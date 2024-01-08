@@ -1,16 +1,19 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.04
- * September 9, 2011
+ * Software version 1.05
+ * January 27, 2017
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST. Modifications and additions by IUPAC 
- * and the InChI Trust.
+ * Originally developed at NIST. 
+ * Modifications and additions by IUPAC and the InChI Trust.
+ * Some portions of code were developed/changed by external contributors
+ * (either contractor or volunteer) which are listed in the file 
+ * 'External-contributors' included in this distribution.
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the 
- * International Chemical Identifier (InChI) Software version 1.04
+ * International Chemical Identifier (InChI) 
  * Copyright (C) IUPAC and InChI Trust Limited
  * 
  * This library is free software; you can redistribute it and/or modify it 
@@ -18,54 +21,23 @@
  * or any later version.
  * 
  * Please note that this library is distributed WITHOUT ANY WARRANTIES 
- * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
- * Licence for the International Chemical Identifier (InChI) Software 
- * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
- * for more details.
+ * whatsoever, whether expressed or implied.  
+ * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  * 
  * You should have received a copy of the IUPAC/InChI Trust InChI 
  * Licence No. 1.0 with this library; if not, please write to:
  * 
  * The InChI Trust
- * c/o FIZ CHEMIE Berlin
+ * 8 Cavendish Avenue
+ * Cambridge CB1 7US
+ * UK
  *
- * Franklinstrasse 11
- * 10587 Berlin
- * GERMANY
- *
- *  or email to: ulrich@inchi-trust.org.
+ * or e-mail to alan@inchi-trust.org
  * 
  */
 
 
+This directory contains a number of sample files and a simple test suite 
+for InChI version 1, software version 1.05.
 
-This directory contains, in the two sub-directories, a set of test files 
-representing various chemical structures. 
-
-
-=========
-  FILES 
-=========
-
-readme.txt                       this file
-
-samples				 SUB-DIRECTORY
-
-Sample chemical structure files for testing InChI/InChIKey software.  
-
-test				 SUB-DIRECTORY
-
-Test suite including data file (SDF) and reference InChI/InChIKey identifiers 
-obtained with InChI software v. 1.04 using various command-line options.
-
-
-
-
-
-=========
-  LINKS
-=========
-
-IUPAC                   http://www.iupac.org/inchi
-InChI Trust             http://www.inchi-trust.org                                      
-InChI discussion group  https://lists.sourceforge.net/lists/listinfo/inchi-discuss
+For the details, see 'readme.txt' files in the sub-directories.

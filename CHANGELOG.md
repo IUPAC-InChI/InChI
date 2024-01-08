@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.05 release 2017-02-04
+
+### Added
+
+- Support for chemical element numbers 113-118 (see release notes for detailed information)
+- Experimental support of InChI/InChIKey for regular single-strand polymers (see release notes for detailed information)Several minor bugfixes is necessary for treating large molecules (previous versions supported only V2000 format limited to not more than 1000 atoms).
+- Provisional support for extended features of Molfile V3000
+- API procedure for direct conversion of Molfile input to InChI, as well as demo program illustrating its use
+- New set of API procedures for both low and high-level operations (InChI extensible interface, IXA), as well as a demo program illustrating its use
+- Convience options added to inchi-1 executable
+- New optin `Large Molecules` instructs inchi-1 executable to accept molecules containing more than 1024 (but less than 32767) atoms
+- A new option `Polymers` instructs inchi-1 executable to accept polymer data in input V2000 Molfiles
+- The new option "Output at Error an empty InChI", `OutErrInChI` (`/OutErrInChI` under Windows, `-OutErrInChI` under Linux) instructs inchi-1 executable to output empty InChI and corresponding InChIKey if error occurs (default behaviour is output nothing)
+- Option `Record:N` (`/Record:N` under Windows, `-Record:N` under Linux) instructs inchi-1 executable to process only the N-th record of the input file in SDF format
+
+### Changed
+
+- Implementation of wildcard expansion in "Allow Multiple Input (AMI) mode" (like in `inchi-1 /AMI *.mol`) under Windows is improved, in order to tolerate possible large expansion volumes
+- Source code was significantly changed in order to ensure multithread execution safety of the InChI library
+- Several minor changes (including refactoring)
+- Updated documentation
+
 ## v1.04 release 2011-10-12
 
 ### Added
