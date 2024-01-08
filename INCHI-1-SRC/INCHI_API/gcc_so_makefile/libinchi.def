@@ -1,0 +1,35 @@
+LIBRARY
+    libinchi.dll
+EXPORTS
+    CheckINCHI
+    CheckINCHIKey
+    FreeINCHI
+    FreeStdINCHI                     
+    FreeStructFromINCHI              
+    FreeStructFromStdINCHI           
+    Free_inchi_Input                 
+    Free_std_inchi_Input             
+    GetINCHI                         
+    GetINCHIKeyFromINCHI             
+    GetINCHIfromINCHI                
+    GetStdINCHI                      
+    GetStdINCHIKeyFromStdINCHI       
+    GetStringLength                  
+    GetStructFromINCHI               
+    GetStructFromStdINCHI            
+    Get_inchi_Input_FromAuxInfo      
+    Get_std_inchi_Input_FromAuxInfo  
+    INCHIGEN_Create                  
+    INCHIGEN_Destroy                 
+    INCHIGEN_DoCanonicalization      
+    INCHIGEN_DoNormalization         
+    INCHIGEN_DoSerialization         
+    INCHIGEN_Reset                   
+    INCHIGEN_Setup                   
+    STDINCHIGEN_Create               
+    STDINCHIGEN_Destroy              
+    STDINCHIGEN_DoCanonicalization   
+    STDINCHIGEN_DoNormalization      
+    STDINCHIGEN_DoSerialization      
+    STDINCHIGEN_Reset                
+    STDINCHIGEN_Setup
