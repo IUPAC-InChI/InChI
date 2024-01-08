@@ -1,25 +1,47 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
 #ifndef __INCHIDRP_H__
 #define __INCHIDRP_H__
 
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
 /********************************************
  * Parameters for the structure drawing
  ********************************************/
@@ -54,8 +76,8 @@ typedef struct tagDrawParms {
     SET_DRAW_PARMS  sdp;   /* how to draw: fill on the 1st call */
     RET_DRAW_PARMS  rdp;   /* returned when drawing window is closed */
     PER_DRAW_PARMS *pdp;   /* persistent: save between calls (window size) */
-#ifndef INCHI_LIB
-#ifndef INCHI_ANSI_ONLY
+#ifndef TARGET_LIB_FOR_WINCHI
+#ifndef COMPILE_ANSI_ONLY
     AT_NUMB   *nEquLabels; /* num_inp_atoms elements, value>0 marks atoms in the set #value  */
     AT_NUMB    nNumEquSets;  /* max mark value */
     AT_NUMB    nCurEquLabel; /* current mark */
@@ -63,7 +85,7 @@ typedef struct tagDrawParms {
 #endif
 } DRAW_PARMS; /* Settings: How to draw the structure */
 
-#endif /* } INCHI_ANSI_ONLY */
+#endif /* } COMPILE_ANSI_ONLY */
 
 #define MAX_NUM_PATHS 4
 
@@ -87,7 +109,7 @@ typedef struct tagInputParms {
     char           *pSdfValue;
     long            lSdfId;
     long            lMolfileNumber;
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
     DRAW_PARMS      dp;
     PER_DRAW_PARMS  pdp;
     TBL_DRAW_PARMS  tdp;
@@ -138,15 +160,15 @@ typedef struct tagInputParms {
     INCHI_MODE      bTautFlags;
     INCHI_MODE      bTautFlagsDone;
 
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
     int             bReadInChIOptions;
 #endif
 
 /* post v.1 features */
-#if( UNDERIVATIZE == 1 )
+#if ( UNDERIVATIZE == 1 )
     int             bUnderivatize;
 #endif
-#if( RING2CHAIN == 1 )
+#if ( RING2CHAIN == 1 )
     int             bRing2Chain;
 #endif
 #if ( RING2CHAIN == 1 || UNDERIVATIZE == 1 )

@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -43,24 +65,26 @@ typedef struct tagStructData {
     INCHI_MODE     bTautFlagsDone[INCHI_NUM]; /* reconnected does not have TG_FLAG_DISCONNECT_COORD_DONE flag */
     int           num_components[INCHI_NUM]; /* number of allocated INChI, INChI_Aux data structures */
     /* debugging info */
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
     int           bExtract;
 #endif
 
 } STRUCT_DATA;
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
 #endif
+
+int process_single_input( int argc, char *argv[ ] );
 
 int ReadCommandLineParms(int argc, const char *argv[], INPUT_PARMS *ip, 
                          char *szSdfDataValue, unsigned long *ulDisplTime, 
                          int bReleaseVersion, INCHI_IOSTREAM *log_file);
 void HelpCommandLineParms(INCHI_IOSTREAM *f);
 int OpenFiles( FILE **inp_file, FILE **output_file, FILE **log_file, FILE **prb_file, INPUT_PARMS *ip );
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
 int DisplayStructure( inp_ATOM *at, int num_at, int num_removed_H, int bAdd_DT_to_num_H, int nNumRemovedProtons, NUM_H nNumRemovedProtonsIsotopic[],
                       int bIsotopic, int j /*bTautomeric*/, INChI **cur_INChI, INChI_Aux **cur_INChI_Aux,
                       int bAbcNumbers, DRAW_PARMS *dp, INCHI_MODE nMode, char *szTitle );
@@ -128,7 +152,7 @@ int TreatCreateINChIWarning(STRUCT_DATA *sd, INPUT_PARMS *ip,
                             INCHI_IOSTREAM *prb_file,
                             char *pStr, int nStrLen );
 
-#if( TEST_RENUMB_ATOMS == 1 || READ_INCHI_STRING == 1 ) /*  { */
+#if ( TEST_RENUMB_ATOMS == 1 || READ_INCHI_STRING == 1 ) /*  { */
 int CompareINChI( INChI *i1, INChI *i2, INChI_Aux *a1, INChI_Aux *a2 );
 #endif
 
@@ -190,7 +214,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
 int CompareHillFormulasNoH(const char *f1, const char *f2, int *num_H1, int *num_H2);
 
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif

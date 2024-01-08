@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -64,7 +86,7 @@ int Canon_INChI3(int num_atoms, int num_at_tg, sp_ATOM* at,
                  CANON_STAT* pCS, INCHI_MODE nMode, int bTautFtcn);
 
 
-#ifdef INCHI_ANSI_ONLY
+#ifdef COMPILE_ANSI_ONLY
 
 static clock_t InchiClock(void);
 
@@ -889,13 +911,13 @@ int UpdateFullLinearCT( int num_atoms, int num_at_tg, sp_ATOM* at, AT_RANK *nRan
     /**********************************************************************/
     for ( rank = 1; rank <= num_atoms; rank ++ ) {
         i = (int)nAtomNumber[rank-1];  /* current atom */
-#if( CT_ATOMID == CT_ATOMID_IS_CURRANK )
+#if ( CT_ATOMID == CT_ATOMID_IS_CURRANK )
         r0_at_type = (AT_NUMB)rank; /* current Rank */
 #else
-#if( CT_ATOMID == CT_ATOMID_IS_INITRANK )
+#if ( CT_ATOMID == CT_ATOMID_IS_INITRANK )
         r0_at_type = (AT_NUMB)at[i].init_rank; /* chemical + neighborhood ID */
 #else
-#if( CT_ATOMID == CT_ATOMID_DONTINCLUDE )
+#if ( CT_ATOMID == CT_ATOMID_DONTINCLUDE )
 #else
  #error Undefined or wrong definition of CT_ATOMID
 #endif
@@ -946,10 +968,10 @@ int UpdateFullLinearCT( int num_atoms, int num_at_tg, sp_ATOM* at, AT_RANK *nRan
     for ( rank = num_atoms + 1; rank <= num_at_tg; rank ++ ) {
         j = (int)nAtomNumber[rank-1];  /* current "atom" */
         i = j - num_atoms;             /* current t-group */
-#if(   CT_ATOMID == CT_ATOMID_IS_CURRANK )
+#if ( CT_ATOMID == CT_ATOMID_IS_CURRANK )
         r0_at_type = (AT_NUMB)rank; /* current Rank */
 #else
-#if( CT_ATOMID == CT_ATOMID_IS_INITRANK )
+#if ( CT_ATOMID == CT_ATOMID_IS_INITRANK )
         r0_at_type = (AT_NUMB)rank; /* current Rank or  (AT_NUMB)at[i].init_rank; ==> chemical + neighborhood ID */
 #else
 #if ( CT_ATOMID == CT_ATOMID_DONTINCLUDE )

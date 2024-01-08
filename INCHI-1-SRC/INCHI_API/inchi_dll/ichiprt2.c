@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -46,7 +68,7 @@ int Eql_INChI_Stereo( INChI_Stereo *s1, int eql1, INChI_Stereo *s2, int eql2, in
     if ( !s1 ) {
         return 0;
     }
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
 #else
     bRelRac = 0;
 #endif
@@ -599,7 +621,7 @@ int MakeHString( int bAddDelim, S_CHAR *LinearCT, int nLenCT,
                     }
                     /* end debug */
                     curLenH = curMaxH - curMinH + 1;
-                    nNumH = (int*)inchi_malloc( curLenH * sizeof(nNumH[0]) );
+                    nNumH = (int*) inchi_malloc( curLenH * sizeof(nNumH[0]) );
                     if ( !nNumH ) {
                         *bOverflow |= 1;
                         return nLen;
@@ -1414,7 +1436,7 @@ int MakeStereoString( AT_NUMB *at1, AT_NUMB *at2, S_CHAR *parity, int bAddDelim,
 }
 #ifdef ALPHA_BASE
 
-#if(  ALPHA_BASE != 27 )
+#if ( ALPHA_BASE != 27 )
 #error ALPHA_BASE definitions mismatch
 #endif
 
@@ -1472,7 +1494,7 @@ int MakeAbcNumber( char *szString, int nStringLen, const char *szLeadingDelim, i
     p[0] = toupper(p[0]);
     return (q - szString);
 }
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
 /*****************************************************/
 static long abctol( const char *szString, char **q ); /* keep compiler happy */
 

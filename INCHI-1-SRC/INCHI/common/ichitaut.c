@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -38,7 +60,7 @@
 #include "ichi_bns.h"
 
 
-/* local prototypes */
+/* Local prototypes */
 int SetTautomericBonds( inp_ATOM *at, int nNumBondPos, T_BONDPOS *BondPos );
 int CompRankTautomer(const void* a1, const void* a2 );
 int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnum_t, int max_num_t,*/
@@ -53,7 +75,7 @@ int FindAccessibleEndPoints( T_ENDPOINT *EndPoint, int *nNumEndPoints, T_BONDPOS
                          struct BalancedNetworkStructure *pBNS, struct BalancedNetworkData *pBD,
                          inp_ATOM *at, int num_atoms, C_GROUP_INFO *cgi, int taut_mode );
 
-/* bits for GetChargeType */
+/* Bits for GetChargeType */
 
 #define C_SUBTYPE_CHARGED     0
 #define C_SUBTYPE_p_DONOR     1  /* new */
@@ -63,7 +85,7 @@ int FindAccessibleEndPoints( T_ENDPOINT *EndPoint, int *nNumEndPoints, T_BONDPOS
 #define C_SUBTYPE_NEUTRAL    16
 
 
-/* internal stack array size */
+/* Internal stack array size */
 #define MAX_STACK_ARRAY_LEN 127
 #define MAX_TGROUP_ARRAY_LEN 127
 
@@ -87,11 +109,14 @@ int bDoNotMergeNonTautAtom(inp_ATOM *at, int at_no);
 int GetOtherSaltType( inp_ATOM *at, int at_no, int *s_subtype );
 
 
-/****************************************************************/
-/*  tautomers: Sorting globals */
+/*****************************************************************************/
+/*  Tautomers: Sorting globals												 */
 AT_RANK        *pn_tRankForSort;
+/*****************************************************************************/
 
-/*************************************************************************************/
+
+
+/*****************************************************************************/
 int is_centerpoint_elem( U_CHAR el_number )
 {
     static U_CHAR el_numb[12];
@@ -118,7 +143,10 @@ int is_centerpoint_elem( U_CHAR el_number )
     return 0;
 }
 #if ( KETO_ENOL_TAUT == 1 )  /* post v.1 feature */
-/*************************************************************************************/
+
+
+
+/*****************************************************************************/
 int is_centerpoint_elem_KET( U_CHAR el_number )
 {
     static U_CHAR el_numb[1];
@@ -135,7 +163,10 @@ int is_centerpoint_elem_KET( U_CHAR el_number )
     return 0;
 }
 #endif
-/*************************************************************************************/
+
+
+
+/*****************************************************************************/
 int is_centerpoint_elem_strict( U_CHAR el_number )
 {
     static U_CHAR el_numb[6];
@@ -155,7 +186,10 @@ int is_centerpoint_elem_strict( U_CHAR el_number )
     }
     return 0;
 }
-/*************************************************************************************/
+
+
+
+/*****************************************************************************/
 int get_endpoint_valence( U_CHAR el_number )
 {
     static U_CHAR el_numb[6];
@@ -176,8 +210,12 @@ int get_endpoint_valence( U_CHAR el_number )
     }
     return 0;
 }
-#if( KETO_ENOL_TAUT == 1 )  /* post v.1 feature */
-/*************************************************************************************/
+
+
+
+/*****************************************************************************/
+#if ( KETO_ENOL_TAUT == 1 )  /* post v.1 feature */
+/*****************************************************************************/
 int get_endpoint_valence_KET( U_CHAR el_number )
 {
     static U_CHAR el_numb[2];
@@ -196,7 +234,11 @@ int get_endpoint_valence_KET( U_CHAR el_number )
     return 0;
 }
 #endif
-/********************************************************************************************************/
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
 int AddAtom2num(  AT_RANK num[], inp_ATOM *atom, int at_no, int bSubtract )
 {  /*  bSubtract: 0=> add, 1=>subtract, 2=> fill */
     inp_ATOM *at = atom + at_no;
@@ -227,7 +269,10 @@ int AddAtom2num(  AT_RANK num[], inp_ATOM *atom, int at_no, int bSubtract )
     }
     return nMobile;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 void AddAtom2DA( AT_RANK num_DA[], inp_ATOM *atom, int at_no, int bSubtract )
 {   /*  bSubtract: 0=> add, 1=>subtract, 2=> fill */
     inp_ATOM *at = atom + at_no;
@@ -276,7 +321,10 @@ void AddAtom2DA( AT_RANK num_DA[], inp_ATOM *atom, int at_no, int bSubtract )
     }
     return;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int AddEndPoint( T_ENDPOINT *pEndPoint, inp_ATOM *at, int iat )
 {        
     pEndPoint->nAtomNumber  = iat;
@@ -299,7 +347,10 @@ int AddEndPoint( T_ENDPOINT *pEndPoint, inp_ATOM *at, int iat )
     }
     return 0;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int nGetEndpointInfo( inp_ATOM *atom, int iat, ENDPOINT_INFO *eif )
 {
     int  nEndpointValence;
@@ -365,8 +416,12 @@ int nGetEndpointInfo( inp_ATOM *atom, int iat, ENDPOINT_INFO *eif )
     }
     return 0;
 }
+
+
+
+/*****************************************************************************/
 #if ( KETO_ENOL_TAUT == 1 )  /* post v.1 feature */
-/********************************************************************************************************/
+/*****************************************************************************/
 int nGetEndpointInfo_KET( inp_ATOM *atom, int iat, ENDPOINT_INFO *eif )
 {
     int  nEndpointValence;
@@ -441,11 +496,18 @@ int nGetEndpointInfo_KET( inp_ATOM *atom, int iat, ENDPOINT_INFO *eif )
     return 0;
 }
 #endif
-/********************************************************************************************************/
-/*  RegisterEndPoints ret>0 => new registration happened, 0 => no changes, -1 => program error (debug) */
-int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnum_t, int max_num_t,*/
-                       T_ENDPOINT *EndPoint, int nNumEndPoints, inp_ATOM *at, int num_atoms, C_GROUP_INFO *cgi
-                       , struct BalancedNetworkStructure *pBNS )
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
+/*  RegisterEndPoints ret>0 => new registration happened,					 */
+/*                       =0 => no changes, -1 => program error (debug)		 */
+/*****************************************************************************/
+int RegisterEndPoints( T_GROUP_INFO *t_group_info, 
+                       /* T_GROUP *t_group, int *pnum_t, int max_num_t,*/
+                       T_ENDPOINT *EndPoint, int nNumEndPoints, inp_ATOM *at, int num_atoms, 
+                       C_GROUP_INFO *cgi, struct BalancedNetworkStructure *pBNS )
 {
     T_GROUP  *t_group   =  t_group_info->t_group;
     int      *pnum_t    = &t_group_info->num_t_groups;
@@ -523,7 +585,7 @@ int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnu
                     /* found new fict. ID = group */
                     if ( j == MAX_STACK_ARRAY_LEN && nGroupNewNumber == nGroupNewNumberStackArray ) {
                         /* stack array overflow; allocate more memory than may be needed */
-                        nGroupNewNumber = (AT_NUMB *)inchi_malloc(nNumEndPoints*sizeof(nGroupNewNumber[0]));
+                        nGroupNewNumber = (AT_NUMB *) inchi_malloc(nNumEndPoints*sizeof(nGroupNewNumber[0]));
                         if ( !nGroupNewNumber ) {
                             ret = -1;
                             goto exit_function;
@@ -601,7 +663,7 @@ int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnu
                  /* discovered a new t-group number; store it together with its nEquNumber */
                  if ( j == MAX_STACK_ARRAY_LEN ) {
                     if ( nGroupNewNumber == nGroupNewNumberStackArray ) {
-                        nGroupNewNumber = (AT_NUMB *)inchi_malloc(nNumEndPoints*sizeof(nGroupNewNumber[0]));
+                        nGroupNewNumber = (AT_NUMB *) inchi_malloc(nNumEndPoints*sizeof(nGroupNewNumber[0]));
                         if ( !nGroupNewNumber ) {
                             ret = -1;
                             goto exit_function;
@@ -609,7 +671,7 @@ int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnu
                         memcpy( nGroupNewNumber, nGroupNewNumberStackArray, nNumGroups*sizeof(nGroupNewNumber[0]));
                     }
                     if ( nGroupNumber == nGroupNumberStackArray ) {
-                        nGroupNumber = (AT_NUMB *)inchi_malloc(nNumEndPoints*sizeof(nGroupNumber[0]));
+                        nGroupNumber = (AT_NUMB *) inchi_malloc(nNumEndPoints*sizeof(nGroupNumber[0]));
                         if ( !nGroupNumber ) {
                             ret = -1;
                             goto exit_function;
@@ -700,7 +762,7 @@ int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnu
      if ( nNumGroups ) {
          /* there are groups to merge */
          if ( nNextGroupNumber >= MAX_STACK_ARRAY_LEN ) {
-             nNewTgNumber = (AT_NUMB *)inchi_malloc((nNextGroupNumber+1)*sizeof(*nNewTgNumber));
+             nNewTgNumber = (AT_NUMB *) inchi_malloc((nNextGroupNumber+1)*sizeof(*nNewTgNumber));
              if ( !nNewTgNumber ) {
                  ret = -1;
                  goto exit_function; /* error: out of RAM */
@@ -722,7 +784,7 @@ int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnu
          for ( i = 0; i < num_t; i ++ ) {
              t_group[i].nGroupNumber = nNewTgNumber[t_group[i].nGroupNumber];
          }
-#if( bRELEASE_VERSION != 1 )
+#if ( bRELEASE_VERSION != 1 )
          /* Check: debug only */
          for ( i = 1; i < num_t; i ++ ) {
              if ( 1 != t_group[i].nGroupNumber - t_group[i-1].nGroupNumber ) {
@@ -754,7 +816,7 @@ int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnu
          nGroupNewNumber = nGroupNewNumberStackArray;
      }
      if ( !t_group_info->tGroupNumber ) {
-        t_group_info->tGroupNumber = (AT_NUMB *)inchi_malloc(2*max_num_t*sizeof(t_group_info->tGroupNumber[0])); 
+        t_group_info->tGroupNumber = (AT_NUMB *) inchi_malloc(2*max_num_t*sizeof(t_group_info->tGroupNumber[0])); 
         if ( !t_group_info->tGroupNumber ) {
             ret = -1;
             goto exit_function;
@@ -773,7 +835,7 @@ int RegisterEndPoints( T_GROUP_INFO *t_group_info, /* T_GROUP *t_group, int *pnu
         memset( &tgi, 0, sizeof(tgi) );
         tgi.num_t_groups = num_t;
         tgi.t_group = t_group;
-#if( KETO_ENOL_TAUT == 1 )
+#if ( KETO_ENOL_TAUT == 1 )
         tgi.bTautFlags |= (t_group_info->bTautFlags & TG_FLAG_KETO_ENOL_TAUT); /* needed in AddTGroups2BnStruct() */
 #endif
         /* reinitialize BN Structure */
@@ -810,10 +872,13 @@ exit_function:
      }
      return ret;
 }
-/*******************************************************************************************************
- * change non-alternating and non-tautomeric bonds
+
+
+
+/*****************************************************************************
+ * Change non-alternating and non-tautomeric bonds
  * (that is, single and double bonds) to tautomeric
- */
+ *****************************************************************************/
 int SetTautomericBonds( inp_ATOM *at, int nNumBondPos, T_BONDPOS *BondPos )
 {
     int k, n;
@@ -823,7 +888,7 @@ int SetTautomericBonds( inp_ATOM *at, int nNumBondPos, T_BONDPOS *BondPos )
         int bond_mark      = at[center].bond_type[neighbor_index];
         int bond_type      = bond_mark & ~BOND_MARK_ALL;
         int neighbor;
-#if( REPLACE_ALT_WITH_TAUT == 1 )
+#if ( REPLACE_ALT_WITH_TAUT == 1 )
         if ( bond_type != BOND_TAUTOM )
 #else
         if ( bond_type != BOND_ALTERN && bond_type != BOND_TAUTOM )
@@ -848,8 +913,11 @@ int SetTautomericBonds( inp_ATOM *at, int nNumBondPos, T_BONDPOS *BondPos )
     return n;
 }
 
-/********************************************************************************************************/
-int GetNeutralRepsIfNeeded( AT_NUMB *pri, AT_NUMB *prj, inp_ATOM *at, int num_atoms, T_ENDPOINT *EndPoint, int nNumEndPoints, C_GROUP_INFO *cgi )
+
+
+/*****************************************************************************/
+int GetNeutralRepsIfNeeded( AT_NUMB *pri, AT_NUMB *prj, inp_ATOM *at, int num_atoms, 
+                           T_ENDPOINT *EndPoint, int nNumEndPoints, C_GROUP_INFO *cgi )
 {
     AT_NUMB ri = *pri;
     AT_NUMB rj = *prj;
@@ -951,7 +1019,9 @@ int GetNeutralRepsIfNeeded( AT_NUMB *pri, AT_NUMB *prj, inp_ATOM *at, int num_at
     return 0;
 }
 
-/********************************************************************************************************/
+
+
+/*****************************************************************************/
 int FindAccessibleEndPoints( T_ENDPOINT *EndPoint, int *nNumEndPoints, T_BONDPOS *BondPos, int *nNumBondPos,
                          struct BalancedNetworkStructure *pBNS, struct BalancedNetworkData *pBD,
                          inp_ATOM *at, int num_atoms, C_GROUP_INFO *cgi, int taut_mode )
@@ -1119,7 +1189,7 @@ int FindAccessibleEndPoints( T_ENDPOINT *EndPoint, int *nNumEndPoints, T_BONDPOS
     */
     for ( i = 0, j = 0; i < *nNumEndPoints; i ++ ) {
         if ( EndPoint[i].nEquNumber ) {
-#if( IGNORE_SINGLE_ENDPOINTS == 1 )  /* 1-28-2003 */
+#if ( IGNORE_SINGLE_ENDPOINTS == 1 )  /* 1-28-2003 */
             for ( k = 0, nNumFoundEqu = 0; k < *nNumEndPoints; k ++ ) {
                 nNumFoundEqu += (EndPoint[i].nEquNumber == EndPoint[k].nEquNumber);
             }
@@ -1136,7 +1206,7 @@ int FindAccessibleEndPoints( T_ENDPOINT *EndPoint, int *nNumEndPoints, T_BONDPOS
         }
     }
 
-#if( IGNORE_SINGLE_ENDPOINTS != 1 )  /* 1-28-2003 */
+#if ( IGNORE_SINGLE_ENDPOINTS != 1 )  /* 1-28-2003 */
     /* Do not allow a centerpoint to have only one tautomeric bond */
     /* Hack: we may have only one centerpoint */
     /* BondPos[*].nAtomNumber are centerpoints */
@@ -1159,8 +1229,11 @@ int FindAccessibleEndPoints( T_ENDPOINT *EndPoint, int *nNumEndPoints, T_BONDPOS
     
 }
 
-/*#if( MOVE_CHARGES == 1 ) */  /* { */
-/********************************************************************************************************/
+
+
+/*****************************************************************************/
+/*#if ( MOVE_CHARGES == 1 ) */  /* { */
+/*****************************************************************************/
 
 /**********************************************/
 /*                                            */
@@ -1168,6 +1241,7 @@ int FindAccessibleEndPoints( T_ENDPOINT *EndPoint, int *nNumEndPoints, T_BONDPOS
 /*                                            */
 /**********************************************/
 
+/*****************************************************************************/
 typedef struct tagChargeType {  /* meaning see in bCanBeACPoint() */
     char    elname[3];
     S_CHAR  charge;
@@ -1181,7 +1255,7 @@ typedef struct tagChargeType {  /* meaning see in bCanBeACPoint() */
 CHARGE_TYPE CType[] = {
     { "N\0",  1, 3, 3, 1, 0, 0 },
     { "P\0",  1, 3, 3, 1, 1, 0 },
-#if( ADD_MOVEABLE_O_PLUS == 1 )
+#if ( ADD_MOVEABLE_O_PLUS == 1 )
     { "O\0",  1, 2, 2, 1, 2, 2 }, /* added 02-06-2005 */
     { "S\0",  1, 2, 2, 1, 3, 2 }, /* added 03-18-2005 */
     { "Se",   1, 2, 2, 1, 4, 2 }, /* added 03-18-2005 */
@@ -1212,9 +1286,11 @@ CHARGE_TYPE CType[] = {
 #define C_SUBTYPE_NEUTRAL_H_DONOR           (C_SUBTYPE_NEUTRAL|C_SUBTYPE_H_DONOR)
 
 #define NUM_C_TYPES  (int)(sizeof( CType )/sizeof(CType[0]))
+/*****************************************************************************/
 
 
-/********************************************************************************************************/
+
+/*****************************************************************************/
 int bCanBeACPoint( inp_ATOM *at, S_CHAR cCharge, S_CHAR cChangeValence, S_CHAR neutral_bonds_valence,
                    S_CHAR neutral_valence, S_CHAR nEndpointValence, S_CHAR *cChargeSubtype )
 {
@@ -1304,7 +1380,10 @@ int bCanBeACPoint( inp_ATOM *at, S_CHAR cCharge, S_CHAR cChangeValence, S_CHAR n
     }
     return 0;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int GetChargeType( inp_ATOM *atom, int iat, S_CHAR *cChargeSubtype )
 {
     int i, n;
@@ -1338,7 +1417,9 @@ int GetChargeType( inp_ATOM *atom, int iat, S_CHAR *cChargeSubtype )
     }
     return -1;
 }
-/********************************************************************************************************/
+
+
+/*****************************************************************************/
 int CmpCCandidates( const void *a1, const void *a2 )
 {
     const C_CANDIDATE *c1 = (const C_CANDIDATE *)a1;
@@ -1351,7 +1432,9 @@ int CmpCCandidates( const void *a1, const void *a2 )
     ret = (int)c1->atnumber - (int)c2->atnumber;
     return ret;
 }
-/********************************************************************************************************/
+
+
+/*****************************************************************************/
 int RegisterCPoints( C_GROUP *c_group, int *pnum_c, int max_num_c, T_GROUP_INFO *t_group_info,
                      int point1, int point2, int ctype, inp_ATOM *at, int num_atoms )
 {
@@ -1455,7 +1538,9 @@ int RegisterCPoints( C_GROUP *c_group, int *pnum_c, int max_num_c, T_GROUP_INFO 
     }
 }
 
-/********************************************************************************************************/
+
+
+/*****************************************************************************/
 int MarkChargeGroups(inp_ATOM *at, int num_atoms, 
                      C_GROUP_INFO *c_group_info, T_GROUP_INFO *t_group_info,
                      struct BalancedNetworkStructure *pBNS, 
@@ -1599,7 +1684,9 @@ quick_exit:
     return nNumChanges;
 }
 
-/********************************************************************************************************/
+
+
+/*****************************************************************************/
 int GetSaltChargeType(inp_ATOM *at, int at_no, T_GROUP_INFO *t_group_info, int *s_subtype )
 {
     static int el_number_C  = 0;
@@ -1714,7 +1801,10 @@ int GetSaltChargeType(inp_ATOM *at, int at_no, T_GROUP_INFO *t_group_info, int *
     }
     return type;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int bDoNotMergeNonTautAtom(inp_ATOM *at, int at_no)
 {
     static int el_number_N  = 0;
@@ -1728,7 +1818,10 @@ int bDoNotMergeNonTautAtom(inp_ATOM *at, int at_no)
     }
     return 0;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int GetOtherSaltChargeType( inp_ATOM *at, int at_no, T_GROUP_INFO *t_group_info, int *s_subtype, int bAccept_O )
 {
    /* static int el_number_C  = 0; */
@@ -1847,7 +1940,10 @@ int GetOtherSaltChargeType( inp_ATOM *at, int at_no, T_GROUP_INFO *t_group_info,
     }
     return type;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int GetOtherSaltType( inp_ATOM *at, int at_no, int *s_subtype )
 {
     static int el_number_C  = 0;
@@ -1946,7 +2042,10 @@ int GetOtherSaltType( inp_ATOM *at, int at_no, int *s_subtype )
       participate in the H/(-) migrartion and it will be unmarked/unmerged.
 
 */
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int comp_candidates( const void *a1, const void *a2 )
 {
     const S_CANDIDATE *s1 = (const S_CANDIDATE *)a1;
@@ -1965,7 +2064,10 @@ int comp_candidates( const void *a1, const void *a2 )
     }
     return (int)s1->atnumber - (int)s2->atnumber;
 }
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int MarkSaltChargeGroups2 ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info,
                           T_GROUP_INFO *t_group_info, C_GROUP_INFO *c_group_info,
                           struct BalancedNetworkStructure *pBNS, struct BalancedNetworkData *pBD )
@@ -2000,7 +2102,7 @@ int MarkSaltChargeGroups2 ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_i
         ENDPOINT_INFO    eif;
 */
 
-#if( IGNORE_TGROUP_WITHOUT_H == 1 )
+#if ( IGNORE_TGROUP_WITHOUT_H == 1 )
         int          bTGroupHasNegativeChargesOnly = 1;
 #endif
         /*return 0;*/ /* debug only */
@@ -2305,7 +2407,7 @@ bFound2Pairs:
             }
             /* merge all marked atoms and their t-groups into one t-group */
             ret = RegisterEndPoints( t_group_info, EndPoint, nNumMarkedCandidates, at, num_atoms, c_group_info, pBNS );
-            if (  ret == -1 ) {
+            if ( ret == -1 ) {
                 ret = BNS_PROGRAM_ERR;
             }
             if ( ret < 0 ) {
@@ -2345,7 +2447,7 @@ bFound2Pairs:
         }
         nTotNumChanges = ( nTotNumChanges > 0);
 
-#if( IGNORE_TGROUP_WITHOUT_H == 1 )
+#if ( IGNORE_TGROUP_WITHOUT_H == 1 )
         if ( nTotNumChanges && bTGroupHasNegativeChargesOnly ) {
             nTotNumChanges = 2;  /* means no moveable H has been affected */
         }
@@ -2392,7 +2494,10 @@ typedef struct tagTGroupData {
     S_SHORT nAccepS;      /* number of acidic endpoint-acceptors */
 } TGroupData;
 #endif
-/********************************************************************************************************/
+
+
+
+/*****************************************************************************/
 int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info,
                           T_GROUP_INFO *t_group_info, C_GROUP_INFO *c_group_info,
                           struct BalancedNetworkStructure *pBNS, struct BalancedNetworkData *pBD )
@@ -2415,6 +2520,8 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
         TGroupData   tgData[MAX_LOCAL_TGNUM];
         TGroupData   *ptgData = tgData;
 #endif
+        int cond1=0,cond2a=0,cond2b=0,cond2c=0,cond2=0;
+
         if ( nNumCandidates <= -1 || !t_group_info || !t_group_info->t_group ) {
             return 0;
         }
@@ -2446,19 +2553,23 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
         nNumCandidates = 0; /* always recalculate 2004-03-22 */
         num_tested = 0;
 
-        if ( nNumCandidates == 0 ) {
-            for ( i = 0, nNumCandidates = nNumOtherCandidates = nNumPOnlyCandidates = 0; i < num_atoms; i ++ ) {
+        if ( nNumCandidates == 0 ) 
+        {
+            for ( i = 0, nNumCandidates = nNumOtherCandidates = nNumPOnlyCandidates = 0; i < num_atoms; i ++ ) 
+            {
                 if ( 0 == (s_type = GetSaltChargeType( at, i, t_group_info, &s_subtype )) ||
                      /* -C=O or =C-OH, O = S, Se, Te */
-#if( INCL_NON_SALT_CANDIDATATES == 1 )            
+#if ( INCL_NON_SALT_CANDIDATATES == 1 )            
                      1 == (s_type = GetOtherSaltChargeType( at, i, t_group_info, &s_subtype, 1 )) ||
                      /* =Z-MH or -Z=M, Z = centerpoint, M = endpoint, other than above */
 #endif
                      2 == (s_type = GetOtherSaltType( at, i, &s_subtype ) ) 
                      /* >C-SH, >C-S(-); S=S,Se,Te */
-                   ) {
+                   ) 
+                {
 
-                    if ( nNumCandidates >= nMaxNumCandidates ) {
+                    if ( nNumCandidates >= nMaxNumCandidates ) 
+                    {
                         err = BNS_VERT_EDGE_OVFL;
                         goto quick_exit;
                     }
@@ -2472,9 +2583,10 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
                     s_subtype_all                        |= s_subtype;
                     /*i1 = i;*/ /* save a representative of a tautomeric group */
                 }
-            }
+            } /* for */
 
             /* changes: TG_FLAG_ALLOW_NO_NEGTV_O replaced CHARGED_SALTS_ONLY==0 */
+#if 0
             if ( nNumCandidates <= 1 ||
                 !(s_subtype_all & SALT_ACCEPTOR) ||
                  (((t_group_info->bTautFlags & TG_FLAG_ALLOW_NO_NEGTV_O)||
@@ -2483,6 +2595,22 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
                     !(s_subtype_all & (SALT_DONOR_Neg | SALT_DONOR_H)):
                     (!(s_subtype_all & SALT_DONOR_Neg) || nNumOtherCandidates==nNumCandidates))
                ) {
+#endif
+            cond1 = s_subtype_all & SALT_ACCEPTOR;
+            cond2a = t_group_info->bTautFlags & TG_FLAG_ALLOW_NO_NEGTV_O;
+            cond2b = t_group_info->bTautFlagsDone & TG_FLAG_FOUND_SALT_CHARGES_DONE;
+            cond2c = t_group_info->tni.bNormalizationFlags & FLAG_FORCE_SALT_TAUT;
+            if ( cond2a || cond2b|| cond2c ) 
+                cond2 = !(s_subtype_all & (SALT_DONOR_Neg | SALT_DONOR_H));
+            else
+                cond2 = !(s_subtype_all & SALT_DONOR_Neg) || nNumOtherCandidates==nNumCandidates;
+            if ( nNumCandidates <= 1 || !cond1 || cond2
+                 /*(
+                    ( cond2a || cond2b	|| cond2c ) 
+                    ?		!(s_subtype_all & (SALT_DONOR_Neg | SALT_DONOR_H))
+                    :		( !(s_subtype_all & SALT_DONOR_Neg) || nNumOtherCandidates==nNumCandidates) ) */
+               ) 
+            {
                 s_group_info->num_candidates = -1; /* no candidate exists */
                 goto quick_exit;
             }
@@ -2493,7 +2621,7 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
             for ( i = 0; i < nNumCandidates; i ++ ) {
                 i1 = s_candidate[i].atnumber;
                 if ( 0 <= (s_type = GetSaltChargeType( at, i1, t_group_info, &s_subtype ))
-#if( INCL_NON_SALT_CANDIDATATES == 1 )            
+#if ( INCL_NON_SALT_CANDIDATATES == 1 )            
                      || 0 < (s_type = GetOtherSaltChargeType( at, i1, t_group_info, &s_subtype, 1 /* bAccept_O*/ ))
 #endif
                     ) {
@@ -2534,31 +2662,38 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
                         }
 
                         if ( ( s_candidate[ii1].subtype & (SALT_DONOR_Neg | SALT_DONOR_H) ) &&
-                             ( s_candidate[ii2].subtype & SALT_ACCEPTOR ) ) {
+                             ( s_candidate[ii2].subtype & SALT_ACCEPTOR ) ) 
+                        {
                             ret = bExistsAltPath( pBNS, pBD, NULL, at, num_atoms, jj2, jj1, ALT_PATH_MODE_4_SALT );
                             num_tested ++;
-                            if ( IS_BNS_ERROR( ret ) ) {
+                            if ( IS_BNS_ERROR( ret ) ) 
+                            {
                                 err = ret;
                                 goto quick_exit;
                             }
-                            if ( ret & 1 ) {
+                            if ( ret & 1 ) 
+                            {
                                 nDelta       = (ret & ~3) >> 2;
                                 nNumChanges += (ret & 2);
-                                for ( i = 0; i < 2; i ++ ) {
+                                for ( i = 0; i < 2; i ++ ) 
+                                {
                                     jj = i? jj2 : jj1;
                                     AddEndPoint( EndPoint+i, at, jj );
                                 }
                                 /* add/merge taut groups and reinit pBNS in the fly */
                                 ret = RegisterEndPoints(  t_group_info,
                                                           EndPoint, 2, at, num_atoms, c_group_info, pBNS );
-                                if (  ret == -1 ) {
+                                if ( ret == -1 ) 
+                                {
                                     ret = BNS_PROGRAM_ERR;
                                 }
-                                if ( ret < 0 ) {
+                                if ( ret < 0 ) 
+                                {
                                     err = ret;
                                     goto quick_exit;
                                 }
-                                if ( nDelta ) {
+                                if ( nDelta ) 
+                                {
                                     err = BNS_RADICAL_ERR;
                                     goto quick_exit;
                                 }
@@ -2591,7 +2726,8 @@ quick_exit:
     return nTotNumChanges;
 }
 #else
-/********************************************************************************************************/
+
+/*****************************************************************************/
 int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info,
                           T_GROUP_INFO *t_group_info, C_GROUP_INFO *c_group_info,
                           struct BalancedNetworkStructure *pBNS, struct BalancedNetworkData *pBD )
@@ -2626,7 +2762,7 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
                     s_subtype_all                        |= s_subtype;
                     /*i1 = i;*/ /* save a representative of a tautomeric group */
                 }
-#if( INCL_NON_SALT_CANDIDATATES == 1 )            
+#if ( INCL_NON_SALT_CANDIDATATES == 1 )            
                 else  /* new */
                 if ( 0 < (s_type = GetOtherSaltChargeType( at, i, t_group_info, &s_subtype, 1 /* bAccept_O*/ )) ) {
                     if ( nNumCandidates >= nMaxNumCandidates ) {
@@ -2659,7 +2795,7 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
             for ( i = 0; i < nNumCandidates; i ++ ) {
                 i1 = s_candidate[i].atnumber;
                 if ( 0 <= (s_type = GetSaltChargeType( at, i1, t_group_info, &s_subtype ))
-#if( INCL_NON_SALT_CANDIDATATES == 1 )            
+#if ( INCL_NON_SALT_CANDIDATATES == 1 )            
                      || 0 < (s_type = GetOtherSaltChargeType( at, i1, t_group_info, &s_subtype, 1 /* bAccept_O*/ ))
 #endif
                     ) {
@@ -2730,7 +2866,7 @@ int MarkSaltChargeGroups ( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_in
                                 /* add/merge taut groups and reinit pBNS */
                                 ret = RegisterEndPoints(  t_group_info,
                                                           EndPoint, 2, at, num_atoms, c_group_info, pBNS );
-                                if (  ret < 0 ) {
+                                if ( ret < 0 ) {
                                     return ret;
                                 }
                                 nNumChanges += (ret > 0);
@@ -2757,6 +2893,8 @@ quick_exit:
     return nTotNumChanges;
 }
 #endif
+
+
 
 /*****************************************************************************/
 int MergeSaltTautGroups( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info,
@@ -2916,7 +3054,7 @@ int MergeSaltTautGroups( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info
 
     ret = RegisterEndPoints(  t_group_info,
                               EndPoint, j, at, num_atoms, c_group_info, pBNS );
-    if (  ret == -1 ) {
+    if ( ret == -1 ) {
         ret = BNS_PROGRAM_ERR;
     }
 
@@ -2926,6 +3064,8 @@ int MergeSaltTautGroups( inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info
 
     return ret;
 }
+
+
 
 /*****************************************************************************/
 int MakeIsotopicHGroup(inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info, 
@@ -3080,8 +3220,9 @@ int MakeIsotopicHGroup(inp_ATOM *at, int num_atoms, S_GROUP_INFO *s_group_info,
  **********************************************************************************/
 
 
-/********************************************************************************************************/
+/***********************************************************************************/
 /*   MarkTautomerGroups: do not identify positively charged N as endpoints for now */
+/***********************************************************************************/
 int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info, C_GROUP_INFO *c_group_info
                         , struct BalancedNetworkStructure *pBNS, struct BalancedNetworkData *pBD )
 {
@@ -3140,7 +3281,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
             /*  1st endpoint candidate found. Find centerpoint candidate */
             for ( j = 0; j < at[i].valence; j ++ ) {
                 bond_type   = (int)at[i].bond_type[j] & ~BOND_MARK_ALL;
-#if( FIX_BOND23_IN_TAUT == 1 )
+#if ( FIX_BOND23_IN_TAUT == 1 )
                 bond_type = ACTUAL_ORDER(pBNS,i,j,bond_type);
 #endif
                 centerpoint = (int)at[i].neighbor[j];  /*  a centerpoint candidate */
@@ -3159,7 +3300,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                     for ( k = 0, nNumEndPoints = 0, nNumBondPos = 0; k < at[centerpoint].valence; k ++ ) {
                         endpoint = at[centerpoint].neighbor[k]; /*  endpoint candidate */
                         bond_type    = (int)at[centerpoint].bond_type[k] & ~BOND_MARK_ALL;
-#if( FIX_BOND23_IN_TAUT == 1 )
+#if ( FIX_BOND23_IN_TAUT == 1 )
                         bond_type = ACTUAL_ORDER(pBNS,centerpoint,k,bond_type);
 #endif
                         bTautBond    =
@@ -3171,7 +3312,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                         } else
                         if ( bond_type == BOND_ALTERN || bond_type == BOND_ALT12NS || bond_type == BOND_TAUTOM ) {
                             bTautBond = 1;
-#if( REPLACE_ALT_WITH_TAUT == 1 )
+#if ( REPLACE_ALT_WITH_TAUT == 1 )
                             bAltBond  = (bond_type == BOND_ALTERN || bond_type == BOND_ALT12NS);
 #endif
                         } else
@@ -3219,13 +3360,13 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                         }
                         
                         /*  save positions of all, not only possibly tautomeric bonds */
-#if( REPLACE_ALT_WITH_TAUT != 1 )
+#if ( REPLACE_ALT_WITH_TAUT != 1 )
                         if ( bNonTautBond || bAltBond ) {
 #endif
                             BondPos[nNumBondPos].nAtomNumber    = (AT_NUMB)centerpoint;
                             BondPos[nNumBondPos].neighbor_index = (AT_NUMB)k; /* bond ordering number; used to change bonds to tautomeric only  */
                             nNumBondPos ++;
-#if( REPLACE_ALT_WITH_TAUT != 1 )
+#if ( REPLACE_ALT_WITH_TAUT != 1 )
                         }
 #endif
                         /*  mobile group is possible if (a) the endpoint has a mobile group or */
@@ -3284,7 +3425,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                 /*  1st endpoint candidate found. Find centerpoint candidate */
                 for ( j = 0; j < at[i].valence; j ++ ) {
                     bond_type   = (int)at[i].bond_type[j] & ~BOND_MARK_ALL;
-#if( FIX_BOND23_IN_TAUT == 1 )
+#if ( FIX_BOND23_IN_TAUT == 1 )
                     bond_type = ACTUAL_ORDER(pBNS,i,j,bond_type);
 #endif
                     centerpoint = (int)at[i].neighbor[j];  /*  a centerpoint candidate */
@@ -3309,7 +3450,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                         for ( k = 0, nNumEndPoints = 0, nNumBondPos = 0; k < at[centerpoint].valence; k ++ ) {
                             endpoint = at[centerpoint].neighbor[k]; /*  endpoint candidate */
                             bond_type    = (int)at[centerpoint].bond_type[k] & ~BOND_MARK_ALL;
-#if( FIX_BOND23_IN_TAUT == 1 )
+#if ( FIX_BOND23_IN_TAUT == 1 )
                             bond_type = ACTUAL_ORDER(pBNS,centerpoint,k,bond_type);
 #endif
                             bTautBond    =
@@ -3321,7 +3462,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                             } else
                             if ( bond_type == BOND_ALTERN || bond_type == BOND_ALT12NS || bond_type == BOND_TAUTOM ) {
                                 bTautBond = 1;
-#if( REPLACE_ALT_WITH_TAUT == 1 )
+#if ( REPLACE_ALT_WITH_TAUT == 1 )
                                 bAltBond  = (bond_type == BOND_ALTERN || bond_type == BOND_ALT12NS);
 #endif
                             } else
@@ -3378,13 +3519,13 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                             }
                             
                             /*  save positions of all, not only possibly tautomeric bonds */
-#if( REPLACE_ALT_WITH_TAUT != 1 )
+#if ( REPLACE_ALT_WITH_TAUT != 1 )
                             if ( bNonTautBond || bAltBond ) {
 #endif
                                 BondPos[nNumBondPos].nAtomNumber    = (AT_NUMB)centerpoint;
                                 BondPos[nNumBondPos].neighbor_index = (AT_NUMB)k; /* bond ordering number; used to change bonds to tautomeric only  */
                                 nNumBondPos ++;
-#if( REPLACE_ALT_WITH_TAUT != 1 )
+#if ( REPLACE_ALT_WITH_TAUT != 1 )
                             }
 #endif
                             /*  mobile group is possible if (a) the endpoint has a mobile group or */
@@ -3437,7 +3578,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
     }
 #endif  /* KETO_ENOL_TAUT */
 
-#if( TAUT_OTHER == 1 ) /* { */
+#if ( TAUT_OTHER == 1 ) /* { */
     if ( !tot_changes ) {
 #define MAX_ALT_PATH_LEN 8
         int nMaxLenDfsPath = MAX_ALT_PATH_LEN;
@@ -3449,7 +3590,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
             tot_changes = CT_OUT_OF_RAM;  /*   <BRKPT> */
             goto free_memory;
         }
-#if( TAUT_15_NON_RING      == 1 ) /***** post v.1 feature *****/
+#if ( TAUT_15_NON_RING      == 1 ) /***** post v.1 feature *****/
         if ( t_group_info->bTautFlags & TG_FLAG_1_5_TAUT ) {
             /*  1,5 tautomerism; one of the endpoints should no be on a ring  */
             /*
@@ -3507,7 +3648,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
             }
         }
 #endif
-#if( TAUT_4PYRIDINOL_RINGS == 1 )
+#if ( TAUT_4PYRIDINOL_RINGS == 1 )
         /*  6-member rings */
         /*
               O              OH             OH   
@@ -3558,7 +3699,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
             }
         }
 #endif /* TAUT_4PYRIDINOL_RINGS */
-#if( TAUT_PYRAZOLE_RINGS == 1 )
+#if ( TAUT_PYRAZOLE_RINGS == 1 )
         /* 5-member rings:
 
             Z               Z   
@@ -3598,7 +3739,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                         continue; /*  not a nitrogen atom or a wrong valence or not a single bond */
                     }
                     nMobile2 = at[i2].num_H + (at[i2].charge == -1);  /*  number of mobile groups */
-#if( TAUT_IGNORE_EQL_ENDPOINTS == 1 )
+#if ( TAUT_IGNORE_EQL_ENDPOINTS == 1 )
                       if ( at[i1].endpoint && at[i1].endpoint == at[i2].endpoint )
                           continue; /* atoms already belong to the same t-group */
 #endif
@@ -3650,14 +3791,14 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
          */
         for ( i1 = 0; i1 < num_atoms; i1 ++ ) {
             if ( at[i1].nNumAtInRingSystem >=
-#if( TAUT_TROPOLONE_5 == 1 )
+#if ( TAUT_TROPOLONE_5 == 1 )
                   5
 #else
                   7 
 #endif
                  &&
                  bIsCenterPointStrict( at, i1 ) &&
-#if( TAUT_RINGS_ATTACH_CHAIN == 1 )        
+#if ( TAUT_RINGS_ATTACH_CHAIN == 1 )        
                  at[i1].bCutVertex &&
 #endif
                  at[i1].valence == 3 && !at[i1].endpoint ) {
@@ -3672,7 +3813,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                     */
                     if ( at[i2].nRingSystem != at[i1].nRingSystem ||
                          !bIsCenterPointStrict( at, i2 ) ||
-#if( TAUT_RINGS_ATTACH_CHAIN == 1 )        
+#if ( TAUT_RINGS_ATTACH_CHAIN == 1 )        
                          !at[i2].bCutVertex ||
 #endif                         
                          at[i2].valence != 3 || at[i2].endpoint )
@@ -3691,7 +3832,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                             continue; /*  j == k */
                         if ( !(endpoint1_valence = nGetEndpointInfo( at, endpoint1, &eif1 ) ) )
                             continue; /*  not an endpoint1 element or can't have mobile groups */
-#if( TAUT_RINGS_ATTACH_CHAIN == 1 )        
+#if ( TAUT_RINGS_ATTACH_CHAIN == 1 )        
                         if ( at[endpoint1].nRingSystem == at[i1].nRingSystem )
                             continue;
 #endif
@@ -3713,7 +3854,7 @@ int MarkTautomerGroups( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info,
                                 continue;
                             if ( !(endpoint2_valence = nGetEndpointInfo( at, endpoint2, &eif2 )) )
                                 continue; /*  not an endpoint2 element or can't have mobile groups */
-#if( TAUT_RINGS_ATTACH_CHAIN == 1 )        
+#if ( TAUT_RINGS_ATTACH_CHAIN == 1 )        
                             if ( at[endpoint2].nRingSystem == at[i2].nRingSystem )
                                 continue;
 #endif
@@ -3854,7 +3995,9 @@ exit_function:
     return nErr < 0? nErr : tot_changes;
 }
 
-/******************************************************************************/
+
+
+/*****************************************************************************/
 int free_t_group_info( T_GROUP_INFO *t_group_info )
 {
     if ( t_group_info ) {
@@ -3875,8 +4018,9 @@ int free_t_group_info( T_GROUP_INFO *t_group_info )
     return 0;
 }
 
-/*******************************************************************************/
-/**/
+
+
+/*****************************************************************************/
 int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info, T_GROUP_INFO *t_group_info_orig )
 {
     int err = 0, len;
@@ -3884,7 +4028,7 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info, T_GROUP_INFO *t_gro
     if ( t_group_info_orig && t_group_info ) {
         if ( (len=t_group_info_orig->max_num_t_groups) > 0 ) {
             if (t_group_info->t_group =
-                (T_GROUP*)inchi_malloc( len * sizeof(t_group_info->t_group[0]))) {
+                (T_GROUP*) inchi_malloc( len * sizeof(t_group_info->t_group[0]))) {
                 memcpy(t_group_info->t_group,
                        t_group_info_orig->t_group,
                        len * sizeof(t_group_info->t_group[0]));
@@ -3894,7 +4038,7 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info, T_GROUP_INFO *t_gro
         }
         if ( (len = t_group_info_orig->nNumEndpoints) > 0 ) {
             if (t_group_info->nEndpointAtomNumber =
-                (AT_NUMB*)inchi_malloc( len * sizeof(t_group_info->nEndpointAtomNumber[0]))) {
+                (AT_NUMB*) inchi_malloc( len * sizeof(t_group_info->nEndpointAtomNumber[0]))) {
                 memcpy(t_group_info->nEndpointAtomNumber,
                        t_group_info_orig->nEndpointAtomNumber,
                        len * sizeof(t_group_info->nEndpointAtomNumber[0]));
@@ -3904,7 +4048,7 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info, T_GROUP_INFO *t_gro
         }
         if ( (len = t_group_info_orig->num_t_groups) > 0 ) {
             if (t_group_info->tGroupNumber =
-                (AT_NUMB*)inchi_malloc( len * TGSO_TOTAL_LEN * sizeof(t_group_info->tGroupNumber[0]))) {
+                (AT_NUMB*) inchi_malloc( len * TGSO_TOTAL_LEN * sizeof(t_group_info->tGroupNumber[0]))) {
                 memcpy(t_group_info->tGroupNumber,
                        t_group_info_orig->tGroupNumber,
                        len * TGSO_TOTAL_LEN * sizeof(t_group_info->tGroupNumber[0]));
@@ -3914,7 +4058,7 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info, T_GROUP_INFO *t_gro
         }
         if ( (len = t_group_info_orig->nNumIsotopicEndpoints) > 0 ) {
             if (t_group_info->nIsotopicEndpointAtomNumber =
-                (AT_NUMB*)inchi_malloc( len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]))) {
+                (AT_NUMB*) inchi_malloc( len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]))) {
                 memcpy(t_group_info->nIsotopicEndpointAtomNumber,
                        t_group_info_orig->nIsotopicEndpointAtomNumber,
                        len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]));
@@ -3945,8 +4089,12 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info, T_GROUP_INFO *t_gro
     }
     return err;
 }
-/*******************************************************************************/
-/*  set tautomer group isotopic sort keys */
+
+
+
+/*****************************************************************************/
+/*  Set tautomer group isotopic sort keys									 */
+/*****************************************************************************/
 int set_tautomer_iso_sort_keys( T_GROUP_INFO *t_group_info )
 {
     T_GROUP       *t_group;
@@ -4055,7 +4203,7 @@ int CountTautomerGroups( sp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info 
             nNumH -= (int)t_group[i].num[j];
         }
         if ( t_group[i].nNumEndpoints != nTautomerGroupNumber[(int)nGroupNumber]
-#if( IGNORE_TGROUP_WITHOUT_H == 1 )
+#if ( IGNORE_TGROUP_WITHOUT_H == 1 )
              || (bNoH = (t_group[i].num[0]==t_group[i].num[1]))  /* only for (H,-) t-groups; (+) t-groups are not removed */
 #endif
            ) {
@@ -4084,7 +4232,7 @@ int CountTautomerGroups( sp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info 
             t_group[i].nFirstEndpointAtNoPos = nCurrEndpointAtNoPos[i]  =
                 i? (t_group[i-1].nFirstEndpointAtNoPos+t_group[i-1].nNumEndpoints) : 0;
             t_group[i].num[0] = nNumH;
-#if( REMOVE_TGROUP_CHARGE == 1 )
+#if ( REMOVE_TGROUP_CHARGE == 1 )
             t_group[i].num[1]  = 0;  /* remove only (-) charges */
 #endif
             /* -- wrong condition. Disabled.
@@ -4167,9 +4315,9 @@ exit_function:
     }
     return ret;
 }
-#if( READ_INCHI_STRING == 1 )
-#if( INCLUDE_NORMALIZATION_ENTRY_POINT == 1 )
-/********************************************************************************/
+#if ( READ_INCHI_STRING == 1 )
+#if ( INCLUDE_NORMALIZATION_ENTRY_POINT == 1 )
+/*****************************************************************************/
 int CountTautomerGroupsInpAt( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group_info )
 {
     int i, j, ret = 0, nNumEndpoints, max_t_group, num_groups_noH;
@@ -4245,7 +4393,7 @@ int CountTautomerGroupsInpAt( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group
             nNumH -= (int)t_group[i].num[j];
         }
         if ( t_group[i].nNumEndpoints != nTautomerGroupNumber[(int)nGroupNumber]
-#if( IGNORE_TGROUP_WITHOUT_H == 1 )
+#if ( IGNORE_TGROUP_WITHOUT_H == 1 )
              || (bNoH = (t_group[i].num[0]==t_group[i].num[1]))  /* only for (H,-) t-groups; (+) t-groups are not removed */
 #endif
            ) {
@@ -4274,7 +4422,7 @@ int CountTautomerGroupsInpAt( inp_ATOM *at, int num_atoms, T_GROUP_INFO *t_group
             t_group[i].nFirstEndpointAtNoPos = nCurrEndpointAtNoPos[i]  =
                 i? (t_group[i-1].nFirstEndpointAtNoPos+t_group[i-1].nNumEndpoints) : 0;
             t_group[i].num[0] = nNumH;
-#if( REMOVE_TGROUP_CHARGE == 1 )
+#if ( REMOVE_TGROUP_CHARGE == 1 )
             t_group[i].num[1]  = 0;  /* remove only (-) charges */
 #endif
             /* -- wrong condition. Disabled.
@@ -4359,9 +4507,12 @@ exit_function:
 }
 #endif
 #endif
-/**************************************************************
+
+
+
+/*****************************************************************************
  * tautomers: Compare for sorting
- ******************************************************************/
+ *****************************************************************************/
 /*  Compare for sorting Ranks only */
 /*  Globals: pn_tRankForSort */
 int CompRankTautomer(const void* a1, const void* a2 )
@@ -4370,7 +4521,10 @@ int CompRankTautomer(const void* a1, const void* a2 )
               (int)pn_tRankForSort[(int)(*(const AT_RANK*)a2)];
     return ret;
 }
-/*********************************************************************/
+
+
+
+/*****************************************************************************/
 int SortTautomerGroupsAndEndpoints( T_GROUP_INFO *t_group_info, int num_atoms, int num_at_tg, AT_RANK *nRank )
 {
     int i, nFirstEndpointAtNoPos, nNumEndpoints;

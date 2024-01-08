@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -286,7 +308,7 @@ repeat:
     }
 
     if ( argc == 1
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
         && (!inp || inp->num_atoms <= 0 || !inp->atom)
 #endif        
         || argc==2 && ( argv[1][0]==INCHI_OPTION_PREFX ) &&
@@ -406,7 +428,7 @@ repeat:
             pStructPtrs->cur_fptr ++;
         }
 
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
         if ( sd->bUserQuit ) {
             break;
         }
@@ -420,7 +442,7 @@ repeat:
         case _IS_ERROR:
             num_err ++;
             goto exit_function;
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
         case _IS_SKIP:
             continue;
 #endif
@@ -451,7 +473,7 @@ repeat:
             goto exit_function;
         case _IS_ERROR:
             ; /* num_err ++; */
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
             continue;
 #endif
         }
@@ -635,13 +657,13 @@ char pp;
         return INCHI_INVALID_LAYOUT;    
 #endif
     
-	/* Treat possible SaveOpt letters  */
-	slen0 = slen;
-	if ( (szINCHI[slen-3]=='\\') &&
-		 (szINCHI[slen-2] >= 'A') && (szINCHI[slen-2] <='Z') &&
-		 (szINCHI[slen-1] >= 'A') && (szINCHI[slen-1] <='Z')		 
-		)
-		slen0 = slen -3;
+    /* Treat possible SaveOpt letters  */
+    slen0 = slen;
+    if ( (szINCHI[slen-3]=='\\') &&
+         (szINCHI[slen-2] >= 'A') && (szINCHI[slen-2] <='Z') &&
+         (szINCHI[slen-1] >= 'A') && (szINCHI[slen-1] <='Z')		 
+        )
+        slen0 = slen -3;
 
     for (i=pos_slash1+1; i<slen0; i++)
     {
@@ -665,7 +687,7 @@ char pp;
 
     if ( strict )
     {
-		char opts[]="?FixedH ?RecMet ?SUU ?SLUUD";
+        char opts[]="?FixedH ?RecMet ?SUU ?SLUUD";
         extract_inchi_substring(&str, szINCHI, slen);
         if (NULL==str)
         {
@@ -674,8 +696,8 @@ char pp;
         }
 
         inchi_inp.szInChI = str;
-		opts[0] = opts[8] = opts[16] = opts[21] = INCHI_OPTION_PREFX;
-		inchi_inp.szOptions  = opts;
+        opts[0] = opts[8] = opts[16] = opts[21] = INCHI_OPTION_PREFX;
+        inchi_inp.szOptions  = opts;
 
         ret_i2i = GetINCHIfromINCHI(&inchi_inp, &inchi_out);
         
@@ -1675,7 +1697,7 @@ int ExtractOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
      *
      ********************************************************/
     Extract0DParities(at, nNumAtoms, inp->stereo0D, inp->num_stereo0D, 
-					   pStrErr, err, vABParityUnknown);
+                       pStrErr, err, vABParityUnknown);
 
     if ( *err ) {
         goto err_exit;
@@ -1870,7 +1892,7 @@ repeat:
     }
 
     if ( argc == 1
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
         && (!inpInChI || !inpInChI->szInChI)
 #endif        
         || argc==2 && ( argv[1][0]==INCHI_OPTION_PREFX ) &&
@@ -1983,7 +2005,7 @@ exit_function:;
 #endif
 
 
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
     /* output */
 
     if ( log_file->s.pStr && log_file->s.nUsedLength > 0 ) {
@@ -2038,16 +2060,16 @@ translate_RetVal:
 
 EXPIMP_TEMPLATE INCHI_API int INCHI_DECL GetStructFromStdINCHI( inchi_InputINCHI *inpInChI, inchi_OutputStruct *outStruct )
 {
-	if ( ( inpInChI ) && 
-		 ( inpInChI->szInChI ) &&
-		 ( strlen(inpInChI->szInChI) >= LEN_INCHI_STRING_PREFIX+3 ) &&
-		 ( inpInChI->szInChI[LEN_INCHI_STRING_PREFIX+1] == 'S' ) 
-	   ) 
-		/* brief check indicated valid std input (more checks in GetStructFromINCHI) */
-		return GetStructFromINCHI( inpInChI, outStruct );
-	else
-		/* non-std or just invalid input */
-		return inchi_Ret_ERROR;
+    if ( ( inpInChI ) && 
+         ( inpInChI->szInChI ) &&
+         ( strlen(inpInChI->szInChI) >= LEN_INCHI_STRING_PREFIX+3 ) &&
+         ( inpInChI->szInChI[LEN_INCHI_STRING_PREFIX+1] == 'S' ) 
+       ) 
+        /* brief check indicated valid std input (more checks in GetStructFromINCHI) */
+        return GetStructFromINCHI( inpInChI, outStruct );
+    else
+        /* non-std or just invalid input */
+        return inchi_Ret_ERROR;
 }
 
 
@@ -2075,7 +2097,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL GetStructFromINCHI( inchi_InputINCHI *i
 
     int             bReleaseVersion = bRELEASE_VERSION;
     int   nRet = 0, nRet1;
-	int bStdFormat          = 0;
+    int bStdFormat          = 0;
 
     /* conversion result */
     inp_ATOM *at=NULL;
@@ -2093,7 +2115,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL GetStructFromINCHI( inchi_InputINCHI *i
         return inchi_Ret_BUSY;
     }
 #if 0
-	/* moved to after call to CheckINCHI - Marc 2010 */
+    /* moved to after call to CheckINCHI - Marc 2010 */
     bLibInchiSemaphore = 1;
 #endif
 
@@ -2156,7 +2178,7 @@ repeat:
     szMainOption[1] = INCHI_OPTION_PREFX;
 
     if ( !inpInChI ) 
-	{
+    {
         nRet = _IS_ERROR;
         goto exit_function;
     }
@@ -2181,7 +2203,7 @@ repeat:
     }
 
     if ( argc == 1
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
         && (!inpInChI || !inpInChI->szInChI)
 #endif        
         || argc==2 && ( argv[1][0]==INCHI_OPTION_PREFX ) &&
@@ -2222,28 +2244,28 @@ repeat:
     }
 
     if ( !inpInChI->szInChI ) 
-	{
+    {
         nRet = _IS_ERROR;
         goto exit_function;
     }
-	else
-	{
-		const int strict=0; /* do not use strict mode, it may be too alarmous */
-		nRet = CheckINCHI(inpInChI->szInChI, strict);
-		if (nRet == INCHI_VALID_STANDARD)
-		{
-			bStdFormat = 1;
-		}
-		else if (nRet == INCHI_VALID_NON_STANDARD)
-		{
-			;
-		}
-		else
-		{
-			nRet = _IS_ERROR;
-			goto exit_function;
-		}
-	}
+    else
+    {
+        const int strict=0; /* do not use strict mode, it may be too alarmous */
+        nRet = CheckINCHI(inpInChI->szInChI, strict);
+        if (nRet == INCHI_VALID_STANDARD)
+        {
+            bStdFormat = 1;
+        }
+        else if (nRet == INCHI_VALID_NON_STANDARD)
+        {
+            ;
+        }
+        else
+        {
+            nRet = _IS_ERROR;
+            goto exit_function;
+        }
+    }
 
 
     if ( bLibInchiSemaphore ) {  /* does not work properly under sufficient stress */
@@ -2313,7 +2335,7 @@ exit_function:;
 #endif
 
 
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
     /* output */
 
     if ( log_file->s.pStr && log_file->s.nUsedLength > 0 ) {
@@ -2361,13 +2383,13 @@ translate_RetVal:
 
 /********************************************************************/
 
-#if( defined( _WIN32 ) && defined( _MSC_VER ) && _MSC_VER >= 800 && defined(_USRDLL) && defined(INCHI_LINK_AS_DLL) )
+#if( defined( _WIN32 ) && defined( _MSC_VER ) && _MSC_VER >= 800 && defined(_USRDLL) && defined(BUILD_LINK_AS_DLL) )
     /* Win32 & MS VC ++, compile and link as a DLL */
 /*********************************************************/
 /*   C calling conventions export from Win32 dll         */
 /*********************************************************/
 /* prototypes */
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2383,7 +2405,7 @@ int  cdecl_Get_inchi_Input_FromAuxInfo( char *szInchiAuxInfo,
                                        InchiInpData *pInchiInp );
 int  cdecl_Get_std_inchi_Input_FromAuxInfo( char *szInchiAuxInfo, 
                                            int bDoNotAddH,
-										   InchiInpData *pInchiInp );
+                                           InchiInpData *pInchiInp );
 void cdecl_Free_inchi_Input( inchi_Input *pInp );
 void cdecl_Free_std_inchi_Input( inchi_Input *pInp );
 int cdecl_GetStructFromINCHI( inchi_InputINCHI *inpInChI, inchi_OutputStruct *outStruct );
@@ -2392,7 +2414,7 @@ int cdecl_GetINCHIfromINCHI( inchi_InputINCHI *inpInChI, inchi_Output *out );
 void cdecl_FreeStructFromINCHI( inchi_OutputStruct *outStruct );
 void cdecl_FreeStructFromStdINCHI( inchi_OutputStruct *outStruct );
 int cdecl_CheckINCHI(const char *szINCHI, const int strict);
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif
@@ -2489,7 +2511,7 @@ int cdecl_CheckINCHI(const char *szINCHI, const int strict)
 /*********************************************************/
 /*   Pacal calling conventions export from Win32 dll     */
 /*********************************************************/
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2516,7 +2538,7 @@ int PASCAL pasc_GetStructFromINCHI( inchi_InputINCHI *inp, inchi_OutputStruct *o
 int PASCAL pasc_GetStructFromStdINCHI( inchi_InputINCHI *inp, inchi_OutputStruct *out );
 int PASCAL pasc_CheckINCHI(const char *szINCHI, const int strict);
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif

@@ -1,17 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -63,7 +86,7 @@ void e_PrintFileName( const char *fmt, FILE *output_file, const char *szFname )
 
 
 
-#ifdef INCHI_ANSI_ONLY
+#ifdef COMPILE_ANSI_ONLY
 
 static clock_t InchiClock(void);
 
@@ -326,7 +349,7 @@ int bInchiTimeIsOver( inchiTime *TickEnd )
 
 
 
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
 
 
 #ifndef INCHI_ADD_STR_LEN
@@ -702,7 +725,7 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
             ret2 = vfprintf( stdout, lpszFormat, argList );
             va_end( argList );
         }
-#ifdef INCHI_LIB
+#ifdef BUILD_LIB_FOR_WINCHI
         if( FWPRINT )
         {
             my_va_start( argList, lpszFormat );
@@ -811,7 +834,7 @@ va_list argList;
     if (!ios) 
         return -1;
 
-    if (ios->type == INCHI_IOSTREAM_STRING) /* was #if ( defined(INCHI_LIBRARY) || defined(BUILD_CINCHI_WITH_INCHIKEY) ) */
+    if (ios->type == INCHI_IOSTREAM_STRING) /* was #if ( defined(TARGET_API_LIB) || defined(BUILD_CINCHI_WITH_INCHIKEY) ) */
     {
         /* output to string buffer */
         int max_len, nAddLength = 0;
@@ -868,8 +891,8 @@ va_list argList;
             my_va_start( argList, lpszFormat );
             ret = inchi_vfprintf( ios->f, lpszFormat, argList ); 
             va_end( argList );
-/*^^^  No output to stderr from within dll or GUI program */
-#if ( !defined(INCHI_LIBRARY) && !defined(INCHI_LIB) )
+#if ( !defined(TARGET_API_LIB) && !defined(BUILD_LIB_FOR_WINCHI) )
+            /*^^^  No output to stderr from within dll or GUI program */
             if ( ios->f != stderr ) 
             { 
                 my_va_start( argList, lpszFormat );
@@ -916,7 +939,7 @@ va_list argList;
         ret = inchi_vfprintf( f, lpszFormat, argList ); 
         va_end( argList );
 /*^^^  No output to stderr from within dll or GUI program */
-#if ( !defined(INCHI_LIBRARY) && !defined(INCHI_LIB) )
+#if ( !defined(TARGET_API_LIB) && !defined(BUILD_LIB_FOR_WINCHI) )
         if ( f != stderr ) 
         { 
             my_va_start( argList, lpszFormat );
@@ -940,7 +963,7 @@ int ret=0;
     if ( f == stderr && lpszFormat && lpszFormat[0] && '\r' == lpszFormat[strlen(lpszFormat)-1] ) 
     {
 #define CONSOLE_LINE_LEN 80
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
         char szLine[CONSOLE_LINE_LEN];
         ret = _vsnprintf( szLine, CONSOLE_LINE_LEN-1, lpszFormat, argList );
         if ( ret < 0 ) 

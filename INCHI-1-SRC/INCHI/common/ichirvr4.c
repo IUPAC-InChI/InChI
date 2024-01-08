@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -24,7 +46,7 @@
 /*#define CHECK_WIN32_VC_HEAP*/
 #include "mode.h"
 
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
 
 #include "ichi.h"
 #include "ichitime.h"
@@ -423,7 +445,7 @@ exit_function:
     AllocEdgeList( &NewlyFixedEdges, EDGE_LIST_FREE );
     return ret;
 }
-#if( FIX_ADD_PROTON_FOR_ADP == 1 )
+#if ( FIX_ADD_PROTON_FOR_ADP == 1 )
 /******************************************************************************************************/
 int FixAddProtonForADP( BN_STRUCT *pBNS, BN_DATA *pBD, StrFromINChI *pStruct, inp_ATOM *at,
                               inp_ATOM *at2, inp_ATOM *atf, VAL_AT *pVA, ALL_TC_GROUPS *pTCGroups, ICR *picr,
@@ -605,9 +627,9 @@ int  FillOutExtraFixedHDataRestr( StrFromINChI *pStruct )
         if ( pNum ) {
             len = pStruct->num_atoms * sizeof(pStruct->nCanon2Atno[0][0]);
             if ( !pStruct->nCanon2Atno[i] &&
-                 !(pStruct->nCanon2Atno[i] = (AT_NUMB *)inchi_malloc( len )) ||
+                 !(pStruct->nCanon2Atno[i] = (AT_NUMB *) inchi_malloc( len )) ||
                  !pStruct->nAtno2Canon[i] &&
-                 !(pStruct->nAtno2Canon[i] = (AT_NUMB *)inchi_malloc( len ))) {
+                 !(pStruct->nAtno2Canon[i] = (AT_NUMB *) inchi_malloc( len ))) {
                 ret = RI_ERR_ALLOC;
                 goto exit_function;
             }
@@ -656,7 +678,7 @@ int  FillOutExtraFixedHDataInChI( StrFromINChI *pStruct, INChI *pInChI[] )
         memset( pStruct->endpoint, 0, pStruct->num_atoms * sizeof(pStruct->endpoint[0] ) );
     }
     if ( NULL == pStruct->fixed_H ) {
-        pStruct->fixed_H = (S_CHAR *)inchi_malloc(pStruct->num_atoms * sizeof(pStruct->fixed_H[0]));
+        pStruct->fixed_H = (S_CHAR *) inchi_malloc(pStruct->num_atoms * sizeof(pStruct->fixed_H[0]));
     }
     if ( !pStruct->endpoint || !pStruct->fixed_H ) {
         ret = RI_ERR_ALLOC;
@@ -1031,8 +1053,8 @@ int NormalizeAndCompare(ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
     int err;
     ICR icr, icr2;
     int num_norm_endpoints, num_endpoints, num_norm_t_groups, num_mobile, num_norm_mobile, ret = 0;
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
     const char *szCurHdr = (ip->pSdfValue && ip->pSdfValue[0])? ip->pSdfValue : "???";
     int         iComponent = pTCGroups->iComponent;
 #endif
@@ -1051,8 +1073,8 @@ int NormalizeAndCompare(ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
     ret = MakeOneInChIOutOfStrFromINChI2( ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
                                           &t_group_info, &at_norm, &at_prep );
     if ( ret < 0 ) {
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
         fprintf( stdout, "\nERROR in MakeOneInchi-1: %ld %s Comp:%d %c%c Err:%d\n", num_inp,
                  szCurHdr? szCurHdr: "???", iComponent, pStruct->iInchiRec? 'R':'D', pStruct->iMobileH?'M':'F', ret);
 #endif
@@ -1096,8 +1118,8 @@ int NormalizeAndCompare(ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
                 ret = MakeOneInChIOutOfStrFromINChI2( ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
                                                       &t_group_info, &at_norm, &at_prep );
                 if ( ret < 0 ) {
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
                     fprintf( stdout, "\nERROR in MakeOneInchi-2: %ld %s Comp:%d %c%c Err:%d\n", num_inp,
                              szCurHdr? szCurHdr: "???", iComponent, pStruct->iInchiRec? 'R':'D', pStruct->iMobileH?'M':'F', ret);
 #endif
@@ -1134,8 +1156,8 @@ int NormalizeAndCompare(ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
                 ret = MakeOneInChIOutOfStrFromINChI2( ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
                                                       &t_group_info, &at_norm, &at_prep );
                 if ( ret < 0 ) {
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
                     fprintf( stdout, "\nERROR in MakeOneInchi-3: %ld %s Comp:%d %c%c Err:%d\n", num_inp,
                              szCurHdr? szCurHdr: "???", iComponent, pStruct->iInchiRec? 'R':'D', pStruct->iMobileH?'M':'F', ret);
 #endif
@@ -1172,8 +1194,8 @@ int NormalizeAndCompare(ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
                 ret = MakeOneInChIOutOfStrFromINChI2( ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
                                                       &t_group_info, &at_norm, &at_prep );
                 if ( ret < 0 ) {
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
                     fprintf( stdout, "\nERROR in MakeOneInchi-4: %ld %s Comp:%d %c%c Err:%d\n", num_inp,
                              szCurHdr? szCurHdr: "???", iComponent, pStruct->iInchiRec? 'R':'D', pStruct->iMobileH?'M':'F', ret);
 #endif
@@ -1253,7 +1275,7 @@ int NormalizeAndCompare(ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
     if ( ret < 0 ) {
         goto exit_function;
     }
-#if( FIX_ADD_PROTON_FOR_ADP == 1 )
+#if ( FIX_ADD_PROTON_FOR_ADP == 1 )
     /************************ check and fix ADP by adding a proton (dummy) *************************/
     if ( cmpInChI && pTCGroups->num_tgroups && pBNS->tot_st_cap > pBNS->tot_st_flow ) {
         ret = FixAddProtonForADP( pBNS, pBD, pStruct, at, at2, at_prep, pVA, pTCGroups, &icr,
@@ -1290,8 +1312,8 @@ int NormalizeAndCompare(ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
             }
         }
     }
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
     if ( num_norm_t_groups != pTCGroups->num_tgroups || num_norm_endpoints != num_endpoints ) {
         /* need aggressive (de)protonation */
         /* pStruct->bExtract |= EXTRACT_STRUCT_NUMBER; */
@@ -1520,7 +1542,7 @@ int MoveChargeToRemoveCenerpoints(BN_STRUCT *pBNS, BN_DATA *pBD, StrFromINChI *p
         ret = ret2;
         goto exit_function;
     }
-#if( FIND_RING_SYSTEMS == 1 )
+#if ( FIND_RING_SYSTEMS == 1 )
     ret2 = MarkRingSystemsInp( at2, num_at, 0 );
     if ( ret2 < 0 ) {
         ret = ret2;
@@ -1783,7 +1805,7 @@ int MakeSingleBondsMetal2ChargedHeteroat(BN_STRUCT *pBNS, BN_DATA *pBD, StrFromI
             if ( !nNumEdgesToFix ) {
                 break; /* nothing to do */
             }
-            pFixedEdges = (EdgeIndex *)inchi_malloc(nNumEdgesToFix * sizeof( pFixedEdges[0] ) );
+            pFixedEdges = (EdgeIndex *) inchi_malloc(nNumEdgesToFix * sizeof( pFixedEdges[0] ) );
             if ( !pFixedEdges ) {
                 ret = RI_ERR_ALLOC;
                 goto exit_function;
@@ -2207,8 +2229,8 @@ int RunBnsRestore1( ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *pBNS,
         goto exit_function;
     }
 
-    if ( !at2 && !(at2 = (inp_ATOM *)inchi_malloc((num_at + num_deleted_H)*sizeof(at2[0]))) ||
-         !at3 && !(at3 = (inp_ATOM *)inchi_malloc((num_at + num_deleted_H)*sizeof(at3[0])))) {
+    if ( !at2 && !(at2 = (inp_ATOM *) inchi_malloc((num_at + num_deleted_H)*sizeof(at2[0]))) ||
+         !at3 && !(at3 = (inp_ATOM *) inchi_malloc((num_at + num_deleted_H)*sizeof(at3[0])))) {
         return RI_ERR_ALLOC;
     }
 
@@ -2597,8 +2619,8 @@ int RestoreAtomMakeBNS( ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, StrFromINChI
 
     if ( num_at == 1 ) {
         /* single atom -- no bonds to restore */
-        inp_ATOM *at2 = (inp_ATOM *)inchi_malloc(sizeof(at2[0])*(pStruct->num_atoms+pStruct->num_deleted_H));
-        inp_ATOM *at3 = (inp_ATOM *)inchi_malloc(sizeof(at3[0])*(pStruct->num_atoms+pStruct->num_deleted_H));
+        inp_ATOM *at2 = (inp_ATOM *) inchi_malloc(sizeof(at2[0])*(pStruct->num_atoms+pStruct->num_deleted_H));
+        inp_ATOM *at3 = (inp_ATOM *) inchi_malloc(sizeof(at3[0])*(pStruct->num_atoms+pStruct->num_deleted_H));
         pStruct->at2 = at2;
         at[0].charge = pInChI[0]->nTotalCharge;
         if ( at2 ) {
@@ -2751,8 +2773,8 @@ repeat_for_new_metals:
     }
 
     ret = CheckBnsConsistency( pStruct, pBNS, pVA, pTCGroups, 1 );
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
     if ( ret ) {
         fprintf( stdout, "Msg for: %ld %s comp=%d %c%c\n", num_inp, (szCurHdr && szCurHdr[0])? szCurHdr : "", iComponent, pStruct->iInchiRec? 'R':'D', pStruct->iMobileH?'M':'F' ); 
     }
@@ -2817,7 +2839,7 @@ int OneInChI2Atom( ICHICONST INPUT_PARMS *ip_inp, STRUCT_DATA *sd, const char *s
     /* main InChI restore function */
     ret = RestoreAtomMakeBNS( ip, sd, pStruct, iComponent, iAtNoOffset, pInChI, szCurHdr, num_inp, bHasSomeFixedH );
 
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
     if ( (pStruct->num_inp_actual>0? pStruct->num_inp_actual : num_inp) >= ip->first_struct_number &&
         ( (/*ret > 0 &&*/ ip->bDisplayIfRestoreWarnings ) && pStruct->pXYZ ) ) {
         inchiTime     ulTStart;
@@ -2850,8 +2872,8 @@ int OneInChI2Atom( ICHICONST INPUT_PARMS *ip_inp, STRUCT_DATA *sd, const char *s
         if ( ret >= 0 ) {
             ;
         } 
-#if( bRELEASE_VERSION == 0 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
         else {
             fprintf( stdout, "\nERROR in MakeInChI-1: %ld %s Comp:%d %c%c Err:%d\n", num_inp,
                      szCurHdr? szCurHdr: "???", iComponent, pStruct->iInchiRec? 'R':'D', pStruct->iMobileH?'M':'F', ret);

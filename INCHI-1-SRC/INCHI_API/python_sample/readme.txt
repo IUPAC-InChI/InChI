@@ -1,28 +1,41 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * June 15, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
-
-*****
-This is the release of the IUPAC International Chemical
-Identifier with InChIKey, version 1, software version 1.03.
-(http://www.iupac.org/projects/2000/2000-025-1-800.html
-http://www.iupac.org/inchi).
-
-This software supports both standard and non-standard InChI/InChIKey.
-*****
 
 
 This directory contains Python demo application illustrating how the InChI 
@@ -30,8 +43,8 @@ library functions may be called from within Python. It has a simple Mol/SDfile
 reader and produces InChI strings for a SD file and, optionally, generates 
 InChIKey.
 
-Tested with Python 2.5.1 under MS Windows XP Pro SP, Python 2.5.4 under 
-Windows Vista 64, and Python 2.5.2 under Ubuntu 8.04.1 LTS.
+Tested with Python 2.7.2 64 bit under Windows 7 64bit and 
+Python 2.5.2 under Ubuntu 10.04.3 LTS.
 
 It is assumed that under MS Windows the InChI library name is 'libinchi.dll' 
 while under Linux it is '/usr/lib/libinchi.so.1' (see readme.txt file in 
@@ -79,7 +92,15 @@ make_inchi.py     Python demo app, main program
 
 PyINCHI.py        Python interface to INCHI library
 
-lightsdf.py	  Light SDF reader: parses SD file records and collects 
+lightsdf.py	      Light SDF reader: parses SD file records and collects 
                   information
 
-libinchi.dll      dynamic-link InChI library 
+
+
+=========
+  LINKS
+=========
+
+IUPAC                   http://www.iupac.org/inchi
+InChI Trust             http://www.inchi-trust.org                                      
+InChI discussion group  https://lists.sourceforge.net/lists/listinfo/inchi-discuss

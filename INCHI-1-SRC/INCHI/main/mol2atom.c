@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-license.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -31,7 +53,7 @@
 
 #include "ichicomp.h"
 
-#if( ADD_CMLPP == 1 )
+#if ( ADD_CMLPP == 1 )
 #include "debug.h"
 #endif
 #include "mol2atom.h"
@@ -102,7 +124,7 @@ void FreeCompAtomData( COMP_ATOM_DATA *inp_at_data )
         inchi_free( inp_at_data->nOffsetAtAndH );
     memset( inp_at_data, 0, sizeof(*inp_at_data) );
 }
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
 /******************************************************************************************************/
 int CreateCompAtomData( COMP_ATOM_DATA *inp_at_data, int num_atoms, int num_components, int bIntermediateTaut )
 {
@@ -185,10 +207,10 @@ int DuplicateInfoAtomData( INF_ATOM_DATA *inf_at_data_to, const INF_ATOM_DATA *i
     }
     return 0;
 }
-#endif /* ifndef INCHI_ANSI_ONLY */
+#endif /* ifndef COMPILE_ANSI_ONLY */
 
 
-#if( TEST_RENUMB_ATOMS == 1 )  /*  { */
+#if ( TEST_RENUMB_ATOMS == 1 )  /*  { */
 
 /******************************************************************************************************/
 int CopyInpAtomData( INP_ATOM_DATA *dest_inp_at_data, INP_ATOM_DATA *src_inp_at_data )
@@ -217,7 +239,7 @@ int CopyInpAtomData( INP_ATOM_DATA *dest_inp_at_data, INP_ATOM_DATA *src_inp_at_
 void RenumbInpAtomData( INP_ATOM_DATA *dest_inp_at_data, INP_ATOM_DATA *src_inp_at_data, AT_RANK *new_ord )
 {
     int j, n, m, val;
-#if( TEST_RENUMB_NEIGH == 1 )
+#if ( TEST_RENUMB_NEIGH == 1 )
     int i, k;
 #endif
     int       num_atoms = src_inp_at_data->num_at;
@@ -230,7 +252,7 @@ void RenumbInpAtomData( INP_ATOM_DATA *dest_inp_at_data, INP_ATOM_DATA *src_inp_
         for ( j = 0; j < val; j ++ ) {
             dest_at[m].neighbor[j] = new_ord[dest_at[m].neighbor[j]];
         }
-#if( TEST_RENUMB_NEIGH == 1 )
+#if ( TEST_RENUMB_NEIGH == 1 )
         for ( i = 0; i < val; i ++ ) {
             j = i;
             k = j + (rand() * (val-j)) / (RAND_MAX+1);
@@ -330,12 +352,12 @@ inp_ATOM* mol_to_atom( MOL_DATA* mol_data, int *num_atoms, int *num_bonds, inp_A
         at[i].iso_atw_diff       = iso_atw_diff==ZERO_ATW_DIFF? 1:
                                    iso_atw_diff>  0?            iso_atw_diff+1:
                                                                 iso_atw_diff;
-#if( SINGLET_IS_TRIPLET == 1 )
+#if ( SINGLET_IS_TRIPLET == 1 )
         if ( at[i].radical == RADICAL_SINGLET ) {
             at[i].radical = RADICAL_TRIPLET;
         }
 #endif
-#if( bRELEASE_VERSION != 1 )
+#if ( bRELEASE_VERSION != 1 )
         if ( isdigit( at[i].elname[0] ) ) { /*  for testing */
             mystrncpy( at[i].elname, "C", sizeof(at->elname) );
         }
@@ -518,7 +540,7 @@ void calculate_valences (MOL_DATA* mol_data, inp_ATOM* at, int *num_atoms, int b
             bHasMetalNeighbor = 0;
             for ( n1 = 0; n1 < at[a1].valence; n1 ++ ) {
                 bond_type = at[a1].bond_type[n1] - MIN_INPUT_BOND_TYPE;
-                if (  bond_type < 0 || bond_type > MAX_INPUT_BOND_TYPE - MIN_INPUT_BOND_TYPE ) {
+                if ( bond_type < 0 || bond_type > MAX_INPUT_BOND_TYPE - MIN_INPUT_BOND_TYPE ) {
                     bond_type = 0;
                     MOLFILE_ERR_SET (*err, 0, "Unknown bond type in MOLfile assigned as a single bond");
                 }
@@ -728,7 +750,7 @@ int mol_to_atom_xyz( MOL_DATA* mol_data, int num_atoms, inp_ATOM* at, int *err, 
             coeff = MIN_STDATA_AVE_BOND_LENGTH / average_bond_length; /* avoid too short bonds */
         }
     }
-#if( NORMALIZE_INP_COORD == 1 )
+#if ( NORMALIZE_INP_COORD == 1 )
     /* set integral coordinates */
     for ( i = 0; i < num_atoms; i ++ ) {
         double x = mol_data->ctab.MolAtom[i].fX;

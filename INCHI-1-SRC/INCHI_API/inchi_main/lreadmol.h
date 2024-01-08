@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -347,7 +369,7 @@ int mol_read_counts_line( MOL_CTAB* ctab, FILE *inp, char *pStrErr )
     if ( line[MOLFILEMAXLINELEN] ){
         MOLFILE_ERR_SET (err, 0, "Too long counts line");  /* too long input file line */
     } 
-    if (    0 > mol_read_datum( &ctab->nNumberOfAtoms,         3,  MOL_SHORT_INT_DATA, &p )
+    if ( 0 > mol_read_datum( &ctab->nNumberOfAtoms,         3,  MOL_SHORT_INT_DATA, &p )
          || 0 > mol_read_datum( &ctab->nNumberOfBonds,         3,  MOL_SHORT_INT_DATA, &p )
 #if ( MOL_QUERY == MOL_PRESENT )
          || 0 > mol_read_datum( &ctab->nNumberOfAtomsLists,    3,  MOL_SHORT_INT_DATA, &p )
@@ -420,12 +442,12 @@ int read_atom_block( MOL_CTAB* ctab, FILE *inp, int err, char *pStrErr )
         }
 
         if ( NULL != ctab->MolAtom ) {
-            if (   0 > mol_read_datum( &ctab->MolAtom[i].fX,   10,  MOL_DOUBLE_DATA, &p )
+            if ( 0 > mol_read_datum( &ctab->MolAtom[i].fX,   10,  MOL_DOUBLE_DATA, &p )
                 || 0 > mol_read_datum( &ctab->MolAtom[i].fY,   10,  MOL_DOUBLE_DATA, &p )
                 || 0 > mol_read_datum( &ctab->MolAtom[i].fZ,   10,  MOL_DOUBLE_DATA, &p )
                 || 0 > mol_read_datum( NULL, /* undescribed in article*/    1,  MOL_JUMP_TO_RIGHT, &p )
                 || 0 == mol_read_datum( &ctab->MolAtom[i].szAtomSymbol,     3,  MOL_STRING_DATA, &p ) /* was sizeof(ctab->MolAtom[0].szAtomSymbol)-1 */
-#ifdef INCHI_MAIN
+#ifdef TARGET_EXE_USING_API
                 || 0 > mol_read_datum( &ctab->MolAtom[i].cMassDifference,   2,  MOL_SHORT_INT_DATA, &p )
 #else
                 || 0 > mol_read_datum( &ctab->MolAtom[i].cMassDifference,   2,  MOL_CHAR_INT_DATA, &p )
@@ -466,7 +488,7 @@ int read_atom_block( MOL_CTAB* ctab, FILE *inp, int err, char *pStrErr )
                 ctab->MolAtom[i].cCharge  = (S_CHAR)chg; /* actual charge value */
                 ctab->MolAtom[i].cRadical = 0;
             }
-#ifdef INCHI_MAIN
+#ifdef TARGET_EXE_USING_API
             if ( ctab->MolAtom[i].cMassDifference ) { /* e_ReadMOL.c specific */
                 ctab->MolAtom[i].cMassDifference += ISOTOPIC_SHIFT_FLAG;
             }
@@ -544,7 +566,7 @@ int read_bonds_block( MOL_CTAB* ctab, FILE *inp, int err, char *pStrErr )
         }
 
         if ( ctab->MolBond ) {
-            if (   0 > mol_read_datum( &ctab->MolBond[i].nAtomNo1,      3,  MOL_SHORT_INT_DATA, &p )
+            if ( 0 > mol_read_datum( &ctab->MolBond[i].nAtomNo1,      3,  MOL_SHORT_INT_DATA, &p )
                 || 0 > mol_read_datum( &ctab->MolBond[i].nAtomNo2,      3,  MOL_SHORT_INT_DATA, &p )
                 || 0 > mol_read_datum( &ctab->MolBond[i].cBondType,     3,  MOL_CHAR_INT_DATA,  &p )
                 || 0 > mol_read_datum( &ctab->MolBond[i].cBondStereo,   3,  MOL_CHAR_INT_DATA,  &p )
@@ -673,7 +695,7 @@ int read_properties_block( MOL_CTAB* ctab, MOL_HEADER_BLOCK *pHdr, FILE *inp, in
                 if ( 1 == len && 'D' == p[0]    ) {
                     /*  H isotope */
                     p[0] = 'H';
-#ifdef INCHI_MAIN
+#ifdef TARGET_EXE_USING_API
                     MolAtom->cMassDifference=(1 + ISOTOPIC_SHIFT_FLAG);
 #else
                     MolAtom->cMassDifference=1;
@@ -682,7 +704,7 @@ int read_properties_block( MOL_CTAB* ctab, MOL_HEADER_BLOCK *pHdr, FILE *inp, in
                 if ( 1 == len && 'T' == p[0]    ) {
                     /*  H isotope */
                     p[0] = 'H';
-#ifdef INCHI_MAIN
+#ifdef TARGET_EXE_USING_API
                     MolAtom->cMassDifference=(2 + ISOTOPIC_SHIFT_FLAG);
 #else
                     MolAtom->cMassDifference=2;
@@ -701,7 +723,7 @@ int read_properties_block( MOL_CTAB* ctab, MOL_HEADER_BLOCK *pHdr, FILE *inp, in
             continue;
         }
         
-        if (   1 != mol_read_datum( charM,     sizeof(charM)   - 1,  MOL_STRING_DATA, &p )
+        if ( 1 != mol_read_datum( charM,     sizeof(charM)   - 1,  MOL_STRING_DATA, &p )
             || 0 != mol_read_datum( szBlank,   sizeof(szBlank) - 1,  MOL_STRING_DATA, &p ) /* must contain 0 bytes */
             || 0 >= mol_read_datum( szType,    sizeof(szType)  - 1,  MOL_STRING_DATA, &p ) /* must contain 3 bytes */
         ) {
@@ -872,7 +894,7 @@ int read_properties_block( MOL_CTAB* ctab, MOL_HEADER_BLOCK *pHdr, FILE *inp, in
                     char *at =  ctab->MolAtom[atoms[j]-1].szAtomSymbol;
                     if ( at[1] || at[0] != 'D' && at[0] != 'T' ) {  /*  D & T cannot have ISO */
                         /*  need atomic weight to calculate isotope difference. 7-14-00 DCh. */
-#ifdef INCHI_MAIN
+#ifdef TARGET_EXE_USING_API
                         /*^^^ Check added 5-10-2008 - IPl */
                         if (iso_mass[j] > 0)
                             /* According to MDL specification, p.12, only a positive 

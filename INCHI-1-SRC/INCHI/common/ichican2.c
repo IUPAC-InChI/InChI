@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -239,7 +261,7 @@ int  GetCanonRanking2( int num_atoms, int num_at_tg, int num_max, int bDigraph, 
                      CANON_STAT* pCS );
 
 
-#if( SEPARATE_CANON_CALLS == 1 )
+#if ( SEPARATE_CANON_CALLS == 1 )
 /* for profiling purposes */
 
 int CanonGraph01( int n, int n_tg, int n_max, int bDigraph, Graph *G, Partition pi[],
@@ -956,10 +978,10 @@ int PartitionColorVertex( Graph *G, Partition *p, Node v, int n, int n_tg, int n
     AT_NUMB s, sv;
     for ( i = 1; i <= 2; i ++ ) {
         if ( !p[i].AtNumber ) {
-            p[i].AtNumber = (AT_NUMB *)inchi_malloc(n_max*sizeof(p[0].AtNumber[0]));
+            p[i].AtNumber = (AT_NUMB *) inchi_malloc(n_max*sizeof(p[0].AtNumber[0]));
         }
         if ( !p[i].Rank ) {
-            p[i].Rank = (AT_RANK *)inchi_malloc(n_max*sizeof(p[0].Rank[0]));
+            p[i].Rank = (AT_RANK *) inchi_malloc(n_max*sizeof(p[0].Rank[0]));
         }
         if ( !p[i].AtNumber || !p[i].Rank ) {
             INCHI_HEAPCHK
@@ -1040,12 +1062,12 @@ Node CellGetMinNode( Partition *p, Cell *W, Node v, CANON_DATA *pCD )
     if ( W->first > W->next ) {
         return INFINITY;
     }
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
     if ( pCD && pCD->nAuxRank )
     {
         AT_RANK uMinAuxRank, uCurAuxRank;
         int     nCurAtNumb;
-#if( USE_AUX_RANKING_ALL == 1 )
+#if ( USE_AUX_RANKING_ALL == 1 )
         AT_RANK uInpAuxRank;
         int     nInpAtNumb, nMinAtNumb;
 #endif
@@ -1058,7 +1080,7 @@ Node CellGetMinNode( Partition *p, Cell *W, Node v, CANON_DATA *pCD )
         if ( i == W->next ) {
             return INFINITY;
         }
-#if( USE_AUX_RANKING_ALL == 1 )
+#if ( USE_AUX_RANKING_ALL == 1 )
         /*==== vertex ordering definition ===
          * vertex v1 < v2 <=> (AuxRank(v1)==AuxRank(v2) && AtNumb(v1) < AtNumb(v2)) || (AuxRank(v1) < AuxRank(v2))
          * vertex v1 > v2 <=> (AuxRank(v1)==AuxRank(v2) && AtNumb(v1) > AtNumb(v2)) || (AuxRank(v1) > AuxRank(v2))
@@ -1259,7 +1281,7 @@ void CtPartFill( Graph *G, CANON_DATA *pCD, Partition *p,
 #ifdef INCHI_CANON_USE_HASH        
             hash = add2crc32( hash, rj );
 #endif
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
             /* debug only */
             if ( rj < rj_prev ) {
                 int stop = 1;   /* <BRKPT> */
@@ -1549,7 +1571,7 @@ int CtPartCompare( ConTable *Ct1, ConTable *Ct2, S_CHAR *cmp,
     k1 = Ct1->lenPos-1;
     k2 = Ct2->lenPos-1;
 
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
     if ( k > k1 || k > k2 ) {
         int stop = 1;
     }
@@ -1601,7 +1623,7 @@ int CtPartCompare( ConTable *Ct1, ConTable *Ct2, S_CHAR *cmp,
                 endCt1 = endCt2 = inchi_max(endCt1, endCt2);
                 endAt1 = endAt2 = inchi_max(endAt1, endAt2);
             }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
             else {
                 int stop = 1;
             }
@@ -1795,7 +1817,7 @@ done:
             }
         }
     }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
     else {
         int stop = 1;  /* for debug only */
     }
@@ -2076,7 +2098,7 @@ void CtPartCopy( ConTable *Ct1 /* to */, ConTable *Ct2 /* from */, int k )
 
     len2   = endCt2-startCt2;
     /* len    = min(len1, len2); */
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
     if ( startCt1 != startCt2 || startAt1 != startAt2  ) {
         int stop = 1;
     }
@@ -2211,7 +2233,7 @@ void TranspositionGetMcrAndFixSetAndUnorderedPartition( Transposition *gamma, No
             }
         }
     }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
     /* for debug only */
     for ( i = 0; i < n; i ++ ) {
         if ( p->equ2[i] >= n ) {
@@ -2858,7 +2880,7 @@ int CanonGraph( int n, int n_tg, int n_max, int bDigraph, Graph *G, Partition pi
                 CtCompareLayersGetFirstDiff( kLeast_rho_fix, nOneAdditionalLayer,
                                  &L_rho_fix_prev, &I_rho_fix_prev, &k_rho_fix_prev );
             }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
             else {
                 int stop = 1;
             }
@@ -2911,7 +2933,7 @@ L2:
         if ( !qzb_rho_fix && bRhoIsDiscrete ) {
             qzb_rho_fix = CtPartCompareLayers( kLeast_rho_fix, L_rho_fix_prev, nOneAdditionalLayer );
 
-#if( FIX_ChCh_CONSTIT_CANON_BUG == 1 )
+#if ( FIX_ChCh_CONSTIT_CANON_BUG == 1 )
             if ( qzb_rho_fix ) {
                 int L_rho_fix_diff = abs(qzb_rho_fix)-1;
                 if ( L_rho_fix_diff < L_rho_fix_prev ||
@@ -2921,7 +2943,7 @@ L2:
             }
 #endif
 
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
             if ( qzb_rho_fix ) {
                 int stop = 1; /* debug only */
             }
@@ -2950,7 +2972,7 @@ L2:
             /* new code */
             if ( !qzb_rho && bRhoIsDiscrete ) {
                 qzb_rho = CtPartCompareLayers( kLeast_rho, L_rho_fix_prev, 0 );
-#if( FIX_ChCh_CONSTIT_CANON_BUG == 1 )
+#if ( FIX_ChCh_CONSTIT_CANON_BUG == 1 )
                 if ( qzb_rho ) {
                     int L_rho_diff = abs(qzb_rho)-1;
                     if ( L_rho_diff < L_rho_fix_prev ||
@@ -2961,7 +2983,7 @@ L2:
 #endif
             }
             /* compare old results to new */
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
             if ( qzb_rho_temp && qzb_rho_temp != qzb_rho ) {
                 int stop = 1; /* <BRKPT> */
             }
@@ -3007,7 +3029,7 @@ L6:
         goto L13;
     /* store isomorphism found from Lemma 2.25. should be dig=0 !!! */
     if ( dig ) {
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
         int stop = 1;
 #endif
         goto L13;
@@ -3032,7 +3054,7 @@ L7:
         lNumEqlZeta ++;
         goto L10;
     } else
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
     {
         int stop = 1;
     }
@@ -3055,7 +3077,7 @@ L8: /* here nu is discrete: check rho for being a bettere leaf or isomorphism */
             /* for debug only */
             qzb_rho_fix_alt =  CtFullCompare( &Lambda, pzb_rho_fix, 1, bSplitTautCompare );
             if ( qzb_rho_fix != qzb_rho_fix_alt ) {
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 int stop = 1;
 #endif
                 qzb_rho_fix = qzb_rho_fix_alt;
@@ -3093,7 +3115,7 @@ L8: /* here nu is discrete: check rho for being a bettere leaf or isomorphism */
         /* for debug only */
         cur_qzb_alt = CtFullCompare( &Lambda, pzb_rho, 0, bSplitTautCompare );
         if ( qzb_rho != cur_qzb_alt ) {
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
             int stop = 1;
 #endif
             qzb_rho = cur_qzb_alt;
@@ -3167,7 +3189,7 @@ L11:
     k = lab? h_rho : h_zeta; /***Changed*** originally was k = h_rho; */
 L12:
     /* if ( e[k-1] == 1 ) */
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
     if ( e[k-1] == 1 && v[k-1] == INFINITY ) {
         int stop = 1;          /* <BRKPT> testing only */
     }
@@ -3254,7 +3276,7 @@ L16:
     goto L13;
 L17:
     /* if ( e[k-1] == 0 ) */
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
     if ( e[k-1] == 0 && v[k-1] == INFINITY ) { /* testing only */
         int stop = 1;  /* <BRKPT> */
     }
@@ -3610,7 +3632,7 @@ void DeAllocBCN( BCN *pBCN )
 #undef FREE_ARRAY
 
 /*****************************************************************************/
-#if( bRELEASE_VERSION == 0 && FIND_CANON_NE_EQUITABLE == 1 )
+#if ( bRELEASE_VERSION == 0 && FIND_CANON_NE_EQUITABLE == 1 )
 /* debug: find whether canonical equivalence is different from equitable partition */
 int bCanonIsFinerThanEquitablePartition( int num_atoms, sp_ATOM* at, AT_RANK *nSymmRank )
 {
@@ -3730,7 +3752,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
     int      lenNumH;
     int      maxlenNumH               = 0;
 
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
     AT_RANK *nRankAux                 = NULL;
     AT_NUMB *nAtomNumberAux           = NULL;
     ATOM_INVARIANT2 *pAtomInvariantAux= NULL;
@@ -3891,10 +3913,10 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
          !nRank          || !nAtomNumber      || !nTempRank             ) {
         goto exit_error_alloc;
     }
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
     nRankAux            = (AT_RANK *)  inchi_calloc( num_max, sizeof(nRankAux[0]            ) );
     nAtomNumberAux      = (AT_NUMB *)  inchi_calloc( num_max, sizeof(nAtomNumberAux[0]      ) );
-    pAtomInvariantAux   = (ATOM_INVARIANT2 *)inchi_malloc( num_max * sizeof(pAtomInvariantAux[0]) );
+    pAtomInvariantAux   = (ATOM_INVARIANT2 *) inchi_malloc( num_max * sizeof(pAtomInvariantAux[0]) );
     if ( !nRankAux || !nAtomNumberAux || !pAtomInvariantAux ) {
         goto exit_error_alloc;
     }
@@ -4060,7 +4082,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
     if ( i < num_atoms ) {
         /* needs canonicalization */
         /* get aux canonical ranking of the structure with attached H */
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
         /* refine no-H partition according to not-a-taut-H distribution */
         memset( pAtomInvariantAux, 0, num_max * sizeof(pAtomInvariantAux[0]) );
         for ( i = 0; i < num_atoms; i ++ ) {
@@ -4197,7 +4219,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
             /* we need canonicalization */
             /* get aux canonical ranking of the structure with isotopic non-tautomeric H */
 
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
             /* refine no-taut-H partition according to non-taut H isotopic distribution */
             memset( pAtomInvariantAux, 0, num_max * sizeof(pAtomInvariantAux[0]) );
             for ( i = 0; i < num_atoms; i ++ ) {
@@ -4321,7 +4343,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
         nNumCurrRanks = DifferentiateRanks4( num_at_tg, NeighList[TAUT_YES], 
                                          nNumCurrRanks, pBCN->pRankStack[0], nTempRank /* temp array */,
                                          pBCN->pRankStack[1],  (AT_RANK)num_atoms, &lCount );
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
         /* refine no-H partition according to non-taut H distribution */
         memset( pAtomInvariantAux, 0, num_max * sizeof(pAtomInvariantAux[0]) );
         for ( i = 0; i < num_atoms; i ++ ) {
@@ -4506,7 +4528,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
                     /* we need canonicalization */
                     /* get aux canonical ranking of the structure with isotopic non-tautomeric H */
 
-    #if( USE_AUX_RANKING == 1 )
+    #if ( USE_AUX_RANKING == 1 )
                     /* refine no-taut-H partition according to non-taut H + t-groups isotopic distribution */
                     memset( pAtomInvariantAux, 0, num_max * sizeof(pAtomInvariantAux[0]) );
                     for ( i = 0; i < num_at_tg; i ++ ) {
@@ -4633,13 +4655,13 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
 #endif
         pCD[iOther].nAuxRank                   = NULL;
 
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
         if ( !nRankAux )
             nRankAux            = (AT_RANK *)  inchi_calloc( num_max, sizeof(nRankAux[0]            ) );
         if ( !nAtomNumberAux )
             nAtomNumberAux      = (AT_NUMB *)  inchi_calloc( num_max, sizeof(nAtomNumberAux[0]      ) );
         if ( !pAtomInvariantAux )
-            pAtomInvariantAux   = (ATOM_INVARIANT2 *)inchi_malloc( num_max * sizeof(pAtomInvariantAux[0]) );
+            pAtomInvariantAux   = (ATOM_INVARIANT2 *) inchi_malloc( num_max * sizeof(pAtomInvariantAux[0]) );
 
         if ( !nRankAux || !nAtomNumberAux ||
              !pAtomInvariantAux ) {
@@ -4673,7 +4695,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
         /*******************************************************************************************/
         iflag = s[iBase].num_isotopic_atoms && !s[iBase].bIgnoreIsotopic ||
              s[iBase].bHasIsotopicTautGroups && !bTautIgnoreIsotopic;
-        if (bFixIsoFixedH) /* #if( FIX_ISO_FIXEDH_BUG == 1 )  */
+        if (bFixIsoFixedH) /* #if ( FIX_ISO_FIXEDH_BUG == 1 )  */
              /* fix bug when iso H was removed as a proton and fixed-H isotopic layer is missing -  2008-09-24 DT*/
              iflag = iflag || s[iOther].num_isotopic_atoms && !s[iOther].bIgnoreIsotopic;
         if (iflag) {
@@ -4725,7 +4747,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
             /* fill out isotopic non-tautomeric keys */
             for ( i = 0; i < num_atoms; i ++ ) {
 
-                if (bFixIsoFixedH) /* #if( FIX_ISO_FIXEDH_BUG == 1 )  */
+                if (bFixIsoFixedH) /* #if ( FIX_ISO_FIXEDH_BUG == 1 )  */
                 {
                     /* fix bug when iso H was removed as a proton and fixed-H isotopic layer is missing -  2008-09-24 DT*/
                     if ( at_other ) 
@@ -4809,7 +4831,7 @@ int GetBaseCanonRanking( int num_atoms, int num_at_tg, sp_ATOM* at[],
                 /* we need canonicalization */
                 /* get aux canonical ranking of the structure with isotopic non-tautomeric H */
 
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
                 /* refine fixed-taut-H partition according to the isotopic distribution */
                 memset( pAtomInvariantAux, 0, num_max * sizeof(pAtomInvariantAux[0]) );
                 for ( i = 0; i < num_atoms; i ++ ) {
@@ -5090,7 +5112,7 @@ exit_function:
         pBCN->pRankStack[1] = NULL;
     }
 
-#if( USE_AUX_RANKING == 1 )
+#if ( USE_AUX_RANKING == 1 )
     FREE_ARRAY( nRankAux            )
     FREE_ARRAY( nAtomNumberAux      )
     FREE_ARRAY( pAtomInvariantAux   )

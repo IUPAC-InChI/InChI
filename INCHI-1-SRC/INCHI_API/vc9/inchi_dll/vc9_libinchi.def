@@ -19,15 +19,15 @@ EXPORTS
      GetStructFromStdINCHI            = cdecl_GetStructFromStdINCHI       @16
      Get_inchi_Input_FromAuxInfo      = cdecl_Get_inchi_Input_FromAuxInfo @17
      Get_std_inchi_Input_FromAuxInfo  = cdecl_Get_std_inchi_Input_FromAuxInfo @18
-     INCHIGEN_Create                  = cdecl_Get_std_inchi_Input_FromAuxInfo @19
+     INCHIGEN_Create                  = cdecl_INCHIGEN_Create             @19
      INCHIGEN_Destroy                 = cdecl_INCHIGEN_Destroy            @20
-     INCHIGEN_DoCanonicalization      = cdecl_INCHIGEN_DoNormalization    @21
+     INCHIGEN_DoCanonicalization      = cdecl_INCHIGEN_DoCanonicalization @21
      INCHIGEN_DoNormalization         = cdecl_INCHIGEN_DoNormalization    @22
      INCHIGEN_DoSerialization         = cdecl_INCHIGEN_DoSerialization    @23
      INCHIGEN_Reset                   = cdecl_INCHIGEN_Reset              @24
-     INCHIGEN_Setup                   = cdecl_INCHIGEN_Reset              @25
+     INCHIGEN_Setup                   = cdecl_INCHIGEN_Setup              @25
      STDINCHIGEN_Create               = cdecl_STDINCHIGEN_Create          @26
-     STDINCHIGEN_Destroy              = cdecl_STDINCHIGEN_Create          @27
+     STDINCHIGEN_Destroy              = cdecl_STDINCHIGEN_Destroy         @27
      STDINCHIGEN_DoCanonicalization   = cdecl_STDINCHIGEN_DoCanonicalization  @28
      STDINCHIGEN_DoNormalization      = cdecl_STDINCHIGEN_DoNormalization @29
      STDINCHIGEN_DoSerialization      = cdecl_STDINCHIGEN_DoSerialization @30
@@ -36,17 +36,17 @@ EXPORTS
 ;    dll_exported names(stdcall)
 ;   _CheckINCHI@8                     = _CheckINCHI@8                     @33
 ;   _CheckINCHIKey@4                  = _CheckINCHIKey@4                  @34
-;   _FreeStdINCHI@4                   = _FreeStdINCHI@4                   @35
+;   _Free=INCHI@4                     = _FreeINCHI@4                      @35
 ;   _FreeStdINCHI@4                   = _FreeStdINCHI@4                   @36
 ;   _FreeStructFromINCHI@4            = _FreeStructFromINCHI@4            @37
 ;   _FreeStructFromStdINCHI@4         = _FreeStructFromStdINCHI@4         @38
-;   _Free_inchi_Input@4               = _FreeStructFromStdINCHI@4         @39
+;   _Free_inchi_Input@4               = _Free_inchi_Input@4               @39
 ;   _Free_std_inchi_Input@4           = _Free_std_inchi_Input@4           @40
 ;   _GetINCHI@8                       = _GetINCHI@8                       @41
 ;   _GetINCHIKeyFromINCHI@24          = _GetINCHIKeyFromINCHI@24          @42
 ;   _GetINCHIfromINCHI@8              = _GetINCHIfromINCHI@8              @43
 ;   _GetStdINCHI@8                    = _GetStdINCHI@8                    @44
-;   _GetStdINCHIKeyFromStdINCHI@8     = _GetStdINCHI@8                    @45
+;   _GetStdINCHIKeyFromStdINCHI@8     = _GetStdINCHIKeyFromStdINCHI@8     @45
 ;   _GetStringLength@4                = _GetStringLength@4                @46
 ;   _GetStructFromINCHI@8             = _GetStructFromINCHI@8             @47
 ;   _GetStructFromStdINCHI@8          = _GetStructFromStdINCHI@8          @48
@@ -57,7 +57,7 @@ EXPORTS
 ;   _INCHIGEN_DoCanonicalization@8    = _INCHIGEN_DoCanonicalization@8    @53
 ;   _INCHIGEN_DoNormalization@8       = _INCHIGEN_DoNormalization@8       @54
 ;   _INCHIGEN_DoSerialization@12      = _INCHIGEN_DoSerialization@12      @55
-;   _INCHIGEN_Reset@12                = _INCHIGEN_DoSerialization@12      @56
+;   _INCHIGEN_Reset@12                = _INCHIGEN_Reset@12                @56
 ;   _INCHIGEN_Setup@12                = _INCHIGEN_Setup@12                @57
 ;   _STDINCHIGEN_Create@0             = _STDINCHIGEN_Create@0             @58
 ;   _STDINCHIGEN_Destroy@4            = _STDINCHIGEN_Destroy@4            @59

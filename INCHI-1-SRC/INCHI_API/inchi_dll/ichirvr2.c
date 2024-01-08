@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -24,7 +46,7 @@
 /*#define CHECK_WIN32_VC_HEAP*/
 #include "mode.h"
 
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
 
 #include "ichi.h"
 #include "ichitime.h"
@@ -866,8 +888,8 @@ int CopyBnsToAtom( StrFromINChI *pStruct, BN_STRUCT  *pBNS, VAL_AT *pVA, ALL_TC_
 int CheckBnsConsistency( StrFromINChI *pStruct, BN_STRUCT  *pBNS, VAL_AT *pVA, ALL_TC_GROUPS *pTCGroups, int bNoRad )
 {
     int nOutput = 0;
-#ifndef INCHI_LIBRARY
-#if( bRELEASE_VERSION == 0 )
+#ifndef TARGET_API_LIB
+#if ( bRELEASE_VERSION == 0 )
     char s[128];
     int i, j, atom_charge, left_charge, charge, excess_charge, ret = 0;
     int v1, v2, flow, tot_st_flow, tot_st_cap, num_electrons, nNumMetalAtoms;
@@ -1398,7 +1420,7 @@ int set_atom_0D_parity( inp_ATOM *at, inp_ATOM_STEREO *st, int num_at, int num_d
 
     return 0;
 }
-#if( BNS_RAD_SEARCH == 1 )
+#if ( BNS_RAD_SEARCH == 1 )
 /******************************************************************************************************/
 int MoveRadToAtomsAddCharges( BN_STRUCT *pBNS, BN_DATA *pBD, StrFromINChI *pStruct,
                     inp_ATOM *at, inp_ATOM *at2, VAL_AT *pVA, ALL_TC_GROUPS *pTCGroups, int forbidden_mask )
@@ -1429,7 +1451,7 @@ int MoveRadToAtomsAddCharges( BN_STRUCT *pBNS, BN_DATA *pBD, StrFromINChI *pStru
     /****************************************************/
     
     /* allocate memory to keep track of moved radicals */
-    pnRad   = (S_SHORT *)inchi_malloc(pBNS->num_vertices * sizeof(pnRad[0]));
+    pnRad   = (S_SHORT *) inchi_malloc(pBNS->num_vertices * sizeof(pnRad[0]));
     pnDelta = (S_SHORT *)inchi_calloc(pBNS->num_atoms, sizeof(pnDelta[0]));
     if ( !pnRad || !pnDelta ) {
         ret = RI_ERR_ALLOC;
@@ -2710,7 +2732,7 @@ int RearrangePlusMinusEdgesFlow( BN_STRUCT *pBNS, BN_DATA *pBD, VAL_AT *pVA,
         eMinus = pVA[i].nCMinusGroupEdge - 1;
         ePlus  = pVA[i].nCPlusGroupEdge - 1;
         num_tot += (eMinus >= 0) + (ePlus >= 0);
-        if (  eMinus >= 0 && ePlus >= 0 ) {
+        if ( eMinus >= 0 && ePlus >= 0 ) {
             pPlus  = pBNS->edge + ePlus;
             pMinus = pBNS->edge + eMinus;
             if ( (k1=pMinus->flow) > 0 &&  (k2=pPlus->cap-pPlus->flow) > 0 ) {
@@ -2729,7 +2751,7 @@ int RearrangePlusMinusEdgesFlow( BN_STRUCT *pBNS, BN_DATA *pBD, VAL_AT *pVA,
         eMinus = pVA[i].nCMinusGroupEdge - 1;
         ePlus  = pVA[i].nCPlusGroupEdge - 1;
         num_tot += (eMinus >= 0) + (ePlus >= 0);
-        if (  eMinus >= 0 && ePlus >= 0 ) {
+        if ( eMinus >= 0 && ePlus >= 0 ) {
             pPlus  = pBNS->edge + ePlus;
             pMinus = pBNS->edge + eMinus;
             if ( (k1=pMinus->flow) > 0 &&  (k2=pPlus->cap  - pPlus->flow) > 0 ) {
@@ -5194,7 +5216,7 @@ int MoveMobileHToAvoidFixedBonds(BN_STRUCT *pBNS, BN_DATA *pBD, StrFromINChI *pS
             ret = ret2;
             goto exit_function;
         }
-#if( FIND_RING_SYSTEMS == 1 )
+#if ( FIND_RING_SYSTEMS == 1 )
         ret2 = MarkRingSystemsInp( at2, num_at, 0 );
         if ( ret2 < 0 ) {
             ret = ret2;

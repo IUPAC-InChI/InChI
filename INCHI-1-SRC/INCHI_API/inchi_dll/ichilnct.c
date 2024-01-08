@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -55,16 +77,16 @@ extern int bLibInchiSemaphore;
 EXPIMP_TEMPLATE INCHI_API int INCHI_DECL Get_std_inchi_Input_FromAuxInfo
             ( char *szInchiAuxInfo, 
             int bDoNotAddH,
-			InchiInpData *pInchiInp )
+            InchiInpData *pInchiInp )
 {
-	int bDiffUnkUndfStereo = 0;
-	return Get_inchi_Input_FromAuxInfo( szInchiAuxInfo, bDoNotAddH, bDiffUnkUndfStereo,
+    int bDiffUnkUndfStereo = 0;
+    return Get_inchi_Input_FromAuxInfo( szInchiAuxInfo, bDoNotAddH, bDiffUnkUndfStereo,
                                         pInchiInp );
 }
 
-EXPIMP_TEMPLATE INCHI_API INCHI_DECL Get_inchi_Input_FromAuxInfo(char *szInchiAuxInfo, 
-												  int bDoNotAddH, int bDiffUnkUndfStereo,
-												  InchiInpData *pInchiInp )
+EXPIMP_TEMPLATE INCHI_API int INCHI_DECL Get_inchi_Input_FromAuxInfo(char *szInchiAuxInfo, 
+                                                  int bDoNotAddH, int bDiffUnkUndfStereo,
+                                                  InchiInpData *pInchiInp )
 {
     INCHI_IOSTREAM inp;
     int num_at, nRet = inchi_Ret_OKAY, err = 0;
@@ -74,15 +96,15 @@ EXPIMP_TEMPLATE INCHI_API INCHI_DECL Get_inchi_Input_FromAuxInfo(char *szInchiAu
     char         szHeader[MAX_SDF_HEADER];  /* stucture label header HHH from the input */
     char         szLabel[MAX_SDF_VALUE];    /* stucture label VVV from the input */
 
-	/* vABParityUnknown holds actual value of an internal constant signifying       */
+    /* vABParityUnknown holds actual value of an internal constant signifying       */
     /* unknown parity: either the same as for undefined parity (default==standard)  */
     /*  or a specific one (non-std; requested by SLUUD switch).                     */
     int vABParityUnknown = AB_PARITY_UNDF;
     if ( 0 != bDiffUnkUndfStereo ) 
-	{
+    {
         /* Make labels for unknown and undefined stereo different */
-		vABParityUnknown = AB_PARITY_UNKN;
-	}
+        vABParityUnknown = AB_PARITY_UNKN;
+    }
 
 
     if ( bLibInchiSemaphore ) {  /* does not work properly under sufficient stress */
@@ -146,7 +168,7 @@ EXPIMP_TEMPLATE INCHI_API INCHI_DECL Get_inchi_Input_FromAuxInfo(char *szInchiAu
 /*****************************************************************************************************/
 void INCHI_DECL Free_std_inchi_Input( inchi_Input *pInp )
 {
-	Free_inchi_Input( pInp );
+    Free_inchi_Input( pInp );
 }
 
 void INCHI_DECL Free_inchi_Input( inchi_Input *pInp )
@@ -160,8 +182,8 @@ void INCHI_DECL Free_inchi_Input( inchi_Input *pInp )
 
 /*#endif*/ /* INCHI_MAIN */
 
-#ifndef INCHI_LIBRARY
-#error "INCHI_LIBRARY MUST be defined here"
+#ifndef TARGET_API_LIB
+#error "TARGET_API_LIB MUST be defined here"
 #endif
 
 

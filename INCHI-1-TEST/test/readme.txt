@@ -1,38 +1,52 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * June 15, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ *  or email to: ulrich@inchi-trust.org.
+ * 
  */
 
-*****
-This is the release of the IUPAC International Chemical Identifier 
-with InChIKey, version 1, software version 1.03.
-(http://www.iupac.org/projects/2000/2000-025-1-800.html
-http://www.iupac.org/inchi).
-
-This software supports both standard and non-standard InChI/InChIKey.
-*****
 
 
 This directory contains a simple test suite for InChI version 1, 
-software version 1.03.
+software version 1.04.
 
 Included are: 
 a) source structural data (in SDF format);
 b) 36 reference result files containing InChI strings (in several cases, 
 accompanied by InChIKey strings) generated from the source data by InChI 
-software v. 1.03 executable inchi-1 with different command-line options;
+software v. 1.04 executable inchi-1 with different command-line options;
 c) scripts used to generate the reference identifiers.
 
 Using these data, one may verify that InChI code included in an 
@@ -137,7 +151,7 @@ ftp://ftp.ncbi.nlm.nih.gov/pubchem/Compound/CURRENT-Full/SDF/
   FILES 
 =========
 
-readme.txt                       This file
+readme.txt                       this file
 
 InChI_TestSet.sdf                Source structural data (SDF)
 
@@ -146,11 +160,21 @@ TestSet2InChI.sh                 Linux shell script for generation of identifier
 
 InChI_TestSet-result.zip         Archive containing the 36 reference 
                                  result files:
-                                     (standard)
                                      InChI_TestSet-std-01.txt
                                      ...
                                      InChI_TestSet-std-06.txt
-                                     (non-standard)
                                      InChI_TestSet-non-std-01.txt
                                      ...
                                      InChI_TestSet-non-std-30.txt
+
+
+
+
+
+=========
+  LINKS
+=========
+
+IUPAC                   http://www.iupac.org/inchi
+InChI Trust             http://www.inchi-trust.org                                      
+InChI discussion group  https://lists.sourceforge.net/lists/listinfo/inchi-discuss

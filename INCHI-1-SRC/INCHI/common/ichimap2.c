@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -1122,7 +1144,7 @@ int might_change_other_atom_parity( sp_ATOM *at, int num_atoms, int at_no, AT_RA
     return 0;
 }
 /**************************************************************************************/
-#if( REMOVE_CALC_NONSTEREO == 1 ) /* { */
+#if ( REMOVE_CALC_NONSTEREO == 1 ) /* { */
 /**************************************************************************************/
 void DeAllocateForNonStereoRemoval( AT_RANK **nAtomNumberCanon1, AT_RANK **nAtomNumberCanon2,
                                     NEIGH_LIST **nl, NEIGH_LIST **nl1, NEIGH_LIST **nl2, AT_RANK **nVisited1, AT_RANK **nVisited2 )
@@ -1450,7 +1472,7 @@ int BreakNeighborsTie(  sp_ATOM *at, int num_atoms, int num_at_tg, int ib, int i
 
 
 
-#if( BREAK_ONE_MORE_SC_TIE == 1 ) /* { */
+#if ( BREAK_ONE_MORE_SC_TIE == 1 ) /* { */
     /* Check for a very highly symmetrical stereo center 12-06-2002 */
     if ( ib >= num_atoms && at[ia].valence == MAX_NUM_STEREO_ATOM_NEIGH ) {
         int num_eq;
@@ -1487,7 +1509,7 @@ int BreakNeighborsTie(  sp_ATOM *at, int num_atoms, int num_at_tg, int ib, int i
     }
 #endif /* } BREAK_ONE_MORE_SC_TIE */
 
-#if( BREAK_ALSO_NEIGH_TIE == 1 )
+#if ( BREAK_ALSO_NEIGH_TIE == 1 )
     /* check whether neighbor's neighbors are tied and untie them */
     if ( at[n1].nRingSystem == at[n2].nRingSystem &&  ib >= num_atoms ) {
         AT_RANK NeighNeighList[MAX_NUM_STEREO_ATOM_NEIGH+1];
@@ -1519,7 +1541,7 @@ int BreakNeighborsTie(  sp_ATOM *at, int num_atoms, int num_at_tg, int ib, int i
         insertions_sort_NeighListBySymmAndCanonRank( NeighNeighList, pRankStack2[0], nCanonRank );
         for ( m = 2; m < at[n2].valence; m ++ ) {
             if ( pRankStack2[0][NeighNeighList[m]] == pRankStack2[0][NeighNeighList[m-1]] ) {
-#if( BREAK_ALSO_NEIGH_TIE_ROTATE == 1 )
+#if ( BREAK_ALSO_NEIGH_TIE_ROTATE == 1 )
                 neigh2 = NeighNeighList[m];    /* [m] to obtain same axis orientation  around ia<neigh */
 #else
                 neigh2 = NeighNeighList[m-1];  /* [m-1] to obtain reflection ??? */
@@ -1642,7 +1664,7 @@ int CheckNextSymmNeighborsAndBonds( sp_ATOM *at, AT_RANK cur1, AT_RANK cur2, AT_
                  PARITY_KNOWN(at[cur2].stereo_bond_parity[i2] )  ) {
                 return 0; /*  different currently known stereo bond parities */
             }
-#if( PROPAGATE_ILL_DEF_STEREO != 1 )
+#if ( PROPAGATE_ILL_DEF_STEREO != 1 )
             /*  well defined and to be calculated from the ranks */
             if ( !(PARITY_CALCULATE(at[cur1].stereo_bond_parity[i1]) && PARITY_WELL_DEF (at[cur2].stereo_bond_parity[i2]) ||
                    PARITY_WELL_DEF (at[cur1].stereo_bond_parity[i1]) && PARITY_CALCULATE(at[cur2].stereo_bond_parity[i2]) ||
@@ -1653,7 +1675,7 @@ int CheckNextSymmNeighborsAndBonds( sp_ATOM *at, AT_RANK cur1, AT_RANK cur2, AT_
 #endif
         }
    
-#if( PROPAGATE_ILL_DEF_STEREO != 1 )
+#if ( PROPAGATE_ILL_DEF_STEREO != 1 )
         if ( (cur1 != cur2 || s1 != s2) && (cur1 != s2 || cur2 != s1) ) {
             /*  two different stereo bonds */
             if ( PARITY_ILL_DEF( at[cur1].stereo_bond_parity[i1] ) ||
@@ -1704,7 +1726,7 @@ int CreateCheckSymmPaths( sp_ATOM *at, AT_RANK prev1, AT_RANK cur1, AT_RANK prev
          PARITY_KNOWN(at[cur1].parity) != PARITY_KNOWN(at[cur2].parity) ) {
         return 0; /*  one atom is stereogenic, another (presumably equivalent) is not. 9-11-2002 */
     }
-#if( PROPAGATE_ILL_DEF_STEREO != 1 )
+#if ( PROPAGATE_ILL_DEF_STEREO != 1 )
     if ( cur1 != cur2 &&
          (PARITY_ILL_DEF(at[cur1].stereo_atom_parity) ||
           PARITY_ILL_DEF(at[cur2].stereo_atom_parity)) 
@@ -2166,7 +2188,7 @@ int CalculatedPathsParitiesAreIdentical( sp_ATOM *at, int num_atoms, const AT_RA
                     /* return 0; */
                 }
             } else {
-#if( PROPAGATE_ILL_DEF_STEREO == 1 )
+#if ( PROPAGATE_ILL_DEF_STEREO == 1 )
                 /*  at least one parity is ill-defined. Use parity1 and parity2 to temporarily save bitmaps */
                 parity1 = (parity  ==vABParityUnknown /*AB_PARITY_UNKN*/)? NOT_WELL_DEF_UNKN :
                           (parity  ==AB_PARITY_UNDF)? NOT_WELL_DEF_UNDF : 0;
@@ -2307,7 +2329,7 @@ int CalculatedPathsParitiesAreIdentical( sp_ATOM *at, int num_atoms, const AT_RA
                 return 0;
             } else {
                 /*  at least one parity is ill-defined. Use parity1 and parity2 to temporarily save bitmaps */
-#if( PROPAGATE_ILL_DEF_STEREO == 1 )
+#if ( PROPAGATE_ILL_DEF_STEREO == 1 )
                 parity1 = (parity  ==vABParityUnknown /*AB_PARITY_UNKN*/)? NOT_WELL_DEF_UNKN :
                           (parity  ==AB_PARITY_UNDF)? NOT_WELL_DEF_UNDF : 0;
                 parity2 = (parity12==vABParityUnknown /*AB_PARITY_UNKN*/)? NOT_WELL_DEF_UNKN :
@@ -2366,7 +2388,7 @@ int CalculatedPathsParitiesAreIdentical( sp_ATOM *at, int num_atoms, const AT_RA
     if ( nNumEqStereogenic > 0 ) {
         /*  case similar to trimethylcyclopropane: 3 constitutionally equivalent stereogenic elements */
         /*  the transposition does not change the parities */
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
         pCS->bExtract |= EXTR_2EQL2CENTER_TO_REMOVE_PARITY;
 #endif
         return 0;
@@ -2515,7 +2537,7 @@ second_pass:
                             if ( pCS->LinearCTStereoDble[n].at_num1 == nAtomRank1 &&
                                  pCS->LinearCTStereoDble[n].at_num2 == nAtomRank2 ) {
                                 pCS->LinearCTStereoDble[n].parity = new_parity;
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
                                 pCS->bExtract |= EXTR_CALC_USED_TO_REMOVE_PARITY;
 #endif
                                 m = -1;
@@ -2547,7 +2569,7 @@ second_pass:
                                          (m-n)*sizeof(pCS->LinearCTStereoDble[0]) );
                             }
                             pCS->nLenLinearCTStereoDble --;
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
                             pCS->bExtract |= EXTR_CALC_USED_TO_REMOVE_PARITY;
 #endif
                             m = -1;
@@ -2630,7 +2652,7 @@ second_pass:
          *         2 => Check for C2 rotation preserving parities
          *         3 => Check for S4 rotation/reflection leading to parity inversion
          */
-#if( CHECK_C2v_S4_SYMM == 1 )
+#if ( CHECK_C2v_S4_SYMM == 1 )
         if ( nNeighMode = NEIGH_MODE_RING && at[i].valence == 4 &&
              nSymmRank[(int)neigh[0]] == nSymmRank[(int)neigh[1]] &&
              nSymmRank[(int)neigh[2]] == nSymmRank[(int)neigh[3]] &&
@@ -2743,7 +2765,7 @@ second_pass:
                                 for ( n = 0, m = pCS->nLenLinearCTStereoCarb-1; n <= m; n ++ ) {
                                     if ( pCS->LinearCTStereoCarb[n].at_num == nAtomRank1 ) {
                                         pCS->LinearCTStereoCarb[n].parity = PARITY_VAL(new_parity);
-    #if( bRELEASE_VERSION == 0 )
+    #if ( bRELEASE_VERSION == 0 )
                                         pCS->bExtract |= EXTR_CALC_USED_TO_REMOVE_PARITY;
     #endif
                                         m = -1;
@@ -2768,7 +2790,7 @@ second_pass:
                                                  (m-n)*sizeof(pCS->LinearCTStereoCarb[0]) );
                                     }
                                     pCS->nLenLinearCTStereoCarb --;
-    #if( bRELEASE_VERSION == 0 )
+    #if ( bRELEASE_VERSION == 0 )
                                     pCS->bExtract |= EXTR_CALC_USED_TO_REMOVE_PARITY;
     #endif
                                     m = -1;

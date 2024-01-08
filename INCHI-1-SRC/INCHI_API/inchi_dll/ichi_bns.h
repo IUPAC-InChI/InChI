@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -139,7 +161,7 @@ typedef enum tagAltPathConst {
 #define EDGE_FLOW_PATH          0x4000  /* mark: the edge belongs to the augmenting path */
 
 /*********************************************************************************/
-#if( ADD_CAPACITY_RADICAL == 1 )  /* { */
+#if ( ADD_CAPACITY_RADICAL == 1 )  /* { */
 /*  -- do not treat triplets as moving dots -- 2004-02-18 --
 #define MAX_AT_FLOW(X) (((X).chem_bonds_valence - (X).valence)+\
                        ((is_centerpoint_elem((X).el_number)||get_endpoint_valence((X).el_number))?\
@@ -261,7 +283,7 @@ typedef struct BalancedNetworkData {
     Vertex          *Pv;         /*[MAX_VERTEX/2+1] */
     int             max_num_vertices; /* allocation size of all except Pu, Pv */
     int             max_len_Pu_Pv;    /* allocation size of Pu and Pv */
-#if( BNS_RAD_SEARCH == 1 )
+#if ( BNS_RAD_SEARCH == 1 )
     Vertex         *RadEndpoints; /*[MAX_VERTEX*/
     int             nNumRadEndpoints;
     EdgeIndex      *RadEdges;
@@ -319,7 +341,7 @@ typedef struct tagBNS_FLOW_CHANGES {
 #define ALT_PATH_MODE_REM2H_TST  7   /* test-remove 2 H along alt. path AH-=-BH => A=-=B; restore changed bonds */
 #define ALT_PATH_MODE_ADD2H_TST  8   /* test-add 2 H along alt. path A=-=B => AH-=-BH; restore changed bonds */
 #define ALT_PATH_MODE_REM_PROTON 9   /* remove proton, adjust bonds, charges, H-counts 2004-03-05 */
-#if( KETO_ENOL_TAUT == 1 )
+#if ( KETO_ENOL_TAUT == 1 )
 #define ALT_PATH_MODE_TAUTOM_KET 10  /* same as ALT_PATH_MODE_TAUTOM, applies to C=-OH or CH-=O; H may be (-) */
 #endif
 
@@ -333,7 +355,7 @@ typedef struct tagNodeSet {
 } NodeSet;
 
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -434,7 +456,7 @@ int AddRemoveProtonsRestr( inp_ATOM *at, int num_atoms, int *num_protons_to_add,
 int AddRemoveIsoProtonsRestr( inp_ATOM *at, int num_atoms, NUM_H num_protons_to_add[], int num_tg );
 
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif

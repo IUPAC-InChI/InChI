@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -24,7 +46,7 @@
 /* #define CHECK_WIN32_VC_HEAP */
 #include "mode.h"
 
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
 
 #include "ichicomp.h"
 #include "ichi.h"
@@ -48,7 +70,7 @@
 
 
 /*^^^ */
-#if ( defined(INCHI_LIBRARY) || defined(INCHI_STANDALONE_EXE) )
+#if ( defined(TARGET_API_LIB) || defined(TARGET_EXE_STANDALONE) )
 #include "inchi_api.h"
 #endif
 /*^^^ */
@@ -104,7 +126,7 @@ static int SetProtonsAndXchgIsoH(int bInChI2Structure,
                                  int num_components[INCHI_NUM],
                                  MODE_PIXH nModeProtonIsoExchgH[INCHI_NUM], 
                                  InpInChI *OneInput);
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
 static int SetHillFormFromInChI(InpInChI *OneInput);
 #endif
 
@@ -367,7 +389,7 @@ const char *getInchiStateReadErr(int stat)
     for ( i = 0; 0 <= irErrMsg[i].stat && stat != irErrMsg[i].stat; i ++ )
         ;
     sprintf(szMsg, 
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
         "%s%.100s",
 #else
         "%s%s",
@@ -392,7 +414,7 @@ const char *getInchiErrName(int nErr)
     }
     return "Unknown error";
 }
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
 /*****************************************************************************************/
 int SetHillFormFromInChI(InpInChI *OneInput)
 {
@@ -467,7 +489,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
     int  bPlainTabbedOutput;
     const char *pTAB;
 
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
     const int       bInChI2Structure = 0 != (ip_inp->bReadInChIOptions & READ_INCHI_TO_STRUCTURE);
     const int       bInChI2InChI     = 0 != (ip_inp->bReadInChIOptions & READ_INCHI_OUTPUT_INCHI);
 #else
@@ -519,7 +541,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
                                         0 != (READ_INCHI_KEEP_BALANCE_P & ip->bReadInChIOptions);
 
         bPlainTabbedOutput     = 0 != (ip->bINChIOutputOptions & INCHI_OUT_TABBED_OUTPUT);
-#if ( !defined(INCHI_LIBRARY) && !defined(INCHI_LIB) )    
+#if ( !defined(TARGET_API_LIB) && !defined(TARGET_LIB_FOR_WINCHI) )    
         pTAB                   = bPlainTabbedOutput? "\t" : "\n";
 #else
         pTAB                   = "\n";
@@ -648,7 +670,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
             
 
 
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
             /*
             inchi_ios_eprint(stderr, "%ld: %s\r", num_inp, strHdr? strHdr : "");
             inchi_ios_eprint(pLog,  "%ld: %s\n", num_inp, strHdr? strHdr : "");
@@ -660,7 +682,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
                 if ( strHdr && strstr(strHdr, "Structure:")) 
                 {
                     inchi_ios_print(pOut,  "%s%s", strHdr, pTAB); /* output header */
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
 #else
                     sprintf(szMessage, "%s (%ld)",  strHdr? strHdr : "", num_inp);
 #endif
@@ -672,7 +694,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
                     sprintf(szMessage, "Structure %ld (%s)%s", num_inp, strHdr? strHdr : "" , pTAB);
                     */
                     inchi_ios_print(pOut,  "Structure: %ld. (%s)%s", num_inp, strHdr? strHdr : "No struct name" , pTAB); /* output header */
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
 #else
                     sprintf(szMessage, "Structure: %ld. (%s)%s", num_inp, strHdr? strHdr : "No struct name", pTAB);
 #endif
@@ -691,7 +713,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
                 }
             }
 
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
             sprintf(szMessage, "%ld: %.400s", num_inp, strHdr? strHdr : "");
 #else
             sprintf(szMessage, "%ld: %s", num_inp, strHdr? strHdr : "");
@@ -722,7 +744,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
                     if ( cur_struct_number > 0 && cur_struct_number < ip->first_struct_number ) 
                     {
 
-#if ( !defined(INCHI_LIBRARY) && !defined(INCHI_STANDALONE_EXE) )                   
+#if ( !defined(TARGET_API_LIB) && !defined(TARGET_EXE_STANDALONE) )                   
                         inchi_fprintf(stderr, "Skipping %s\r", szMessage);
 #endif
                         FreeInpInChI(&OneInput);
@@ -791,7 +813,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
                 
 
                 int bINChIOutputOptions = 
-#if( I2S_MODIFY_OUTPUT == 1 )
+#if ( I2S_MODIFY_OUTPUT == 1 )
                 /* transfer user's InChI output options to serialization 10-12-2007 */
                     ip_inp->bINChIOutputOptions & (
                             INCHI_OUT_NO_AUX_INFO           |   /* do not output Aux Info */
@@ -964,7 +986,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
                 
                 ulProcessingTime += InchiTimeElapsed(&ulTStart);
 
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
                 ret = DisplayStructureComponents(ip, sd, num_inp, szCurHdr,
                                                   &srm, bReqNonTaut, pStruct, &OneInput);
                 if ( ret < 0 ) 
@@ -984,7 +1006,7 @@ int ReadWriteInChI(INCHI_IOSTREAM *pInp, INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *p
 
 
 
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
 /*------------- for debug only -------------------
                 InchiTimeGet(&ulTStart);
                 ret = OutputInChIOutOfStrFromINChI(ip, sd, num_inp, 0, 
@@ -1069,7 +1091,7 @@ dealloc:
                                     {
                                         char *szFormula = OneInput.pInpInChI[iRec][iMob][iComp].szHillFormula;
                                         sprintf (szTemp,
-#if( FIX_DALKE_BUGS == 1 )                                            
+#if ( FIX_DALKE_BUGS == 1 )                                            
                                             " %s%s%d(%.96s)",
 #else
                                             " %s%s%d(%s)",
@@ -1112,7 +1134,7 @@ dealloc:
                 {
                     inchi_ios_eprint(pLog, "%s\n", szMessage);
                 }
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
                 else 
                 {
                     /*^^^inchi_ios_eprint( stderr, "%s\r", szMessage );*/
@@ -1153,7 +1175,7 @@ dealloc:
                 INCHI_HEAPCHK
                 ip->pSdfValue = NULL;
                 ip->pSdfLabel = NULL;
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
                 SetHillFormFromInChI( &OneInput );
 #endif
 
@@ -1163,7 +1185,7 @@ dealloc:
                                              num_inp, save_opt_bits);
 
 
-#if ( !defined(INCHI_LIBRARY) && defined(INCHI_STANDALONE_EXE) )
+#if ( !defined(TARGET_API_LIB) && defined(TARGET_EXE_STANDALONE) )
                 /*^^^ calculate InChIKey if requested */
                 /* However, do not calculat/write it if this function is called from within dll */
                 {
@@ -1251,7 +1273,7 @@ dealloc:
 
                 ip->bNoStructLabels = tmp;
 
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
                 if ( ret < 0 ) 
                 {
                     if ( szCurHdr && szCurHdr[0] ) 
@@ -1264,7 +1286,7 @@ dealloc:
                     }
                     num_errors ++;
                 } 
-#if ( !defined(INCHI_LIBRARY) && !defined(INCHI_STANDALONE_EXE) )                   
+#if ( !defined(TARGET_API_LIB) && !defined(TARGET_EXE_STANDALONE) )                   
                 else
                 if ( szCurHdr && szCurHdr[0] ) 
                 {
@@ -1332,15 +1354,15 @@ dealloc:
         }
 
 
-#ifdef INCHI_STANDALONE_EXE
-#ifndef INCHI_LIBRARY
+#ifdef TARGET_EXE_STANDALONE
+#ifndef TARGET_API_LIB
         inchi_ios_flush(pOut);
         inchi_ios_flush2(pLog, stderr);
 #endif
 #endif
 
 
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
         break;  /* exit after the 1st structure */
 #endif
 
@@ -1432,7 +1454,7 @@ int OutputInChIAsRequested(INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *pLog,
     {
         MYREALLOC2(PINChI2, PINChI_Aux2, pINChI[INCHI_REC], pINChI_Aux[INCHI_REC], num_components[INCHI_REC], num_components[INCHI_REC], k2);
     }
-    pStr = (char*)inchi_malloc( nStrLen * sizeof(pStr[0]) );
+    pStr = (char*) inchi_malloc( nStrLen * sizeof(pStr[0]) );
 
     INCHI_HEAPCHK
 
@@ -1471,7 +1493,7 @@ int OutputInChIAsRequested(INCHI_IOSTREAM *pOut, INCHI_IOSTREAM *pLog,
                         goto exit_error;
                     }
                     /* copy InChI & AuxInfo */
-                    if (  k < OneInput->nNumComponents[iINChI][j] ) 
+                    if ( k < OneInput->nNumComponents[iINChI][j] ) 
                     {
 
                         /* copy InChI */
@@ -2287,7 +2309,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
     NUM_ELEM *num_elem[INCHI_NUM][TAUT_NUM];
 
 
-#if( FIX_I2I_STEREOCONVERSION_BUG == 1 )
+#if ( FIX_I2I_STEREOCONVERSION_BUG == 1 )
 /* (2008-03-06)   1=> Fix bug of i2i conversion SAbs-->(SRel||Srac) */
 /*                    (converter does not placed proper stereo to output) */
     
@@ -2307,7 +2329,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
                         bStdFormat, bInputHasSaveOpt, inp_save_opt_bits);
 
 
-#if( FIX_I2I_STEREOCONVERSION_BUG == 1 )
+#if ( FIX_I2I_STEREOCONVERSION_BUG == 1 )
     /* modify stereo type for layers as requested */
     if (target_stereo_type > 1)
         for (i1=0;i1<INCHI_NUM;i1++)
@@ -2369,7 +2391,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
                 {
                     /* for each component k ... */
 
-                    if (  pInpInChI[iINChI][j] ) {
+                    if ( pInpInChI[iINChI][j] ) {
                         INChI *pInChI = &pInpInChI[iINChI][j][k];
                         INChI *pInChI_Alt = (k<nNumComponents[iINChI][jAlt] &&
                                              pInpInChI[iINChI][jAlt] &&
@@ -2691,7 +2713,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
                             if ( pAltInChI->Stereo && pAltInChI->Stereo->nNumberOfStereoCenters &&
                                  (!pInChI->Stereo || !pInChI->Stereo->t_parity) ) 
                             {
-#if( FIX_I2I_STEREOCONVERSION_BUG2 == 1 )	
+#if ( FIX_I2I_STEREOCONVERSION_BUG2 == 1 )	
                                 /* (2008-04-02)   1=> Fix bug of i2i conversion SAbs-->(SRel||Srac) */
                                 /*                    (converter skipped empty '/t' or sometimes produced an excess one */
 
@@ -2712,7 +2734,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
                                     goto exit_function;
                                 }
 
-#if( FIX_I2I_STEREOCONVERSION_BUG2 == 1 )				
+#if ( FIX_I2I_STEREOCONVERSION_BUG2 == 1 )				
                                 /* ... correct just copied stereo if applicable */
                                 if ( (s[iINChI][j][0] < 1)	&&
                                      (bHave_t_stereo <1 )		&&
@@ -2838,7 +2860,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
                             }
                             /* (3) isotopic Mobile H -> isotopic Fixed H */
                             /* if !FH_Stereo && !MH_Stereo && MH_IsoStereo!=NULL && FH_IsoStereo==NULL */
-                            if (  bIso ) { 
+                            if ( bIso ) { 
                                 if ( !(pInChI->Stereo && pInChI->Stereo->t_parity) &&                                    /* !FH_Stereo */
                                      !(pAltInChI->Stereo && pAltInChI->Stereo->t_parity) &&                              /* !MH_Stereo */
                                      (pAltInChI->StereoIsotopic && pAltInChI->StereoIsotopic->nNumberOfStereoCenters) && /*  MH_IsoStereo */
@@ -2951,7 +2973,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
             /**** replace NO_VALUE_INT with zeroes in all Mobile & Fixed H components ****/
             for ( j = 0; j < TAUT_NUM; j ++ ) {
                 for ( k = 0; k < nNumComponents[iINChI][j]; k ++ ) {
-                    if (  pInpInChI[iINChI][j] ) {
+                    if ( pInpInChI[iINChI][j] ) {
                         INChI *pInChI = &pInpInChI[iINChI][j][k];
                         if ( pInChI->nTotalCharge == NO_VALUE_INT ) {
                             pInChI->nTotalCharge = 0;
@@ -3011,7 +3033,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
             for ( j = 0; j < TAUT_NUM; j ++ ) {
                 for ( k = 0; k < nNumComponents[iINChI][j]; k ++ ) 
                 {
-                    if (  pInpInChI[iINChI][j] ) 
+                    if ( pInpInChI[iINChI][j] ) 
                     {
                         INChI *pInChI = &pInpInChI[iINChI][j][k];
                         if ( pInChI->Stereo && !pInChI->Stereo->nNumberOfStereoCenters ) 
@@ -3027,7 +3049,7 @@ int InChILine2Data(INCHI_IOSTREAM *pInp, SEGM_LINE *pLine,
             }
 
 
-#if( FIX_I2I_STEREOCONVERSION_BUG3 == 1 )	
+#if ( FIX_I2I_STEREOCONVERSION_BUG3 == 1 )	
 /* (2008-04-10)   1=> Fix bug of i2i conversion */
 /* (missed repeating /s in FI after F for multi-component case) */	
             if (nNumComponents[iINChI][TAUT_NON]>1)					 /* if multi-component */
@@ -3156,7 +3178,7 @@ fini:		;
                 }
                 if ( nNumProtons[iINChI][TAUT_YES].pNumProtons ) {
                     /* check consistency */
-#if( FIX_ISO_FIXEDH_BUG_READ == 1 )
+#if ( FIX_ISO_FIXEDH_BUG_READ == 1 )
                     int iso_diff[NUM_H_ISOTOPES], iso_diff_tot=0;
 #endif
                     if ( nTotRemovedProtons != nNumProtons[iINChI][TAUT_YES].nNumRemovedProtons ) {
@@ -5661,7 +5683,7 @@ int ParseSegmentSp3( const char *str, int bMobileH, INChI *pInpInChI[], int ppnN
         /* pass 1: find number of stereoatoms */
         if ( *pbAbc == 1 ) {
             for ( p = pStart, iAtom = 0; p < pEnd; iAtom ++ ) {
-                if (  (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
+                if ( (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
                       (atomParity = (int)inchi_strtol( p, &p, 10),
                       AB_MIN_KNOWN_PARITY <= atomParity && atomParity <= AB_MAX_KNOWN_PARITY) ) {
                     ; /* okay */
@@ -5728,7 +5750,7 @@ int ParseSegmentSp3( const char *str, int bMobileH, INChI *pInpInChI[], int ppnN
         /* pass 2: store stereocenters */
         if ( *pbAbc == 1 ) {
             for ( p = pStart, iAtom = 0; p < pEnd; iAtom ++ ) {
-                if (  (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
+                if ( (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
                       (atomParity = (int)inchi_strtol( p, &p, 10),
                       AB_MIN_KNOWN_PARITY <= atomParity && atomParity <= AB_MAX_KNOWN_PARITY) ) {
                     ; /* okay */
@@ -6007,7 +6029,7 @@ int ParseSegmentSp2( const char *str, int bMobileH, INChI *pInpInChI[], int ppnN
             /* pass 1: find number of stereobonds */
             for ( p = pStart, iBond = 0; p < pEnd; iBond ++ ) {
                 /* atoms 1, 2, and parity */
-                if (  (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
+                if ( (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
                       (nAtom2 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
                       (bondParity = (int)inchi_strtol( p, &p, 10),
                       AB_MIN_KNOWN_PARITY <= bondParity && bondParity <= AB_MAX_KNOWN_PARITY) ) {
@@ -6093,7 +6115,7 @@ int ParseSegmentSp2( const char *str, int bMobileH, INChI *pInpInChI[], int ppnN
         /* pass 2: store stereobonds */
         if ( *pbAbc == 1 ) {
             for ( p = pStart, iBond = 0; p < pEnd; iBond ++ ) {
-                if (  (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
+                if ( (nAtom1 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
                       (nAtom2 = (AT_NUMB)inchi_strtol( p, &p, base ) ) &&
                       (bondParity = (int)inchi_strtol( p, &p, 10),
                       AB_MIN_KNOWN_PARITY <= bondParity && bondParity <= AB_MAX_KNOWN_PARITY) ) {
@@ -6299,7 +6321,7 @@ int ParseSegmentCharge( const char *str, int bMobileH, INChI *pInpInChI[], int p
             mpy_component = 1;
             p = pStart;
         }
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
         if ( mpy_component + iComponent > nNumComponents || mpy_component <= 0 ) {
             ret = RI_ERR_SYNTAX; /* syntax error: too many components in charge layer */
             goto exit_function;
@@ -6319,7 +6341,7 @@ int ParseSegmentCharge( const char *str, int bMobileH, INChI *pInpInChI[], int p
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
             }
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
             if ( val < -256 || val > 256 ) {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
@@ -6420,7 +6442,7 @@ int ParseSegmentMobileH( const char *str, int bMobileH, INChI *pInpInChI[], int 
         }
         if ( (p = strchr(pStart, '*')) && p < pEnd ) {
             mpy_component = (int)inchi_strtol( pStart, &q, 10 );
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
             if ( p != q || !isdigit(UCINT *pStart) ) /* prevent non-positive multipliers */
 #else
             if ( p != q )
@@ -7524,7 +7546,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
     }
     pnNumComponents[bMobileH] = nNumComponents;
 
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
     if ( nNumComponents > MAX_ATOMS ) {
         return RI_ERR_SYNTAX; /* syntax error */
     }
@@ -7548,7 +7570,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
                     if ( pInpInChI[bMobileH][i].nAtom ) {
                         inchi_free( pInpInChI[bMobileH][i].nAtom );
                     }
-                    if ( pInpInChI[bMobileH][i].nAtom = (U_CHAR *)inchi_malloc( (len + 1) * sizeof(pInpInChI[0][0].nAtom[0]) ) ) {
+                    if ( pInpInChI[bMobileH][i].nAtom = (U_CHAR *) inchi_malloc( (len + 1) * sizeof(pInpInChI[0][0].nAtom[0]) ) ) {
                         memcpy(pInpInChI[bMobileH][i].nAtom, pInpInChI[nAltMobileH][i].nAtom, len);
                         pInpInChI[bMobileH][i].nAtom[len] = 0;
                     } else {
@@ -7559,7 +7581,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
                     if ( pInpInChI[bMobileH][i].szHillFormula ) {
                         inchi_free( pInpInChI[bMobileH][i].szHillFormula );
                     }
-                    if ( pInpInChI[bMobileH][i].szHillFormula = (char *)inchi_malloc( inchi_max(len,2) ) ) {
+                    if ( pInpInChI[bMobileH][i].szHillFormula = (char *) inchi_malloc( inchi_max(len,2) ) ) {
                         memcpy( pInpInChI[bMobileH][i].szHillFormula, pInpInChI[nAltMobileH][i].szHillFormula, len);
                     } else {
                         return RI_ERR_ALLOC; /* alloc failure */
@@ -7610,7 +7632,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
         } else {
             mpy_component = 1;
         }
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
         if ( iComponent + mpy_component > MAX_ATOMS ) {
             return RI_ERR_SYNTAX; /* syntax error */
         }
@@ -7620,7 +7642,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
             if ( pInChI[iComponent+i].szHillFormula ) {
                 inchi_free( pInChI[iComponent+i].szHillFormula );
             }
-            pInChI[iComponent+i].szHillFormula = (char*)inchi_malloc( inchi_max(len,1)+1 );
+            pInChI[iComponent+i].szHillFormula = (char*) inchi_malloc( inchi_max(len,1)+1 );
             memcpy( pInChI[iComponent].szHillFormula, p, len );
             pInChI[iComponent+i].szHillFormula[len] = '\0';
             if ( !i ) {
@@ -7654,7 +7676,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
 
                     nNumAtoms += mpy_atom;
                 }
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
                 if ( nNumAtoms > MAX_ATOMS ) {
                     return RI_ERR_SYNTAX; /* syntax error */
                 }
@@ -7664,7 +7686,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
                 if ( pInChI[iComponent+i].nAtom ) {
                     inchi_free( pInChI[iComponent+i].nAtom );
                 }
-                pInChI[iComponent+i].nAtom = (U_CHAR *)inchi_malloc((nNumAtomsAndH+1)*sizeof(pInChI[0].nAtom[0]));
+                pInChI[iComponent+i].nAtom = (U_CHAR *) inchi_malloc((nNumAtomsAndH+1)*sizeof(pInChI[0].nAtom[0]));
                 if ( !pInChI[iComponent+i].nAtom )
                     return RI_ERR_ALLOC; /* failed allocation */
                 /* Pass 2.2 Store elements; this assumes no bridging H. Bridging H will be found in connection table, /c */
@@ -7719,7 +7741,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
                 if ( pInChI[iComponent+i].nAtom ) {
                     inchi_free( pInChI[iComponent+i].nAtom );
                 }
-                pInChI[iComponent+i].nAtom = (U_CHAR *)inchi_malloc(nNumAtoms+1);
+                pInChI[iComponent+i].nAtom = (U_CHAR *) inchi_malloc(nNumAtoms+1);
                 if ( !pInChI[iComponent+i].nAtom )
                     return RI_ERR_ALLOC; /* failed allocation */
                 memcpy( pInChI[iComponent+i].nAtom, pInChI[iComponent].nAtom, nNumAtoms+1 );
@@ -7744,7 +7766,7 @@ int ParseSegmentFormula( const char *str, int bMobileH, INChI *pInpInChI[], int 
             if ( pInpInChI[bMobileH][i].nNumberOfAtoms < (len=pInpInChI[nAltMobileH][i].nNumberOfAtoms) ) {
                 /* there are bridging H in this component */
                 if ( pInpInChI[nAltMobileH][i].nAtom ) {
-                    U_CHAR *nAtom = (U_CHAR *)inchi_malloc( (len+1) * sizeof(nAtom[0]) );
+                    U_CHAR *nAtom = (U_CHAR *) inchi_malloc( (len+1) * sizeof(nAtom[0]) );
                     if ( !nAtom ) {
                         return RI_ERR_ALLOC;
                     }
@@ -7980,7 +8002,7 @@ int getInChIChar( INCHI_IOSTREAM *pInp )
     {
         /* input from plain file */
         int c;
-#if( defined(_MSC_VER)&&defined(_WIN32) || defined(__BORLANDC__)&&defined(__WIN32__) || defined(__GNUC__)&&defined(__MINGW32__)&&defined(_WIN32) )
+#if ( defined(_MSC_VER)&&defined(_WIN32) || defined(__BORLANDC__)&&defined(__WIN32__) || defined(__GNUC__)&&defined(__MINGW32__)&&defined(_WIN32) )
         do 
         {
             c = getc( pInp->f );

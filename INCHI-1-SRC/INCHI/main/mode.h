@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-license.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -23,103 +45,81 @@
 
 #include <stdio.h>
 
-#ifndef INCHI_ALL_CPP
-#ifdef __cplusplus
-extern "C" {
+    
+
+
+/*******************/
+/*                 */
+/*  BUILD TARGETS  */
+/*                 */
+/*******************/
+
+/*	Valid targets are:
+
+TARGET_EXE_STANDALONE
+    Stand-alone executable inchi-1[.exe] 
+TARGET_API_LIB
+    Library (libinchi) for using InChI API described in inchi_api.h
+TARGET_EXE_USING_API
+    Executable (INCHI_MAIN) which uses API library (e.g., libinchi.dll)
+TARGET_LIB_FOR_WINCHI
+    library for wInChI
+
+    Select and uncomment one from the list below. */
+
+
+#define TARGET_EXE_STANDALONE 1
+/* #define TARGET_API_LIB */
+/* #define TARGET_EXE_USING_API */
+/* #define TARGET_LIB_FOR_WINCHI 1 */
+
+    
+/****************************/	
+/*                          */
+/*  BUILD OPTIONS/FEATURES  */
+/*                          */
+/****************************/	
+
+/*	Possible options are:
+
+BUILD_LINK_AS_DLL
+    Link library as a Win32 DLL or to eliminate stricmp duplication
+    (use with TARGET_API_LIB or TARGET_EXE_USING_API) 
+
+BUILD_WITH_ENG_OPTIONS
+    Expose engineering options
+
+BUILD_WITH_AMI
+    Turns on AMI (Allow Multiple Inputs) mode for standalone executable
+
+    Select and uncomment whichever are necessary from the list below. */
+
+
+/* #define BUILD_LINK_AS_DLL */
+
+/* #define BUILD_WITH_ENG_OPTIONS 1 */
+
+#ifndef BUILD_WITH_AMI
+/* this allows BUILD_WITH_AMI be #defined in a makefile */
+#define BUILD_WITH_AMI 1
+#endif
+/* NB:  AMI mode is only for stand-alone executable */
+#ifndef TARGET_EXE_STANDALONE
+#ifdef BUILD_WITH_AMI
+#undef BUILD_WITH_AMI
 #endif
 #endif
 
 
-/*
-    BUILD TARGET IS DETERMINED BY THE FOLLOWING DEFINES:
 
-if (defined)        compile/build
--------------       -------------       
-
-INCHI_LIBRARY       library (libinchi) for using InChI API described in inchi_api.h
-
-INCHI_LINK_AS_DLL   INChI library as a Win32 DLL or to eliminate stricmp duplication
-
-INCHI_MAIN          INCHI_MAIN.exe that calls INCHI_DLL.dll 
-
-INCHI_STANDALONE_EXE      
-                    InChI stand-alone executable
-
-INCHI_LIB           wInChI
-
-
-*/
-
-#if 0
-#ifndef INCHI_LIB
-#define INCHI_LIB 1
-#endif
-#endif
-
-
-/* make stand-alone command-line executable */
-#define INCHI_STANDALONE_EXE 1
-
-/* uncomment to create a library for using INChI API described in inchi_api.h */
-/* #define INCHI_LIBRARY */
-
-/* uncomment to use INChI library as a Win32 DLL or to eliminate stricmp duplication */
-/* #define INCHI_LINK_AS_DLL */
-
-/* Uncomment to compile INCHI_MAIN.exe that calls INCHI_DLL.dll */
-/* #define INCHI_MAIN */
-
-
-/* Uncomment to show engineering options in help screen */
-/* #define ENABLE_ENGINEERING_OPTIONS 1 */
-
-/* uncomment to unconditionally force ANSI-89 C, no Win32 specific code */
-/* #define INCHI_ANSI_ONLY */
-
-#ifdef INCHI_ANSI_ONLY
-/*#define ADD_NON_ANSI_FUNCTIONS */ /* uncomment to add stricmp(), etc., see util.c */
-#endif
-
-
-#if(!defined(_MSC_VER) || defined(INCHI_LIBRARY))  /* non-Microsoft GNU C, BCC, etc. compilers */
-#ifndef INCHI_ANSI_ONLY
-#define INCHI_ANSI_ONLY
-#endif
-#endif
-
-/* #define INCHI_ALL_CPP */   /* uncomment to allow C++ compilation/linkage of functions prototyped in .h files */
-
-#ifdef _MSC_VER
-/*
-========== disable MS VC++ 6.0 Level 4 compiler warnings: ==============
- C4706: assignment within conditional expression
- C4127: conditional expression is constant
- C4244: '=' : conversion from 'int ' to '???', possible loss of data
- C4701: local variable '???' may be used without having been initialized (removed)
- C4514: unreferenced inline/local function has been removed (C++)
- C4100: 'identifier' : unreferenced formal parameter
- C4786: 'identifier' : identifier was truncated to 'number' characters in the debug information
- C4996: 'identifier' was declared deprecated
-========================================================================
-*/
-   #pragma warning( disable : 4706 4127 4514 4100 4786 4996 )
-#endif
-
-
-#define BUILD_INFO ", Software version 1.03 Build of June 15, 2010"
-
-
-#define bRELEASE_VERSION  1    /* 1=> release version; comment out to disable */
-
-#ifndef bRELEASE_VERSION 
-#define bRELEASE_VERSION  0    /* 0=> debug version */
-#endif
-
+/* CML input is not supported started from v. 1.04 */
+/* set ADD_CMLPPP to zero to override possble makefile define */
+#define ADD_CMLPP 0
+#if 0 /* obsolete */
 #ifndef ADD_CMLPP
 /* this allows ADD_CMLPP be #defined in a makefile */
-#define ADD_CMLPP        0    /* 1 => add CMLPP input */
+#define ADD_CMLPP        1
 #endif
-
 #if ( ADD_CMLPP == 1 )
 #ifdef USE_CMLPPDLL
 /* 1200 is VC++ 6.0 version, 1300 is VC++ .NET; USE_CMLPPDLL may be #defined in a makefile*/
@@ -128,9 +128,136 @@ INCHI_LIB           wInChI
 #endif
 #endif
 #endif
+#endif
+
+    
+    
+    
+/*****************************/	
+/*                           */
+/* COMPILE OPTIONS/FEATURES  */
+/*                           */
+/*****************************/	
+
+/*	Possible options are:
+
+COMPILE_ANSI_ONLY
+    Unconditionally force ANSI-89 C, no Win32 specific code
+
+COMPILE_ADD_NON_ANSI_FUNCTIONS
+    Use with COMPILE_ANSI_ONLY to add stricmp(), etc., see util.c
+    
+COMPILE_ALL_CPP
+    allow C++ compilation/linkage of functions prototyped in .h files
+
+MS VC compiler pragmas
+
+    Select and uncomment whichever are necessary from the list below. */
+
+
+/* #define COMPILE_ANSI_ONLY */
+#if ( !defined(_MSC_VER) || defined(TARGET_API_LIB))  /* non-Microsoft GNU C, BCC, etc. compilers */
+#ifndef COMPILE_ANSI_ONLY
+#define COMPILE_ANSI_ONLY
+#endif
+#endif
+#ifdef COMPILE_ANSI_ONLY
+/*#define COMPILE_ADD_NON_ANSI_FUNCTIONS */ 
+#endif
+
+/* #define COMPILE_ALL_CPP */
+
+#ifdef _MSC_VER
+/*
+========== disable MS VC++ 6.0 Level 4 compiler warnings: ==============
+ C4706: assignment within conditional expression
+ C4127: conditional expression is constant
+ C4244: '=' : conversion from 'int ' to '???', possible loss of data
+ C4267: '=' : conversion from 'size_t' to 'int', possible loss of data
+ C4701: local variable '???' may be used without having been initialized (removed)
+ C4514: unreferenced inline/local function has been removed (C++)
+ C4100: 'identifier' : unreferenced formal parameter
+ C4786: 'identifier' : identifier was truncated to 'number' characters in the debug information
+ C4996: 'identifier' was declared deprecated
+========================================================================
+*/
+   #pragma warning( disable : 4706 4127 4514 4100 4786 4996 4244 4267 )
+#endif
+
+
+
+/* TARGET_ID_STRING */
+#define TARGET_ID_STRING ", Software version 1.04 Build of September 9, 2011"
+
+
+#ifndef COMPILE_ALL_CPP
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
+
+
+
+
+/*********************/
+/*                   */
+/*  INCHI ALGORITHM  */
+/*                   */
+/*********************/
+
+#define INCHI_VERSION       "1"
+
+#if 0	/* obsolete */
+/*#define INCHI_VERSION     "0.9Beta"  */
+/*#define INCHI_VERSION     "0.91Beta" */  /* 10-10-2002: sent to Jonathan Goodman */
+/*#define INCHI_VERSION     "0.92Beta" */  /* 11-15-2002: added Hill notation; sent to S.Heller & S.Stein */
+/*#define INCHI_VERSION     "0.93Beta" */  /* 12-09-2002: Fixed isotopic canon. bug & chiralanes; sent to S.Heller & A. McNaught */
+/*#define INCHI_VERSION     "0.931Beta" */  /* Non-BNS without salts released to PMR 01-2003 */
+/*#define INCHI_VERSION     "0.932Beta" */      /* Released to CAS 04-01-2003:
+                                            * - Improved taut. definitions as compared to 01-2003;
+                                            * - fixed bug: non-isotopic components' stereo missing from isotopic stereo
+                                            * - fixed bug: couldn't properly read Unix files (EOL = LF instead of CR/LF)
+                                            *   (effective only for MS VC++, Borland and MinGW/GCC compiles that accept "rb" mode of fopen)
+                                            *   DJGPP/GCC does not seem to need this fix.
+                                            */
+/*==== Release version ===*/
+/*#define INCHI_VERSION     "0.94Beta" */       /* 02-27-2003: Balanced network search to find alt paths and non-stereo bonds;
+                                                      Implemented salts disconnection; added (-) to taut groups */
+/*#define INCHI_VERSION     "1.12Beta" */       /* 1.12: 07-06-2004: sort order: No H formula,..; Pointed end stereo ON, Aggressive (de)protonation OFF */
+                                                /* 1.11: 05-19-2004: annotated plain text output, fixed bugs */
+                                                /* 1.1:  04-08-2004: variable protonation version */
+                                                /* 1.01: 12-23-2003 protected bonds, isotopic canonicalization in GetBaseCanonRanking() */
+                                                /* 1.02: 01-26-2004 fixed new isotopic tgroup canon bug, molfile merge bug */
+
+/*#define INCHI_VERSION       "1.0RC"*/             /* 02-07-2005 v1.0 Release Candidate */
+#endif
+
+#define INCHI_NAME          "InChI"
+#if 0	/* obsolete */
+#define INCHI_REC_NAME      "ReChI"
+#endif
+
+#define INCHI_NAM_VER_DELIM "="
+
+#ifdef _WIN32
+#define   INCHI_OPTION_PREFX  '/'
+#define   INCHI_PATH_DELIM    '\\'
+#else
+#define   INCHI_OPTION_PREFX  '-'
+#define   INCHI_PATH_DELIM    '/'
+#endif
+
+#define   INCHI_ALT_OPT_PREFIX  '-'
+#define   INCHI_ACD_LABS_PREFIX '-'
+
+#define bRELEASE_VERSION  1    /* 1=> release version; comment out to disable */
+#ifndef bRELEASE_VERSION 
+#define bRELEASE_VERSION  0    /* 0=> debug version */
+#endif
+
 
 /* display (non-canonical) c-groups, display orig at numbers */
-#if( bRELEASE_VERSION == 1 )
+#if ( bRELEASE_VERSION == 1 )
 #define DISPLAY_DEBUG_DATA_C_POINT 0  /* disabled release version for now */
 #define DISPLAY_ORIG_AT_NUMBERS    1  /* 1 => in an uncanonicalized components display orig. atom numbers (default) */
 #else
@@ -142,6 +269,9 @@ INCHI_LIB           wInChI
 #define DISPLAY_DEBUG_DATA         DISPLAY_DEBUG_DATA_C_POINT
 #endif
 
+
+
+/* BUG FIXES */
 
 /**************************/
 /* bug fixes in v1.00     */
@@ -195,8 +325,11 @@ INCHI_LIB           wInChI
                                         atom resulted in neutralizing H but not adjusting 
                                         charge of heavy atom */
 
+#define FIX_AROM_RADICAL              1 /* (2011-05-09) 1=> Fix bug which leads for different InChI */
+                                        /* on atomic permitations for systems containing radical at */
+                                        /* atom in aromatic ring */
 
-#if( !defined(INCHI_LIBRARY) && !defined(INCHI_MAIN) )
+#if ( !defined(TARGET_API_LIB) && !defined(TARGET_EXE_USING_API) )
 #define I2S_MODIFY_OUTPUT             1  /* 1=> Allow various InChI2InChI output types from cInChI */
 #else
 #define I2S_MODIFY_OUTPUT             0  /* 0=> Always */
@@ -214,7 +347,7 @@ INCHI_LIB           wInChI
 #define SDF_OUTPUT_DT               1  /* 1=> all option -SdfAtomsDT to output D and T into SDfile */
 #define CHECK_AROMBOND2ALT          1  /* 1=> check whether arom->alt bond conversion succeeded */
 
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
 #define READ_INCHI_STRING           0  /* 1=> input InChI string and process it */
 #else
 #define READ_INCHI_STRING           1  /* 1=> input InChI string and process it */
@@ -233,7 +366,7 @@ INCHI_LIB           wInChI
 #define KETO_ENOL_TAUT             1 /* include keto-enol tautomerism */
 #define TAUT_15_NON_RING           1 /* 1,5 tautomerism with endpoints not in ring */
 
-/* v.1.03 : still experimental but may be exposed (set to 1) */
+/* v.1.04 : still experimental but may be exposed (set to 1) */
 #define UNDERIVATIZE               0 /* split to possible underivatized fragments */
 #define RING2CHAIN                 0 /* open rings R-C(-OH)-O-R => R-C(=O) OH-R   */
 
@@ -296,34 +429,6 @@ INCHI_LIB           wInChI
 #define bOUTPUT_ONE_STRUCT_TIME     1  /* 1 => output each structure time (non-release only) */
 
 
-/*#define INCHI_VERSION     "0.9Beta"  */
-/*#define INCHI_VERSION     "0.91Beta" */  /* 10-10-2002: sent to Jonathan Goodman */
-/*#define INCHI_VERSION     "0.92Beta" */  /* 11-15-2002: added Hill notation; sent to S.Heller & S.Stein */
-/*#define INCHI_VERSION     "0.93Beta" */  /* 12-09-2002: Fixed isotopic canon. bug & chiralanes; sent to S.Heller & A. McNaught */
-/*#define INCHI_VERSION     "0.931Beta" */  /* Non-BNS without salts released to PMR 01-2003 */
-/*#define INCHI_VERSION     "0.932Beta" */      /* Released to CAS 04-01-2003:
-                                            * - Improved taut. definitions as compared to 01-2003;
-                                            * - fixed bug: non-isotopic components' stereo missing from isotopic stereo
-                                            * - fixed bug: couldn't properly read Unix files (EOL = LF instead of CR/LF)
-                                            *   (effective only for MS VC++, Borland and MinGW/GCC compiles that accept "rb" mode of fopen)
-                                            *   DJGPP/GCC does not seem to need this fix.
-                                            */
-/*==== Release version ===*/
-/*#define INCHI_VERSION     "0.94Beta" */       /* 02-27-2003: Balanced network search to find alt paths and non-stereo bonds;
-                                                      Implemented salts disconnection; added (-) to taut groups */
-/*#define INCHI_VERSION     "1.12Beta" */       /* 1.12: 07-06-2004: sort order: No H formula,..; Pointed end stereo ON, Aggressive (de)protonation OFF */
-                                                /* 1.11: 05-19-2004: annotated plain text output, fixed bugs */
-                                                /* 1.1:  04-08-2004: variable protonation version */
-                                                /* 1.01: 12-23-2003 protected bonds, isotopic canonicalization in GetBaseCanonRanking() */
-                                                /* 1.02: 01-26-2004 fixed new isotopic tgroup canon bug, molfile merge bug */
-
-/*#define INCHI_VERSION       "1.0RC"*/             /* 02-07-2005 v1.0 Release Candidate */
-
-#define INCHI_VERSION       "1"
-#define INCHI_NAME          "InChI"
-#define INCHI_REC_NAME      "ReChI"
-
-#define INCHI_NAM_VER_DELIM "="
 
 /* constants and array sizes */
 
@@ -354,27 +459,6 @@ INCHI_LIB           wInChI
 #define TEST_RENUMB_SWITCH          0    /* 1 => display & output another (different) picture */
 #define TEST_RENUMB_ATOMS_SAVE_LONGEST 0 /* 1 => save the component with largest processing time into the problem file */
 
-#if ( defined(_WIN32) && defined(_DEBUG) && defined(_MSC_VER) /*&& !defined(INCHI_ANSI_ONLY)*/ )
-/* debug: memory leaks tracking */
-#ifndef INCHI_LIB
-
-#ifndef DO_NOT_TRACE_MEMORY_LEAKS
-#define TRACE_MEMORY_LEAKS          1    /* 1=>trace, 0 => do not trace (Debug only) */
-#else
-#define TRACE_MEMORY_LEAKS          0
-#endif
-
-#else
-
-#define TRACE_MEMORY_LEAKS          1    /* 1=>trace, **ALWAYS** =1 for INCHI_LIB */
-
-#endif
-
-#else /* not MSC and not Debug */
-
-#define TRACE_MEMORY_LEAKS          0    /* 0: do not change */
-
-#endif
 
 /* stereo */
 
@@ -472,13 +556,13 @@ INCHI_LIB           wInChI
                                        /* instead of ranks */
 /* consistency */
 
-#if( bRELEASE_VERSION==1 && bOUTPUT_ONE_STRUCT_TIME==1)
+#if ( bRELEASE_VERSION==1 && bOUTPUT_ONE_STRUCT_TIME==1)
 #undef bOUTPUT_ONE_STRUCT_TIME
 #define bOUTPUT_ONE_STRUCT_TIME 0
 #endif
 
 /* consistency: bRELEASE_VERSION==1 needs FIND_RING_SYSTEMS=1 */
-#if( bRELEASE_VERSION==1 && FIND_RING_SYSTEMS!=1 )
+#if ( bRELEASE_VERSION==1 && FIND_RING_SYSTEMS!=1 )
 #ifdef FIND_RING_SYSTEMS
 #undef FIND_RING_SYSTEMS
 #endif
@@ -486,9 +570,9 @@ INCHI_LIB           wInChI
 #endif
 
 /* consistency: FIND_RINS_SYSTEMS_DISTANCES needs FIND_RING_SYSTEMS  */
-#if( FIND_RING_SYSTEMS != 1 )
+#if ( FIND_RING_SYSTEMS != 1 )
 
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
 #undef  FIND_RINS_SYSTEMS_DISTANCES
 #define FIND_RINS_SYSTEMS_DISTANCES 0
 #endif
@@ -496,14 +580,14 @@ INCHI_LIB           wInChI
 #endif
 
 /* consistency: USE_DISTANCES_FOR_RANKING and DISPLAY_RING_SYSTEMS need FIND_RINS_SYSTEMS_DISTANCES */
-#if( FIND_RINS_SYSTEMS_DISTANCES != 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES != 1 )
 
-#if( USE_DISTANCES_FOR_RANKING == 1 )
+#if ( USE_DISTANCES_FOR_RANKING == 1 )
 #undef  USE_DISTANCES_FOR_RANKING
 #define USE_DISTANCES_FOR_RANKING 0
 #endif
 
-#if( DISPLAY_RING_SYSTEMS == 1 )
+#if ( DISPLAY_RING_SYSTEMS == 1 )
 #undef  DISPLAY_RING_SYSTEMS
 #define DISPLAY_RING_SYSTEMS 0
 #endif
@@ -511,7 +595,7 @@ INCHI_LIB           wInChI
 #endif
 
 
-#if( FIND_RING_SYSTEMS==1 && (TAUT_TROPOLONE_7==1 || TAUT_TROPOLONE_5==1 || TAUT_4PYRIDINOL_RINGS==1 || TAUT_PYRAZOLE_RINGS) )
+#if ( FIND_RING_SYSTEMS==1 && (TAUT_TROPOLONE_7==1 || TAUT_TROPOLONE_5==1 || TAUT_4PYRIDINOL_RINGS==1 || TAUT_PYRAZOLE_RINGS) )
 #define TAUT_OTHER 1
 #else
 #define TAUT_OTHER 0
@@ -633,7 +717,7 @@ INCHI_LIB           wInChI
 #if !defined( CT_ATOMID )
   #error  You have to #define CT_ATOMID
 #else
-#if( defined( CT_ATOMID ) && CT_ATOMID==CT_ATOMID_DONTINCLUDE )
+#if ( defined( CT_ATOMID ) && CT_ATOMID==CT_ATOMID_DONTINCLUDE )
   #error  CT_DELIMITER should be #defined if CT_ATOMID is not included
 #endif
 #endif
@@ -667,7 +751,7 @@ INCHI_LIB           wInChI
 #define MAX_NUM_STEREO_ATOM_NEIGH 4
 #define STEREO_AT_MARK            8 /* > MAX_NUM_STEREO_BONDS */
 
-#if( ONLY_DOUBLE_BOND_STEREO == 1 )  /* { */
+#if ( ONLY_DOUBLE_BOND_STEREO == 1 )  /* { */
 
 #ifdef ALLOW_TAUT_ATTACHMENTS_TO_STEREO_BONDS
 #undef ALLOW_TAUT_ATTACHMENTS_TO_STEREO_BONDS
@@ -687,7 +771,7 @@ INCHI_LIB           wInChI
 #endif /* } ONLY_DOUBLE_BOND_STEREO */
 
 /* dependent definitions due to settings */
-#if( ALL_ALT_AS_AROMATIC == 1 && DOUBLE_BOND_NEIGH_LIST != 0 )
+#if ( ALL_ALT_AS_AROMATIC == 1 && DOUBLE_BOND_NEIGH_LIST != 0 )
 #undef DOUBLE_BOND_NEIGH_LIST
 #define DOUBLE_BOND_NEIGH_LIST 0
 #endif
@@ -725,7 +809,7 @@ INCHI_LIB           wInChI
 #define TG_FLAG_VARIABLE_PROTONS         0x00000800   /* add/remove protons to neutralize */
 #define TG_FLAG_HARD_ADD_REM_PROTONS     0x00001000   /* add/remove protons to neutralize in hard way */
 #define TG_FLAG_POINTED_EDGE_STEREO      0x00002000   /* only pointed edge of stereo bond defines stereo */
-#if( FIX_ADJ_RAD == 1 )
+#if ( FIX_ADJ_RAD == 1 )
 #define TG_FLAG_FIX_ADJ_RADICALS         0x00004000   /* remove adjacent radical-doubletes, fix valence */
 #endif
 #define TG_FLAG_PHOSPHINE_STEREO         0x00008000   /* add phosphine sp3 stereo */
@@ -763,11 +847,11 @@ INCHI_LIB           wInChI
 #define TG_FLAG_FOUND_SALT_CHARGES_DONE  0x00002000   /* not assigned: preprocessing detected possibility of salt-type tautomerism */
 #define TG_FLAG_FOUND_ISOTOPIC_H_DONE    0x00004000   /* preprocessing detected isotopic H on "good" heteroatoms or isotopic H(+) */
 #define TG_FLAG_FOUND_ISOTOPIC_ATOM_DONE 0x00008000   /* preprocessing detected isotopic H on "good" heteroatoms or isotopic H(+) */
-#if( FIX_ADJ_RAD == 1 )
+#if ( FIX_ADJ_RAD == 1 )
 #define TG_FLAG_FIX_ADJ_RADICALS_DONE    0x00010000
 #endif
 
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
 #define READ_INCHI_OUTPUT_INCHI          0x00000001
 #define READ_INCHI_SPLIT_OUTPUT          0x00000002
 #define READ_INCHI_KEEP_BALANCE_P        0x00000004
@@ -775,28 +859,21 @@ INCHI_LIB           wInChI
 #endif
 
 
-#ifdef _WIN32
 
-#define   INCHI_OPTION_PREFX  '/'
-#define   INCHI_PATH_DELIM    '\\'
 
-#else
+/*********/
+/*       */
+/*  I/O  */
+/*       */
+/*********/
 
-#define   INCHI_OPTION_PREFX  '-'
-#define   INCHI_PATH_DELIM    '/'
-
-#endif
-
-#define   INCHI_ALT_OPT_PREFIX  '-'
-#define   INCHI_ACD_LABS_PREFIX '-'
-
-typedef struct tagOutputString {
+typedef struct tagOutputString 
+{
     char *pStr;
     int  nAllocatedLength;
     int  nUsedLength;
     int  nPtr;
 } INCHI_OUTPUT;
-
 
 typedef struct tagOutputStream 
 {
@@ -812,17 +889,41 @@ typedef struct tagOutputStream
 #define INCHI_IOSTREAM_FILE 2
 
 
+
+
+/***********/
+/*         */
+/*  DEBUG  */
+/*         */
+/***********/
+
+#if ( defined(_WIN32) && defined(_DEBUG) && defined(_MSC_VER) /*&& !defined(COMPILE_ANSI_ONLY)*/ )
+/* debug: memory leaks tracking */
+#ifndef TARGET_LIB_FOR_WINCHI
+#ifndef DO_NOT_TRACE_MEMORY_LEAKS
+#define TRACE_MEMORY_LEAKS          1    /* 1=>trace, 0 => do not trace (Debug only) */
+#else
+#define TRACE_MEMORY_LEAKS          0
+#endif
+#else
+#define TRACE_MEMORY_LEAKS          1    /* 1=>trace, **ALWAYS** =1 for TARGET_LIB_FOR_WINCHI */
+#endif
+#else /* not MSC and not Debug */
+#define TRACE_MEMORY_LEAKS          0    /* 0: do not change */
+#endif
+
+
 /* memory leaks tracking */
 #define INCHI_HEAPCHK          /* default: no explicit heap checking during the execution */
 
-#if( TRACE_MEMORY_LEAKS == 1 )
+#if ( TRACE_MEMORY_LEAKS == 1 )
 #ifdef _DEBUG
 
 #define   inchi_malloc(s)         _malloc_dbg(s, _NORMAL_BLOCK, __FILE__, __LINE__)
 #define   inchi_calloc(c, s)      _calloc_dbg(c, s, _NORMAL_BLOCK, __FILE__, __LINE__)
 #define   inchi_free(p)           _free_dbg(p, _NORMAL_BLOCK)
 
-#ifdef INCHI_MAIN
+#ifdef TARGET_EXE_USING_API
 /* INChI_MAIN specific */
 #define e_inchi_malloc(a)   inchi_malloc(a)
 #define e_inchi_calloc(a,b) inchi_calloc(a,b)
@@ -856,14 +957,21 @@ do {\
 */
 #endif
 
-
 #else
 #undef  TRACE_MEMORY_LEAKS
 #define TRACE_MEMORY_LEAKS 0
 #endif  /* _DEBUG */
 #endif  /* TRACE_MEMORY_LEAKS */
 
-#ifdef INCHI_MAIN
+
+
+/***********/
+/*         */
+/*  ALLOC  */
+/*         */
+/***********/
+
+#ifdef TARGET_EXE_USING_API
 /* INChI_MAIN specific */
 #ifndef inchi_malloc
 #define inchi_malloc   e_inchi_malloc
@@ -885,7 +993,7 @@ do {\
 #define e_inchi_free(X) do{ if(X) free(X); }while(0)
 #endif
 
-#else /* not INCHI_MAIN */
+#else /* not TARGET_EXE_USING_API */
 
 #ifndef inchi_malloc
 #define inchi_malloc   malloc
@@ -897,12 +1005,12 @@ do {\
 #define inchi_free(X)  do{ if(X) free(X); }while(0)
 #endif
 
-#endif /* INCHI_MAIN */
+#endif /* TARGET_EXE_USING_API */
 
 /* allocation/deallocation */
 #define USE_ALLOCA 0
 
-#if( USE_ALLOCA == 1 )
+#if ( USE_ALLOCA == 1 )
 #define qmalloc(X) _alloca(X)
 #define qfree(X)   do{(X)=NULL;}while(0)
 #else
@@ -910,7 +1018,7 @@ do {\
 #define qfree(X)   do{if(X){inchi_free(X);(X)=NULL;}}while(0)
 #endif
 
-#if( defined(_MSC_VER) && _MSC_VER >= 800 )
+#if ( defined(_MSC_VER) && _MSC_VER >= 800 )
 #define fast_alloc(X) _alloca(X)
 #define fast_free(X)
 #else
@@ -946,7 +1054,10 @@ do {\
         } else { (ERR) = 0; } \
     } while(0)
 
-#ifndef INCHI_ALL_CPP
+
+
+
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif

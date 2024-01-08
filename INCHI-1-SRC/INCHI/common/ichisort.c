@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -521,10 +543,10 @@ int BreakAllTies( int num_atoms, int num_max, AT_RANK **pRankStack,
     AT_RANK *nNewAtomNumber  = NULL;
         
     if ( !pRankStack[0] ) {
-        pRankStack[0] = (AT_RANK *)inchi_malloc(num_max*sizeof(*nNewRank));
+        pRankStack[0] = (AT_RANK *) inchi_malloc(num_max*sizeof(*nNewRank));
     }
     if ( !pRankStack[1] ) {
-        pRankStack[1] = (AT_RANK *)inchi_malloc(num_max*sizeof(*nNewAtomNumber));
+        pRankStack[1] = (AT_RANK *) inchi_malloc(num_max*sizeof(*nNewAtomNumber));
     }
     if ( !pRankStack[0] || !pRankStack[1] )
         return CT_OUT_OF_RAM;  /*   <BRKPT> */

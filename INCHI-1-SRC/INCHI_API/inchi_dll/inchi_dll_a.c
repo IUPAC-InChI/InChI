@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -371,7 +393,7 @@ int p;
 
 
     if ( argc == 1
-#ifdef INCHI_LIBRARY
+#ifdef TARGET_API_LIB
         && (!pInp || pInp->num_atoms <= 0 || !pInp->atom)
 #endif        
         || argc==2 && ( argv[1][0]==INCHI_OPTION_PREFX ) &&
@@ -451,12 +473,12 @@ ret:switch (retcode)
         default         : retcode = inchi_Ret_UNKNOWN; break;   /* Unlnown program error */
     }
 
-	if (!pGenData)
-	{
-		strcpy(pGenData->pStrErrStruct, sd->pStrErrStruct);
-		for (p=0; p < INCHI_NUM; p++)  
-			pGenData->num_components[p] = sd->num_components[p];
-	}
+    if (!pGenData)
+    {
+        strcpy(pGenData->pStrErrStruct, sd->pStrErrStruct);
+        for (p=0; p < INCHI_NUM; p++)  
+            pGenData->num_components[p] = sd->num_components[p];
+    }
 
     return retcode;
 }
@@ -1302,7 +1324,7 @@ INCHIGEN_CONTROL * HGen = (INCHIGEN_CONTROL *)_HGen;
         memset(HGen->pINChI,     0, sizeof(HGen->pINChI) );
         memset(HGen->pINChI_Aux, 0, sizeof(HGen->pINChI_Aux) );
         
-		HGen->szTitle[0] = '\0';
+        HGen->szTitle[0] = '\0';
     }
 
     memset(&(HGen->StructData), 0, sizeof(STRUCT_DATA) );    
@@ -1346,13 +1368,13 @@ INCHIGEN_CONTROL * HGen = (INCHIGEN_CONTROL *)_HGen;
 
 /********************************************************************/
 
-#if( defined( _WIN32 ) && defined( _MSC_VER ) && _MSC_VER >= 800 && defined(_USRDLL) && defined(INCHI_LINK_AS_DLL) )
+#if( defined( _WIN32 ) && defined( _MSC_VER ) && _MSC_VER >= 800 && defined(_USRDLL) && defined(BUILD_LINK_AS_DLL) )
     /* Win32 & MS VC ++, compile and link as a DLL */
 /*********************************************************/
 /*   C calling conventions export from Win32 dll         */
 /*********************************************************/
 /* prototypes */
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1371,7 +1393,7 @@ void cdecl_INCHIGEN_Reset( INCHIGEN_HANDLE HGen, INCHIGEN_DATA * pGenData, inchi
 void cdecl_STDINCHIGEN_Reset( INCHIGEN_HANDLE HGen, INCHIGEN_DATA * pGenData, inchi_Output * pResults); 
 void cdecl_INCHIGEN_Destroy( INCHIGEN_HANDLE HGen ); 
 void cdecl_STDINCHIGEN_Destroy( INCHIGEN_HANDLE HGen ); 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif
@@ -1456,7 +1478,7 @@ void cdecl_STDINCHIGEN_Destroy( INCHIGEN_HANDLE HGen )
 /*********************************************************/
 /*   Pacal calling conventions export from Win32 dll     */
 /*********************************************************/
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1477,7 +1499,7 @@ void PASCAL pasc_INCHIGEN_Reset( INCHIGEN_HANDLE HGen, INCHIGEN_DATA *pGenData, 
 void PASCAL pasc_STDINCHIGEN_Reset( INCHIGEN_HANDLE HGen, INCHIGEN_DATA *pGenData, inchi_Output *pResults ); 
 void PASCAL pasc_INCHIGEN_Destroy(INCHIGEN_HANDLE HGen); 
 void PASCAL pasc_STDINCHIGEN_Destroy(INCHIGEN_HANDLE HGen); 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif

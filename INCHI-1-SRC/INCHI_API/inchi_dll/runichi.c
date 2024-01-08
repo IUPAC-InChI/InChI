@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -31,7 +53,7 @@
 
 #include "ichitime.h"
 
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
 #include <conio.h>
 #endif
 
@@ -46,14 +68,14 @@
 #include "ichitaut.h"
 #include "ichi_io.h"
 
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
 #include "ichi_lib.h"
 #endif
 #include "inchi_api.h"
 
 #include "ichicomp.h"
 
-#if( ADD_CMLPP == 1 )
+#if ( ADD_CMLPP == 1 )
 #include "readcml.hpp"
 #include "debug.h"
 #endif
@@ -86,14 +108,14 @@ int DetectInputINChIFileType( FILE **inp_file, INPUT_PARMS *ip, const char *fmod
 int (*ConsoleQuit)(void) = NULL; /*  Console user issued CTRL+C etc. */
 int (*UserAction)(void)  = NULL; /*  callback */
 
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
 void (*FWPRINT) (const char * format, va_list argptr )=NULL;
 void (*DRAWDATA) ( struct DrawData * pDrawData) = NULL;
 int (*DRAWDATA_EXISTS) ( int nComponent, int nType, int bReconnected ) = NULL;
 struct DrawData * (*GET_DRAWDATA) ( int nComponent, int nType, int bReconnected ) = NULL;
 #endif
 
-#if( TEST_RENUMB_ATOMS == 1 ) /* { */
+#if ( TEST_RENUMB_ATOMS == 1 ) /* { */
 /************************************************/
 /*    atoms renumbering -- for testing only     */
 /************************************************/
@@ -102,7 +124,7 @@ typedef struct tagRenumbData {
     PINChI_Aux2     ren_INChI_Aux[1];
     INP_ATOM_DATA  orig_inp_cur_data;
     INP_ATOM_DATA  saved_inp_cur_data;
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
     INP_ATOM_DATA  longest_inp_cur_data;
 #endif
     INP_ATOM_DATA  ren_inp_norm_data1, ren_inp_norm_data2;
@@ -134,7 +156,7 @@ int RenumberingTest( INChI *pINChI[][TAUT_NUM], INChI_Aux *pINChI_Aux[][TAUT_NUM
 
 
 
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
 /********************************************************************/
 void FillTableParms( SET_DRAW_PARMS *sdp, INChI **cur_INChI, INChI_Aux **cur_INChI_Aux,
                      INCHI_MODE nMode, int bShowIsotopic, int indx )
@@ -144,7 +166,7 @@ void FillTableParms( SET_DRAW_PARMS *sdp, INChI **cur_INChI, INChI_Aux **cur_INC
     int  i, j;
     INChI_Stereo *Stereo;
     int          bShowTaut = (cur_INChI && cur_INChI[indx]->lenTautomer > 0)? 1 : 0;
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
     int bRelRac = 0 != (nMode & (REQ_MODE_RELATIVE_STEREO | REQ_MODE_RACEMIC_STEREO ));
 #endif
     if ( !cur_INChI || !cur_INChI_Aux ) {
@@ -166,7 +188,7 @@ void FillTableParms( SET_DRAW_PARMS *sdp, INChI **cur_INChI, INChI_Aux **cur_INC
     } else {
         Stereo = NULL;
     }
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
     if ( Stereo && ( 0 < Stereo->nNumberOfStereoBonds ||
                      0 < Stereo->nNumberOfStereoCenters-bRelRac ) ) {
         ReqShownFound[ilSHOWN][itSTEREO] = 'S';
@@ -282,8 +304,8 @@ void FillCompositeTableParms( SET_DRAW_PARMS *sdp, AT_NUMB StereoFlags,
 #endif
 /* IchiParm.c was here */
 /*******************************************************************/
-#ifndef INCHI_ANSI_ONLY
-#ifndef INCHI_LIB
+#ifndef COMPILE_ANSI_ONLY
+#ifndef TARGET_LIB_FOR_WINCHI
 /*******************************************************************/
 int DisplayStructure( inp_ATOM *at, int num_at, int num_removed_H, int bAdd_DT_to_num_H,
                       int nNumRemovedProtons, NUM_H *nNumRemovedProtonsIsotopic,
@@ -396,7 +418,7 @@ const char *ErrMsg( int nErrorCode )
     return p;
 }
 /***********************************************************************************/
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
 /***********************************************************************************/
 int SaveEquComponentsInfoAndSortOrder ( int iINChI, INCHI_SORT *pINChISort[TAUT_NUM], int *num_components,
                                         ORIG_ATOM_DATA *orig_inp_data, ORIG_ATOM_DATA *prep_inp_data,
@@ -413,7 +435,7 @@ int SaveEquComponentsInfoAndSortOrder ( int iINChI, INCHI_SORT *pINChISort[TAUT_
 
     if ( num_components[iINChI] <= 1 )
         return 0;
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
     if ( !DRAWDATA )
         return 0;
 #endif
@@ -450,7 +472,7 @@ int SaveEquComponentsInfoAndSortOrder ( int iINChI, INCHI_SORT *pINChISort[TAUT_
                         }
                     }
                     if ( i2 - i1 - nNumDeleted > 1 ) {
-                        if (  inp_data->nEquLabels ||
+                        if ( inp_data->nEquLabels ||
                              (inp_data->nEquLabels = (AT_NUMB *)inchi_calloc(inp_data->num_inp_atoms+1,
                                                  sizeof(inp_data->nEquLabels[0]))) ) {
                             nSet ++; /* found i2-i1 equivalent components && memory has been allocated */
@@ -489,7 +511,7 @@ int SaveEquComponentsInfoAndSortOrder ( int iINChI, INCHI_SORT *pINChISort[TAUT_
             for ( i1 = 0; i1 < num_components[iINChI]; i1 ++ ) {
                 prep_inp_data[iINChI].nSortedOrder[i1+1] = pINChISort[TAUT_YES][i1].ord_number+1;
             }
-#ifdef INCHI_LIB /* { */
+#ifdef TARGET_LIB_FOR_WINCHI /* { */
             if ( DRAWDATA && GET_DRAWDATA && inp_data->nNumEquSets > 0 && inp_data->nEquLabels ) {
                 int    nType = inp_data->bPreprocessed[iINChI]?
                                         COMPONENT_ORIGINAL_PREPROCESSED :
@@ -507,7 +529,7 @@ int SaveEquComponentsInfoAndSortOrder ( int iINChI, INCHI_SORT *pINChISort[TAUT_
                     }
                 }
             }
-#endif  /* } INCHI_LIB */
+#endif  /* } TARGET_LIB_FOR_WINCHI */
         }
     }
     return nRet;
@@ -572,7 +594,7 @@ int DisplayTheWholeCompositeStructure( INPUT_PARMS *ip, STRUCT_DATA *sd, long nu
                               /*j? ", mobile H":", fixed H",*/
                               k? ", isotopic":"",
                               SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue), iINChI? " (Reconnected)":"");
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
                 /****** Display composite Result structure **************/
                 nNumIntermediateTaut += (j == TAUT_INI );  /* display TAUT_INI (preprocessed) only once */
                 if ( j != TAUT_INI || nNumIntermediateTaut == 1 ) {
@@ -658,7 +680,7 @@ int DisplayTheWholeCompositeStructure( INPUT_PARMS *ip, STRUCT_DATA *sd, long nu
                     struct DrawData vDrawData;
                     struct DrawData *pDrawData;
 
-                    if (  !(ip->bCompareComponents & CMP_COMPONENTS) ||
+                    if ( !(ip->bCompareComponents & CMP_COMPONENTS) ||
                            (ip->bCompareComponents & CMP_COMPONENTS_NONTAUT) ||
                           !k != !composite_norm_data[j].bHasIsotopicLayer ) {
 
@@ -713,7 +735,7 @@ int DisplayTheWholeCompositeStructure( INPUT_PARMS *ip, STRUCT_DATA *sd, long nu
     return err;
 }
 
-#endif /*  }INCHI_ANSI_ONLY */
+#endif /*  }COMPILE_ANSI_ONLY */
 
 
 
@@ -793,7 +815,7 @@ int SortAndPrintINChI(INCHI_IOSTREAM *output_file,
 
         iINChI = j;
 
-#if( OUTPUT_CONNECTED_METAL_ONLY == 1 ) /* test: output connected as the only one INChI */
+#if ( OUTPUT_CONNECTED_METAL_ONLY == 1 ) /* test: output connected as the only one INChI */
         if ( INCHI_BAS == j && num_components[INCHI_REC] ) {
             j = INCHI_REC;
         }
@@ -822,10 +844,10 @@ int SortAndPrintINChI(INCHI_IOSTREAM *output_file,
                 break;
             }
         }
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
 /* find equivalent and wINChI display order; use requested in ip->bCompareComponents comparison */
         ret = SaveEquComponentsInfoAndSortOrder ( iINChI, pINChISort[j], num_components, orig_inp_data, prep_inp_data,
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
                                                   composite_norm_data? composite_norm_data[j]:NULL,
 #else
                                                   composite_norm_data[j],
@@ -928,7 +950,7 @@ int SortAndPrintINChI(INCHI_IOSTREAM *output_file,
                     continue;
                 }
 
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
                 if ( ikflag==0 )
                     output_file->type = INCHI_IOSTREAM_STRING;
 #endif
@@ -964,7 +986,7 @@ int SortAndPrintINChI(INCHI_IOSTREAM *output_file,
                                         save_opt_bits);
                 }
 
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
                 /* always calculate InChIKey */
                 ikflag++;
                 if (ikflag==1) 
@@ -1109,7 +1131,7 @@ const char gsEmpty[]   = "";
 const char gsSpace[]   = " ";
 const char gsEqual[]   = "=";
 
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
 /*********************************************************************************************************/
 void SplitTime( unsigned long ulTotalTime, int *hours, int *minutes, int *seconds, int *mseconds )
 {
@@ -1169,7 +1191,7 @@ int ReadTheStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, INCHI_IOSTREAM  *inp_fil
             if ( !ip->bGetMolfileNumber || ip->lMolfileNumber < 0 ) ip->lMolfileNumber = 0;
             sd->fPtrEnd = (inp_file->f == stdin)? -1 : ftell( inp_file->f );
             sd->ulStructTime += InchiTimeElapsed( &ulTStart );
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
             sd->bExtract |= orig_inp_data->bExtract;
 #endif
             /* 2004-11-16: added Molfile Chiral Flag Mode */
@@ -1246,7 +1268,7 @@ int ReadTheStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, INCHI_IOSTREAM  *inp_fil
             sd->fPtrEnd = (inp_file->f == stdin)? -1 : ftell( inp_file->f );
 
             sd->ulStructTime += InchiTimeElapsed( &ulTStart );
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
             sd->bExtract |= orig_inp_data->bExtract;
 #endif
             /* 2004-11-16: added Molfile Chiral Flag Mode */
@@ -1284,7 +1306,7 @@ int ReadTheStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, INCHI_IOSTREAM  *inp_fil
         }
         break;
 
-#if( ADD_CMLPP == 1 )
+#if ( ADD_CMLPP == 1 )
     /* BILLY 8/6/04 */
     case INPUT_CMLFILE:
         if ( orig_inp_data ) {
@@ -1307,7 +1329,7 @@ int ReadTheStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, INCHI_IOSTREAM  *inp_fil
 
 
             sd->ulStructTime += InchiTimeElapsed( &ulTStart );
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
             sd->bExtract |= orig_inp_data->bExtract;
 #endif
         } else {
@@ -1355,8 +1377,8 @@ int TreatReadTheStructureErrors(  STRUCT_DATA *sd, INPUT_PARMS *ip, int nLogMask
     /*  Skipping the structures */
     if ( *num_inp < ip->first_struct_number ) {
 
-#if ( !defined(INCHI_LIBRARY) && !defined(INCHI_STANDALONE_EXE) )
-/*^^^ #ifndef INCHI_LIBRARY */
+#if ( !defined(TARGET_API_LIB) && !defined(TARGET_EXE_STANDALONE) )
+/*^^^ #ifndef TARGET_API_LIB */
         if ( log_file->f != stderr ) {
             inchi_fprintf( stderr, "\rSkipping structure #%ld.%s%s%s%s...", *num_inp, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue));
         }
@@ -1389,7 +1411,7 @@ int TreatReadTheStructureErrors(  STRUCT_DATA *sd, INPUT_PARMS *ip, int nLogMask
         if ( nLogMask & LOG_MASK_FATAL )
             inchi_ios_eprint( log_file, "Fatal Error %d (aborted; %s) inp structure #%ld.%s%s%s%s\n",
                     sd->nStructReadError, sd->pStrErrStruct, *num_inp, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue) );
-#if( bRELEASE_VERSION == 1 || EXTR_FLAGS == 0 )
+#if ( bRELEASE_VERSION == 1 || EXTR_FLAGS == 0 )
         if ( prb_file->f && 0L <= sd->fPtrStart && sd->fPtrStart < sd->fPtrEnd && !ip->bSaveAllGoodStructsAsProblem ) {
             CopyMOLfile(inp_file->f, sd->fPtrStart, sd->fPtrEnd, prb_file->f, *num_inp);
         }
@@ -1402,7 +1424,7 @@ int TreatReadTheStructureErrors(  STRUCT_DATA *sd, INPUT_PARMS *ip, int nLogMask
             inchi_ios_eprint( log_file, "Error %d (no %s; %s) inp structure #%ld.%s%s%s%s\n",
                     sd->nStructReadError, (ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY)?"Molfile":INCHI_NAME,
                     sd->pStrErrStruct, *num_inp, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue) );
-#if( bRELEASE_VERSION == 1 || EXTR_FLAGS == 0 )
+#if ( bRELEASE_VERSION == 1 || EXTR_FLAGS == 0 )
         if ( prb_file->f && 0L <= sd->fPtrStart && sd->fPtrStart < sd->fPtrEnd && !ip->bSaveAllGoodStructsAsProblem) {
             CopyMOLfile(inp_file->f, sd->fPtrStart, sd->fPtrEnd, prb_file->f, *num_inp);
         }
@@ -1418,7 +1440,7 @@ int TreatReadTheStructureErrors(  STRUCT_DATA *sd, INPUT_PARMS *ip, int nLogMask
 
     /*  xml error/warning processing; close xml struct block if error */
     if ( (ip->bINChIOutputOptions & INCHI_OUT_XML)
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
          || (ip->bINChIOutputOptions & INCHI_OUT_WINCHI_WINDOW) && (ip->bINChIOutputOptions & INCHI_OUT_PLAIN_TEXT)
 #endif
         ) {
@@ -1454,7 +1476,7 @@ int GetOneComponent( STRUCT_DATA *sd, INPUT_PARMS *ip, INCHI_IOSTREAM *log_file,
         /* num_err ++; */
         sd->nErrorType = _IS_ERROR;
         if ( (ip->bINChIOutputOptions & INCHI_OUT_XML)
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
              || (ip->bINChIOutputOptions & INCHI_OUT_WINCHI_WINDOW) && (ip->bINChIOutputOptions & INCHI_OUT_PLAIN_TEXT)
 #endif
            ) {
@@ -1560,9 +1582,9 @@ int CreateOneComponentINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, INP_ATOM_DATA *in
     sd->ulStructTime += lElapsedTime;
 
 
-/*^^^#if( !defined( INCHI_LIB ) && !defined( INCHI_LIBRARY ) ) */
-#if( !defined( INCHI_LIB ) && !defined( INCHI_LIBRARY ) && !defined(INCHI_STANDALONE_EXE) )
-#if( TEST_RENUMB_ATOMS != 1 )
+/*^^^#if ( !defined( TARGET_LIB_FOR_WINCHI ) && !defined( TARGET_API_LIB ) ) */
+#if ( !defined( TARGET_LIB_FOR_WINCHI ) && !defined( TARGET_API_LIB ) && !defined(TARGET_EXE_STANDALONE) )
+#if ( TEST_RENUMB_ATOMS != 1 )
     /*  log file / console output */
     if ( log_file->f && log_file->f != stderr ) { /* NULL log_file now ignored. 11-23-2005 */
         if ( ip->bDisplay )
@@ -1621,7 +1643,7 @@ int CreateOneComponentINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, INP_ATOM_DATA *in
         /*  tautomeric error */
         sd->nErrorCode = cur_INChI[TAUT_YES]->nErrorCode;
     }
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
     if ( cur_INChI[TAUT_NON] ) sd->bExtract |= cur_INChI[TAUT_NON]->bExtract;
     if ( cur_INChI[TAUT_YES] ) sd->bExtract |= cur_INChI[TAUT_YES]->bExtract;
     if ( (TG_FLAG_TEST_TAUT3_SALTS_DONE & bTautFlagsDone) ) {
@@ -1638,7 +1660,7 @@ int CreateOneComponentINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, INP_ATOM_DATA *in
         ip->msec_LeftTime -= lElapsedTime;
     }
     sd->ulStructTime += lElapsedTime;
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
     /*  Display the results */
     if ( ip->bDisplay )
         eat_keyboard_input();
@@ -1722,7 +1744,7 @@ int TreatCreateOneComponentINChIError(STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATO
             sd->nErrorCode, sd->pStrErrStruct, num_inp, i+1, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue) );
         sd->nErrorType = (sd->nErrorCode==CT_OUT_OF_RAM || sd->nErrorCode==CT_USER_QUIT_ERR)? _IS_FATAL : _IS_ERROR;
         if ( (ip->bINChIOutputOptions & INCHI_OUT_XML)
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
              || (ip->bINChIOutputOptions & INCHI_OUT_WINCHI_WINDOW) && (ip->bINChIOutputOptions & INCHI_OUT_PLAIN_TEXT)
 #endif
             ) {
@@ -1739,8 +1761,8 @@ int TreatCreateOneComponentINChIError(STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATO
             }
         }
     }
-/*^^^ #ifndef INCHI_LIBRARY */
-#if( !defined( INCHI_LIBRARY ) && !defined(INCHI_STANDALONE_EXE) )
+/*^^^ #ifndef TARGET_API_LIB */
+#if ( !defined( TARGET_API_LIB ) && !defined(TARGET_EXE_STANDALONE) )
     /*  print the logfile record */
     if ( log_file->f && log_file->f != stderr && (sd->ulStructTime >= 1000 || sd->nErrorCode) ) {
         fprintf( log_file->f, "%10lu msec structure #%ld.%s%s%s%s (%d component%s, %d atom%s, error=%d).\n",
@@ -1757,7 +1779,7 @@ int TreatCreateINChIWarning(STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
                                      INCHI_IOSTREAM *prb_file, /*^^^ was: INCHI_IOSTREAM */
                                      char *pStr, int nStrLen )
 {
-#if( bRELEASE_VERSION == 0 && (EXTR_FLAGS || EXTR_MASK) )
+#if ( bRELEASE_VERSION == 0 && (EXTR_FLAGS || EXTR_MASK) )
     if ( EXTR_MASK? ((sd->bExtract & EXTR_MASK) == EXTR_FLAGS) : (sd->bExtract & EXTR_FLAGS) ) {
         char szMsg[64];
         sprintf( szMsg, "ExtractStruct.code=0x%X", sd->bExtract);
@@ -1769,7 +1791,7 @@ int TreatCreateINChIWarning(STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
             sd->pStrErrStruct, num_inp, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue) );
         sd->nErrorType = _IS_WARNING;
         if ( (ip->bINChIOutputOptions & INCHI_OUT_XML)
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
              || (ip->bINChIOutputOptions & INCHI_OUT_WINCHI_WINDOW) && (ip->bINChIOutputOptions & INCHI_OUT_PLAIN_TEXT)
 #endif
             ) {
@@ -1781,7 +1803,7 @@ int TreatCreateINChIWarning(STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
              prb_file->f && 0L <= sd->fPtrStart && sd->fPtrStart < sd->fPtrEnd ) {
             CopyMOLfile(inp_file->f, sd->fPtrStart, sd->fPtrEnd, prb_file->f, num_inp);
         }
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
         /*  otherwise extract the structure as a problem structure if requested */
         else
         if ( (EXTR_MASK? ((sd->bExtract & EXTR_MASK) == EXTR_FLAGS) : (sd->bExtract & EXTR_FLAGS)) && !ip->bSaveAllGoodStructsAsProblem &&
@@ -1790,8 +1812,8 @@ int TreatCreateINChIWarning(STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
         }
 #endif
     }
-#if( bRELEASE_VERSION != 1 && bOUTPUT_ONE_STRUCT_TIME == 1 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION != 1 && bOUTPUT_ONE_STRUCT_TIME == 1 )
+#ifndef TARGET_API_LIB
     if ( log_file && log_file != stderr ) {
         fprintf( log_file, "%10lu msec structure %1dD #%ld.%s%s%s%s (%d component%s, %d atom%s, error=%d).\n",
                 sd->ulStructTime, orig_inp_data->num_dimensions, num_inp, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue),
@@ -1873,7 +1895,7 @@ int DuplicateOrigAtom( ORIG_ATOM_DATA *new_orig_atom, ORIG_ATOM_DATA *orig_atom 
 
     return -1; /* failed */
 }
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
 /*******************************************************************************************/
 int GetOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                      INCHI_IOSTREAM *inp_file, INCHI_IOSTREAM *log_file, INCHI_IOSTREAM *output_file, 
@@ -1888,7 +1910,7 @@ int GetOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
     FreeOrigAtData( orig_inp_data + 2 );
     */
 
-    /* added for INCHI_LIB early EOF detection */
+    /* added for TARGET_LIB_FOR_WINCHI early EOF detection */
     inp_index = -1;
     out_index = -1;
     if ( struct_fptrs ) {
@@ -1958,7 +1980,7 @@ int GetOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
     }
 
     /************************************************************/
-    /* added for INCHI_LIB: look ahead for end of file detection */
+    /* added for TARGET_LIB_FOR_WINCHI: look ahead for end of file detection */
     /************************************************************/
     if ( struct_fptrs && struct_fptrs->fptr && struct_fptrs->fptr[struct_fptrs->cur_fptr+1] <= 0 ) {
         int nRet2 = 0;
@@ -2029,7 +2051,7 @@ exit_function:
     return nRet;
 }
 #endif
-#if( TEST_RENUMB_ATOMS == 1 ) /* { */
+#if ( TEST_RENUMB_ATOMS == 1 ) /* { */
 /************************************************************************************************/
 int RenumberingTestInit( RENUMB_DATA *pRenumbData, INP_ATOM_DATA *inp_cur_data )
 {
@@ -2042,7 +2064,7 @@ int RenumberingTestInit( RENUMB_DATA *pRenumbData, INP_ATOM_DATA *inp_cur_data )
     memset( &pRenumbData->saved_inp_cur_data, 0, sizeof( pRenumbData->saved_inp_cur_data ));
     memset( pRenumbData->ren_inp_norm_data[0], 0, sizeof( *pRenumbData->ren_inp_norm_data[0] ));
     memset( pRenumbData->ren_inp_norm_data[1], 0, sizeof( *pRenumbData->ren_inp_norm_data[1] ));
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
     memset( &pRenumbData->longest_inp_cur_data, 0, sizeof(pRenumbData->longest_inp_cur_data));
 #endif
     CopyInpAtomData( &pRenumbData->orig_inp_cur_data, inp_cur_data );
@@ -2064,7 +2086,7 @@ int RenumberingTestInit( RENUMB_DATA *pRenumbData, INP_ATOM_DATA *inp_cur_data )
 int RenumberingTestUninit( RENUMB_DATA *pRenumbData )
 {
     FreeInpAtomData( &pRenumbData->orig_inp_cur_data );
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
     FreeInpAtomData( &pRenumbData->longest_inp_cur_data );
 #endif
     inchi_free( pRenumbData->new_ord );
@@ -2086,7 +2108,7 @@ int RenumberingTest( PINChI2 *pINChI, PINChI_Aux2 *pINChI_Aux, ORIG_ATOM_DATA *o
         pRenumbData->nComp ++;
         MakeNewOrd( pRenumbData->orig_inp_cur_data.num_at, pRenumbData->new_ord );
         RenumbInpAtomData( inp_cur_data /* output*/, &pRenumbData->orig_inp_cur_data/* input*/, pRenumbData->new_ord/* input*/ );
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
         CopyInpAtomData( &pRenumbData->longest_inp_cur_data, inp_cur_data );
 #endif
         if ( 470 == pRenumbData->nComp ) {
@@ -2119,7 +2141,7 @@ int RenumberingTest( PINChI2 *pINChI, PINChI_Aux2 *pINChI_Aux, ORIG_ATOM_DATA *o
                 inchi_ios_eprint( log_file, "\n" );
                 pRenumbData->ren_counter = 0; /* force exit */
                 pRenumbData->bRenumbErr = 1000*pRenumbData->c2 + pRenumbData->c1;
-#if( TEST_RENUMB_SWITCH == 1 )
+#if ( TEST_RENUMB_SWITCH == 1 )
                 CopyInpAtomData( &pRenumbData->longest_inp_cur_data, inp_cur_data );
                 if ( pRenumbData->longest_inp_cur_data.at ) {
                     for ( k = 0; k < pRenumbData->longest_inp_cur_data.num_at; k ++ ) {
@@ -2128,7 +2150,7 @@ int RenumberingTest( PINChI2 *pINChI, PINChI_Aux2 *pINChI_Aux, ORIG_ATOM_DATA *o
                 }
 #endif
             }
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 )
             /*  output time per this component */
             inchi_ios_eprint( stderr, "\rComp#%d str#%ld/%d%s%s%s%s Ren %d/%d n(%lu:%lu)c(%lu:%lu)...\r",
                                 i+1, num_inp, iINChI, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue), pRenumbData->nComp, pRenumbData->ren_counter+pRenumbData->nComp,
@@ -2166,7 +2188,7 @@ int RenumberingTest( PINChI2 *pINChI, PINChI_Aux2 *pINChI_Aux, ORIG_ATOM_DATA *o
                 pRenumbData->ulMaxTimeCanon = pRenumbData->ulCurTimeCanon;
                 bLongerTime = 1;
             }
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
             if ( bLongerTime || TEST_RENUMB_SWITCH == 1 && (pRenumbData->c1 || pRenumbData->c2 || pRenumbData->nRet2) ) {
                 char szLine[512];
                 char szValue[512];
@@ -2230,7 +2252,7 @@ int RenumberingTest( PINChI2 *pINChI, PINChI_Aux2 *pINChI_Aux, ORIG_ATOM_DATA *o
     CopyInpAtomData( inp_norm_data[TAUT_NON], pRenumbData->ren_inp_norm_data[TAUT_NON] );
     CopyInpAtomData( inp_norm_data[TAUT_YES], pRenumbData->ren_inp_norm_data[TAUT_YES] );
     /*  renumbered input structure */
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
     if ( /*ip->bDisplayEachComponentINChI &&*/ !pRenumbData->nRet2 ) {
         int err, len;
         /*
@@ -2251,14 +2273,14 @@ int RenumberingTest( PINChI2 *pINChI, PINChI_Aux2 *pINChI_Aux, ORIG_ATOM_DATA *o
             inchi_ios_eprint( stderr, "Cannot display the structure\n");
         }
     }
-#endif  /* } INCHI_ANSI_ONLY */
+#endif  /* } COMPILE_ANSI_ONLY */
 #else /* } TEST_RENUMB_SWITCH { */
     CopyInpAtomData( inp_cur_data, &pRenumbData->saved_inp_cur_data );
 #endif /* } TEST_RENUMB_SWITCH */
     FreeInpAtomData( &pRenumbData->saved_inp_cur_data );
     FreeInpAtomData( pRenumbData->ren_inp_norm_data[TAUT_NON] );
     FreeInpAtomData( pRenumbData->ren_inp_norm_data[TAUT_YES] );
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
     FreeInpAtomData( &pRenumbData->longest_inp_cur_data );
 #endif
     return pRenumbData->nRet2;
@@ -2313,7 +2335,7 @@ int PreprocessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
         sd->nErrorType = _IS_FATAL;
         goto exit_function;
     }
-#if( bRELEASE_VERSION == 0 && (EXTR_HAS_METAL_ATOM & (EXTR_MASK | EXTR_FLAG) ) )
+#if ( bRELEASE_VERSION == 0 && (EXTR_HAS_METAL_ATOM & (EXTR_MASK | EXTR_FLAG) ) )
         if ( bHasMetalAtom( orig_inp_data ) ) {
             sd->bExtract |= EXTR_HAS_METAL_ATOM;
         }
@@ -2330,14 +2352,14 @@ int PreprocessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
         }
         sd->bTautFlagsDone[INCHI_BAS] |= TG_FLAG_FIX_ODD_THINGS_DONE;
     }
-#if( FIX_ADJ_RAD == 1 )
+#if ( FIX_ADJ_RAD == 1 )
     if ( ip->bTautFlags & TG_FLAG_FIX_ADJ_RADICALS ) {
         if ( 0 < FixAdjacentRadicals( prep_inp_data->num_inp_atoms, prep_inp_data->at ) ) {
             sd->bTautFlagsDone[INCHI_BAS] |= TG_FLAG_FIX_ADJ_RADICALS_DONE;
         }
     }
 #endif
-#if( bRELEASE_VERSION == 0 && (EXTR_FLAGS & EXTR_HAS_FEATURE) )
+#if ( bRELEASE_VERSION == 0 && (EXTR_FLAGS & EXTR_HAS_FEATURE) )
     if ( bFoundFeature( prep_inp_data->at, prep_inp_data->num_inp_atoms ) ) {
         sd->bExtract |= EXTR_HAS_FEATURE;
     }
@@ -2359,7 +2381,7 @@ int PreprocessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
         i = (0 != (ip->bTautFlags & TG_FLAG_CHECK_VALENCE_COORD));
         bMayDisconnectMetals( prep_inp_data, i, &bTautFlagsDone ); /* changes prep_inp_data->bDisconnectCoord */
         sd->bTautFlagsDone[INCHI_BAS] |= bTautFlagsDone; /* whether any disconnection has been rejected because of the metal proper valence */
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
         if ( i && (bTautFlagsDone & TG_FLAG_CHECK_VALENCE_COORD_DONE) ) {
             sd->bExtract |= EXTR_METAL_WAS_NOT_DISCONNECTED;
         }
@@ -2388,7 +2410,7 @@ int PreprocessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
             AddMOLfileError( sd->pStrErrStruct, "0D Parities Reconciliation failed:" );
             AddMOLfileError( sd->pStrErrStruct, szErrCode );
         }
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
         sd->bExtract |= EXTR_SALT_WAS_DISCONNECTED;
 #endif
     } else {
@@ -2430,7 +2452,7 @@ int PreprocessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
 
 
     if ( bCheckUnusualValences( prep_inp_data, 1, sd->pStrErrStruct ) ) {
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
         sd->bExtract |= EXTR_UNUSUAL_VALENCES;
 #else
         ;
@@ -2482,7 +2504,7 @@ int PreprocessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, ORIG_ATOM_DATA *or
             if ( sd->nErrorType < _IS_WARNING ) {
                 sd->nErrorType = _IS_WARNING;
             }
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
             sd->bExtract |= EXTR_METAL_WAS_DISCONNECTED;
 #endif
             /* last parm=1 means find link between unchanged by Metal Disconnection components */
@@ -2578,7 +2600,7 @@ exit_function:
     return sd->nErrorType;
 }
 
-#ifndef INCHI_ANSI_ONLY  /* { */
+#ifndef COMPILE_ANSI_ONLY  /* { */
 /************************************************************************************************/
 int DisplayTheWholeStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle, 
                               INCHI_IOSTREAM *inp_file, INCHI_IOSTREAM *log_file,
@@ -2586,9 +2608,9 @@ int DisplayTheWholeStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 {
 
     int bDisplayEqu = 0;
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
     /* Displaying equivalent input structures when disconnection has been done: */
-    /* in case of INCHI_LIB equivalence info is always unknown here and bOriginalReconnected=0 */
+    /* in case of TARGET_LIB_FOR_WINCHI equivalence info is always unknown here and bOriginalReconnected=0 */
     int bOriginalReconnected = iINChI < 0 && orig_inp_data && orig_inp_data->nEquLabels &&
                                (sd->bTautFlagsDone[INCHI_BAS] & TG_FLAG_DISCONNECT_COORD_DONE) &&
                                (ip->bTautFlags & TG_FLAG_RECONNECT_COORD);
@@ -2604,7 +2626,7 @@ int DisplayTheWholeStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
     if(!DRAWDATA || !DRAWDATA_EXISTS)
         return 0;
 #endif
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
     /********************************************************************
      * Ask the user whether to process the input structure or quit
      */
@@ -2618,8 +2640,8 @@ int DisplayTheWholeStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
     /******************************************************
      * Display the whole input structure in console app
      */
-/*^^^ #ifndef INCHI_LIB */
-#if( !defined( INCHI_LIB ) && !defined(INCHI_STANDALONE_EXE) )
+/*^^^ #ifndef TARGET_LIB_FOR_WINCHI */
+#if ( !defined( TARGET_LIB_FOR_WINCHI ) && !defined(TARGET_EXE_STANDALONE) )
     if ( bShowStruct && ip->bDisplay ) {
         if ( bDisplayEqu ) {
             sprintf( szTitle, " Equ Set %d of %d, Input Structure #%ld.%s%s%s%s%s",
@@ -2657,7 +2679,7 @@ int DisplayTheWholeStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
     /******************************************************
      * Store the whole input structure in GUI application
      */
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
     if ( ip->bDisplay && bINCHI_LIB_Flag )
 #else
     if ( (ip->bDisplay || (ip->bCompareComponents & CMP_COMPONENTS)) && bINCHI_LIB_Flag )
@@ -2682,7 +2704,7 @@ int DisplayTheWholeStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                               num_inp,
                               SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue));
 
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
             if(DRAWDATA && DRAWDATA_EXISTS)
             {
                 struct DrawData vDrawData;
@@ -2724,7 +2746,7 @@ int DisplayTheWholeStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 exit_function:
     return sd->bUserQuit;
 }
-#endif /* } INCHI_ANSI_ONLY */
+#endif /* } COMPILE_ANSI_ONLY */
 /************************************************************************************************/
 int ProcessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                          PINChI2 *pINChI[INCHI_NUM], PINChI_Aux2 *pINChI_Aux[INCHI_NUM],
@@ -2753,11 +2775,11 @@ int ProcessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
         /* ip->msec_LeftTime = ip->msec_MaxTime; */ /* start timeout countdown */
 
         /* for testing only */
-#if( REMOVE_ION_PAIRS_ORIG_STRU == 1 )
+#if ( REMOVE_ION_PAIRS_ORIG_STRU == 1 )
         fix_odd_things( orig_inp_data->num_inp_atoms, orig_inp_data->at, 0, ip->bFixNonUniformDraw );
 #endif
 
-#if( UNDERIVATIZE == 1 )  /***** post v.1 feature *****/
+#if ( UNDERIVATIZE == 1 )  /***** post v.1 feature *****/
         if ( ip->bUnderivatize && 0 > (ret2=underivatize( orig_inp_data )) ) {
             long num_inp2 = num_inp;
             AddMOLfileError(sd->pStrErrStruct, "Underivatization error");
@@ -2769,7 +2791,7 @@ int ProcessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
             goto exit_function; /* output only if derivatives found */
         }
 #endif /* UNDERIVATIZE == 1 */
-#if( RING2CHAIN == 1 )  /***** post v.1 feature *****/
+#if ( RING2CHAIN == 1 )  /***** post v.1 feature *****/
         if ( ip->bRing2Chain && 0 > (ret1 = Ring2Chain( orig_inp_data )) ) {
             long num_inp2 = num_inp;
             AddMOLfileError(sd->pStrErrStruct, "Ring to chain error");
@@ -2792,9 +2814,9 @@ int ProcessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
         if ( ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY  ) {
             char szNumber[32];
             int ret1a=0, ret2a=0; /* for derivatives and ring-chain */
-/*^^^ #if ( !defined( INCHI_LIB ) && !defined( INCHI_LIBRARY ) ) */
-#if( !defined( INCHI_LIB ) && !defined( INCHI_LIBRARY ) && !defined(INCHI_STANDALONE_EXE) )
-#if( TEST_RENUMB_ATOMS != 1 )
+/*^^^ #if ( !defined( TARGET_LIB_FOR_WINCHI ) && !defined( TARGET_API_LIB ) ) */
+#if ( !defined( TARGET_LIB_FOR_WINCHI ) && !defined( TARGET_API_LIB ) && !defined(TARGET_EXE_STANDALONE) )
+#if ( TEST_RENUMB_ATOMS != 1 )
             /*  log file / console output */
             if ( log_file->f != stderr ) {
                 if ( ip->bDisplay )
@@ -2856,7 +2878,7 @@ int ProcessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 
         if ( nRet != _IS_FATAL && nRet != _IS_ERROR ) {
 
-            if (  (sd->bChiralFlag & FLAG_INP_AT_CHIRAL) &&
+            if ( (sd->bChiralFlag & FLAG_INP_AT_CHIRAL) &&
                   (ip->nMode & REQ_MODE_STEREO) &&
                  !(ip->nMode & (REQ_MODE_RELATIVE_STEREO | REQ_MODE_RACEMIC_STEREO)) &&
                  !bIsStructChiral( pINChI, sd->num_components ) ) {
@@ -2918,11 +2940,11 @@ int ProcessOneStructure( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                                       &bSortPrintINChIFlags, save_opt_bits);
             nRet = inchi_max(nRet, nRet1);
         }
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
         
         /* display equivalent components on original or preprocessed structure(s) */
 
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
 
         if ( nRet != _IS_FATAL && nRet != _IS_ERROR && /*ip->bDisplay &&*/
              (ip->bCompareComponents & CMP_COMPONENTS) && !sd->bUserQuit && !sd->bUserQuitComponent ) 
@@ -2984,14 +3006,14 @@ exit_loop:;
                                                orig_inp_data, prep_inp_data,
                                                composite_norm_data[iINChI] );
             }
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
             if( !ip->bDisplay && sd->bUserQuitComponentDisplay ) {
                 sd->bUserQuit = 1;
             }
 #endif
         }
 
-#endif /* } INCHI_ANSI_ONLY */
+#endif /* } COMPILE_ANSI_ONLY */
 
 
         /* XML struct end tag */
@@ -3011,7 +3033,7 @@ exit_loop:;
             if ( prb_file && prb_file->f && 0L <= sd->fPtrStart && sd->fPtrStart < sd->fPtrEnd && ip->bSaveAllGoodStructsAsProblem ) {
                 CopyMOLfile(inp_file->f, sd->fPtrStart, sd->fPtrEnd, prb_file->f, 0);
             }
-#if( /*bRELEASE_VERSION != 1 &&*/ EXTR_FLAGS == EXTR_TRANSPOSITION_EXAMPLES && EXTR_MASK == EXTR_FLAGS )
+#if ( /*bRELEASE_VERSION != 1 &&*/ EXTR_FLAGS == EXTR_TRANSPOSITION_EXAMPLES && EXTR_MASK == EXTR_FLAGS )
             else
             if ( prb_file->f && (bSortPrintINChIFlags & 
                    ( FLAG_SORT_PRINT_TRANSPOS_BAS | FLAG_SORT_PRINT_TRANSPOS_REC ) )
@@ -3082,9 +3104,9 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                          long num_inp, char *pStr, int nStrLen, NORM_CANON_FLAGS *pncFlags )
 {
     int i, j, k, /*m,*/ nRet = 0;
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
     int n;
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
     int err;
 #endif
 #endif
@@ -3099,7 +3121,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
     INP_ATOM_DATA *inp_norm_data[TAUT_NUM]; /*  = { &InpNormAtData, &InpNormTautData }; */
     ORIG_ATOM_DATA *cur_prep_inp_data = prep_inp_data + iINChI;
     inchiTime      ulTStart;
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
     int            bShowStructure = 0;
     int            bStructurePreprocessed = 0; /* All changes except disconnection */
     int            bStructureDisconnected = 0;
@@ -3140,7 +3162,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 
     */
 
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
     RENUMB_DATA RenumbData;
     RENUMB_DATA *pRenumbData = &RenumbData;
 #endif
@@ -3148,7 +3170,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 
     ip->msec_LeftTime = ip->msec_MaxTime; /* start timeout countdown for each component */
 
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
     memset( pRenumbData, 0, sizeof(*pRenumbData) );
 #endif
 
@@ -3160,7 +3182,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
     memset( inp_norm_data[TAUT_NON], 0, sizeof( *inp_norm_data[0] ) );
     memset( inp_norm_data[TAUT_YES], 0, sizeof( *inp_norm_data[0] ) );
 
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
     memset( composite_norm_data+TAUT_NON, 0, sizeof( composite_norm_data[0] ) );
     memset( composite_norm_data+TAUT_YES, 0, sizeof( composite_norm_data[0] ) );
     memset( composite_norm_data+TAUT_INI, 0, sizeof( composite_norm_data[0] ) );
@@ -3205,7 +3227,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
         pncFlags->bTautFlagsDone[iINChI][TAUT_YES] =
         pncFlags->bTautFlagsDone[iINChI][TAUT_NON] = sd->bTautFlagsDone[INCHI_BAS] | ip->bTautFlagsDone;
 
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
         /* in this location the call happens once for each input structure, before preprocessing */
         bStructurePreprocessed = (0 != (sd->bTautFlagsDone[INCHI_BAS] & (
                                         TG_FLAG_MOVE_HPLUS2NEUTR_DONE  |
@@ -3225,9 +3247,9 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                                  (ip->bTautFlags               & TG_FLAG_RECONNECT_COORD);
         bINCHI_LIB_Flag = 0;
 
-        /*************** output structures to INCHI_LIB conditions *********************
+        /*************** output structures to TARGET_LIB_FOR_WINCHI conditions *********************
          *
-         *  Send to INCHI_LIB:
+         *  Send to TARGET_LIB_FOR_WINCHI:
          *
          *  type                      component  conditions
          *
@@ -3300,7 +3322,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 
 
 
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
 
     /******************************************/
     /*      Displaying the structures         */
@@ -3364,7 +3386,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
             goto exit_function;
         }
     }
-#endif /* } ifndef INCHI_ANSI_ONLY */
+#endif /* } ifndef COMPILE_ANSI_ONLY */
 
 
 
@@ -3395,8 +3417,8 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
         if ( ip->msec_MaxTime ) {
             InchiTimeGet( &ulTStart );
         }
-#ifndef INCHI_LIB  /* { */
-#if( bREUSE_INCHI == 1 )
+#ifndef TARGET_LIB_FOR_WINCHI  /* { */
+#if ( bREUSE_INCHI == 1 )
         if ( iINChI == INCHI_REC && (!ip->bDisplay && !ip->bDisplayCompositeResults && !(ip->bCompareComponents & CMP_COMPONENTS) ||
                                    sd->bUserQuitComponentDisplay) ) {
             /* reconnected structure (06-20-2005: added "&& !ip->bDisplayCompositeResults" to display composite structure) */
@@ -3446,7 +3468,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
             }
         }
 #endif
-#endif /* } INCHI_LIB */
+#endif /* } TARGET_LIB_FOR_WINCHI */
 
         /*****************************************************/
         /*  a) allocate memory and extract current component */
@@ -3460,7 +3482,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
         case _IS_FATAL:
             goto exit_cycle;
         }
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
         /*  console request: Display the component? */
         if ( ip->bDisplay && inp_file->f != stdin ) {
             if ( user_quit("Enter=Display Component, Esc=Stop ?", ip->ulDisplTime) ) {
@@ -3469,7 +3491,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
             }
         }
 #endif
-#ifndef INCHI_ANSI_ONLY  /* { */
+#ifndef COMPILE_ANSI_ONLY  /* { */
         /*  b) Display the extracted original component structure */
         if ( inp_cur_data->at && ip->bDisplay && !sd->bUserQuitComponentDisplay ) {
             if ( cur_prep_inp_data->num_components == 1 ) {
@@ -3481,7 +3503,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                                   i+1, cur_prep_inp_data->num_components,
                                   num_inp, SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue), iINChI? " (Reconnected)":"");
             }
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
             err = DisplayStructure( inp_cur_data->at, inp_cur_data->num_at,
                                     0, 1, 0, NULL, 1/*isotopic*/, 0/*taut*/, NULL, NULL,
                                     ip->bAbcNumbers, &ip->dp, ip->nMode, szTitle );
@@ -3514,9 +3536,9 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
             }
 #endif
         }
-#endif   /* } INCHI_ANSI_ONLY */
+#endif   /* } COMPILE_ANSI_ONLY */
 
-#if( TEST_RENUMB_ATOMS == 1 ) /* { */
+#if ( TEST_RENUMB_ATOMS == 1 ) /* { */
         /****************************************************************************/
         /*     R E N U M B E R I N G (testing only) Part I  STARTS here             */
         /****************************************************************************/
@@ -3546,7 +3568,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                                        i, num_inp, inp_norm_data, pncFlags, log_file );
 
 
-#if( TEST_RENUMB_ATOMS == 1 )  /*  { */
+#if ( TEST_RENUMB_ATOMS == 1 )  /*  { */
         /****************************************************************************/
         /*     R E N U M B E R I N G (testing only) Part II STARTS here             */
         /****************************************************************************/
@@ -3561,7 +3583,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 
 
         /*  d) Display one component structure and/or INChI results only if there was no error */
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
         if ( !nRet ) {
             /*  output one component INChI to the stdout if requested */
             /*
@@ -3615,7 +3637,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                                               bIsotopic? ", isotopic":"",
                                               SDF_LBL_VAL(ip->pSdfLabel,ip->pSdfValue), iINChI? " (Reconnected)":"");
                             }
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
                             if ( bFixedBondsTaut && nNumDisplayedFixedBondTaut != 1 )
                                 continue;
                             if ( bFixedBondsTaut ) {
@@ -3660,7 +3682,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
                             if(DRAWDATA && bFixedBondsTaut)
                             {
                                 struct DrawData vDrawData;
-                                if (  (ip->bCompareComponents & CMP_COMPONENTS) &&
+                                if ( (ip->bCompareComponents & CMP_COMPONENTS) &&
                                      !(ip->bCompareComponents & CMP_COMPONENTS_NONTAUT) &&
                                      !bIsotopic == !inp_norm_data[j]->bHasIsotopicLayer ) {
 
@@ -3702,7 +3724,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
             }
 
         }
-#endif  /* } INCHI_ANSI_ONLY */
+#endif  /* } COMPILE_ANSI_ONLY */
         if ( nRet ) {
             nRet = TreatCreateOneComponentINChIError(sd, ip, cur_prep_inp_data, i, num_inp,
                                  inp_file, log_file, output_file, prb_file,pStr, nStrLen );
@@ -3723,7 +3745,7 @@ int CreateOneStructureINChI( STRUCT_DATA *sd, INPUT_PARMS *ip, char *szTitle,
 
 exit_cycle:
 
-#if( TEST_RENUMB_ATOMS == 1 )  /* { */
+#if ( TEST_RENUMB_ATOMS == 1 )  /* { */
     if ( pRenumbData->bRenumbErr && (!nRet || nRet==_IS_WARNING) ) {
         sd->nErrorCode = pRenumbData->bRenumbErr;
         nRet = TreatCreateOneComponentINChIError(sd, ip, cur_prep_inp_data, -1, num_inp,
@@ -3741,7 +3763,7 @@ exit_cycle:
 
     default:
 
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
         /* composite results picture(s) */
         if ( all_inp_norm_data ) {
              int res = CreateCompositeNormAtom( composite_norm_data, all_inp_norm_data, pINChI, pINChI_Aux,
@@ -3756,13 +3778,13 @@ exit_cycle:
              all_inp_norm_data = NULL;
              */
         }
-#endif /* } INCHI_ANSI_ONLY */
+#endif /* } COMPILE_ANSI_ONLY */
 
         break;
     }
 
 
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
         /* avoid memory leaks in case of error */
         if ( all_inp_norm_data ) {
              for ( i = 0; i < prep_inp_data[iINChI].num_components; i ++ ) {
@@ -3773,7 +3795,7 @@ exit_cycle:
              inchi_free( all_inp_norm_data );
              all_inp_norm_data = NULL;
         }
-#endif /* } INCHI_ANSI_ONLY */
+#endif /* } COMPILE_ANSI_ONLY */
 
 
     FreeInpAtomData( inp_cur_data     );
@@ -3789,7 +3811,7 @@ exit_function:
 
 
 
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
 /****************************************************************************/
 int CreateCompositeNormAtom( COMP_ATOM_DATA *composite_norm_data, INP_ATOM_DATA2 *all_inp_norm_data,
                              PINChI2 *pINChI, PINChI_Aux2 *pINChI_Aux, int num_components, INCHI_MODE nMode )
@@ -3959,7 +3981,7 @@ int CreateCompositeNormAtom( COMP_ATOM_DATA *composite_norm_data, INP_ATOM_DATA2
                 tot_num_at += cur_num_at;
                 tot_num_H += cur_num_H;
                 /* offset for the next component */
-                if (  composite_norm_data[jj].nOffsetAtAndH ) {
+                if ( composite_norm_data[jj].nOffsetAtAndH ) {
                     composite_norm_data[jj].nOffsetAtAndH[2*i]   = tot_num_at;
                     composite_norm_data[jj].nOffsetAtAndH[2*i+1] = num_at[jj]+tot_num_H;
                 }
@@ -3981,6 +4003,6 @@ int CreateCompositeNormAtom( COMP_ATOM_DATA *composite_norm_data, INP_ATOM_DATA2
 exit_error:
     return ret;
 }
-#endif /* } INCHI_ANSI_ONLY */
+#endif /* } COMPILE_ANSI_ONLY */
 
 

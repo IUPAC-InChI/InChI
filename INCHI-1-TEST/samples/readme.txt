@@ -1,28 +1,42 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * June 15, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ *  or email to: ulrich@inchi-trust.org.
+ * 
  */
 
-*****
-This is the release of the IUPAC International Chemical Identifier 
-with InChIKey, version 1, software version 1.03.
-(http://www.iupac.org/projects/2000/2000-025-1-800.html
-http://www.iupac.org/inchi).
-
-This software supports both standard and non-standard InChI/InChIKey.
-*****
 
 
 This directory contains a number of sample files for testing InChI/InChIKey
@@ -34,7 +48,7 @@ structures drawn in InChI User's Guide and Technical Manual.
   FILES 
 =========
 
-readme.txt                       This file
+readme.txt                       this file
 
 UserGuide                        SUB-DIRECTORY
     (S)-Glutamic_Acid.mol        3 sample files -- illustrations from the
@@ -52,16 +66,6 @@ Misc                             SUB-DIRECTORY
                                  SDfile
     Samples.zip                  Individual structure sample files
 
-CML                              SUB-DIRECTORY
-    SL0010_three_dimensions.cml  3D structure in CML format
-    SL0010_two_dimensions.cml    Same 2D structure in CML format
-    SL0010_zero_dimensions.cml   Same 0D structure in CML format
-                                 (on the display all atoms overlap
-                                 due to all coordinates being equal
-                                 to zero)
-    SL0010_three_dimensions.mol  Same 3D structure in Molfile format
-
-    M0005C.cml                   A collection of structures in CML format
 
 
 Note.
@@ -72,3 +76,15 @@ NAME
 
 into "Structure ID Header" of an "Open" dialog 
 to view structure name in Samples and SamplesTechMan collections.
+
+
+
+
+
+=========
+  LINKS
+=========
+
+IUPAC                   http://www.iupac.org/inchi
+InChI Trust             http://www.inchi-trust.org                                      
+InChI discussion group  https://lists.sourceforge.net/lists/listinfo/inchi-discuss

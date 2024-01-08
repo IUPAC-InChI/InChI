@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -199,7 +221,7 @@ int str_Sp2(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int nSt
                         ; /* pINChI_Taut_Prev exists and has not sp2 info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -238,7 +260,7 @@ int str_Sp3(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int nSt
     eq2tautPrev = 1; /* pINChI_Prev (previous pINChI) does not exist */
     pPrevEquStr = NULL; /*, *pCurrEquStr;*/
     multPrevEquStr = 0;        
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
 #else
     bRelRac = 0;
 #endif
@@ -377,7 +399,7 @@ int str_Sp3(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int nSt
                         ; /* pINChI_Taut_Prev exists and has not sp3 info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -450,7 +472,7 @@ int str_IsoAtoms(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, in
                         tot_len += MakeDelim( bAbcNumbers? ITEM_DELIMETER : "(", pStr + tot_len, nStrLen-tot_len, bOverflow);
                         tot_len += MakeIsoTautString( pINChI_Prev->IsotopicTGroup, pINChI_Prev->nNumberOfIsotopicTGroups,
                                                      pStr + tot_len, nStrLen-tot_len, TAUT_MODE, bOverflow);
-                        if (  !bAbcNumbers ) {
+                        if ( !bAbcNumbers ) {
                             tot_len += MakeDelim( ")", pStr + tot_len, nStrLen-tot_len, bOverflow);
                         }
                     }
@@ -530,7 +552,7 @@ int str_IsoAtoms(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, in
                             tot_len += MakeDelim( bAbcNumbers? ITEM_DELIMETER : "(", pStr + tot_len, nStrLen-tot_len, bOverflow);
                             tot_len += MakeIsoTautString( pINChI_Prev->IsotopicTGroup, pINChI_Prev->nNumberOfIsotopicTGroups,
                                                          pStr + tot_len, nStrLen-tot_len, TAUT_MODE, bOverflow);
-                            if (  !bAbcNumbers ) {
+                            if ( !bAbcNumbers ) {
                                 tot_len += MakeDelim( ")", pStr + tot_len, nStrLen-tot_len, bOverflow);
                             }
                         }
@@ -550,7 +572,7 @@ int str_IsoAtoms(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, in
                         ; /* pINChI_Taut_Prev exists and has not isotopic info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -779,7 +801,7 @@ int str_IsoSp2(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int 
                         ; /* pINChI_Taut_Prev exists and has not sp2 info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -817,7 +839,7 @@ int str_IsoSp3(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int 
     eq2tautPrev = 1; /* pINChI_Prev (previous pINChI) does not exist */
     pPrevEquStr = NULL; /*, *pCurrEquStr;*/
     multPrevEquStr = 0;        
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
 #else
     bRelRac = 0;
 #endif
@@ -1000,7 +1022,7 @@ int str_IsoSp3(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int 
                         ; /* pINChI_Taut_Prev exists and has not sp3 info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -1147,7 +1169,7 @@ int str_AuxEqu(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int 
                          ; /* pINChI_Aux_Taut_Prev exists and has only trivial equivalence info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -1356,7 +1378,7 @@ int str_AuxInvSp3(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, i
                         ; /* pINChI_Taut_Prev exists and has not sp3 info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -1802,7 +1824,7 @@ int str_AuxIsoEqu(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, i
                          ; /* pINChI_Aux_Taut_Prev exists and has only trivial equivalence info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -2088,7 +2110,7 @@ int str_AuxInvIsoSp3(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr
                         ; /* pINChI_Taut_Prev exists and has not sp3 info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -2658,7 +2680,7 @@ int str_Charge2(INCHI_SORT *pINChISort, INCHI_SORT *pINChISort2, char *pStr, int
                         ; /* pINChI_Taut_Prev exists and has not sp3 info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }
@@ -2921,7 +2943,7 @@ int str_AuxChargeRadVal(INCHI_SORT *pINChISort, char *pStr, int nStrLen, int tot
                     ; /* pINChI_Aux_Prev exists and has only trivial info */
                  }
             }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
             else {
                 int stop = 1;   /* <BRKPT> */
             }
@@ -3186,7 +3208,7 @@ int str_AuxIsoTgroupEqu(INCHI_SORT *pINChISort, char *pStr, int nStrLen, int tot
                         ; /* pINChI_Aux_Prev exists and has only trivial equivalence info */
                      }
                 }
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 else {
                     int stop = 1;   /* <BRKPT> */
                 }

@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-license.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -20,8 +42,10 @@
 
 #include "mode.h"
 
-#ifndef INCHI_ANSI_ONLY /* { */
-#ifdef WIN32 /* { */
+#ifndef COMPILE_ANSI_ONLY
+
+
+#ifdef WIN32
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
@@ -31,6 +55,15 @@
 #include "dispstru.h"
 #include "extr_ct.h"
 #include "ichicomp.h"
+
+#if ( defined(_WIN64) || defined(WIN64))					/* 64-bit build */
+#define GETWINDLONG GetWindowLongPtr( hWnd, GWLP_USERDATA )
+#define SETWINDLONG SetWindowLongPtr( hWnd, GWLP_USERDATA, (long)&WinData )
+#else														/* 32-bit build */
+#define GETWINDLONG GetWindowLong( hWnd, GWL_USERDATA )
+#define SETWINDLONG SetWindowLong( hWnd, GWL_USERDATA, (long)&WinData )
+#endif
+
 
 /* Font size */
 #define FONT_NAME "Arial"     /* "MS Sans Serif"; */
@@ -303,7 +336,7 @@ int         GetStringWidth( HDC  pDC, char *pString)
 {
     SIZE    Size;
 
-    GetTextExtentPoint32( pDC, pString, strlen( pString ), &Size );
+    GetTextExtentPoint32( pDC, pString, (int) strlen( pString ), &Size );
     return    Size.cx;
 }
 
@@ -789,7 +822,7 @@ int DrawBondParity( HDC pDC, int x1, int y1, int x2, int y2, int parity_mark0 )
         xs = x1 + x2;  /* middle */
         ys = y1 + y2;  /* middle */
     }
-    GetTextSize( pDC, strlen(p), p, &width, &height );
+    GetTextSize( pDC, (int) strlen(p), p, &width, &height );
     /*
     width  = GetFontAveWidth( pDC);
     height = GetFontAscent( pDC );
@@ -1304,7 +1337,7 @@ int         DrawTheInputStructure( inp_ATOM *at, INF_ATOM_DATA *inf_at_data, int
 {
     int          RetVal;
     char        *NoRoom     = "Window is too small";
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
     static char  PressEnter[] = "";
 #else
     static char PressEnter[] = "Press Enter to continue.";
@@ -1347,7 +1380,7 @@ int         DrawTheInputStructure( inp_ATOM *at, INF_ATOM_DATA *inf_at_data, int
         y = nFontHeight/5;
         for ( i = 0; i < num_str; i ++ ) {
             if ( i+1 < num_str ) {
-                TextOut( pDC, x+tx_off, y+ty_off, Str[i], strlen(Str[i]) );
+                TextOut( pDC, x+tx_off, y+ty_off, Str[i], (int) strlen(Str[i]) );
                 x += GetStringWidth( pDC, Str[i] )+2*nFontAveWidth;
                 if ( i == 0 ) {
                     SetBkColor( pDC, rgbColor );
@@ -1362,7 +1395,7 @@ int         DrawTheInputStructure( inp_ATOM *at, INF_ATOM_DATA *inf_at_data, int
         }
     } else {
         rgbColor = SetTextColor( pDC, CLR_RED );
-        TextOut( pDC, nFontAveWidth+tx_off, nFontHeight/5+ty_off, NoRoom, strlen(NoRoom) );
+        TextOut( pDC, nFontAveWidth+tx_off, nFontHeight/5+ty_off, NoRoom, (int) strlen(NoRoom) );
         rgbColor = SetTextColor( pDC, rgbColor );
     }
     return RetVal;
@@ -1390,7 +1423,8 @@ void CalcTblParms( HDC hMemoryDC, TBL_PARMS *tp, TBL_DRAW_PARMS *tdp,
     tp->tblCols = tdp->bDrawTbl;
     tp->tblRows = 0;
     for ( i = 0; i < tp->tblCols; i ++ ) {
-        (tdp->nOrientation? GetVertTextSize:GetTextSize)( hMemoryDC, strlen(tdp->ReqShownFoundTxt[i]), tdp->ReqShownFoundTxt[i], &w, &h );
+        (tdp->nOrientation? GetVertTextSize
+                          : GetTextSize)( hMemoryDC, (int) strlen(tdp->ReqShownFoundTxt[i]), tdp->ReqShownFoundTxt[i], &w, &h );
         tp->thdrHeight=inchi_max(h, tp->thdrHeight); 
         tp->thdrWidth =inchi_max(w, tp->thdrWidth );
 
@@ -1475,7 +1509,8 @@ int DrawTheTable( HDC hDC, TBL_PARMS *tp, TBL_DRAW_PARMS *tdp, int x_offs, int y
             x1 = tp->xtblOffs + tp->tcellWidth;
             y1 = tp->ytblOffs + tp->tcellHeight + 2 * i * tp->tcellHeight;
         }
-        (tdp->nOrientation? TextOutVert:TextOutHoriz)( hDC, x1+x_offs, y1+y_offs, tdp->ReqShownFoundTxt[i], strlen(tdp->ReqShownFoundTxt[i]), tp->tcellWidth );
+        (tdp->nOrientation? TextOutVert
+                          : TextOutHoriz)( hDC, x1+x_offs, y1+y_offs, tdp->ReqShownFoundTxt[i], (int) strlen(tdp->ReqShownFoundTxt[i]), tp->tcellWidth );
         
         for ( j = 0; j < tp->tblRows; j ++ ) {
             if ( tdp->ReqShownFound[i][j] >= ' ' ) {
@@ -1930,7 +1965,7 @@ int CreateInputStructPicture( HDC hDC, MY_WINDOW_DATA *pWinData, RECT *rc, int b
         /***********************************************/
     
         memset( &tp, 0, sizeof(tp) );
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
         bDrawTbl = 0;
 #else
         bDrawTbl = tdp && tdp->bDrawTbl;
@@ -2095,11 +2130,11 @@ int CreateInputStructPicture( HDC hDC, MY_WINDOW_DATA *pWinData, RECT *rc, int b
             /* set highlighted background color */
             clrBk = SetBkColor( hMemoryDC, CLR_LTPURPLE  );
             /* output the 1st word */
-            TextOut( hMemoryDC, 0, 0, p1, strlen(p1) );
+            TextOut( hMemoryDC, 0, 0, p1, (int) strlen(p1) );
             /* restore text background */
             SetBkColor( hMemoryDC, clrBk );
             /* output the rest of the text as normal text */
-            TextOut( hMemoryDC, 0, 0, p2, strlen(p2) );
+            TextOut( hMemoryDC, 0, 0, p2, (int) strlen(p2) );
 
             if ( str[0] ) {
                 POINT     pt2;
@@ -2129,7 +2164,7 @@ int CreateInputStructPicture( HDC hDC, MY_WINDOW_DATA *pWinData, RECT *rc, int b
             /* set text aligh that do not require coordinates in TextOut() */
             uPrevTextAlign = SetTextAlign( hMemoryDC, TA_UPDATECP);
             /* output the text */
-            TextOut( hMemoryDC, 0, 0, p1, strlen(p1) );
+            TextOut( hMemoryDC, 0, 0, p1, (int) strlen(p1) );
             /* restore text align */
             SetTextAlign( hMemoryDC, uPrevTextAlign);
             /* restore current position */
@@ -2212,14 +2247,14 @@ LRESULT CALLBACK WndProcDisplayInputStructure(HWND hWnd, UINT message, WPARAM wP
             break;
 
         case WM_CLOSE:
-            pWinData = (MY_WINDOW_DATA *)GetWindowLong( hWnd, GWL_USERDATA );
+            pWinData = (MY_WINDOW_DATA *) GETWINDLONG;
             pWinData->bEsc = 1;
             goto close_window;
 
         case WM_RBUTTONUP: /* RightClick in the window client area */
         case WM_LBUTTONUP: /* LeftClick in the window client area */
                 /* stop the timer */
-                pWinData = (MY_WINDOW_DATA *)GetWindowLong( hWnd, GWL_USERDATA );
+                pWinData = (MY_WINDOW_DATA *) GETWINDLONG;
                 if ( pWinData->nTimerId ) {
                     KillTimer( hWnd, pWinData->nTimerId );
                     pWinData->nTimerId = 0;
@@ -2230,7 +2265,7 @@ LRESULT CALLBACK WndProcDisplayInputStructure(HWND hWnd, UINT message, WPARAM wP
             
         case WM_CHAR:
             
-                pWinData = (MY_WINDOW_DATA *)GetWindowLong( hWnd, GWL_USERDATA );
+                pWinData = (MY_WINDOW_DATA *) GETWINDLONG;
                 if ( pWinData->nTimerId ) {
                     KillTimer( hWnd, pWinData->nTimerId );
                     pWinData->nTimerId = 0;
@@ -2248,7 +2283,7 @@ LRESULT CALLBACK WndProcDisplayInputStructure(HWND hWnd, UINT message, WPARAM wP
 
         case WM_SIZE:
         case WM_MOVE:
-                pWinData = (MY_WINDOW_DATA *)GetWindowLong( hWnd, GWL_USERDATA );
+                pWinData = (MY_WINDOW_DATA *) GETWINDLONG;
                 if ( pWinData->nTimerId ) {
                     KillTimer( hWnd, pWinData->nTimerId );
                     pWinData->nTimerId = 0;
@@ -2277,7 +2312,7 @@ LRESULT CALLBACK WndProcDisplayInputStructure(HWND hWnd, UINT message, WPARAM wP
         break;
 
         case WM_TIMER:
-            pWinData = (MY_WINDOW_DATA *)GetWindowLong( hWnd, GWL_USERDATA );
+            pWinData = (MY_WINDOW_DATA *) GETWINDLONG;
             if ( wParam == pWinData->nTimerId ) {
                 KillTimer( hWnd, pWinData->nTimerId );
                 pWinData->nTimerId = 0;
@@ -2289,7 +2324,7 @@ LRESULT CALLBACK WndProcDisplayInputStructure(HWND hWnd, UINT message, WPARAM wP
             break;
 */
         case WM_PAINT:
-            pWinData = (MY_WINDOW_DATA *)GetWindowLong( hWnd, GWL_USERDATA );
+            pWinData = (MY_WINDOW_DATA *) GETWINDLONG;
             GetClientRect( hWnd, &rc );
             hdc = BeginPaint (hWnd, &ps);
             /* the drawing code is here */
@@ -2324,7 +2359,7 @@ LRESULT CALLBACK WndProcDisplayInputStructure(HWND hWnd, UINT message, WPARAM wP
 
 close_window:
 
-    pWinData = (MY_WINDOW_DATA *)GetWindowLong( hWnd, GWL_USERDATA );
+    pWinData = (MY_WINDOW_DATA *) GETWINDLONG;
     GetWindowRect( hWnd, &pWinData->rc );
     ReallySetForegroundWindow(GetConsoleHwnd());
     DestroyWindow( hWnd );
@@ -2360,7 +2395,7 @@ void FreeWinData( MY_WINDOW_DATA* pWinData )
         }
     }
 }
-#ifndef INCHI_LIB
+#ifndef TARGET_LIB_FOR_WINCHI
 /**********************************************************************************************/
 int DisplayInputStructure( char *szOutputString, inp_ATOM  *at, INF_ATOM_DATA *inf_at_data, int num_at, DRAW_PARMS *dp )
 {
@@ -2496,7 +2531,7 @@ int DisplayInputStructure( char *szOutputString, inp_ATOM  *at, INF_ATOM_DATA *i
         }
     }
 
-    SetWindowLong( hWnd, GWL_USERDATA, (long)&WinData );
+    SETWINDLONG;
 
     ShowWindow(hWnd, SW_SHOWNORMAL /*SW_SHOW*/);
     UpdateWindow(hWnd);
@@ -2549,7 +2584,7 @@ void MySleep( unsigned long ms )
     Sleep( ms );
 }
 
-#endif /* } _WIN32 */
+#endif /* WIN32 */
 #else
 int dummyDispStru_c; /* make translation unit non-empty for ANSI-C compatibility */
-#endif /* } INCHI_ANSI_ONLY */
+#endif /* COMPILE_ANSI_ONLY */

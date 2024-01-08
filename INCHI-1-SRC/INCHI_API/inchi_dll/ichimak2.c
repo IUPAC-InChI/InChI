@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -47,7 +69,7 @@ int GetHillFormulaCounts( U_CHAR *nAtom, S_CHAR *nNum_H, int num_atoms,
 int MakeHillFormula( U_CHAR *nAtom, int num_atoms,
                   char *szLinearCT, int nLen_szLinearCT, int num_C, int num_H, int *bOverflow );
 
-#if( FIX_DALKE_BUGS == 1 )
+#if ( FIX_DALKE_BUGS == 1 )
 #else
 char *AllocateAndFillHillFormula( INChI *pINChI );
 #endif
@@ -122,7 +144,7 @@ int GetHillFormulaCounts( U_CHAR *nAtom, S_CHAR *nNum_H, int num_atoms,
     nNumNonHAtoms = num_atoms;
     for ( i = 0; i < num_atoms; i ++ ) {
         if ( nPrevAtom != nAtom[i] ) {
-            if (  mult ) {
+            if ( mult ) {
                 if ( bHydrogen ) {
                     num_H += mult;
                 }else
@@ -160,7 +182,7 @@ int GetHillFormulaCounts( U_CHAR *nAtom, S_CHAR *nNum_H, int num_atoms,
         }
     }
 
-    if (  mult ) {
+    if ( mult ) {
         if ( bHydrogen ) {
             num_H += mult;
         } else
@@ -282,7 +304,7 @@ char *AllocateAndFillHillFormula( INChI *pINChI )
     if ( !GetHillFormulaCounts( pINChI->nAtom, pINChI->nNum_H, pINChI->nNumberOfAtoms,
                           pINChI->nTautomer, pINChI->lenTautomer,
                           &num_C, &num_H, &nLen, &nNumNonHAtoms ) ) {
-        if ( pHillFormula = (char*)inchi_malloc( nLen+1 ) ) {
+        if ( pHillFormula = (char*) inchi_malloc( nLen+1 ) ) {
             ret = MakeHillFormula( pINChI->nAtom+num_C, nNumNonHAtoms-num_C,
                   pHillFormula, nLen+1, num_C, num_H, &bOverflow );
             if ( ret != nLen || bOverflow ) {
@@ -573,7 +595,7 @@ INCHI_MODE UnmarkAllUndefinedUnknownStereo( INChI_Stereo *Stereo, INCHI_MODE nUs
 
     return nRet;
 }
-#if( defined(INCHI_LIBRARY) || ADD_CMLPP==1 )
+#if ( defined(TARGET_API_LIB) || ADD_CMLPP==1 )
 /**********************************************************************************************/
 void WriteCoord( char *str, double x )
 {

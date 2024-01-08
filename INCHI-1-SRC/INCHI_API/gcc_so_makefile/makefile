@@ -28,7 +28,7 @@ endif
 
 # === version ===
 MAIN_VERSION = .1
-VERSION = $(MAIN_VERSION).03.00
+VERSION = $(MAIN_VERSION).04.00
 
 # === executable & library directory ===
 ifndef LIB_DIR
@@ -93,7 +93,7 @@ ifndef C_OPTIONS
   endif
   endif
   ifndef C_MAIN_OPTIONS
-    C_MAIN_OPTIONS = -DINCHI_LINK_AS_DLL
+    C_MAIN_OPTIONS = -DBUILD_LINK_AS_DLL
   endif
 endif
 

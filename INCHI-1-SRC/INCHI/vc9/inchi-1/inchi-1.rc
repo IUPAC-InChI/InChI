@@ -65,13 +65,13 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,3,1
- PRODUCTVERSION 1,0,3,1
- FILEFLAGSMASK 0x37L
+ FILEVERSION 1,0,4,1
+ PRODUCTVERSION 1,0,4,1
+ FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
- FILEFLAGS 0x21L
+ FILEFLAGS 0x1L
 #else
- FILEFLAGS 0x20L
+ FILEFLAGS 0x0L
 #endif
  FILEOS 0x4L
  FILETYPE 0x1L
@@ -81,14 +81,13 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "IUPAC International Chemical Identifier (InChI) command line version 1 Software version 1.03 Build of June 15, 2010"
+            VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, software (command line) version 1.04. Build of September 9, 2011."
             VALUE "FileDescription", "inchi-1 Application"
-            VALUE "FileVersion", "1, 0, 3, 1"
+            VALUE "FileVersion", "1, 0, 4, 1"
             VALUE "InternalName", "inchi-1.exe"
             VALUE "OriginalFilename", "inchi-1.exe"
-            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) command line version 1 Software version 1.03 Build of June 15, 2010"
-            VALUE "ProductVersion", "1, 0, 3, 1"
-            VALUE "SpecialBuild", "Final release, June 15, 2010"
+            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, software (command line) version 1.04. Build of September 9, 2011."
+            VALUE "ProductVersion", "1, 0, 4, 1"
         END
     END
     BLOCK "VarFileInfo"

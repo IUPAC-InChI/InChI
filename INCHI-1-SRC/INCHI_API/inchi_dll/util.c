@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -159,6 +181,34 @@ const ELDATA ElData[] = {
 { "No", 259, 259, 259.100900000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
 { "Lr", 260, 260, 260.105400000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
 { "Rf", 261, 261, 261.108700000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+
+/*^^^ Added in v. 1.04 */
+
+/* 
+    Reference: 
+        M. E. WIESER AND T. B. COPLEN. 
+        Atomic weights of the elements 2009 (IUPAC Technical Report).
+        Pure Appl. Chem., Vol. 83, No. 2, pp. 359–396, 2011.
+    When available, the mass is given for isotope with the longest half-life.
+*/
+/* 105 dubnium Db */		/* ? Like: Ta */
+{ "Db", 268, 268, 268.125000000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/* 106 seaborgium Sg */		/* ? Like: W */
+{ "Sg", 271, 271, 271.133000000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/* 107 bohrium Bh */		/* ? Like: Re */
+{ "Bh", 267, 267, 267.127700000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/* 108 hassium Hs */		/* ? Like: Os */ 
+{ "Hs", 277, 277, 277.150000000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/* 109 meitnerium Mt */		/* ? Like: Ir */ 
+{ "Mt", 276, 276, 276.151000000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/* 110 darmstadtium Ds */	/* ? Like: Pt */ 
+{ "Ds", 281, 281, 281.162000000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/* 111 roentgenium Rg */	/* ? Like: Au */ 
+{ "Rg", 280, 280, 280.164000000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/* 112 copernicium Cn */	/* ? Like: Hg */ 
+{ "Cn", 285, 285, 285.174000000, METAL ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }},
+/*^^^ End of added in v. 1.04 */
+
 #ifdef INCHI_ZFRAG
 { "Zu",   0,   0,   0.000000000,     0 ,  0,  1, {{0,},       {0,},       {1,},       {0,},       {0,}       }}, //single bond fragment
 { "Zv",   0,   0,   0.000000000,     0 ,  0,  1, {{0,},       {0,},       {2,},       {0,},       {0,}       }}, //double bond fragment
@@ -367,7 +417,7 @@ int is_el_a_metal( int nPeriodicNum )
     return 0!=(ElData[nPeriodicNum+1].nType & IS_METAL);
 }
 /******************************************************************************************************/
-/*#ifndef INCHI_LIBRARY*/
+/*#ifndef TARGET_API_LIB*/
 int extract_ChargeRadical( char *elname, int *pnRadical, int *pnCharge )
 {
     char *q, *r, *p;
@@ -402,7 +452,7 @@ int extract_ChargeRadical( char *elname, int *pnRadical, int *pnCharge )
         }
         memmove( q, q+charge_len, strlen(q+charge_len)+1 );
     }
-    len = strlen(p);
+    len = (int) strlen(p);
     /*  radical */
     if ( (q = strrchr( p, ':' )) && !q[1]) {
         nRad = RADICAL_SINGLET;
@@ -590,7 +640,7 @@ int get_mw(char elname[])
 }
 */
 /***********************************************************************************/
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
 /***********************************************************************************/
 int get_atw(const char *elname)
 {
@@ -631,7 +681,7 @@ int normalize_name( char* name )
     }
     return len;
 }
-#endif /* ifndef INCHI_LIBRARY */
+#endif /* ifndef TARGET_API_LIB */
 /************************************************/
 #ifndef inchi_malloc
 void *inchi_malloc(size_t c)
@@ -658,11 +708,7 @@ void inchi_free(void *p)
 
 
 
-
-
-
-#ifndef INCHI_LIBRARY
-
+#ifndef TARGET_API_LIB
 /*************************************************************************/
 void remove_trailing_spaces( char* p )
 {
@@ -681,7 +727,10 @@ void remove_one_lf( char* p)
             p[len-2] = '\0';
     }
 }
-#endif /* ifndef INCHI_LIBRARY */
+#endif /* ifndef TARGET_API_LIB */
+
+
+
 /***************************************************************************/
 /* Copies up to maxlen characters INCLUDING end null from source to target */
 /* Fills out the rest of the target with null bytes */
@@ -708,7 +757,7 @@ int mystrncpy(char *target,const char *source,unsigned maxlen)
 char* LtrimRtrim( char *p, int* nLen )
 {
     int i, len=0;
-    if ( p &&  (len = strlen( p )) ) {
+    if ( p &&  (len = (int) strlen( p )) ) {
         for ( i = 0; i < len && __isascii( p[i] ) && isspace( p[i] ); i++ )
             ;
         if ( i )
@@ -836,7 +885,7 @@ int nNoMetalNumBonds( inp_ATOM *at, int at_no )
             return a->valence - num_bonds_to_metal;
         }
     }
-#if( S_VI_O_PLUS_METAL_FIX_BOND == 1 )
+#if ( S_VI_O_PLUS_METAL_FIX_BOND == 1 )
     else
     if ( 1 == a->charge && 2 == get_endpoint_valence(a->el_number) &&
          a->chem_bonds_valence + num_H == std_chem_bonds_valence ) {
@@ -884,7 +933,7 @@ int nNoMetalBondsValence( inp_ATOM *at, int at_no )
             return a->chem_bonds_valence - valence_to_metal;
         }
     }
-#if( S_VI_O_PLUS_METAL_FIX_BOND == 1 )
+#if ( S_VI_O_PLUS_METAL_FIX_BOND == 1 )
     else
     if ( 1 == a->charge && 2 == get_endpoint_valence(a->el_number) &&
          a->chem_bonds_valence + num_H == std_chem_bonds_valence ) {
@@ -947,7 +996,7 @@ int nNoMetalOtherNeighIndex2( inp_ATOM *at, int at_no, int cur_neigh, int cur_ne
 }
 
 
-#ifndef INCHI_ANSI_ONLY
+#ifndef COMPILE_ANSI_ONLY
 /**************************************************************************/
 int MakeRemovedProtonsString( int nNumRemovedProtons, NUM_H *nNumExchgIsotopicH, NUM_H *nNumRemovedProtonsIsotopic,
                               int bIsotopic, char *szRemovedProtons, int *num_removed_iso_H )
@@ -1058,14 +1107,14 @@ char *p, pp;
 
 
 
-#ifdef INCHI_ANSI_ONLY
+#ifdef COMPILE_ANSI_ONLY
 /*************************************************************************/
 /*************          non-ANSI functions                ****************/
 /*************************************************************************/
 #define __MYTOLOWER(c) ( ((c) >= 'A') && ((c) <= 'Z') ? ((c) - 'A' + 'a') : (c) )
 
-#if ( defined(ADD_NON_ANSI_FUNCTIONS) || defined(__STDC__) && __STDC__ == 1 )
-/* support (VC++ Language extensions) = OFF && defined(INCHI_ANSI_ONLY) */
+#if ( defined(COMPILE_ADD_NON_ANSI_FUNCTIONS) || defined(__STDC__) && __STDC__ == 1 )
+/* support (VC++ Language extensions) = OFF && defined(COMPILE_ANSI_ONLY) */
 int memicmp ( const void * p1, const void * p2, size_t length )
 {
     const U_CHAR *s1 = (const U_CHAR*)p1;
@@ -1111,7 +1160,7 @@ char *_strdup( const char *string )
     char *p = NULL;
     if ( string ) {
         size_t length = strlen( string );
-        p = (char *)inchi_malloc( length + 1 );
+        p = (char *) inchi_malloc( length + 1 );
         if ( p ) {
             strcpy( p, string );
         }

@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -24,7 +46,7 @@
 /*#define CHECK_WIN32_VC_HEAP*/
 #include "mode.h"
 
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
 
 #include "ichi.h"
 #include "ichitime.h"
@@ -631,7 +653,7 @@ int FillOutpStructEndpointFromInChI( INChI *pInChI, AT_NUMB **pEndpoint )
     AT_NUMB *endpoint = *pEndpoint;
     int     itg, i, j, k, len_tg;
 
-    if ( !endpoint && !(endpoint = (AT_NUMB*)inchi_malloc(num_at * sizeof(endpoint[0]) ) ) ) {
+    if ( !endpoint && !(endpoint = (AT_NUMB*) inchi_malloc(num_at * sizeof(endpoint[0]) ) ) ) {
         return RI_ERR_ALLOC;
     }
     memset( endpoint, 0, num_at * sizeof(endpoint[0]) );
@@ -1182,9 +1204,9 @@ make_cn_bits:
     pVA->cnListIndex = j+1; /* charge structure index + 1 */
     pVA->cInitCharge = cnList[j].nInitialCharge;
     /********** Calculate "Free Valence" ****************/
-#if( ALLOW_METAL_BOND_ZERO == 1 )
+#if ( ALLOW_METAL_BOND_ZERO == 1 )
 
-#if( INIT_METAL_BOND_ZERO == 1 )
+#if ( INIT_METAL_BOND_ZERO == 1 )
     if ( pVA->cMetal ) {
         j = 0;
     } else {
@@ -2163,7 +2185,7 @@ int AddTGroups2TCGBnStruct( BN_STRUCT *pBNS, StrFromINChI *pStruct, VAL_AT *pVA,
             edge->cap       = inchi_max( edge->cap, 0 );
             edge->flow      = 0;
             edge->pass      = 0;
-#if( RESET_EDGE_FORBIDDEN_MASK == 1 )
+#if ( RESET_EDGE_FORBIDDEN_MASK == 1 )
             edge->forbidden &= pBNS->edge_forbidden_mask;
 #endif
 
@@ -2996,7 +3018,7 @@ int AddCGroups2TCGBnStruct( BN_STRUCT *pBNS, StrFromINChI *pStruct, VAL_AT *pVA,
                     }
                     */
                     edge->pass      = 0;
-#if( RESET_EDGE_FORBIDDEN_MASK == 1 )
+#if ( RESET_EDGE_FORBIDDEN_MASK == 1 )
                     edge->forbidden &= pBNS->edge_forbidden_mask;
 #endif
                     /* check edge overflow */
@@ -4182,7 +4204,7 @@ int NormalizeStructure( ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, BN_STRUCT *p
     if ( ret < 0 ) {
         goto exit_function;
     }
-#if( FIND_RING_SYSTEMS == 1 )
+#if ( FIND_RING_SYSTEMS == 1 )
     ret = MarkRingSystemsInp( at2, num_at, 0 );
     if ( ret < 0 ) {
         goto exit_function;
@@ -4444,7 +4466,7 @@ int MakeOneInChIOutOfStrFromINChI( ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, S
                 }
             }
         }
-        pStruct->pOne_norm_data[0] = (INP_ATOM_DATA *)inchi_malloc( sizeof(pStruct->pOne_norm_data[0][0]) );
+        pStruct->pOne_norm_data[0] = (INP_ATOM_DATA *) inchi_malloc( sizeof(pStruct->pOne_norm_data[0][0]) );
         if ( pStruct->pOne_norm_data[0] ) {
             memcpy( pStruct->pOne_norm_data[0], inp_norm_data[bMobileH], sizeof(pStruct->pOne_norm_data[0][0]));
             memset( inp_norm_data[bMobileH], 0, sizeof(*inp_norm_data[0]) );
@@ -4457,7 +4479,7 @@ int MakeOneInChIOutOfStrFromINChI( ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, S
             pStruct->pOneINChI_Aux[1]   = cur_INChI_Aux[bMobileHalt];
             cur_INChI[bMobileHalt]         = NULL;
             cur_INChI_Aux[bMobileHalt]     = NULL;
-            pStruct->pOne_norm_data[1] = (INP_ATOM_DATA *)inchi_malloc( sizeof(pStruct->pOne_norm_data[0][0]) );
+            pStruct->pOne_norm_data[1] = (INP_ATOM_DATA *) inchi_malloc( sizeof(pStruct->pOne_norm_data[0][0]) );
             if ( pStruct->pOne_norm_data[1] ) {
                 memcpy( pStruct->pOne_norm_data[1], inp_norm_data[bMobileHalt], sizeof(pStruct->pOne_norm_data[0][0]));
                 memset( inp_norm_data[bMobileHalt], 0, sizeof(*inp_norm_data[0]) );
@@ -4466,8 +4488,8 @@ int MakeOneInChIOutOfStrFromINChI( ICHICONST INPUT_PARMS *ip, STRUCT_DATA *sd, S
             }
         }
     } else {
-#if( bRELEASE_VERSION != 1 )
-#ifndef INCHI_LIBRARY
+#if ( bRELEASE_VERSION != 1 )
+#ifndef TARGET_API_LIB
         fprintf( stdout, "ERROR: Create_INChI returned %d\n", ret );
 #endif
 #endif
@@ -4815,7 +4837,7 @@ int OutputInChIOutOfStrFromINChI(ICHICONST INPUT_PARMS *ip_inp, STRUCT_DATA *sd_
     ip->bDisplayCompositeResults = 0;
     ip->bDisplayEachComponentINChI = 0;
     ip->bDisplayIfRestoreWarnings  = 0;
-#if( I2S_MODIFY_OUTPUT == 1 )
+#if ( I2S_MODIFY_OUTPUT == 1 )
     if ( bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY )
         ip->bINChIOutputOptions = bINChIOutputOptions & ~(INCHI_OUT_PLAIN_TEXT | INCHI_OUT_XML | INCHI_OUT_PLAIN_TEXT_COMMENTS | INCHI_OUT_XML_TEXT_COMMENTS);
     else

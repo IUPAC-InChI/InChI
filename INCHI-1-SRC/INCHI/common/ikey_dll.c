@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
  
  
@@ -21,7 +43,7 @@
     InChIKey: calculation of hash for InChI string
 
     Uses truncated SHA-256 function.
-    SHA-256 implementation: Copyright (C) 2003-2006  Christophe Devine, 
+    SHA-256 implementation: Copyright (C) Brainspark B.V., 
                             see files sha2.c, sha2.h.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^*/
@@ -242,7 +264,7 @@ size_t bytelen = 32;
     {
         /* 2009-01-07 fix bug/typo: assigned incorrect length to the protonation segment of 
         /* source string ( was sproto[ncp]='\0'; should be sproto[lenproto]='\0'; )  */
-        int lenproto = j - jproto;
+        int lenproto = j - (int) jproto;
         if (lenproto<3)
         {	
             /* empty "/p", should not occur */
@@ -303,13 +325,6 @@ size_t bytelen = 32;
     for( i = 0; i < 32; i++ ) 
         digest_major[i] = 0;            
     sha2_csum( (unsigned char *) smajor, (int) strlen(smajor), digest_major );    
-
-    /* !!! */
-    strcpy(tmp, base26_triplet_1(digest_major));
-    strcpy(tmp, base26_triplet_2(digest_major));
-    strcpy(tmp, base26_triplet_3(digest_major) );
-    strcpy(tmp, base26_triplet_4(digest_major) );
-    strcpy(tmp, base26_dublet_for_bits_56_to_64(digest_major));
 
     sprintf(tmp,"%-.3s%-.3s%-.3s%-.3s%-.2s", 
                 base26_triplet_1(digest_major), base26_triplet_2(digest_major),
@@ -475,13 +490,13 @@ size_t i, bytelen = 32;
 
 /********************************************************************/
 
-#if( defined( _WIN32 ) && defined( _MSC_VER ) && _MSC_VER >= 800 && defined(_USRDLL) && defined(INCHI_LINK_AS_DLL) )
+#if ( defined( _WIN32 ) && defined( _MSC_VER ) && _MSC_VER >= 800 && defined(_USRDLL) && defined(BUILD_LINK_AS_DLL) )
     /* Win32 & MS VC ++, compile and link as a DLL */
 /*********************************************************/
 /*   C calling conventions export from Win32 dll         */
 /*********************************************************/
 /* prototypes */
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -493,7 +508,7 @@ int cdecl_GetINCHIKeyFromINCHI(const char* szINCHISource,
                                char* szINCHIKey, char* szXtra1, char* szXtra2); 
 int cdecl_GetStdINCHIKeyFromStdINCHI(const char* szINCHISource, char* szINCHIKey); 
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif
@@ -523,19 +538,19 @@ int cdecl_GetINCHIKeyFromINCHI(const char* szINCHISource,
 
 
 
-#if( defined(__GNUC__) && __GNUC__ >= 3 && defined(__MINGW32__) && defined(_WIN32) )
+#if ( defined(__GNUC__) && __GNUC__ >= 3 && defined(__MINGW32__) && defined(_WIN32) )
 #include <windows.h>
 /*********************************************************/
 /*   Pacal calling conventions export from Win32 dll     */
 /*********************************************************/
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
 #endif
 /* prototypes */
 int PASCAL pasc_CheckINCHIKey(const char *szINCHIKey);
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif

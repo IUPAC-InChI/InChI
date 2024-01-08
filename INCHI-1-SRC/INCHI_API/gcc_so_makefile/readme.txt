@@ -1,28 +1,42 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * June 15, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
-*****
-This is the release of the IUPAC International Chemical
-Identifier with InChIKey, version 1, software version 1.03.
-(http://www.iupac.org/projects/2000/2000-025-1-800.html
-http://www.iupac.org/inchi).
-
-This software supports both standard and non-standard InChI/InChIKey.
-*****
 
 
 This directory contains  a gcc makefile for INCHI_MAIN + INCHI_DLL code 
@@ -77,14 +91,24 @@ the source code and this makefile.
 Under Linux the makefile creates:
  inchi_main              -- the main program (InChI software library 
                             demo application) and
- libinchi.so.1.03.00     -- the shared object and a link libinchi.so.1 to it
- libinchi.so.1           -- a symbolic link to libinchi.so.1.03.00
+ libinchi.so.1.04.00     -- the shared object and a link libinchi.so.1 to it
+ libinchi.so.1           -- a symbolic link to libinchi.so.1.04.00
 
 in the "result" subdirectory of this makefile directory out of source
 code located in "INCHI_DLL" and "INCHI_MAIN" directories.
 
-Files result/libinchi.so.1.03.00.gz and result/inchi_main.gz
-contain Linux 1386 binaries created with the included makefile.
+Files result/libinchi.so.1.04.00.gz and result/inchi_main.gz
+contain Linux i386 binaries created with the included makefile.
 
 The InChI software library demo application, inchi_main, needs
-libinchi.so.1, a symbolic link to libinchi.so.1.03.00.
+libinchi.so.1, a symbolic link to libinchi.so.1.04.00.
+
+
+
+=========
+  LINKS
+=========
+
+IUPAC                   http://www.iupac.org/inchi
+InChI Trust             http://www.inchi-trust.org                                      
+InChI discussion group  https://lists.sourceforge.net/lists/listinfo/inchi-discuss

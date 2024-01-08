@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -31,7 +53,7 @@
 
 #include "ichicomp.h"
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,7 +62,7 @@ extern "C" {
 /* defined in ichisort.c, prototype in ichicomn.h */
 int insertions_sort_AT_RANK( AT_RANK *base, int num );
 
-#ifndef INCHI_ALL_CPP
+#ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
 #endif
@@ -65,7 +87,7 @@ typedef struct tagTreeAtom {
     S_CHAR     bCutVertex;
 } tre_ATOM;
 
-#if( FIND_RING_SYSTEMS == 1 ) /* { */
+#if ( FIND_RING_SYSTEMS == 1 ) /* { */
 /********************************************************************************/
 int MarkRingSystemsInp( inp_ATOM *at, int num_atoms, int start )
 {
@@ -77,7 +99,7 @@ int MarkRingSystemsInp( inp_ATOM *at, int num_atoms, int start )
     AT_NUMB   *nLowNumber = NULL;
     S_CHAR    *cNeighNumb = NULL;
     AT_NUMB    nDfs;
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
     AT_NUMB    nRs, *nRsConnect = NULL;
     int        k;
     AT_NUMB   *tree = NULL;
@@ -87,17 +109,17 @@ int MarkRingSystemsInp( inp_ATOM *at, int num_atoms, int start )
     int        i, j, u, /*start,*/ nNumRingSystems, nNumStartChildren;
 
     /*  allocate arrays */
-    nStackAtom = (AT_NUMB *)inchi_malloc(num_atoms*sizeof(nStackAtom[0]));
-    nRingStack = (AT_NUMB *)inchi_malloc(num_atoms*sizeof(nRingStack[0]));
-    nDfsNumber = (AT_NUMB *)inchi_malloc(num_atoms*sizeof(nDfsNumber[0]));
-    nLowNumber = (AT_NUMB *)inchi_malloc(num_atoms*sizeof(nLowNumber[0]));
-    cNeighNumb = (S_CHAR  *)inchi_malloc(num_atoms*sizeof(cNeighNumb[0]));
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+    nStackAtom = (AT_NUMB *) inchi_malloc(num_atoms*sizeof(nStackAtom[0]));
+    nRingStack = (AT_NUMB *) inchi_malloc(num_atoms*sizeof(nRingStack[0]));
+    nDfsNumber = (AT_NUMB *) inchi_malloc(num_atoms*sizeof(nDfsNumber[0]));
+    nLowNumber = (AT_NUMB *) inchi_malloc(num_atoms*sizeof(nLowNumber[0]));
+    cNeighNumb = (S_CHAR  *) inchi_malloc(num_atoms*sizeof(cNeighNumb[0]));
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
     nRsConnect = (AT_NUMB *)inchi_calloc(3*num_atoms+3,sizeof(nRsConnect[0]));
 #endif
     /*  check allocation */
     if ( !nStackAtom || !nRingStack || !nDfsNumber || !nLowNumber || !cNeighNumb 
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
         || !nRsConnect
 #endif
         ) {
@@ -203,7 +225,7 @@ advance_block:
     nLowNumber[u] = nDfsNumber[u] = ++nDfs;
     nStackAtom[++nTopStackAtom] = (AT_NUMB)u;
     nRingStack[++nTopRingStack] = (AT_NUMB)u;
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
     nNumConnect = nLenConnect = nMaxNumConnect = 0;
 #endif
 
@@ -241,7 +263,7 @@ advance_ring:
             /*  found a ring system */
             nNumRingSystems ++;
             /*  unwind nRingStack[] down to i */
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
             nNumConnect = 2;
             /* data structure: for each ring system nRsConnect[] contains:
              * 1) nNumConnect+1 = (number of already discovered neighboring "ring systems" + 1)+1
@@ -265,7 +287,7 @@ advance_ring:
                 j = (int)nRingStack[nTopRingStack--];
                 at[j].nRingSystem        = (AT_NUMB)nNumRingSystems; /*  ring system id */
                 at[j].nNumAtInRingSystem = nNumAtInRingSystem;
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
                 for ( k = 0; k < at[j].valence; k ++ ) {
                     if ( (nRs = at[at[j].neighbor[k]].nRingSystem) && (int)nRs != nNumRingSystems ) {
                         nRsConnect[nLenConnect + (nNumConnect++)] = nRs; /*  adjacent ring system id */
@@ -277,7 +299,7 @@ advance_ring:
                     break;
                 }
             }
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
             nRsConnect[nLenConnect] = nNumConnect;
             nRsConnect[nLenConnect+1] = nNumAtInRingSystem;
             nLenConnect += nNumConnect;
@@ -296,7 +318,7 @@ advance_ring:
         }
     } while ( --nTopStackAtom >= 0 );
 
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 ) /*  normally disabled */
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 ) /*  normally disabled */
     nMaxNumConnect ++;
     if ( nNumRingSystems > 1 ) {
         int nCol      = nMaxNumConnect+1;
@@ -497,7 +519,7 @@ exit_function:
         inchi_free( nLowNumber );
     if ( cNeighNumb )
         inchi_free( cNeighNumb );
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
     if ( nRsConnect )
         inchi_free( nRsConnect );
     if ( tree )
@@ -529,7 +551,7 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
     int  num_OtherNeigh, num_HydrogenAt;
 
     new_ord=(AT_NUMB *)inchi_calloc(num_atoms, sizeof(new_ord[0])); /* changed malloc to calloc 9-11-2003 */
-    new_at =(inp_ATOM  *)inchi_malloc(sizeof(new_at[0]) *num_atoms);
+    new_at =(inp_ATOM  *) inchi_malloc(sizeof(new_at[0]) *num_atoms);
     if (!new_ord || !new_at)
         goto exit_function;
 
@@ -787,10 +809,10 @@ int FixAromaticOxygenAndSulfur( inp_ATOM *atom )
 /********************************************************************
 
              InChI post-version 1.01 features implementation
-             (v. 1.03 : underivatize is still experimental and for engineering mode)
+             (v. 1.04 : underivatize is still experimental and for engineering mode)
 
  ********************************************************************/
-#if( RING2CHAIN == 1 || UNDERIVATIZE == 1 )
+#if ( RING2CHAIN == 1 || UNDERIVATIZE == 1 )
 
 static U_CHAR el_number_O;
 static U_CHAR el_number_C;
@@ -998,7 +1020,7 @@ int mark_atoms_ap( inp_ATOM *at, AT_NUMB start, R2C_ATPAIR *ap, int num_ap, int 
 
 #endif /* RING2CHAIN || UNDERIVATIZE */
 
-#if( UNDERIVATIZE == 1 )
+#if ( UNDERIVATIZE == 1 )
 /***************************************************************/
 
 #ifdef NEVER
@@ -2525,7 +2547,7 @@ int underivatize( ORIG_ATOM_DATA *orig_inp_data )
                  
         */
         /* count DERIV_RING-type attachments */
-#if( COUNT_ALL_NOT_DERIV == 1 )
+#if ( COUNT_ALL_NOT_DERIV == 1 )
         num_cuts_to_check = num_cuts;
 #else
         num_cuts_to_check = num_ring_cuts;
@@ -2565,7 +2587,7 @@ repeat_without_deriv_ring:
                         ap[j-1] = ap1; /* sort each pair */
                     }
                 }
-#if( COUNT_ALL_NOT_DERIV == 1 )
+#if ( COUNT_ALL_NOT_DERIV == 1 )
                 else {
                     for ( k = 0; k < DERIV_AT_LEN && da[i].typ[k]; k ++ ) {
                         if ( j >= num_cuts_to_check || (da[i].typ[k] & DERIV_RING) ) {
@@ -2657,7 +2679,7 @@ repeat_without_deriv_ring:
                         da[i].typ[j] = 0;
                     }
                 }
-#if( COUNT_ALL_NOT_DERIV == 1 )
+#if ( COUNT_ALL_NOT_DERIV == 1 )
                 num_cuts_to_check = num_cuts;
 #else
                 num_cuts_to_check = num_ring_cuts;
@@ -2946,7 +2968,7 @@ exit_function:
 
 #endif /* UNDERIVATIZE */
 /********************************************************************/
-#if( RING2CHAIN == 1 )
+#if ( RING2CHAIN == 1 )
 /*
     type=1  (incl sugars: W=O, A=C(sat), Z=C(sat), Y=O, B=C(sat)-OH
 
@@ -3205,7 +3227,7 @@ int Ring2Chain( ORIG_ATOM_DATA *orig_inp_data )
         } else
         if ( num ) {
             /* allocate an array of bonds to be cut */
-            R2C_ATPAIR *ap = (R2C_ATPAIR *)inchi_malloc( sizeof(ap[0]) * num );
+            R2C_ATPAIR *ap = (R2C_ATPAIR *) inchi_malloc( sizeof(ap[0]) * num );
             AT_NUMB    comp_num = 0;
             if ( !ap ) {
                 ret = -1; /* malloc failure */

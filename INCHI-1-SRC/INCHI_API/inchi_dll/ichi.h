@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -177,13 +199,13 @@ typedef struct tagINChI {  /* [N] = allocated length */
                                                 /* not including mobile H groups */
     AT_NUMB *nPossibleLocationsOfIsotopicH;     /* [0]=> length including 0th element, location1,...*/
     int      bDeleted;
-#if( bREUSE_INCHI == 1 )
+#if ( bREUSE_INCHI == 1 )
     int nRefCount;
 #endif
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
     int bExtract;
 #endif
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
     int nLink;  /* negative: ignore InChI; positive: index of (Reconnected component) + 1 linked to it */
 #endif
 } INChI;
@@ -214,10 +236,10 @@ typedef struct tagINChI_Aux { /* [N] = allocated length */
     AT_NUMB   *nConstitEquTGroupNumbers;         /* [nNumberOfAtoms/2] */
     AT_NUMB   *nConstitEquIsotopicNumbers;       /* [nNumberOfAtoms*1.5] */
     AT_NUMB   *nConstitEquIsotopicTGroupNumbers; /* [nNumberOfAtoms/2] */
-#if( bREUSE_INCHI == 1 )
+#if ( bREUSE_INCHI == 1 )
     int nRefCount;
 #endif
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
     unsigned long ulNormTime;
     unsigned long ulCanonTime;
 #endif

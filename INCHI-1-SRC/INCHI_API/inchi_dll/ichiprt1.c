@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -49,7 +71,7 @@ int PrintXmlStartTag(char *pStr,
                      const char *l5, int v5, const char *l6, int v6);
 int Needs2addXmlEntityRefs(const char *s );
 int AddXmlEntityRefs(const char *p, char *d );
-#if( TEST_RENUMB_ATOMS == 1 ) /*  { */
+#if ( TEST_RENUMB_ATOMS == 1 ) /*  { */
 int CompareStereoINChI( INChI_Stereo *s1, INChI_Stereo *s2 );
 #endif
 
@@ -507,13 +529,13 @@ int OutputINChIXmlStructStartTag( INCHI_IOSTREAM *output_file, char *pStr, int i
         ret = 1; /*  success */
     } else {
         if ( len = Needs2addXmlEntityRefs( szSdfLabel ) ) {
-            if ( p = (char*)inchi_malloc( len+1 ) ) {
+            if ( p = (char*) inchi_malloc( len+1 ) ) {
                 AddXmlEntityRefs( szSdfLabel, p );
                 szSdfLabel = pSdfLabel = p;
             }
         }
         if ( len = Needs2addXmlEntityRefs( szSdfValue ) ) {
-            if ( p = (char*)inchi_malloc( len+1 ) ) {
+            if ( p = (char*) inchi_malloc( len+1 ) ) {
                 AddXmlEntityRefs( szSdfValue, p );
                 szSdfValue = pSdfValue = p;
             }
@@ -582,10 +604,10 @@ int OutputINChIXmlError( INCHI_IOSTREAM *output_file, char *pStr, int nStrLen, i
         break;
     }
     
-#if( ENTITY_REFS_IN_XML_MESSAGES == 1 )   
+#if ( ENTITY_REFS_IN_XML_MESSAGES == 1 )   
     /*  insert xml entity references if necessary */
     if ( len = Needs2addXmlEntityRefs( szErrorText ) ) {
-        if ( pNewErrorText = (char*)inchi_malloc( len+1 ) ) {
+        if ( pNewErrorText = (char*) inchi_malloc( len+1 ) ) {
             AddXmlEntityRefs( szErrorText, pNewErrorText );
             szErrorText = pNewErrorText;
         }
@@ -1188,10 +1210,10 @@ int OutputINChI1(char *pStr, int nStrLen,
     int ATOM_MODE = ((bAbcNumbers?CT_MODE_ABC_NUMBERS:0)
                     | CT_MODE_ATOM_COUNTS
                     | CT_MODE_NO_ORPHANS
-#if( EQL_H_NUM_TOGETHER == 1 )
+#if ( EQL_H_NUM_TOGETHER == 1 )
                     | CT_MODE_EQL_H_TOGETHER
 #endif
-#if( ABC_CT_NUM_CLOSURES == 1 )
+#if ( ABC_CT_NUM_CLOSURES == 1 )
                     | (bAbcNumbers && bCtPredecessors? CT_MODE_ABC_NUM_CLOSURES:0)
 #endif
                     | (bCtPredecessors?CT_MODE_PREDECESSORS:0));
@@ -1253,7 +1275,7 @@ int OutputINChI1(char *pStr, int nStrLen,
 
     /*^^^ 15 April, 2008 */
     int bFixTranspChargeBug = 0;
-#if( FIX_TRANSPOSITION_CHARGE_BUG == 1 ) /* 2008-01-02 */
+#if ( FIX_TRANSPOSITION_CHARGE_BUG == 1 ) /* 2008-01-02 */
     if ( INCHI_OUT_FIX_TRANSPOSITION_CHARGE_BUG & bINChIOutputOptions )
         bFixTranspChargeBug = 1;
 #endif
@@ -1267,7 +1289,7 @@ int OutputINChI1(char *pStr, int nStrLen,
     bFhTag                 = 0;
     bPlainTabbedOutput     = 0 != (bINChIOutputOptions & INCHI_OUT_TABBED_OUTPUT) &&
                              bPlainText && !bXml && !bPlainTextCommnts;
-#if ( !defined(INCHI_LIBRARY) && !defined(INCHI_LIB) )    
+#if ( !defined(TARGET_API_LIB) && !defined(TARGET_LIB_FOR_WINCHI) )    
     pTAB                   = bPlainTabbedOutput? "\t" : "\n";
 #else
     pTAB                   = "\n";
@@ -1533,7 +1555,7 @@ int OutputINChI1(char *pStr, int nStrLen,
                 }
 
                 bCurRelative        =  bRequestedRelativeStereo && bCurStereoSp3;
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                 bCurRelative        =  bCurRelative &&
                                       (pINChI->Stereo->nNumberOfStereoCenters > 1 ) &&
                                       (pINChI->Stereo->nCompInv2Abs != 0) &&
@@ -1542,7 +1564,7 @@ int OutputINChI1(char *pStr, int nStrLen,
 
 
                 bCurIsoRelative     = bRequestedRelativeStereo && (bCurIsoStereoSp3 || bCurIsoStereoSp3Inv);
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                 bCurIsoRelative     = bCurIsoRelative &&
                                       (pINChI->StereoIsotopic->nNumberOfStereoCenters > 1 ) &&
                                       (pINChI->StereoIsotopic->nCompInv2Abs != 0) &&
@@ -1550,7 +1572,7 @@ int OutputINChI1(char *pStr, int nStrLen,
                                       
 
                 bCurRacemic         = bRequestedRacemicStereo && bCurStereoSp3;
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                 bCurRacemic         = bCurRacemic &&
                                       (pINChI->Stereo->nCompInv2Abs != 0) &&
                                       (pINChI->Stereo->nNumberOfStereoCenters > 0 ) ?
@@ -1558,7 +1580,7 @@ int OutputINChI1(char *pStr, int nStrLen,
 #endif
 
                 bCurIsoRacemic      = bRequestedRacemicStereo && (bCurIsoStereoSp3 || bCurIsoStereoSp3Inv);
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                 bCurIsoRacemic      = bCurIsoRacemic &
                                       (pINChI->StereoIsotopic->nCompInv2Abs != 0) &&
                                       (pINChI->StereoIsotopic->nNumberOfStereoCenters > 0 ) ?
@@ -1805,7 +1827,7 @@ int OutputINChI1(char *pStr, int nStrLen,
         {
             ;
 /* -- removed empty line before InChI ---
-#ifndef INCHI_LIBRARY
+#ifndef TARGET_API_LIB
             inchi_ios_print( output_file, "\n" );
 #else
             ;
@@ -1833,7 +1855,8 @@ int OutputINChI1(char *pStr, int nStrLen,
                 inchi_ios_print( output_file, "%s%s", pStr, pTAB );
             }
         }
-        inchi_ios_print( output_file, "%s%s=%s", pLF, (FLAG_SORT_PRINT_ReChI_PREFIX & *pSortPrintINChIFlags)? INCHI_REC_NAME : INCHI_NAME, pLF );
+        /* inchi_ios_print( output_file, "%s%s=%s", pLF, (FLAG_SORT_PRINT_ReChI_PREFIX & *pSortPrintINChIFlags)? INCHI_REC_NAME : INCHI_NAME, pLF ); */
+        inchi_ios_print( output_file, "%s%s=%s", pLF, INCHI_NAME, pLF );
     }
 
 
@@ -2325,7 +2348,7 @@ repeat_INChI_output:
         }
     }
 
-#if( CANON_FIXH_TRANS == 1 )
+#if ( CANON_FIXH_TRANS == 1 )
     if ( bOutType == OUT_NONTAUT && bOutputType == OUT_TN && bSecondNonTautPass &&
          INCHI_SEGM_FILL == INChI_SegmentAction( sDifSegs[DIFL_F][DIFS_o_TRANSP] )) 
     {
@@ -2991,7 +3014,7 @@ repeat_INChI_Aux_Iso_output:
         } /* Aux info isotopic */
 
 
-#if( CANON_FIXH_TRANS != 1 )
+#if ( CANON_FIXH_TRANS != 1 )
         if ( bSecondNonTautPass ) 
         {
             /* find and print non-tautomeric components transposition, if non-trivial */
@@ -3825,7 +3848,7 @@ int WriteOrigBonds( int num_inp_atoms, inp_ATOM *at, int *i, char *szBuf, int bu
                     case -STEREO_SNGL_DOWN:
                         bond_char = 'N';
                         break;
-#if( FIX_EITHER_STEREO_IN_AUX_INFO == 1 )
+#if ( FIX_EITHER_STEREO_IN_AUX_INFO == 1 )
                     case  STEREO_SNGL_EITHER:
                         bond_char = 'v';
                         break;

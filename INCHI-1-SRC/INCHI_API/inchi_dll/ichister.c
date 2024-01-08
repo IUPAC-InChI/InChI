@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -52,7 +74,7 @@
 #define ZERO_LENGTH           MIN_BOND_LEN
 #define ZERO_FLOAT            1.0e-12
 #define BOND_PARITY_UNDEFINED 64
-#if( STEREO_CENTER_BONDS_NORM == 1 )
+#if ( STEREO_CENTER_BONDS_NORM == 1 )
 #define MPY_SINE              1.00  /*  was 3.0 */
 #define MAX_EDGE_RATIO        2.50   /*  max max/min edge ratio for a tetrahedra close to a parallelogram  */
 #else
@@ -383,7 +405,7 @@ int  ret=0;
             }
         }
     }
-#if( FIX_2D_STEREO_BORDER_CASE == 1 )
+#if ( FIX_2D_STEREO_BORDER_CASE == 1 )
     /* check if the bonds with ordering numbers first_Up+len_Up and first_Up+len_Up+1 */
     /* have identical angles. In this case switch their order to enlarge the Up sequence */
 #define ZERO_ANGLE  0.000001
@@ -565,7 +587,7 @@ int  ret=0;
 
                             dAngle = dBondDirection[nBondOrder[(first_Up + 2 ) % nNumNeigh]];
 
-                            if (  dBisector - dAngle < -dLimit ||
+                            if ( dBisector - dAngle < -dLimit ||
                                   dBisector - dAngle >  dLimit  ) 
                             {
                                 ret = (T2D_UNDF | T2D_WARN);
@@ -658,7 +680,7 @@ int  ret=0;
 
         
             case 2:	/* 2 Up */
-#if( FIX_2D_STEREO_BORDER_CASE == 1 )
+#if ( FIX_2D_STEREO_BORDER_CASE == 1 )
                     if ( len_Up == 1 ) 
                     {
                         ret = T2D_OKAY;
@@ -905,7 +927,7 @@ double triple_prod_and_min_abs_sine2(double at_coord[][3], double central_at_coo
                 }
             }
         }
-#if( STEREO_CENTER_BONDS_NORM == 1 )        
+#if ( STEREO_CENTER_BONDS_NORM == 1 )        
         
         if ( bLongEdges && !bAddedExplicitNeighbor && max_edge_len >= MIN_LEN_STRAIGHT ) {
             /*  possible planar tetragon */
@@ -1072,7 +1094,7 @@ exit_function:
 
 /****************************************************************/
 
-#if( NEW_STEREOCENTER_CHECK == 1 ) /* { */
+#if ( NEW_STEREOCENTER_CHECK == 1 ) /* { */
 
 /********************************************************************************************/
 int bInpAtomHasRequirdNeigh ( inp_ATOM *at, int cur_at, int RequirdNeighType, int NumDbleBonds )
@@ -1149,7 +1171,7 @@ int bInpAtomHasRequirdNeigh ( inp_ATOM *at, int cur_at, int RequirdNeighType, in
         return 0;
     }
 
-    if (  NumDbleBonds && NumDbleBonds > num_mult ||
+    if ( NumDbleBonds && NumDbleBonds > num_mult ||
          !NumDbleBonds && at[cur_at].valence != num_1s ) {
         return 0;
     }
@@ -2098,7 +2120,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
     int i, j, next_at, num_stereo_bonds, bFound;
     int bond_type, num_2s, num_alt;
     int num_2s_next, num_alt_next, num_wrong_bonds_1, num_wrong_bonds_2;
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
     int n2sh, num_2s_hetero[2], num_2s_hetero_next[2], next_next_at, type_N, type_N_next;
 #endif
     if ( MAX_NUM_STEREO_BOND_NEIGH < at[cur_at].valence+at[cur_at].num_H ||
@@ -2108,7 +2130,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
         return 0;
     /*  count bonds and find the second atom on the stereo bond */
     num_2s = num_alt = num_wrong_bonds_1 = 0;
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
     num_2s_hetero[0] = num_2s_hetero[1] = type_N = 0;
     if ( 0 == at[cur_at].num_H && 0 == at[cur_at].charge && 0 == at[cur_at].radical &&
          3 == get_endpoint_valence( at[cur_at].el_number ) ) {
@@ -2131,7 +2153,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
         } else
         if ( bond_type == BOND_DOUBLE ) {
             num_2s ++;
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
             if ( 0 <= (n2sh = bIsSuitableHeteroInpAtom( at + next_at )) ) {
                 num_2s_hetero[n2sh] ++; /* n2sh=0 -> =N- or =NH; n2sh=1 -> =O */
             }
@@ -2141,7 +2163,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
         } else
         if ( bond_type != BOND_SINGLE && bond_type != BOND_TAUTOM ) {
             num_wrong_bonds_1 ++;
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
             if ( num_wrong_bonds_1 > 1 || num_wrong_bonds_1 && 2 >= at[cur_at].valence ) {
                 return 0; /* wrong bond type */
             } else {
@@ -2161,7 +2183,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
                 continue;
             /*  next atom neighbors */
             num_2s_next = num_alt_next = num_wrong_bonds_2 = 0;
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
             num_2s_hetero_next[0] = num_2s_hetero_next[1] = type_N_next = 0;
             if ( 0 == at[next_at].num_H && 0 == at[next_at].charge && 0 == at[next_at].radical &&
                  3 == get_endpoint_valence( at[next_at].el_number ) ) {
@@ -2180,7 +2202,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
                 else
                 if ( bond_type == BOND_DOUBLE ) {
                     num_2s_next ++;
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
                     next_next_at = at[next_at].neighbor[j];
                     if ( 0 <= (n2sh = bIsSuitableHeteroInpAtom( at + next_next_at )) ) {
                         num_2s_hetero_next[n2sh] ++; /* n2sh=0 -> =N- or =NH; n2sh=1 -> =O */
@@ -2189,7 +2211,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
                 } else
                 if ( bond_type != BOND_SINGLE && bond_type != BOND_TAUTOM ) {
                     num_wrong_bonds_2 ++;
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
                     if ( num_wrong_bonds_1 > 1 || num_wrong_bonds_1 && 2 >= at[cur_at].valence ) {
                         break; /* wrong bond type */
                     } else {
@@ -2202,7 +2224,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
             }
             /* figure out whether the at[cur_at]--at[next_at] bond may not be stereogenic */
 
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
             if ( 3 == (type_N | type_N_next) &&
                  ( 2 == type_N && !bIsOxide( at, cur_at ) ||
                    2 == type_N_next && !bIsOxide( at, next_at ) ) ) {
@@ -2220,7 +2242,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
             if ( 2 == num_2s_next ) {
                 if ( 2 == at[next_at].valence ) {
                     ; /* only one double bond permitted except cumulenes */
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
                 } else
                 if ( 1 == (num_2s_hetero_next[0] | num_2s_hetero_next[1]) &&
                      3 == at[next_at].valence + at[next_at].num_H &&
@@ -2254,7 +2276,7 @@ int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE n
     if ( (num_alt>0) + (num_2s>0) != 1 || !num_stereo_bonds )
         return 0;
     if ( num_2s > 1 ) {
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
         if ( 2 == num_2s &&
              1 == (num_2s_hetero[0] | num_2s_hetero[1]) &&
              3 == at[cur_at].valence + at[cur_at].num_H &&
@@ -2362,10 +2384,10 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
     int j, k, next_at_1, i_next_at_1, i_next_at_2, at_2, next_at_2, num_stereo_bonds, bFound, bAllene;
     int bond_type, num_2s_1, num_alt_1;
     int num_2s_2, num_alt_2;
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
     int num_wrong_bonds_1, num_wrong_bonds_2;
 #endif
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
     int n2sh, num_2s_hetero[2], num_2s_hetero_next[2], next_next_at, type_N, type_N_next;
 #endif
     int num_stored_stereo_bonds, num_stored_isotopic_stereo_bonds;
@@ -2397,10 +2419,10 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
     num_2s_1 = num_alt_1 = 0;
     chain_length      = 0;
     num_chains        = 0;
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
     num_wrong_bonds_1 = 0;
 #endif
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
     num_2s_hetero[0] = num_2s_hetero[1] = type_N = 0;
     if ( 0 == at[at_1].num_H && 0 == at[at_1].charge && 0 == at[at_1].radical &&
          3 == get_endpoint_valence( at[at_1].el_number ) ) {
@@ -2424,7 +2446,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
         switch ( bond_type ) {
         case BOND_ALTERN:
             num_alt_1 ++;
-#if( FIND_RING_SYSTEMS == 1 )
+#if ( FIND_RING_SYSTEMS == 1 )
             if ( at[at_1].nRingSystem != at[at_2].nRingSystem )
                 continue; /* reject alt. bond connecting different ring systems */
 #endif
@@ -2469,7 +2491,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
                     chain_length = cur_chain_length; /*  accept a stereogenic cumulele */
                 }
             }
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
             if ( !cur_chain_length &&
                  0 <= (n2sh = bIsSuitableHeteroInpAtom( at + at_2 )) ) {
                 num_2s_hetero[n2sh] ++; /* n2sh=0 -> =N- or =NH; n2sh=1 -> =O */
@@ -2486,7 +2508,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
         case BOND_TAUTOM:
             continue; /*  reject non-stereogenic bond to neighbor #i_next_at_1 */
         default:
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
             num_wrong_bonds_1 ++;
             continue;
 #else
@@ -2506,7 +2528,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
             
             /*  check at_2 neighbors and bonds */
             num_2s_2 = num_alt_2 = 0;
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
             num_2s_hetero_next[0] = num_2s_hetero_next[1] = type_N_next = 0;
             if ( 0 == at[at_2].num_H && 0 == at[at_2].charge && 0 == at[at_2].radical &&
                  3 == get_endpoint_valence( at[at_2].el_number ) ) {
@@ -2519,13 +2541,13 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
             }
 #endif
             i_next_at_2 = -1;  /*  unassigned mark */
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
             num_wrong_bonds_2 = 0;
 #endif
             for ( j = 0; j < at[at_2].valence; j ++ ) {
                 bond_type = get_allowed_stereo_bond_type( (int)at[at_2].bond_type[j] );
                 if ( !bond_type ) {
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
                     num_wrong_bonds_2 ++;
                     continue;  /*  this bond type is not allowed to be adjacent to a stereo bond */
 #else
@@ -2534,7 +2556,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
                 }
                 if ( bond_type == BOND_DOUBLE ) {
                     num_2s_2 ++;
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
                     next_next_at = at[at_2].neighbor[j];
                     if ( 0 <= (n2sh = bIsSuitableHeteroInpAtom( at + next_next_at )) ) {
                         num_2s_hetero_next[n2sh] ++; /* n2sh=0 -> =N- or =NH; n2sh=1 -> =O */
@@ -2547,7 +2569,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
                     i_next_at_2 = j; /*  assigned */
             }
             if ( 
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
                  num_wrong_bonds_2 > 1 || num_wrong_bonds_2 && 2 >= at[at_2].valence ||
 #else
                  j < at[at_2].valence /* "next" has a wrong bond type*/ ||
@@ -2563,7 +2585,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
             if ( num_2s_2 > 2 ) {
                 bFound = 0;
             } else
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
             if ( 3 == (type_N | type_N_next) &&
                  ( 2 == type_N && !bIsOxide( at, at_1 ) ||
                    2 == type_N_next && !bIsOxide( at, at_2 ) ) ) {
@@ -2571,7 +2593,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
             } else
 #endif
             if ( 2 == num_2s_2 ) {
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
                 if ( !chain_length &&
                      1 == (num_2s_hetero_next[0] | num_2s_hetero_next[1]) &&
                      3 == at[at_2].valence + at[at_2].num_H &&
@@ -2626,7 +2648,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
     if ( num_chains > 1 ) {
         return 0; /*  cannot be more than 1 cumulene chain. */
     }
-#if( ONE_BAD_SB_NEIGHBOR == 1 )
+#if ( ONE_BAD_SB_NEIGHBOR == 1 )
     if ( num_wrong_bonds_1 > 1 || num_wrong_bonds_1 && 2 >= at[at_1].valence ) {
         return 0; /* wrong bond type */
     }
@@ -2644,7 +2666,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
         return 0;
 
     if ( num_2s_1 > 1 ) {
-#if( N_V_STEREOBONDS == 1 )
+#if ( N_V_STEREOBONDS == 1 )
         if ( 2 == num_2s_1 &&
              2 == type_N   &&
              1 == (num_2s_hetero[0] | num_2s_hetero[1]) &&
@@ -2677,7 +2699,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
         at_2 = all_at_2[k];
         i_next_at_1 = all_pos_1[k];
 
-#if( MIN_SB_RING_SIZE > 0 )
+#if ( MIN_SB_RING_SIZE > 0 )
         if( at[at_1].nRingSystem == at[at_2].nRingSystem ) {
             /*  check min. ring size only if both double bond/cumulene */
             /*  ending atoms belong to the same ring system */
@@ -2925,7 +2947,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at, inp_ATOM *at, int at_1, inp_ATOM *
 
 /*********************************************************************/
 /*  if isotopic H, D, T added, can the atom be a stereo center? */
-#if( NEW_STEREOCENTER_CHECK == 1 )
+#if ( NEW_STEREOCENTER_CHECK == 1 )
 /* int bCanInpAtomBeAStereoCenter( inp_ATOM *at, int cur_at ) */
 int can_be_a_stereo_atom_with_isotopic_H( inp_ATOM *at, int cur_at, int bPointedEdgeStereo )
 {
@@ -3017,7 +3039,7 @@ int set_stereo_atom_parity( sp_ATOM *out_at, inp_ATOM *at, int cur_at, inp_ATOM 
     memset(num_explicit_iso_H, 0, sizeof(num_explicit_iso_H));
     num_explicit_H = 0;
 
-#if( NEW_STEREOCENTER_CHECK == 1 )
+#if ( NEW_STEREOCENTER_CHECK == 1 )
     if ( !(nMustHaveNumNeigh = bCanInpAtomBeAStereoCenter( at, cur_at, bPointedEdgeStereo ) ) ||
          at[cur_at].num_H > NUM_H_ISOTOPES
        ) {
@@ -3172,7 +3194,7 @@ int set_stereo_atom_parity( sp_ATOM *out_at, inp_ATOM *at, int cur_at, inp_ATOM 
             }
             goto exit_function;
         }
-#if( STEREO_CENTER_BONDS_NORM == 1 )
+#if ( STEREO_CENTER_BONDS_NORM == 1 )
         else {
             mult3( at_coord[j], 1.0/z, at_coord[j] );
         }
@@ -3227,12 +3249,12 @@ int set_stereo_atom_parity( sp_ATOM *out_at, inp_ATOM *at, int cur_at, inp_ATOM 
             if ( num_z > 0 ) {
                 bAmbiguous |= AMBIGUOUS_STEREO;
             }
-#if( APPLY_IMPLICIT_H_DOWN_RULE == 1 )  /* { */
+#if ( APPLY_IMPLICIT_H_DOWN_RULE == 1 )  /* { */
             /*  Although H should be at the top of the list, add it to the bottom. */
             /*  This will be taken care of later by inverting parity 1<->2 */
             at_coord[j][0] = 0.0;
             at_coord[j][1] = 0.0;
-#if( STEREO_CENTER_BONDS_NORM == 1 )
+#if ( STEREO_CENTER_BONDS_NORM == 1 )
             at_coord[j][2] = -1.0;
 #else
             at_coord[j][2] = -(bond_len_xy[0]+bond_len_xy[1]+bond_len_xy[2])/3.0;
@@ -3290,7 +3312,7 @@ int set_stereo_atom_parity( sp_ATOM *out_at, inp_ATOM *at, int cur_at, inp_ATOM 
                 }
                 goto exit_function;
             }
-#if( STEREO_CENTER_BOND4_NORM == 1 )
+#if ( STEREO_CENTER_BOND4_NORM == 1 )
             else {
                 mult3( at_coord[j], 1.0/z, at_coord[j] );
             }
@@ -3583,7 +3605,7 @@ int set_stereo_parity( inp_ATOM* at, sp_ATOM* at_output, int num_at, int num_rem
             *nMaxNumStereoBonds = max_stereo_bonds;
     }
     /*  calculate stereo descriptors */
-#if( MIN_SB_RING_SIZE > 0 )
+#if ( MIN_SB_RING_SIZE > 0 )
     min_sb_ring_size = (AT_RANK)(((nMode & REQ_MODE_MIN_SB_RING_MASK) >> REQ_MODE_MIN_SB_RING_SHFT) & AT_RANK_MASK);
     if ( min_sb_ring_size >= 3 ) {
         /* create BFS data structure for finding for each stereo bond its min. ring sizes */
@@ -3634,7 +3656,7 @@ int set_stereo_parity( inp_ATOM* at, sp_ATOM* at_output, int num_at, int num_rem
     REQ_MODE_SB_IGN_ALL_UU
     */
 
-#if( MIN_SB_RING_SIZE > 0 )
+#if ( MIN_SB_RING_SIZE > 0 )
     if ( q ) {
         q = QueueDelete( q );
     }

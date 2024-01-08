@@ -1,108 +1,105 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * June 15, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
-*****
-This is the release of the IUPAC International Chemical
-Identifier with InChIKey, version 1, software version 1.03.
-(http://www.iupac.org/projects/2000/2000-025-1-800.html
-http://www.iupac.org/inchi).
-
-This software supports both standard and non-standard InChI/InChIKey.
-*****
 
 
-This directory includes stand-alone executables for generating the 
-InChI/InChIKey, all in a single zip file.
+This directory includes 'command line' InChI executable and InChI API library binaries.
+The 32 and 64 bit versions are supplied for both Windows and Linux. 
 
-Included is a 'command line' version of InChI software inchi-1.exe.
-This Windows 32-bit executable is in the directory win32.
-
-Linux 32-bit and 64-bit versions are located in the files inchi-1.gz 
-in the directories linux/32bit and linux/64bit, respectively.
-
-Also included (directory win32) is winchi-1.exe, a conventional Windows 
-application that reads structure files from the disk or through the 
-Window's clipboard. Processed structures are shown in the upper portion 
-of the output screen and text output (including the Identifier itself and 
-auxiliary information) is shown in the lower portion of the output screen. 
-
-Options for this program can be seen by starting the program without command 
-line options from the 'Command Prompt' ('DOS Window').
-
-By default, InChI software v. 1.03 produces standard InChI.
-In particular, the standard identifier is generated when the software is used 
-without any specifically added InChI options. If some options are specified, 
-and at least one of them qualifies as related to non-standard InChI,
-the software produces non-standard Identifier(s). For the details, consult 
-InChI User's Guide.
-
-
-Using winchi-1: entering structures.
-
-Using the Windows clipboard: Molfile formatted structures (connection
-tables) that are 'copied' to the clipboard (using Ctrl-C or Edit/Copy
-choices), may then be 'pasted' (Ctrl-V or Edit/Paste) in the program.
-For ISIS/Draw users this will require the setting 'Copy Mol/Rxnfile
-to Clipboard' to be ON (Options/Settings/General tab in V2.x).
-ACD/ChemSketch works by default. In general, a structure may be
-copied from any application that populates the clipboard with a 
-commonly used Molfile-like (MDLCT) structure format.
-
-If problems are encountered, saving structures as Molfile and reading
-them in winchi-1.exe is recommended.
-
-Using MOL, SDF, or CML files: A set of files are included for testing.
-Each MOL file contains a single structure, while the SDF file
-contains many structures. If an SDF or CML file is selected, you can
-scroll through the structures with the '>>' and '<<' buttons.
-
-Files may be selected in one of four ways:
-1) using the File/Open menu choices - then pressing the '...' button
-   on the upper right of the dialog box. 
-2) the above dialog box may be opened directly with the 'Open'
-   button on the screen.
-3) you may 'drag and drop' the input structure files from the 'Windows
-   Explorer' program to the winchi-1.exe program window or to its
-   icon on the Windows desktop.
-4) you may copy and paste a structure from several structure editors.
-
+Also included is winchi-1.exe, a graphical Windows application
+(directory 'windows'; a 32 bit version which will also run under 64 bit Windows).
 
 
 =========
   FILES 
 =========
 
-readme.txt                  This file
+readme.txt                          This file
 
-win32                       SUB-DIRECTORY
-    winchi-1.exe            InChI Windows program
-    inchi-1.exe             InChI command line program
+WINDOWS                             SUB-DIRECTORY
+    winchi-1.exe                    InChI graphical Windows application 
+    
+    32BIT                           SUB-DIRECTORY
+        inchi-1.exe                 InChI stand-alone command line executable, 32 bit
 
-linux                       SUB-DIRECTORY
+        DLL                         SUB-DIRECTORY
+            libinchi.dll            InChI dynamic-link library, 32 bit
 
-    32bit                       SUB-DIRECTORY
-        inchi-1.gz              Linux i-386 executable of inchi-1
-                                (needs libstdc++.so.6)
+    64BIT                           SUB-DIRECTORY
+        inchi-1.exe                 InChI stand-alone command line executable, 64 bit
 
-    64bit                       SUB-DIRECTORY
-        inchi-1.gz              Linux i-386amd64 executable of inchi-1
+        DLL                         SUB-DIRECTORY
+            libinchi.dll            InChI dynamic-link library, 64 bit
+
+LINUX                               SUB-DIRECTORY
+
+    32BIT                           SUB-DIRECTORY
+        inchi-1.gz                  InChI stand-alone command line executable, 32 bit; gzipped
+        
+        SO                          SUB-DIRECTORY
+            libinchi.so.1.04.00.gz  shared library for InChI API, 32 bit; gzipped
+            
+    64BIT                           SUB-DIRECTORY
+        inchi-1.gz                  InChI stand-alone command line executable, 64 bit; gzipped
+        
+        SO                          SUB-DIRECTORY
+            libinchi.so.1.04.00.gz  shared library for InChI API, 64 bit; gzipped
 
 
 
-InChI discussion group
-=======================
-https://lists.sourceforge.net/lists/listinfo/inchi-discuss
+Note-1. InChI stand-alone executable inchi-1[.exe] does not require dll/so libraries.
+
+Note-2. Example programs which use InChI API library for both Windows (dll) and Linux (so)
+are supplied in INCHI-1-API/InChI_API section of this distribution package.
+There are examples for C ('inchi_main' application, see projects for MS Visual Studio 2008 'vc9' 
+and gcc 'gcc_so_makefile' ) and Python ('python_sample'). Also supplied ther
+are InChI API library sorce codes and related MS Visual Studio 2008/gcc projects.
+
+Note-3. To use the shared library, you may wish to create 'libinchi.so.1' 
+as a symbolic link to 'libinchi.so.1.04.00'
+
+
+
+=========
+  LINKS
+=========
+
+IUPAC                   http://www.iupac.org/inchi
+InChI Trust             http://www.inchi-trust.org                                      
+InChI discussion group  https://lists.sourceforge.net/lists/listinfo/inchi-discuss

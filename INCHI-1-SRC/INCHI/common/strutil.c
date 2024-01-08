@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -629,7 +651,7 @@ int fix_odd_things( int num_atoms, inp_ATOM *at, int bFixBug, int bFixNonUniform
 
     for ( i1 = 0; i1 < num_atoms; i1 ++ ) 
     {
-        if (  1 == at[i1].valence &&
+        if ( 1 == at[i1].valence &&
              -1 == at[i1].charge  &&
              (0 == at[i1].radical || RADICAL_SINGLET == at[i1].radical) &&
               !NUMH(at,i1) &&
@@ -701,7 +723,7 @@ int fix_odd_things( int num_atoms, inp_ATOM *at, int bFixBug, int bFixNonUniform
                         }
                     }
 /*   -- removed -- 2010-03-17 DT
-#if( FIX_ODD_THINGS_REM_Plus_BUG == 1 )
+#if ( FIX_ODD_THINGS_REM_Plus_BUG == 1 )
                     at[c].charge -= charge;
 #else
                     if ( bFixBug ) 
@@ -738,7 +760,7 @@ int fix_odd_things( int num_atoms, inp_ATOM *at, int bFixBug, int bFixNonUniform
         }
     }
 
-#if( REMOVE_ION_PAIRS_EARLY == 1 )
+#if ( REMOVE_ION_PAIRS_EARLY == 1 )
     num_changes += remove_ion_pairs( num_atoms, at );
 #endif
 
@@ -864,7 +886,7 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
     int num_changes = 0;
 
     /*                           0 1 2  3  4 5 6  7  8  9                   8  9  */
-#if( FIX_REM_ION_PAIRS_Si_BUG == 1 )
+#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )
     static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si;";   /* 8 elements + C, Si */
 #else
     static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si";   /* 8 elements + C, Si */
@@ -1743,7 +1765,7 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
     return num_changes;
 }
 
-/*#if( DISCONNECT_SALTS == 1 )*/ /* { */
+/*#if ( DISCONNECT_SALTS == 1 )*/ /* { */
 
 
 
@@ -2074,7 +2096,7 @@ int DisconnectAmmoniumSalt ( inp_ATOM *at, int iN, int iO, int k, S_CHAR *num_ex
                 at[iO].num_H ++;
                 break;
             } else
-            if (  num_explicit_H[0] ) {
+            if ( num_explicit_H[0] ) {
                 nMove_H_iso_diff = 0; /* flag: move explicit non-isotopic H */
                 break;
             }
@@ -2383,7 +2405,7 @@ int bMayDisconnectMetals( ORIG_ATOM_DATA *orig_inp_data, int bCheckMetalValence,
 
 
 /*****************************************************************************/
-#if( bRELEASE_VERSION == 0 && (EXTR_HAS_METAL_ATOM & (EXTR_MASK | EXTR_FLAG) ) )
+#if ( bRELEASE_VERSION == 0 && (EXTR_HAS_METAL_ATOM & (EXTR_MASK | EXTR_FLAG) ) )
 int bHasMetalAtom( ORIG_ATOM_DATA *orig_inp_data )
 {
     int i;
@@ -2744,7 +2766,7 @@ double GetMinDistDistribution( inp_ATOM *at, int num_at, int iat, int iat_H,
                 n = at[i].neighbor[j];
                 if ( (n > i && n != iat) || n == iat_H )
                     continue;
-#if( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
                 if ( n == iat ) {
                     int stop = 1;  /* <BRKPT> */
                 }
@@ -3074,7 +3096,7 @@ int get_iat_number( int el_number, const int el_num[], int el_num_len )
      IAT_MAX
  } ION_ATOM_TYPE;
 
-#if( READ_INCHI_STRING == 1 )
+#if ( READ_INCHI_STRING == 1 )
 /****************************************************************************************/
 int bHeteroAtomMayHaveXchgIsoH( inp_ATOM *atom, int iat )
 {
@@ -3554,7 +3576,7 @@ int Free_INChI(INChI **ppINChI)
     INChI *pINChI;
 
     if ( pINChI = *ppINChI ) {
-#if( bREUSE_INCHI == 1 )
+#if ( bREUSE_INCHI == 1 )
         if ( pINChI->nRefCount -- > 0 )
             return 1;
 #endif
@@ -3690,7 +3712,7 @@ int Free_INChI_Aux( INChI_Aux **ppINChI_Aux )
 {
     INChI_Aux *pINChI_Aux = *ppINChI_Aux;
     if ( pINChI_Aux ) {
-#if( bREUSE_INCHI == 1 )
+#if ( bREUSE_INCHI == 1 )
         if ( pINChI_Aux->nRefCount -- > 0 )
             return 1;
 #endif
@@ -3748,7 +3770,7 @@ INChI_Aux *Alloc_INChI_Aux( int num_at, int num_isotopic_atoms, int nAllocMode, 
         goto out_of_RAM;
     }
     
-    if (  num_at > 0 ) {
+    if ( num_at > 0 ) {
         pINChI_Aux->OrigInfo    = (ORIG_INFO *)inchi_calloc(sizeof(pINChI_Aux->OrigInfo[0]), num_at);
         if ( !pINChI_Aux->OrigInfo )
             goto out_of_RAM;
@@ -3816,7 +3838,7 @@ out_of_RAM:
                          at[i].iso_atw_diff && (bAtomsDT? (at[i].iso_atw_diff != 1 || strcmp(at[i].elname, "H")) : 1) )
 #define ALIASED_AT(i) (0 < NUM_ISO_H(at, i))
 /***********************************************************************************/
-#if( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
+#if ( TEST_RENUMB_ATOMS_SAVE_LONGEST == 1 || TEST_RENUMB_SWITCH == 1 )
 int WriteToSDfile( const INP_ATOM_DATA *inp_at_data, INCHI_IOSTREAM* fcb, const char* name, const char* comment,
                    const char *szLabel, const char *szValue)
 {
@@ -4540,7 +4562,7 @@ int WriteOrigAtomDataToSDfile(const ORIG_ATOM_DATA *inp_at_data, INCHI_IOSTREAM 
     return ret;
     
 }
-#if( FIX_ADJ_RAD == 1 )
+#if ( FIX_ADJ_RAD == 1 )
 /*************************************************************************/
 int FixNextRadicals( int cur_at, inp_ATOM *at );
 int FixNextRadicals( int cur_at, inp_ATOM *at )
@@ -4582,8 +4604,8 @@ int FixAdjacentRadicals( int num_inp_atoms, inp_ATOM *at )
 }
 #endif
 
-#ifdef INCHI_ANSI_ONLY
-#ifndef INCHI_LIBRARY
+#ifdef COMPILE_ANSI_ONLY
+#ifndef TARGET_API_LIB
 /*
 #include <stdio.h>
 #include "inpdef.h"

@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.04 release 2011-10-12
+
+### Added
+
+- Support for chemical element numbers 105-112 (see release notes for detailed information)
+- Possibilty of processing mult iple input files at a single run added to inchi-executable (both on Windows and Linux versions); common file name wildcards are recognized
+
+### Changed
+
+- Software licence changed from GNU Lesser General Public Licence (LGPL) version 2.1 to the more permissive IUPAC/InChI-Trust Licence for International Chemical Identifier (InChI) Software version 1.04, September 2011 ("IPUCA/InChI-Trust Licence No. 1.0")
+- Standard valences for No, Lr, and Rf were updated
+- Several minor changes in source code
+
+### Removed
+
+- Removed support for CML input files and related source code
+- Removed unnecessary dependence of the inchi-1 executable for Windows on Microsoft run-time dynamic libraries was eliminated
+
+### Fixed
+
+- Fixed bug in the normalization procedure for some structures (containing a radical at an atom in an aromatic ring) which may result in different InChI strings for the same molecule, depending on the original order of the atomic numbers; this fix repairs the issue reported Dmitry Pavlov, SciTouch
+
 ## v1.03 release 2010-06-15
 
 ### Added

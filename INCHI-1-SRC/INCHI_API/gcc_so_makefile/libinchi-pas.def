@@ -1,5 +1,5 @@
 ; With gcc under Win32 this produces same exported names, ordinal numbers, and
-; calling conventions as libinchi.dll produced by the MS VC++ 6.0 project
+; calling conventions as libinchi.dll produced by the MS VC++ project
 LIBRARY
     libinchi.dll
 EXPORTS
@@ -22,15 +22,15 @@ EXPORTS
      GetStructFromStdINCHI            = GetStructFromStdINCHI              @16
      Get_inchi_Input_FromAuxInfo      = Get_inchi_Input_FromAuxInfo        @17
      Get_std_inchi_Input_FromAuxInfo  = Get_std_inchi_Input_FromAuxInfo    @18
-     INCHIGEN_Create                  = Get_std_inchi_Input_FromAuxInfo    @19
+     INCHIGEN_Create                  = INCHIGEN_Create                    @19
      INCHIGEN_Destroy                 = INCHIGEN_Destroy                   @20
-     INCHIGEN_DoCanonicalization      = INCHIGEN_DoNormalization           @21
+     INCHIGEN_DoCanonicalization      = INCHIGEN_DoCanonicalization        @21
      INCHIGEN_DoNormalization         = INCHIGEN_DoNormalization           @22
      INCHIGEN_DoSerialization         = INCHIGEN_DoSerialization           @23
      INCHIGEN_Reset                   = INCHIGEN_Reset                     @24
-     INCHIGEN_Setup                   = INCHIGEN_Reset                     @25
+     INCHIGEN_Setup                   = INCHIGEN_Setup                     @25
      STDINCHIGEN_Create               = STDINCHIGEN_Create                 @26
-     STDINCHIGEN_Destroy              = STDINCHIGEN_Create                 @27
+     STDINCHIGEN_Destroy              = STDINCHIGEN_Destroy                @27
      STDINCHIGEN_DoCanonicalization   = STDINCHIGEN_DoCanonicalization     @28
      STDINCHIGEN_DoNormalization      = STDINCHIGEN_DoNormalization        @29
      STDINCHIGEN_DoSerialization      = STDINCHIGEN_DoSerialization        @30
@@ -40,11 +40,11 @@ EXPORTS
 ; ----------------- Pascal/stdcall calling convenions ------------------------
      _CheckINCHI@8                     = pasc_CheckINCHI@8                 @33
      _CheckINCHIKey@4                  = pasc_CheckINCHIKey@4              @34
-     _FreeStdINCHI@4                   = pasc_FreeStdINCHI@4               @35
+     _FreeINCHI@4                      = pasc_FreeINCHI@4                  @35
      _FreeStdINCHI@4                   = pasc_FreeStdINCHI@4               @36
      _FreeStructFromINCHI@4            = pasc_FreeStructFromINCHI@4        @37
      _FreeStructFromStdINCHI@4         = pasc_FreeStructFromStdINCHI@4     @38
-     _Free_inchi_Input@4               = pasc_FreeStructFromStdINCHI@4     @39
+     _Free_inchi_Input@4               = pasc_Free_inchi_Input@4           @39
      _Free_std_inchi_Input@4           = pasc_Free_std_inchi_Input@4       @40
      _GetINCHI@8                       = pasc_GetINCHI@8                   @41
      _GetINCHIKeyFromINCHI@24          = pasc_GetINCHIKeyFromINCHI@24      @42
@@ -61,7 +61,7 @@ EXPORTS
      _INCHIGEN_DoCanonicalization@8    = pasc_INCHIGEN_DoCanonicalization@8 @53
      _INCHIGEN_DoNormalization@8       = pasc_INCHIGEN_DoNormalization@8   @54
      _INCHIGEN_DoSerialization@12      = pasc_INCHIGEN_DoSerialization@12  @55
-     _INCHIGEN_Reset@12                = pasc_INCHIGEN_DoSerialization@12  @56
+     _INCHIGEN_Reset@12                = pasc__INCHIGEN_Reset@12           @56
      _INCHIGEN_Setup@12                = pasc_INCHIGEN_Setup@12     	   @57
      _STDINCHIGEN_Create@0             = pasc_STDINCHIGEN_Create@0         @58
      _STDINCHIGEN_Destroy@4            = pasc_STDINCHIGEN_Destroy@4        @59

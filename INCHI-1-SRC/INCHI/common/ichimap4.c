@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -843,7 +865,7 @@ repeat_all:
                     }
                          
                 } /*  end choices in mapping neighbors of the 1st half-bond */
-                if (  tpos1 < CurTreeGetPos( cur_tree ) &&
+                if ( tpos1 < CurTreeGetPos( cur_tree ) &&
                       1 == CurTreeIsLastRank( cur_tree, at_rank_canon_n1 ) ) {
                      CurTreeRemoveLastRank( cur_tree );
                 }
@@ -1259,7 +1281,7 @@ repeat_all:
                     pCS->LinearCTStereoCarb[nNumMappedAtoms].parity = parity1;
                     pCS->LinearCTStereoCarb[nNumMappedAtoms].at_num = at_rank_canon1;
                     pCS->bRankUsedForStereo[at_from1] = 3;
-#if( FIX_ChCh_STEREO_CANON_BUG == 1 )
+#if ( FIX_ChCh_STEREO_CANON_BUG == 1 )
                     if ( !bAllParitiesIdentical )
 #endif
                         pCS->bAtomUsedForStereo[at_to1] -= STEREO_AT_MARK;
@@ -1270,7 +1292,7 @@ repeat_all:
                                        pCS, cur_tree, nNumMappedAtoms+1 ,
                                        vABParityUnknown);
                     pCS->bRankUsedForStereo[at_from1] = 0;
-#if( FIX_ChCh_STEREO_CANON_BUG == 1 )
+#if ( FIX_ChCh_STEREO_CANON_BUG == 1 )
                     if ( !bAllParitiesIdentical )
 #endif
                         pCS->bAtomUsedForStereo[at_to1] += STEREO_AT_MARK;
@@ -1581,7 +1603,7 @@ done:;      /*  at this point lvl=0. */
             pCS->bStereoIsBetter = 0; /*  prepare to start over */
             nTotSuccess = 1;
             pCS->bFirstCT = 0;
-#if( REMOVE_CALC_NONSTEREO == 1 ) /* { */
+#if ( REMOVE_CALC_NONSTEREO == 1 ) /* { */
             if ( !(pCS->nMode & CMODE_REDNDNT_STEREO ) ) {
                 i1 = RemoveCalculatedNonStereo( at, num_atoms, num_at_tg,
                                   pRankStack1, pRankStack2, nTempRank, NeighList,
@@ -1591,7 +1613,7 @@ done:;      /*  at this point lvl=0. */
                     return i1;
                 }
                 if ( i1 < 0 ) {
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
                     pCS->bExtract |= EXTR_REMOVE_PARITY_WARNING;
 #endif
                     i1 = -(1+i1);

@@ -1,18 +1,40 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.03
- * May 9, 2010
- *
- * Originally developed at NIST
- * Modifications and additions by IUPAC and the InChI Trust
+ * Software version 1.04
+ * September 9, 2011
  *
  * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC);
- * you can redistribute this software and/or modify it under the terms of 
- * the GNU Lesser General Public License as published by the Free Software 
- * Foundation:
- * http://www.opensource.org/licenses/lgpl-2.1.php
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST. Modifications and additions by IUPAC 
+ * and the InChI Trust.
+ *
+ * IUPAC/InChI-Trust Licence No.1.0 for the 
+ * International Chemical Identifier (InChI) Software version 1.04
+ * Copyright (C) IUPAC and InChI Trust Limited
+ * 
+ * This library is free software; you can redistribute it and/or modify it 
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
+ * or any later version.
+ * 
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES 
+ * whatsoever, whether expressed or implied.  See the IUPAC/InChI Trust 
+ * Licence for the International Chemical Identifier (InChI) Software 
+ * version 1.04, October 2011 ("IUPAC/InChI-Trust InChI Licence No.1.0") 
+ * for more details.
+ * 
+ * You should have received a copy of the IUPAC/InChI Trust InChI 
+ * Licence No. 1.0 with this library; if not, please write to:
+ * 
+ * The InChI Trust
+ * c/o FIZ CHEMIE Berlin
+ *
+ * Franklinstrasse 11
+ * 10587 Berlin
+ * GERMANY
+ *
+ * or email to: ulrich@inchi-trust.org.
+ * 
  */
 
 
@@ -24,7 +46,7 @@
 
 #include "mode.h"
 
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
 #include "ichitime.h"
 #endif
 #include "inpdef.h"
@@ -68,11 +90,11 @@ static int CompareDfsDescendants4CT( const void *a1, const void *a2 );
 int GetSp3RelRacAbs( const INChI *pINChI, INChI_Stereo *Stereo );
 
 
-#if( TEST_RENUMB_ATOMS == 1 || READ_INCHI_STRING == 1 ) /*  { */
+#if ( TEST_RENUMB_ATOMS == 1 || READ_INCHI_STRING == 1 ) /*  { */
 int CompareStereoINChI( INChI_Stereo *s1, INChI_Stereo *s2 );
 #endif
 
-#if( READ_INCHI_STRING == 1 ) /*  { */
+#if ( READ_INCHI_STRING == 1 ) /*  { */
 /*************************************************************************************/
 
 int CompareReversedStereoINChI2( INChI_Stereo *s1, INChI_Stereo *s2, ICR *picr);
@@ -104,12 +126,12 @@ int inp2spATOM( inp_ATOM *inp_at, int num_inp_at, sp_ATOM *at )
         at[i].charge             = inp_at[i].charge;
         at[i].radical            = inp_at[i].radical;
 
-#if( FIND_RING_SYSTEMS == 1 )
+#if ( FIND_RING_SYSTEMS == 1 )
         at[i].nBlockSystem       = inp_at[i].nBlockSystem;
         at[i].bCutVertex         = inp_at[i].bCutVertex;
         at[i].nRingSystem        = inp_at[i].nRingSystem;
         at[i].nNumAtInRingSystem = inp_at[i].nNumAtInRingSystem;
-#if( FIND_RINS_SYSTEMS_DISTANCES == 1 )
+#if ( FIND_RINS_SYSTEMS_DISTANCES == 1 )
         at[i].nDistanceFromTerminal = inp_at[i].nDistanceFromTerminal;
 #endif
 #endif
@@ -480,7 +502,7 @@ int GetSp3RelRacAbs( const INChI *pINChI, INChI_Stereo *Stereo )
     if ( pINChI && !pINChI->bDeleted && Stereo && 0 < Stereo->nNumberOfStereoCenters ) {
         if ( 0 != Stereo->nCompInv2Abs ) {
             if ( pINChI->nFlags & INCHI_FLAG_REL_STEREO ) {
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                 if ( 1 <  Stereo->nNumberOfStereoCenters ) {
                     nRet = SP3_REL;
                 }
@@ -489,7 +511,7 @@ int GetSp3RelRacAbs( const INChI *pINChI, INChI_Stereo *Stereo )
 #endif
             } else
             if ( pINChI->nFlags & INCHI_FLAG_RAC_STEREO ) {
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                 if ( 1 <  Stereo->nNumberOfStereoCenters ) {
                     nRet = SP3_REL;
                 }
@@ -500,7 +522,7 @@ int GetSp3RelRacAbs( const INChI *pINChI, INChI_Stereo *Stereo )
                 nRet = SP3_ABS;
             }
         } else
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
         if ( !(( pINChI->nFlags & (INCHI_FLAG_REL_STEREO|INCHI_FLAG_RAC_STEREO) ) && 1 == Stereo->nNumberOfStereoCenters) )
 #endif
         {
@@ -1175,7 +1197,7 @@ int CompareInchiStereo( INChI_Stereo *Stereo1, INCHI_MODE nFlags1, INChI_Stereo 
         if ( ret = (int)Stereo2->nNumberOfStereoBonds - (int)Stereo1->nNumberOfStereoBonds )
             return ret;
         /*  compare stereogenic atoms */
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
         if ( ((nFlags1 | nFlags2) & (INCHI_FLAG_REL_STEREO | INCHI_FLAG_RAC_STEREO) ) &&
              1 == Stereo2->nNumberOfStereoCenters &&
              1 == Stereo1->nNumberOfStereoCenters ) {
@@ -1202,7 +1224,7 @@ int CompareInchiStereo( INChI_Stereo *Stereo1, INCHI_MODE nFlags1, INChI_Stereo 
     } else
     if ( Stereo2 && ( Stereo2->nNumberOfStereoBonds > 0 ||
                       Stereo2->nNumberOfStereoCenters > 0
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                       && /*  do not compare single stereocenters in case of relative stereo */
                       !((nFlags2 & (INCHI_FLAG_REL_STEREO|INCHI_FLAG_RAC_STEREO)) &&
                        1 == Stereo2->nNumberOfStereoCenters
@@ -1213,7 +1235,7 @@ int CompareInchiStereo( INChI_Stereo *Stereo1, INCHI_MODE nFlags1, INChI_Stereo 
     }else
     if ( Stereo1 && ( Stereo1->nNumberOfStereoBonds > 0 || 
                       Stereo1->nNumberOfStereoCenters > 0
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
                       && /*  do not compare single stereocenters in case of relative stereo */
                       !((nFlags1 & (INCHI_FLAG_REL_STEREO|INCHI_FLAG_RAC_STEREO)) &&
                        1 == Stereo1->nNumberOfStereoCenters
@@ -1491,7 +1513,7 @@ int CompINChINonTaut2(const void *p1, const void *p2)
 {
     int ret;
     ret = CompINChI2( (const INCHI_SORT *)p1, (const INCHI_SORT *)p2, TAUT_NON, 1 );
-#if( CANON_FIXH_TRANS == 1 )
+#if ( CANON_FIXH_TRANS == 1 )
     if ( !ret ) {
         /* to obtain canonical transposition 2004-05-10 */
         ret = CompINChI2( (const INCHI_SORT *)p1, (const INCHI_SORT *)p2, TAUT_YES, 1 );
@@ -1508,7 +1530,7 @@ int CompINChITaut2(const void *p1, const void *p2)
 {
     int ret;
     ret = CompINChI2( (const INCHI_SORT *)p1, (const INCHI_SORT *)p2, TAUT_YES, 1 );
-#if( CANON_FIXH_TRANS == 1 )
+#if ( CANON_FIXH_TRANS == 1 )
     if ( !ret ) {
         /* to obtain canonical transposition 2004-05-10 */
         ret = CompINChI2( (const INCHI_SORT *)p1, (const INCHI_SORT *)p2, TAUT_NON, 1 );
@@ -1587,10 +1609,10 @@ AT_NUMB *GetDfsOrder4CT( AT_NUMB *LinearCT, int nLenCT, S_CHAR *nNum_H, int num_
 
 
     /*  allocate arrays */
-    nStackAtom      = (AT_NUMB *)inchi_malloc(num_atoms*sizeof(nStackAtom[0]));
-    nNumDescendants = (AT_NUMB *)inchi_malloc(num_atoms*sizeof(nNumDescendants[0]));
-    nDfsNumber      = (AT_NUMB *)inchi_malloc(num_atoms*sizeof(nDfsNumber[0]));
-    cNeighNumb      = (S_CHAR  *)inchi_malloc(num_atoms*sizeof(cNeighNumb[0]));
+    nStackAtom      = (AT_NUMB *) inchi_malloc(num_atoms*sizeof(nStackAtom[0]));
+    nNumDescendants = (AT_NUMB *) inchi_malloc(num_atoms*sizeof(nNumDescendants[0]));
+    nDfsNumber      = (AT_NUMB *) inchi_malloc(num_atoms*sizeof(nDfsNumber[0]));
+    cNeighNumb      = (S_CHAR  *) inchi_malloc(num_atoms*sizeof(cNeighNumb[0]));
     nl              = CreateNeighListFromLinearCT( LinearCT, nLenCT, num_atoms );
     /*  check allocation */
     if ( !nStackAtom || !nNumDescendants || !nDfsNumber || !cNeighNumb || !nl ) {
@@ -1784,7 +1806,7 @@ AT_NUMB *GetDfsOrder4CT( AT_NUMB *LinearCT, int nLenCT, S_CHAR *nNum_H, int num_
                         if ( j == 1 ) {
                             cDelim = '(';
                         } else
-                        if (  j == nl[i][0] ) {
+                        if ( j == nl[i][0] ) {
                             cDelim = ')';
                         } else {
                             cDelim = ',';
@@ -1843,7 +1865,7 @@ int ProcessStructError( INCHI_IOSTREAM *output_file, INCHI_IOSTREAM *log_file, /
                         int *bXmlStructStarted, long num_inp, INPUT_PARMS *ip, char *pStr, int nStrLen )
 {
     int b_ok;
-#ifdef INCHI_LIB
+#ifdef TARGET_LIB_FOR_WINCHI
     int bPlainText = (ip->bINChIOutputOptions & INCHI_OUT_PLAIN_TEXT) &&
                      (ip->bINChIOutputOptions & INCHI_OUT_WINCHI_WINDOW ) &&
                     !(ip->bINChIOutputOptions & INCHI_OUT_XML);
@@ -1884,7 +1906,7 @@ int ProcessStructError( INCHI_IOSTREAM *output_file, INCHI_IOSTREAM *log_file, /
     
 }
 
-#if( TEST_RENUMB_ATOMS == 1 ) /*  { */
+#if ( TEST_RENUMB_ATOMS == 1 ) /*  { */
 /***************************************************************************************/
 int CompareStereoINChI( INChI_Stereo *s1, INChI_Stereo *s2 )
 {
@@ -1999,7 +2021,7 @@ int CompareINChI( INChI *i1, INChI *i2, INChI_Aux *a1, INChI_Aux *a2 )
     return 0;
 }
 #endif /*  } TEST_RENUMB_ATOMS == 1 */
-#if( READ_INCHI_STRING == 1 ) /*  { */
+#if ( READ_INCHI_STRING == 1 ) /*  { */
 /*************************************************************************************/
 int CompareReversedStereoINChI( INChI_Stereo *s1/* InChI from reversed struct */, INChI_Stereo *s2 /* input InChI */)
 {
@@ -2626,8 +2648,8 @@ INCHI_MODE CompareReversedINChI2( INChI *i1 /* InChI from reversed struct */, IN
         /* number of endpoints */
         int num1 = 0, num2 = 0, num_M1=0, num_M2=0;
         int len, num_eq, num_in1_only, num_in2_only;
-        AT_NUMB *pe1 = (AT_NUMB *)inchi_malloc( (i1->lenTautomer+1) * sizeof(pe1[0]) );
-        AT_NUMB *pe2 = (AT_NUMB *)inchi_malloc( (i2->lenTautomer+1) * sizeof(pe2[0]) );
+        AT_NUMB *pe1 = (AT_NUMB *) inchi_malloc( (i1->lenTautomer+1) * sizeof(pe1[0]) );
+        AT_NUMB *pe2 = (AT_NUMB *) inchi_malloc( (i2->lenTautomer+1) * sizeof(pe2[0]) );
         num_H1 = num_H2=0;
         /* collect endpoints, H, (-) */
         if ( !pe1 || !pe2 ) {
@@ -2816,7 +2838,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
                                   | ((TG_FLAG_FIX_SP3_BUG         & *pbTautFlags)? PES_BIT_FIX_SP3_BUG      :0);
     INCHI_MODE bTautFlags         = (*pbTautFlags     & (~(INCHI_MODE)TG_FLAG_ALL_TAUTOMERIC) );
     INCHI_MODE bTautFlagsDone     = (*pbTautFlagsDone /*& (~(INCHI_MODE)TG_FLAG_ALL_TAUTOMERIC) */);
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
     int bExtract = 0; /*  EXTR_HAS_ATOM_WITH_DEFINED_PARITY; */
 #endif
 
@@ -2824,7 +2846,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
     int bFixIsoFixedH = 0;
     int bFixTermHChrg = 0;
 
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
     long ulNormTime=0;
     long ulCanonTime=0, ulCanonTime2=0;
 
@@ -2847,11 +2869,11 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
     
 
 /*^^^ */
-#if( FIX_ISO_FIXEDH_BUG == 1 )
+#if ( FIX_ISO_FIXEDH_BUG == 1 )
     if (TG_FLAG_FIX_ISO_FIXEDH_BUG & *pbTautFlags)
         bFixIsoFixedH = 1;
 #endif
-#if( FIX_TERM_H_CHRG_BUG == 1 )
+#if ( FIX_TERM_H_CHRG_BUG == 1 )
     if (TG_FLAG_FIX_TERM_H_CHRG_BUG & *pbTautFlags)
         bFixTermHChrg = 1;
 #endif
@@ -2869,7 +2891,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
     /*norm_at_fixed_bonds[TAUT_YES] = out_norm_data[TAUT_YES]->at_fixed_bonds;*/
     for ( i = 0; i < TAUT_NUM; i ++ ) {
         if ( out_norm_data[i]->at ) {
-            if ( !(at[i] = (sp_ATOM  *)inchi_malloc( num_inp_at * sizeof(*at[0]) ) ) ) {
+            if ( !(at[i] = (sp_ATOM  *) inchi_malloc( num_inp_at * sizeof(*at[0]) ) ) ) {
                 ret = -1;
             }
         } else {
@@ -2912,7 +2934,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
         add_DT_to_num_H( num_atoms, out_at );
     }
     /*fix_odd_things( num_atoms, out_at );*/
-#if( FIND_RING_SYSTEMS == 1 )
+#if ( FIND_RING_SYSTEMS == 1 )
     MarkRingSystemsInp( out_at, num_atoms, 0 );
 #endif
     /*  duplicate the preprocessed structure so that all supplied out_norm_data[]->at buffers are filled */
@@ -2975,7 +2997,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
         ret = set_stereo_parity( out_norm_data[TAUT_YES]->at, at[TAUT_YES], num_taut_at, num_removed_H_taut,
                                  &s[TAUT_YES].nMaxNumStereoAtoms, &s[TAUT_YES].nMaxNumStereoBonds, nUserMode,
                                  bPointedEdgeStereo, vABParityUnknown );
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
         if ( 0 < ret ) {
             bExtract |= EXTR_HAS_ATOM_WITH_DEFINED_PARITY;
         }
@@ -3053,7 +3075,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
         ret = set_stereo_parity( out_norm_data[TAUT_NON]->at, at[TAUT_NON], num_atoms, num_removed_H,
                                  &s[TAUT_NON].nMaxNumStereoAtoms, &s[TAUT_NON].nMaxNumStereoBonds, nUserMode,
                                  bPointedEdgeStereo, vABParityUnknown );
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
         if ( 0 < ret ) {
             bExtract |= EXTR_HAS_ATOM_WITH_DEFINED_PARITY;
         }
@@ -3137,7 +3159,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
         ret = -3;
         goto exit_function; /*  program error: inconsistent nUserMode or missing taut/non-taut allocation */ /*   <BRKPT> */
     }
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
     ulNormTime = InchiTimeElapsed( &ulNormTimeStart);
 #endif
     /************************************************************
@@ -3145,7 +3167,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
      *       Obtain all non-stereo canonical numberings         *
      *                                                          *
      ************************************************************/
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
         InchiTimeGet( &ulCanonTimeStart );
 #endif
     if ( (nUserMode & REQ_MODE_NON_ISO) && !(nUserMode & REQ_MODE_ISO) ) {
@@ -3170,13 +3192,13 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
         bHasIsotopicAtoms = 0;
     }
     ret = GetBaseCanonRanking( num_atoms, num_at_tg, at, t_group_info, s, pBCN, ulMaxTime, bFixIsoFixedH );
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
         ulCanonTime = InchiTimeElapsed( &ulCanonTimeStart );
 #endif
     if ( ret < 0 ) {
         goto exit_function; /*  program error */
     }
-#if( bRELEASE_VERSION == 0 && FIND_CANON_NE_EQUITABLE == 1 )
+#if ( bRELEASE_VERSION == 0 && FIND_CANON_NE_EQUITABLE == 1 )
     /* Debug only: find whether canonical equivalence is different from equitable partition */
     if ( bCanonIsFinerThanEquitablePartition( num_atoms, at[n1], pBCN->ftcn[TAUT_NON].nSymmRankCt ) ) {
         bExtract |= EXTR_CANON_NE_EQUITABLE;
@@ -3296,7 +3318,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
          *   '5' S    1|2|4|16   Stereo isotopic canonicalization           
          *   '6' A    1|2|4|8|16 Output All
          */
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
         InchiTimeGet( &ulCanonTimeStart );
 #endif
         /***************************************
@@ -3349,7 +3371,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
                 /****************************/
                 /* success in FillOutINChI() */
                 /****************************/
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
                 if ( pINChI->Stereo &&
                      (pINChI->Stereo->nCompInv2Abs && !pINChI->Stereo->bTrivialInv) ||
                      pINChI->StereoIsotopic &&
@@ -3361,7 +3383,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
                 if ( pINChI_Aux && s[TAUT_YES].nLenLinearCTTautomer ) {
                     pINChI_Aux->bIsTautomeric = s[TAUT_YES].nLenLinearCTTautomer;
                 }
-#if( bRELEASE_VERSION == 0 )
+#if ( bRELEASE_VERSION == 0 )
                 pCS->bExtract   |= bExtract;
                 pINChI->bExtract |= pCS->bExtract;
 #endif
@@ -3375,7 +3397,7 @@ int  Create_INChI( INChI **ppINChI, INChI_Aux **ppINChI_Aux, ORIG_ATOM_DATA *ori
                 }
             }
         }
-#if( TEST_RENUMB_ATOMS == 1 )
+#if ( TEST_RENUMB_ATOMS == 1 )
         ulCanonTime2 = InchiTimeElapsed( &ulCanonTimeStart );
         pINChI_Aux->ulCanonTime = ulCanonTime+ulCanonTime2;
         pINChI_Aux->ulNormTime  = ulNormTime;
@@ -3405,7 +3427,7 @@ exit_function:
     free_t_group_info( t_group_info_orig );
     return ret;
 }
-#ifndef INCHI_ANSI_ONLY /* { */
+#ifndef COMPILE_ANSI_ONLY /* { */
 /***************************************************************************************/
 int GetAtomOrdNbrInCanonOrd( inp_ATOM *norm_at, AT_NUMB *nAtomOrdNbr,
                             AT_NUMB *nOrigAtNosInCanonOrd, int num_at )
@@ -3505,7 +3527,7 @@ int FillOutCanonInfAtom(inp_ATOM *norm_at, INF_ATOM_DATA *inf_norm_at_data, int 
                                           pINChI->Stereo;
     bDoDisplaySp3 = (NULL != Stereo) && (Stereo->nNumberOfStereoCenters > 0); 
 
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
     if ( bDoDisplaySp3 && bRelRac && Stereo->nNumberOfStereoCenters < 2 &&
          (Stereo->nCompInv2Abs || ATOM_PARITY_ILL_DEF(Stereo->t_parity[0]) ) ) {
         bDoDisplaySp3 = 0;
@@ -3576,7 +3598,7 @@ int FillOutCanonInfAtom(inp_ATOM *norm_at, INF_ATOM_DATA *inf_norm_at_data, int 
         inf_norm_at[j].nCanonEquNbr = nConstitEquNumbers[i];
 #ifdef DISPLAY_DEBUG_DATA
         inf_norm_at[j].nDebugData = 0;
-#if( DISPLAY_DEBUG_DATA == DISPLAY_DEBUG_DATA_C_POINT )
+#if ( DISPLAY_DEBUG_DATA == DISPLAY_DEBUG_DATA_C_POINT )
         inf_norm_at[j].nDebugData = norm_at[j].c_point;
 #endif
 #endif
@@ -3616,12 +3638,12 @@ int FillOutCanonInfAtom(inp_ATOM *norm_at, INF_ATOM_DATA *inf_norm_at_data, int 
         }
     }
 
-#if( DISPLAY_RING_SYSTEMS == 1 )
+#if ( DISPLAY_RING_SYSTEMS == 1 )
     /*  debug only */
     for ( j = 0; j < num_at; j ++ ) {
         inf_norm_at[j].nCanonNbr          = norm_at[j].nBlockSystem;
         inf_norm_at[j].nCanonEquNbr       = norm_at[j].nRingSystem;
-#if( USE_DISTANCES_FOR_RANKING == 1 )
+#if ( USE_DISTANCES_FOR_RANKING == 1 )
         inf_norm_at[j].nTautGroupCanonNbr   = norm_at[j].nDistanceFromTerminal;
         inf_norm_at[j].nTautGroupEquNbr     = norm_at[j].bCutVertex;
 #else
@@ -3723,7 +3745,7 @@ int FillOutCanonInfAtom(inp_ATOM *norm_at, INF_ATOM_DATA *inf_norm_at_data, int 
             }
         }
         /*
-        if (  str[0] == 'H' && str[1] == 'H' && !str[2] ) {
+        if ( str[0] == 'H' && str[1] == 'H' && !str[2] ) {
             str[1] = '2';
         }
         */
@@ -3993,7 +4015,7 @@ int FillOutOneCanonInfAtom(inp_ATOM *inp_norm_at, INF_ATOM_DATA *inf_norm_at_dat
                                           pINChI->Stereo;
     bDoDisplaySp3 = (NULL != Stereo) && (Stereo->nNumberOfStereoCenters > 0);
 
-#if( REL_RAC_STEREO_IGN_1_SC == 1 )
+#if ( REL_RAC_STEREO_IGN_1_SC == 1 )
     if ( bDoDisplaySp3 && bRelRac && Stereo->nNumberOfStereoCenters < 2 &&
          (Stereo->nCompInv2Abs || ATOM_PARITY_ILL_DEF(Stereo->t_parity[0]) ) ) {
         bDoDisplaySp3 = 0;
@@ -4066,7 +4088,7 @@ int FillOutOneCanonInfAtom(inp_ATOM *inp_norm_at, INF_ATOM_DATA *inf_norm_at_dat
         inf_norm_at[j].nCanonEquNbr = nConstitEquNumbers[i];
 #ifdef DISPLAY_DEBUG_DATA
         inf_norm_at[j].nDebugData = 0;
-#if( DISPLAY_DEBUG_DATA == DISPLAY_DEBUG_DATA_C_POINT )
+#if ( DISPLAY_DEBUG_DATA == DISPLAY_DEBUG_DATA_C_POINT )
         inf_norm_at[j].nDebugData = norm_at[j].c_point;
 #endif
 #endif
@@ -4105,12 +4127,12 @@ int FillOutOneCanonInfAtom(inp_ATOM *inp_norm_at, INF_ATOM_DATA *inf_norm_at_dat
             }
         }
     }
-#if( DISPLAY_RING_SYSTEMS == 1 )
+#if ( DISPLAY_RING_SYSTEMS == 1 )
     /*  debug only */
     for ( j = 0; j < num_at; j ++ ) {
         inf_norm_at[j].nCanonNbr          = norm_at[j].nBlockSystem;
         inf_norm_at[j].nCanonEquNbr       = norm_at[j].nRingSystem;
-#if( USE_DISTANCES_FOR_RANKING == 1 )
+#if ( USE_DISTANCES_FOR_RANKING == 1 )
         inf_norm_at[j].nTautGroupCanonNbr   = norm_at[j].nDistanceFromTerminal;
         inf_norm_at[j].nTautGroupEquNbr     = norm_at[j].bCutVertex;
 #else
@@ -4445,7 +4467,7 @@ int FillOutInputInfAtom(inp_ATOM *inp_at, INF_ATOM_DATA *inf_at_data, int init_n
     MakeRemovedProtonsString( nNumRemovedProtons, nNumRemovedProtonsIsotopic, NULL, bIsotopic, inf_at_data->szRemovedProtons, NULL );
     /*  atom canonical and equivalence numbers > 0 */
     for ( i = 0; i < num_at; i ++ ) {
-#if( DISPLAY_ORIG_AT_NUMBERS == 1 )
+#if ( DISPLAY_ORIG_AT_NUMBERS == 1 )
         inf_at[i].nCanonNbr = inp_at[i].orig_at_number;
 #else
         inf_at[i].nCanonNbr = (AT_NUMB)(i+1);
@@ -4528,7 +4550,7 @@ int FillOutInputInfAtom(inp_ATOM *inp_at, INF_ATOM_DATA *inf_at_data, int init_n
             }
         }
         /*
-        if (  str[0] == 'H' && str[1] == 'H' && !str[2] ) {
+        if ( str[0] == 'H' && str[1] == 'H' && !str[2] ) {
             str[1] = '2';
         }
         */
@@ -4658,7 +4680,7 @@ int FillOutCompositeCanonInfAtom(COMP_ATOM_DATA *composite_norm_data, INF_ATOM_D
     }
     return 1;
 }
-#endif /* } ifndef INCHI_ANSI_ONLY */
+#endif /* } ifndef COMPILE_ANSI_ONLY */
 /**********************************************************************************************/
 int CheckCanonNumberingCorrectness(int num_atoms, int num_at_tg,
                  sp_ATOM *at, CANON_STAT *pCS, int bTautomeric,
