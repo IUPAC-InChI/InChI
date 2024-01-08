@@ -1,52 +1,15 @@
-# Prerequisites
-*.d
-
-# Object files
 *.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+*.so*
+*.log
+*_regression_test.sqlite
+INCHI-1-TEST/data/**/*.html
+INCHI-1-TEST/data/pubchem/compound
+INCHI-1-TEST/data/pubchem/compound3d
+INCHI-1-TEST/data/pubchem/substance
+.listing
+*/test/datasets
+*/test/expected-results
+*/test/results
+__pycache__
+.pytest_cache
+.vscode/
