@@ -1,0 +1,277 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{61B178D7-60C1-4DB9-8FF5-D9BCB0C6E66B}</ProjectGuid>
+    <RootNamespace>inchi1</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>../../bin2/Windows/$(Platform)/$(Configuration)\</OutDir>
+    <IntDir>../../bin2/Windows/intermediate/$(Platform)/$(Configuration)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>../../bin2/Windows/$(Platform)/$(Configuration)\</OutDir>
+    <IntDir>../../bin2/Windows/intermediate/$(Platform)/$(Configuration)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>../../bin2/Windows/$(Platform)/$(Configuration)\</OutDir>
+    <IntDir>../../bin2/Windows/intermediate/$(Platform)/$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>../../bin2/Windows/$(Platform)/$(Configuration)\</OutDir>
+    <IntDir>../../bin2/Windows/intermediate/$(Platform)/$(Configuration)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../common;../../main;../../cmlpp;../../ICHI_LIB;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;DEBUG;_CONSOLE;ADD_CMLPP=0;ADD_AMI_MODE=1;TARGET_EXE_STANDALONE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level4</WarningLevel>
+      <SuppressStartupBanner>false</SuppressStartupBanner>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>setargv.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <StackReserveSize>16000000</StackReserveSize>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../common;../../main;../../cmlpp;../../ICHI_LIB;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN64;DEBUG;_CONSOLE;ADD_CMLPP=0;ADD_AMI_MODE=1;TARGET_EXE_STANDALONE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>false</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <StackReserveSize>16000000</StackReserveSize>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>../../common;../../main;../../cmlpp;../../ICHI_LIB;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;ADD_CMLPP=0;ADD_AMI_MODE=1;TARGET_EXE_STANDALONE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>false</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>setargv.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <StackReserveSize>16000000</StackReserveSize>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>../../common;../../main;../../cmlpp;../../ICHI_LIB;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;ADD_CMLPP=0;ADD_AMI_MODE=1;TARGET_EXE_STANDALONE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>false</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <StackReserveSize>16000000</StackReserveSize>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichican2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichicano.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichicans.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichierr.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiisot.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichimak2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichimake.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichimap1.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichimap2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichimap4.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichinorm.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiparm.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiprt1.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiprt2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiprt3.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiqueu.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiread.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichiring.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichirvr1.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichirvr2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichirvr3.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichirvr4.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichirvr5.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichirvr6.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichirvr7.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichisort.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichister.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichitaut.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichi_bns.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ichi_io.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ikey_base26.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\ikey_dll.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\inchi_gui.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\mol2atom.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt1.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt3.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt4.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\readinch.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\runichi.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\runichi2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\runichi3.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\runichi4.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\sha2.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\strutil.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\util.c" />
+    <ClCompile Include="..\src\dispstru.c" />
+    <ClCompile Include="..\src\ichimain.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\INCHI_BASE\src\aux2atom.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\extr_ct.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichi.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichicano.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichicant.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichicomn.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichicomp.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichidrp.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichierr.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichimain.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichimake.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichinorm.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichiring.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichirvrs.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichisize.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichister.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichitaut.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichitime.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichi_bns.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ichi_io.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\ikey_base26.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\inchicmp.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\inchi_api.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\inchi_gui.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\incomdef.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\inpdef.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\mode.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\mol_fmt.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\readinch.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\sha2.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\strutil.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\util.h" />
+    <ClInclude Include="..\src\dispstru.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="inchi-1.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

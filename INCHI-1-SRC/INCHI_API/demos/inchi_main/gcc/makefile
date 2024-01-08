@@ -17,7 +17,7 @@ LINUX_Z_RELRO = ,-z,relro
 endif
 # === version ===
 MAIN_VERSION = .1
-VERSION = $(MAIN_VERSION).05.00
+VERSION = $(MAIN_VERSION).06.00
 # === executable & library directory ===
 ifndef LIB_DIR
   LIB_DIR = ../../../bin/Linux

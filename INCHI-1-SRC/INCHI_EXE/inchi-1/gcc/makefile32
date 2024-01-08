@@ -11,7 +11,7 @@ ifndef LINKER
 	LINKER = g++ -s
 endif
 ifndef INCHI_EXECUTABLE_NAME
-	INCHI_EXECUTABLE_NAME = inchi-1-32
+	INCHI_EXECUTABLE_NAME = inchi-1
 endif
  # === executable directory ===
 ifndef BIN_DIR

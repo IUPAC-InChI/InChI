@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,14 +25,9 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
@@ -52,83 +47,92 @@ typedef struct
 } INCHIKEYBUILDER;
 
 
-static INCHIKEYBUILDER* KEYBUILDER_Unpack(IXA_STATUS_HANDLE     hStatus,
-                                          IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder)
+/****************************************************************************/
+static INCHIKEYBUILDER* KEYBUILDER_Unpack( IXA_STATUS_HANDLE hStatus,
+                                           IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder )
 {
     if (!hKeyBuilder)
     {
-        STATUS_PushMessage(hStatus, IXA_STATUS_ERROR, "Illegal keybuilder handle detected");
+        STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Illegal keybuilder handle detected" );
         return NULL;
     }
 
-    return (INCHIKEYBUILDER*)hKeyBuilder;
+    return (INCHIKEYBUILDER*) hKeyBuilder;
 }
 
 
-static IXA_INCHIKEYBUILDER_HANDLE KEYBUILDER_Pack(INCHIKEYBUILDER* pKeyBuilder)
+/****************************************************************************/
+static IXA_INCHIKEYBUILDER_HANDLE KEYBUILDER_Pack( INCHIKEYBUILDER *pKeyBuilder )
 {
-    return (IXA_INCHIKEYBUILDER_HANDLE)pKeyBuilder;
+    return (IXA_INCHIKEYBUILDER_HANDLE) pKeyBuilder;
 }
 
 
-IXA_INCHIKEYBUILDER_HANDLE INCHI_DECL IXA_INCHIKEYBUILDER_Create(IXA_STATUS_HANDLE hStatus)
+/****************************************************************************/
+IXA_INCHIKEYBUILDER_HANDLE INCHI_DECL IXA_INCHIKEYBUILDER_Create( IXA_STATUS_HANDLE hStatus )
 {
-    INCHIKEYBUILDER* key_builder = (INCHIKEYBUILDER*)inchi_malloc(sizeof(INCHIKEYBUILDER));
+    INCHIKEYBUILDER* key_builder = (INCHIKEYBUILDER*) inchi_malloc( sizeof( INCHIKEYBUILDER ) );
     if (!key_builder)
     {
-        STATUS_PushMessage(hStatus, IXA_STATUS_ERROR, "Out of memory");
+        STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Out of memory" );
         return NULL;
     }
 
-    memset(key_builder, 0, sizeof(INCHIKEYBUILDER));
-    return KEYBUILDER_Pack(key_builder);
+    memset( key_builder, 0, sizeof( INCHIKEYBUILDER ) );
+    return KEYBUILDER_Pack( key_builder );
 }
 
 
-void INCHI_DECL IXA_INCHIKEYBUILDER_Destroy(IXA_STATUS_HANDLE     hStatus,
-                                            IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder)
+/****************************************************************************/
+void INCHI_DECL IXA_INCHIKEYBUILDER_Destroy( IXA_STATUS_HANDLE hStatus,
+                                             IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder )
 {
-    INCHIKEYBUILDER* key_builder = KEYBUILDER_Unpack(hStatus, hKeyBuilder);
+    INCHIKEYBUILDER* key_builder = KEYBUILDER_Unpack( hStatus, hKeyBuilder );
     if (!key_builder) return;
 
-    inchi_free(key_builder->inchi);
-    inchi_free(key_builder);
+    inchi_free( key_builder->inchi );
+    inchi_free( key_builder );
 }
 
 
-void INCHI_DECL IXA_INCHIKEYBUILDER_SetInChI(IXA_STATUS_HANDLE     hStatus,
-                                             IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder,
-                                             const char*            pInChI)
+/****************************************************************************/
+void INCHI_DECL IXA_INCHIKEYBUILDER_SetInChI( IXA_STATUS_HANDLE hStatus,
+                                              IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder,
+                                              const char *pInChI )
 {
-    INCHIKEYBUILDER* key_builder = KEYBUILDER_Unpack(hStatus, hKeyBuilder);
-    if (!key_builder) return;
-
-    inchi_free(key_builder->inchi);
-    key_builder->inchi = (char *) inchi_malloc(strlen(pInChI) + 1);
-    if (!key_builder->inchi)
+    INCHIKEYBUILDER* key_builder = KEYBUILDER_Unpack( hStatus, hKeyBuilder );
+    if (!key_builder)
     {
-        STATUS_PushMessage(hStatus, IXA_STATUS_ERROR, "Out of memory");
         return;
     }
 
-    strcpy(key_builder->inchi, pInChI);
+    inchi_free( key_builder->inchi );
+    key_builder->inchi = (char *) inchi_malloc( strlen( pInChI ) + 1 );
+    if (!key_builder->inchi)
+    {
+        STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Out of memory" );
+        return;
+    }
+
+    strcpy( key_builder->inchi, pInChI );
     key_builder->dirty = 1;
 }
 
 
-const char* INCHI_DECL IXA_INCHIKEYBUILDER_GetInChIKey(IXA_STATUS_HANDLE     hStatus,
-                                                       IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder)
+/****************************************************************************/
+const char* INCHI_DECL IXA_INCHIKEYBUILDER_GetInChIKey( IXA_STATUS_HANDLE hStatus,
+                                                        IXA_INCHIKEYBUILDER_HANDLE hKeyBuilder )
 {
-    INCHIKEYBUILDER* key_builder = KEYBUILDER_Unpack(hStatus, hKeyBuilder);
+    INCHIKEYBUILDER* key_builder = KEYBUILDER_Unpack( hStatus, hKeyBuilder );
     if (!key_builder) return NULL;
 
     if (key_builder->dirty)
     {
         char extra1[256];
         char extra2[256];
-        if (GetINCHIKeyFromINCHI(key_builder->inchi, 0, 0, key_builder->inchi_key, extra1, extra2) != INCHIKEY_OK)
+        if (GetINCHIKeyFromINCHI( key_builder->inchi, 0, 0, key_builder->inchi_key, extra1, extra2 ) != INCHIKEY_OK)
         {
-            printf("Failed to create InChIKey\n");
+            printf( "Failed to create InChIKey\n" );
             return NULL;
         }
         key_builder->dirty = 0;

@@ -20,7 +20,7 @@ LINUX_Z_RELRO = ,-z,relro
 endif
 # === version ===
 MAIN_VERSION = .1
-VERSION = $(MAIN_VERSION).05.00
+VERSION = $(MAIN_VERSION).06.00
 # === executable & library directory ===
 ifndef LIB_DIR
   LIB_DIR = ../../../bin/Linux/32bit
@@ -48,7 +48,7 @@ ifndef LINKER
   ifdef ISLINUX
 	 LINKER_CWD_PATH = -Wl,-R,""
   endif
-  LINKER = gcc -s $(LINKER_CWD_PATH)
+  LINKER = gcc -s -pthread $(LINKER_CWD_PATH)
 endif
 ifndef P_LIBR
 	P_LIBR = ../../../libinchi/src/

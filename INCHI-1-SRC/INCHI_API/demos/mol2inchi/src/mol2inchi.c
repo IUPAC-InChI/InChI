@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,19 +25,15 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
-
 #pragma warning( disable : 4996 )
+
+#include <locale.h>
 
 #include <time.h>
 
@@ -50,684 +46,747 @@
 #include <limits.h>
 #include <float.h>
 
-#include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <process.h>
 
+#if( defined( _MSC_VER ) && _MSC_VER > 1200 )
+/* not VC6 or earlier */
 #include <omp.h>
-
-#include "../../../../INCHI_BASE/src/inchi_api.h"
-#include "mol2inchi.h"
-#include "moreitil.h"
-
-#ifdef BUILD_WITH_ENG_OPTIONS
-#include "shuffler.h"
-/* local functions */
-int extract_MOL_counts_and_version(char *str, M2I_NUM *num_at, M2I_NUM *num_bo);
-int extract_counts_from_MOL_V3000(char *str, M2I_NUM *num_at, M2I_NUM *num_bo);
-int extract_name_from_MOL(char *str, char *name, size_t max_symbols);
-double getCPUTime(void);
+#endif
+#else
+#include <pthread.h>
 #endif
 
+#include <time.h>
 
+#include "moreutil.h"
+#include "mol2inchi.h"
 
+#include "../../../../INCHI_BASE/src/inchi_api.h"
 
 
 /****************************************************************************/
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
-int retcode=0, result=0, nerrs=0, k;
-char *fname=NULL;
-FILE *f=NULL;
-char *text=NULL;
+    int retcode = 0, ret = 0, result = 0, at_eof = 0;
+    int nmol = 0, curr_task = 0, curr_worker = 0, i, worker_done = 0, workers_done = 0, nread = 0;
+    unsigned int tick_start, tick_current, tick_stop;
+    char *fname = NULL;
+    FILE *f = NULL;
+    THREAD_PTR *pthreads = NULL;
+    m2i_WorkDetails wd;
+    m2i_WorkPool    pool;
 
-char *option1;
-char *out=NULL, *log=NULL;
-struct WorkerDetails wd;
 
-time_t begin;
+    fprintf( stderr, "%s %-s\n%-s Build (%-s%-s) of %s %s %-s\n\n",
+             APP_DESCRIPTION, INCHI_SRC_REV,
+             INCHI_BUILD_PLATFORM, INCHI_BUILD_COMPILER, INCHI_BUILD_DEBUG, __DATE__, __TIME__,
+             RELEASE_IS_FINAL ? "" : " *** pre-release, for evaluation only ***" );
 
-#if defined(_WIN32)
-const char *platform="Windows";
-#else
-const char *platform="Linux";
+#if (USE_TBB_MALLOC==1) && defined(_WIN32) 
+#if 1 /*if defined(DEBUG_MOL2INCHI)*/
+    {
+        char **func_replacement_log;
+        int func_replacement_status = TBB_malloc_replacement_log(&func_replacement_log);        
+        if (func_replacement_status==0)
+        {
+            fprintf(stderr, "Intel tbbmalloc_proxy library loaded\n");
+        }
+        /*
+        else
+        {
+            fprintf(stderr, "Intel TBB scalable allocator lib load failed: tbbmalloc_proxy cannot replace memory allocation routines\n");
+            for (char** log_string = func_replacement_log; *log_string != 0; log_string++)
+            {
+                fprintf(stderr, "%s\n", *log_string);
+            }
+        }
+        */
+
+    }
+#endif
 #endif
 
-    char banner[255];
-    sprintf( banner, "%s\n%-s Build of %-s %-s%s\n",
-              APP_DESCRIPTION,
-              platform, __DATE__, __TIME__,
-              RELEASE_IS_FINAL?"":" *** pre-release, for evaluation only ***");
+#if (USE_TBB_MALLOC==1) 
+    /* Dirty hack to if TBB malloc library loaded (call it to clear cache which is empty yet) */
+    scalable_allocation_command(TBBMALLOC_CLEAN_ALL_BUFFERS, 0);
+    /* ... if not failed, then the library is in place */
+    fprintf(stderr, "Intel TBB scalable allocator replaced memory allocation routines\n");
+#endif
 
-    /* Parse command line
-        assume that the first item is input filename,
-        then mol2ichi own switches, then  all the others
-        which should be passed to InChI calculation algorithm
-    */
 
-    memset( &wd, 0, sizeof(wd) );
+    /* Parse command line.                                              */
 
-    fprintf( stderr, "%-s\n", banner);
-    if ( argc < 2 )
+    /* The first item is input filename, then mol2ichi own  switches,   */
+    /* then  all the others (which are passed to InChI algorithm).      */
+
+    if (argc < 2)
     {
-        print_help();
-        retcode = 1;
-        goto finish;
+        print_help( );
+        return M2I_ERR_COMMAND_LINE;
     }
 
-    fprintf( stderr, "Started at ");
-    print_time();
-    ctime(&begin);
-
-    /* Set worker details */
-    wd.get_inchikey = 0;
-    wd.do_not_print_inchi = 0;
-    wd.output_error_inchi = 0;
-    wd.do_benchmark = 0;
-    wd.nperms = 0;
-    wd.tmax_shuffle = 0;
-    wd.dtmax_shuffle = 0.0;
-    wd.verbose = 1;
-    wd.out = NULL;
-    wd.log = NULL;
-    wd.rstart = 1;
-    wd.rend = 999999999;
-    wd.nmol = 0;
-    wd.n_inchi_err = 0;
-
-    /* limit calculations by 60 sec */
-#ifdef _WIN32
-    strcpy(wd.options, "/W60");
-#else
-    strcpy(wd.options, "-W60");
-#endif
+    tick_start = get_msec_timer( );
 
     fname = argv[1];
-    for(k=2; k<argc; k++)
+    result = m2i_WorkDetails_init( &wd, argc, argv );
+    if (!result)
     {
-        option1 =  argv[k]+1;
-        /* Treat mol2inchi own switches */
-        if ( !own_stricmp(option1, "NOINCHI") )
+        fprintf(stderr, "\nFATAL ERROR M2I_ERR_SET_JOB_OPTS\n");
+        return M2I_ERR_SET_JOB_OPTS;
+    }
+
+    fprintf(stderr, "\nStarted at "); 
+    print_time();
+    fprintf( stderr, "by the following command line:\n\"" );
+    for (i = 0; i < argc - 1; i++)
+    {
+        fprintf(stderr, "%-s ", argv[i]);
+    }
+    fprintf( stderr, "%-s\"\n", argv[argc - 1] );
+
+    f = fopen( fname, "rb" );
+    if (!f)
+    {
+        fprintf(stderr, "\nFATAL ERROR M2I_ERR_OPEN_INPUT\n");
+        return M2I_ERR_OPEN_INPUT;
+    }
+
+    result = m2i_WorkPool_init( &pool, &wd );
+    if (!result)
+    {
+        fprintf(stderr, "\nFATAL ERROR M2I_ERR_WORKPOOL_INIT\n");
+        return M2I_ERR_WORKPOOL_INIT;
+    }
+
+    fprintf( stderr, "\n" );
+    fflush( NULL );
+
+    pthreads = (THREAD_PTR *) calloc( wd.n_workers, sizeof( THREAD_PTR ) );
+    if (!pthreads)
+    {
+        fprintf(stderr, "\nFATAL ERROR M2I_ERR_PTHREADS_START\n"); 
+        return M2I_ERR_PTHREADS_START;
+    }
+
+    at_eof = 0;
+    nmol = 0;
+
+    curr_worker = 0;
+    curr_task = 0;
+    while ( GrowStr_reset( &( pool.workers[curr_worker].tasks[curr_task].in_buf ) )
+            && (ret=get_next_molfile_as_growing_str_buffer( f, &( pool.workers[curr_worker].tasks[curr_task].in_buf ), &at_eof ) ) == 1 )
+    {
+        nread++;
+        if (nmol + 1 < wd.rstart)
         {
-            wd.do_not_print_inchi = 1;
+            continue;
         }
-#ifdef BUILD_WITH_ENG_OPTIONS
-        else if ( !own_stricmp(option1, "BENCHMARK") )
+        if (nmol > wd.rend)
         {
-            wd.do_benchmark = 1;
+            nmol--;
+            at_eof = 1;
+            break;
         }
-        else if ( !own_memicmp( option1, "NSHUFFLE:", 9 ) )
+        if (!at_eof || nread == 1)
         {
-            wd.nperms = strtol(option1+9, NULL, 10);
-            if ( wd.nperms < 0 )
-                wd.nperms = 0;
+            ++nmol;
         }
-        else if ( !own_memicmp( option1, "TSHUFFLE:", 9 ) )
+
+        pool.workers[curr_worker].tasks[curr_task].nmol = nmol;
+        wd.nmol = nmol;
+        if (0 == wd.nmol % 25000)
         {
-            wd.tmax_shuffle = strtol(option1+9, NULL, 10);
-            if ( wd.tmax_shuffle < 0 )
-                wd.tmax_shuffle = 0; /* no time limit for shuffling */
-            wd.dtmax_shuffle = (double) wd.tmax_shuffle;
+            tick_current = get_msec_timer( );
+            fprintf( stderr, "Conversion speed %.1f mols/sec, structure %-ld\n",
+                (double) wd.nmol *1000.0 / ( tick_current - tick_start ), wd.nmol );
+            fflush( NULL );
         }
-        else if ( !own_memicmp( option1, "VERBOSE:", 8 ) )
+
+        if (!at_eof || nread == 1)
         {
-            wd.verbose = strtol(option1+8, NULL, 10);
-            if ( wd.verbose < 0 )
-                wd.verbose = 0;
-        }
+            /* the current block of records/tasks */
+            worker_done = 0;
+            workers_done = 0;
+            if ((curr_task + 1) == pool.workers[curr_worker].n_total_tasks)
+            {
+                pool.workers[curr_worker].n_ready_tasks = curr_task + 1;
+#ifdef _WIN32
+                pthreads[curr_worker] = (THREAD_PTR) _beginthreadex( NULL, 0, m2i_Worker_run, &pool.workers[curr_worker], 0, NULL );
 #endif
-        else if ( !own_memicmp( option1, "START:", 6 ) )
-        {
-            wd.rstart = strtol(option1+6, NULL, 10);
-            if ( wd.rstart < 1 )
-                wd.rstart = 1;
-        }
-        else if ( !own_memicmp( option1, "END:", 4 ) )
-        {
-            wd.rend = strtol(option1+4, NULL, 10);
-            if ( wd.rend < 1 )
-                wd.rend = 1;
-            if ( wd.rend < wd.rstart )
-                wd.rend = wd.rstart;
-        }
-        else if ( !own_memicmp( option1, "RECORD:", 7 ) )
-        {
-            int num = strtol(option1+7, NULL, 10);
-            wd.rstart = wd.rend = num;
+#if ( !defined(_WIN32) && defined(__linux__) )
+                pthread_create( &pthreads[curr_worker], NULL, m2i_Worker_run, &( pool.workers[curr_worker] ) );
+#endif
+
+#if defined(DEBUG_MOL2INCHI)
+                fprintf( stderr, "Launched new thread: pthreads[%-ld]=%-p\n", curr_worker, pthreads[curr_worker]  );
+                /*
+                {
+                    for (long t=0; t<pool.workers[curr_worker].n_total_tasks; t++)
+                    {
+                        fprintf( stderr, "\nTASK%-d={%s}\n", t, pool.workers[curr_worker].tasks[t].in_buf.ps );
+                    }
+                }
+                */
+                fflush( NULL );
+#endif
+
+                worker_done = 1;
+                /*pool.workers[curr_worker].n_ready_tasks = 0; */
+
+                if ( (curr_worker + 1)==pool.n_total_workers)
+                {
+                    pool.n_ready_workers = curr_worker + 1;
+                    m2i_WorkPool_wait_and_print_all( &pool, pthreads );
+
+                    workers_done = 1;
+                    /* reset pool data */
+#ifdef _WIN32
+                    {
+                        for (long w = 0; w < pool.n_ready_workers; w++)
+                        {
+                            CloseHandle( pthreads[w] );
+                        }
+                    }
+#endif
+                    m2i_WorkPool_reset( &pool );
+                    curr_worker = 0;
+                    curr_task = 0;
+                    if (at_eof)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            if (at_eof)
+            {
+                break;
+            }
+
+            ++curr_task;
+            if (curr_task == pool.workers[curr_worker].n_total_tasks)
+            {
+                ++curr_worker;
+                curr_task = 0;
+            }
+            if (curr_worker == pool.n_total_workers)
+            {
+                curr_worker = 0;
+                curr_task = 0;
+            }
         }
         else
         {
-            if ( !own_stricmp(option1, "KEY") )
+            /* the remaining records/tasks */
+            if (!worker_done)
             {
-                wd.get_inchikey = 1;
+                pool.workers[curr_worker].n_ready_tasks = curr_task;
+#ifdef _WIN32
+                pthreads[curr_worker] = (THREAD_PTR) _beginthreadex( NULL, 0, m2i_Worker_run, &pool.workers[curr_worker], 0, NULL );
+#endif
+#if ( !defined(_WIN32) && defined(__linux__) )
+                pthread_create( &pthreads[curr_worker], NULL, m2i_Worker_run, &( pool.workers[curr_worker] ) );
+#endif
             }
-            /* other switches to be passed to inchi-calc worker */
-            strcat( wd.options, " " );
-            strcat( wd.options, argv[k] );
-        }
-    }
-
-    fprintf( stderr, "by the following command line:\n\"");
-    for(k=0; k<argc-1; k++)
-        fprintf( stderr, "%-s ",argv[k]);
-    fprintf( stderr, "%-s\"\n", argv[argc-1]);
-
-    f = fopen(fname,"rb");
-    if ( !f )
-    {
-        retcode = 2;
-        goto finish;
-    }
-
-    /* Warning: in this demo, we assume that molfile's size does not    */
-    /* exceed some large MOLBUFSIZE; be (more) careful for production.    */
-    text = (char *) calloc( MOLBUFSIZE, sizeof(char) );
-    if ( !text )
-    {
-        retcode = 3;
-        goto finish;
-    }
-    fprintf( stderr, "\n" );
-
-
-    /* Main loop */
-
-    while ( get_next_molfile_as_text( f, text, MOLBUFSIZE ) > 0 )
-    {
-        wd.nmol++;
-        if ( wd.nmol < wd.rstart )
-            continue;
-        if ( wd.nmol > wd.rend )
+            if (!workers_done)
+            {
+                if (!curr_task)
+                {
+                    curr_worker--;
+                }
+                pool.n_ready_workers = curr_worker + 1;
+                m2i_WorkPool_wait_and_print_all( &pool, pthreads );
+            }
             break;
-        nerrs = work_on_molfile_text ( text, &wd );
+        }
+
     }
 
+    if (!result)
+    {
+        fprintf( stderr, "\nReading record next to #%-ld: read/store error", wd.nmol );
+    }
 
-finish:
+    /* Destroy pool data */
+    m2i_WorkPool_close( &pool );
+#ifdef _WIN32
+    free( pthreads );
+#endif
+#if ( !defined(_WIN32) && defined(__linux__) )
+    free( pthreads );
+#endif
 
-    if ( retcode==0 )
-        fprintf( stderr, "\nFinished OK at ");
+    /* Final printouts */
+    tick_stop = get_msec_timer();
+    fprintf( stderr, "\nProcessed %lu structure(s) with %-ld error(s).\n", wd.nmol, wd.n_inchi_err );
+    fprintf(stderr, "Conversion speed %.1f mols/sec, structure %-ld\n", (double)wd.nmol *1000.0 / (tick_stop - tick_start), wd.nmol);   
+    fprintf( stderr, "Finished at " );
+    print_time( );
+    fprintf( stderr, "Elapsed wall time: %d msec (", tick_stop - tick_start );
+
+    if (wd.n_workers == 1)
+    {
+        fprintf( stderr, "single thread" );
+    }
     else
-        fprintf( stderr, "\nFinished with exit code %-d at ", retcode);
-
-    print_time();
-
-    fprintf( stderr, "Processed %lu structure(s) with %-ld error(s).\n",
-                        wd.nmol, wd.n_inchi_err );
-    if ( text )
-        free( text );
+    {
+        fprintf( stderr, "%-d threads", wd.n_workers );
+    }
+    if (wd.n_tasks_per_worker != 1)
+    {
+        fprintf( stderr, " by %-d mols each)\n", wd.n_tasks_per_worker );
+    }
+    else
+    {
+        fprintf( stderr, ")\n" );
+    }
 
     return retcode;
 }
 
 
-
-/*
-    Process one MOLFile text
-
-    Optionally organize benchmarking and
-    repeat calculations with shuffled atoms
-*/
-int work_on_molfile_text( const char* text, struct WorkerDetails * wd)
+/****************************************************************************/
+int m2i_WorkPool_wait_and_print_all( m2i_WorkPool *pool, THREAD_PTR *pthreads )
 {
-int res=0, nerrs=0, shuffle_atoms=0;
-int lenname=0, max_mname_symbols=79;
-long irepeat=0;
-double startTime=0.0;
-double run_duration=0.0;
-int nrepeats=0;
-int have_problems=0;
+    int wait_res = 0, ret = 1;
+    long w, t;
+    m2i_WorkDetails *wd = pool->workers->tasks[0].wd;
 
-#ifdef BUILD_WITH_ENG_OPTIONS
-M2I_NUM numbers[PERMAXATOMS];
-M2I_NUM nat = -1, nbonds = -1;
-char mname[80];
-MFLines *mfdata=NULL;
-long i;
-int version;
+#ifdef _WIN32
+    wait_res = WaitForMultipleObjects( pool->n_ready_workers, pthreads, TRUE, INFINITE );
 #endif
-
-/* Warning: in this demo, we assume that printout (InChI, etc.)    */
-/* does not exceed some large INCHIPRINTOUTSIZE                    */
-char output0[INCHIPRINTOUTSIZE], errstr0[4096];
-char ikey0[28];
-
-    ikey0[0] = output0[0] = errstr0[0] = '\0';
-
-#ifdef BUILD_WITH_ENG_OPTIONS
-    /* Get info for printout */
-    lenname = extract_name_from_MOL( (char *) text, mname, max_mname_symbols);
-    if ( !lenname )
-        strcpy(mname, "");
-    if ( wd->do_benchmark )
-    {
-        startTime = getCPUTime( );
-    }
+#if ( !defined(_WIN32) && defined(__linux__) )
+    for (w = 0; w < pool->n_ready_workers; w++)
+        pthread_join( pthreads[w], NULL );
 #endif
-
-    /* Perform a single run */
-    nerrs = run_once_on_molfile_text( text, wd, ikey0, output0, errstr0);
-
-    if ( errstr0[0] )
-        fprintf( stderr, "%-s\n", errstr0);
-
-#ifndef BUILD_WITH_ENG_OPTIONS
-    fprintf( stdout, "%-s", output0 );
-    fprintf( stdout, "\n");
-    fflush(NULL);
-#else
-    /* have_problems = extract_counts_from_MOL_V3000( (char *) text, &nat, &nbonds);                 */
-    version = extract_MOL_counts_and_version( (char *) text, &nat, &nbonds);
-    have_problems = (version!=2000) && (version!=3000);
-
-    if ( wd->do_benchmark )
+    
+    for (w = 0; w < pool->n_ready_workers; w++)
     {
-        run_duration = getCPUTime( ) - startTime;
-        if ( wd->nperms > 0 )
+        for (t = 0; t < pool->workers[w].n_ready_tasks; t++)
         {
-            /* Permutations requested */
-            nrepeats = wd->nperms;
-
-            if ( nrepeats > 0 )
+            if (pool->workers[w].tasks[t].errstr.used > 0)
             {
-                if ( version!=3000 || nat<1 || nat>PERMAXATOMS )
+                if (wd->verbose > 0)
                 {
-                    nrepeats = 0;
-                    if ( wd->verbose >= 1 )
-                        fprintf( stderr,
-                                 "No shuffle for  struct #%-ld: not V3000 data file or too many atoms (code %-d).\n",
-                                 wd->nmol, have_problems );
+                    fprintf( stderr, "%-s\n", pool->workers[w].tasks[t].errstr.ps );
                 }
             }
-
-            if ( nrepeats > 0 && wd->tmax_shuffle > 0 )
+            if (pool->workers[w].tasks[t].output.used > 0)
             {
-                /* Check single-run timing... */
-                if ( run_duration >= wd->dtmax_shuffle )
-                {
-                    /* Single-run duration exceeds treshold, do not repeat */
-                    nrepeats = 0;
-                    if ( wd->verbose >= 1 )
-                        fprintf( stderr, "No shuffle for  struct #%-ld: too long run.\n", wd->nmol );
-                }
+                fprintf( stdout, "%-s", pool->workers[w].tasks[t].output.ps );
+                fprintf( stdout, "\n" );
             }
         }
-    }    /* if ( wd->do_benchmark ) */
-
-    fprintf( stdout, "%-s\t%-s\t", output0, mname );
-
-    if ( wd->do_benchmark )
-    {
-        fprintf( stdout, "#%-ld\t%-d\t%-d\t%-lf",
-                    irepeat, nat, nbonds,run_duration );
-        if ( ikey0[0] )
-            fprintf( stdout, "%-s", (nrepeats < 1)?"\t---":"\t***" );
-    }
-    fprintf( stdout, "\n");
-    fflush(NULL);
-
-
-    if ( nerrs > 0 )
-    {
-        /* Failed, nothing to do here anymore */
-        return nerrs;
+        fflush( NULL );
     }
 
-    if ( nrepeats < 1 )
-        return 0;
-
-    /* Repeat nrepeat times */
-
-    /* Prepare data structs for repeated calulations */
-    for (i=0; i<nat; i++)
-        numbers[i] = i;
-
-    mfdata = new_mflines( (char *) text, nat, nbonds );
-
-/*#pragma omp parallel num_threads(4)*/
-#ifdef _OPENMP
-    {
-#ifdef WIN32
-        int maxcores=3;    /* laptop */
-#else
-        int maxcores=5;    /* server */
-#endif
-        int nthreads = ( nrepeats <= maxcores ) ? nrepeats : maxcores;
-        omp_set_num_threads( nthreads );
-        fprintf( stderr, "Using OpenMP with %-d threads\n", ( nrepeats <= maxcores ) ? nrepeats : maxcores );
-    }
+#if defined(DEBUG_MOL2INCHI)
+    fprintf( stderr, "All threads finished, exiting from m2i_WorkPool_wait_and_print_all()\n");
+    fflush( NULL );
 #endif
 
-
-#pragma omp parallel for firstprivate( numbers ) private(startTime)
-    for ( irepeat=1; irepeat<nrepeats+1; irepeat++)
-    {
-        int res1;
-        char *mftext=NULL;
-        char ikey[28];
-        /* Warning: in this demo, we just assume that printout (InChI, etc.)    */
-        /* does not exceed some large INCHIPRINTOUTSIZE; be (more) careful.                        */
-        char output[INCHIPRINTOUTSIZE], errstr[4096];
-        output[0] = errstr[0] = ikey[0] = '\0';
-
-#ifdef _OPENMP
-        /* Make sure that different threads go with different rand */
-        srand( (unsigned int) (time(NULL)) ^ omp_get_thread_num());
-#else
-        srand( (unsigned int) (time(NULL)) );
-#endif
-
-        /* Re-order the atoms and make new 'Molfile as text' */
-        shuffle( (void *) numbers, (M2I_NUM) nat, sizeof(M2I_NUM) );
-        mftext = shuffled_mflines( mfdata, numbers );
-        if ( NULL==mftext )
-            continue;
-
-        /* debug printout */
-        if ( wd->verbose >= 1 )
-        {
-            if ( wd->verbose >= 2 )
-#pragma omp critical
-            {
-                fprintf( stderr, "%-s perm#%-.4ld { %-d", mname, irepeat, numbers[0]);
-                for (i=1; i<nat-1; i++) fprintf( stderr, ", %-d", numbers[i]);
-                    fprintf( stderr, ", %-d }\n", numbers[nat-1]);
-                if ( wd->verbose >= 10 )
-                {
-                    fprintf( stderr, "\n\n%-s\n\n", mftext);
-                }
-            }
-        }
-
-        if ( wd->do_benchmark )
-            startTime = getCPUTime( );
-
-
-        res1 = run_once_on_molfile_text( (const char *) mftext, wd, ikey, output, errstr);
-
-
-        if ( wd->do_benchmark )
-        {
-            run_duration = getCPUTime( ) - startTime;
-        }
-        if ( errstr[0] )
-#pragma omp critical
-        {
-            if ( wd->verbose >= 1 )
-#ifdef _OPENMP
-                fprintf( stderr, "(%-s) [thread %-d] \n", errstr, omp_get_thread_num());
-#else
-                fprintf( stderr, "(%-s)\n", errstr );
-#endif
-        }
-
-        if ( wd->do_benchmark )
-#pragma omp critical
-        {
-            {
-                fprintf( stdout, "%-s\t%-s\t#%-ld\t%-d\t%-d\t%-lf",
-                    output, mname, irepeat, nat, nbonds,run_duration );
-                if ( ikey0[0] && ikey[0] )
-                    fprintf( stdout, "%-s",
-                                    strcmp(ikey,ikey0)?"\t!!!":"\t..." );
-                fprintf( stdout, "\n");
-                fflush(NULL);
-            }
-        }
-
-        if ( mftext )
-            free( mftext );
-    }
-
-
-    if ( mfdata )
-        del_mflines( mfdata );
-
-#endif
-
-    return 0;
+    return ret;
 }
 
 
-/* Actual InChI calculation worker    */
-int run_once_on_molfile_text( const char* mftext,
-                              struct WorkerDetails* wd,
-                              char *ikey,
-                              char *output,
-                              char *errstr)
+/****************************************************************************
+ Run a single worker thread
+****************************************************************************/
+M2I_THREADFUNC m2i_Worker_run( void *arg )
 {
-int res=0, errs=0;
-inchi_Output iout, *result = &iout;
-const char *delim = "\n";
+    int res = 0;
+    long t;
+    unsigned errs = 0;
+    const char *delim = "\t"; /*"\n";*/
+    inchi_Output iout, *piout = &iout;
+    m2i_Worker      *w = (m2i_Worker *) arg;
+    m2i_WorkDetails *wd = w->tasks[0].wd;
 
-    memset( result, 0, sizeof(*result) );
-
-    /* Call API function to calculate InChI */
-    res = MakeINCHIFromMolfileText( mftext, wd->options, result );
-
-    if ( res==mol2inchi_Ret_ERROR        ||
-         res==mol2inchi_Ret_ERROR_get    ||
-         res==mol2inchi_Ret_ERROR_comp    )
+    /* For all prepared tasks */
+    for (t = 0; t < w->n_ready_tasks; t++)
     {
-        errs++;
-        wd->n_inchi_err++;
-        sprintf( errstr, "Error " );
-    }
-    else if ( res==mol2inchi_Ret_WARNING )
-    {
-        sprintf( errstr, "Warning " );
-    }
-    if ( result->szLog && result->szLog[0] )
-        sprintf( errstr,
-                 "%-s structure #%-lu",
-                 result->szLog,  wd->nmol );
+        memset( piout, 0, sizeof( *piout ) );
 
-    /* Print InChI and other stuff if InChI is not empty */
-    if ( result->szInChI && result->szInChI[0] )
-    {
-        /* Calculate and print InChIKey */
-        if ( wd->get_inchikey )
+        /* call API function to calculate InChI */
+        res = MakeINCHIFromMolfileText( w->tasks[t].in_buf.ps, wd->options, piout );
+
+        if ( res == mol2inchi_Ret_ERROR     ||
+             res == mol2inchi_Ret_ERROR_get ||
+             res == mol2inchi_Ret_ERROR_comp )
         {
-            int ik_ret=0;           /* InChIKey-calc result code */
-            int xhash1, xhash2;
-            char szXtra1[256], szXtra2[256];
-            xhash1 = xhash2 = 0;
-
-            ik_ret = GetINCHIKeyFromINCHI( result->szInChI,
-                                           xhash1,
-                                           xhash2,
-                                           ikey,
-                                           szXtra1,
-                                           szXtra2);
-            if (ik_ret!=INCHIKEY_OK)
-                ikey[0]='\0';
+            errs++;
+            wd->n_inchi_err++;
+            /* sprintf( errstr, "Error " ); */
+            /* GrowStr_printf( errstr, "Error " ); */
+        }
+        else if (res == mol2inchi_Ret_WARNING)
+        {
+            ;
+            /* sprintf( errstr, "Warning " ); */
+            /* GrowStr_printf( errstr, "Warning " ); */
+        }
+        if (piout->szLog && piout->szLog[0])
+        {
+            GrowStr_printf( &( w->tasks[t].errstr ), "%-s structure #%-lu", piout->szLog, w->tasks[t].nmol );
         }
 
-        sprintf(output, "Structure: %-lu%s%-s%s%-s%s%-s",
-                wd->nmol,
-                wd->do_not_print_inchi ? "" : delim,
-                wd->do_not_print_inchi ? "" : result->szInChI,
-                ikey[0] ? delim : "",
-                ikey[0] ? ikey : "",
-                result->szAuxInfo && result->szAuxInfo[0] ? delim : "",
-                result->szAuxInfo && result->szAuxInfo[0] ? result->szAuxInfo : ""
-            );
+        /* Print InChI and other stuff if not empty */
+        if (piout->szInChI && piout->szInChI[0])
+        {
+            /* But first, calculate InChIKey if requested */
+            if (wd->get_inchikey)
+            {
+                int ik_ret = 0;           /* InChIKey-calc result code */
+                int xhash1, xhash2;
+                xhash1 = xhash2 = 0;
+
+                ik_ret = GetINCHIKeyFromINCHI( piout->szInChI,
+                                               xhash1,
+                                               xhash2,
+                                               w->tasks[t].ikey,
+                                               w->tasks[t].szXtra1,
+                                               w->tasks[t].szXtra2 );
+                if (ik_ret != INCHIKEY_OK)
+                {
+                    w->tasks[t].ikey[0] = '\0';
+                }
+            }
+
+            GrowStr_printf( &( w->tasks[t].output ), "%-lu%s%-s%s%-s%s%-s",
+                             w->tasks[t].nmol,
+                             wd->do_not_print_inchi ? "" : delim,
+                             wd->do_not_print_inchi ? "" : piout->szInChI,
+                             w->tasks[t].ikey[0] ? delim : "",
+                             w->tasks[t].ikey[0] ? w->tasks[t].ikey : "",
+                             piout->szAuxInfo && piout->szAuxInfo[0] ? delim : "",
+                             piout->szAuxInfo && piout->szAuxInfo[0] ? piout->szAuxInfo : "" );
+        }
+        /* Reset output data structure */
+        FreeINCHI( piout );
     }
 
-    /* Reset output data structure */
-    FreeINCHI ( result );
+#ifdef _WIN32
+    /* _endthreadex( 0 ); */
 
     return errs;
-}
-
-
-
-/*
-    Print program usage instructions
-*/
-void print_help(void)
-{
-    fprintf( stderr, "Usage: \n");
-    fprintf( stderr, "mol2inchi inputfilename [options]\n");
-    fprintf( stderr, "Options:\n");
-    fprintf( stderr, "\tSTART:n - start from SDF record n\n");
-    fprintf( stderr, "\tEND:n   - end when reached SDF record n\n");
-    fprintf( stderr, "\tRECORD:n   - process only SDF record n\n");
-    fprintf( stderr, "\tNOINCHI - do not print InChI itself\n");
-    fprintf( stderr, "\tKEY     - calc and print InChIKey\n");
-    fprintf( stderr, "\tPOLYMERS - treat polymers (experimental)\n");
-#ifdef BUILD_WITH_ENG_OPTIONS
-    fprintf( stderr, "\tBENCHMARK - collect timing\n");
-    fprintf( stderr, "\tNSHUFFLE:n - reorder atoms n times and repeat\n");
-    fprintf( stderr, "\tTSHUFFLE:t - do not repeat runs of t sec or longer\n");
-    fprintf( stderr, "\tVERBOSE:n  - > 0 means more output\n");
 #endif
-    fprintf( stderr, "\t[common InChI API options]\n");
 }
 
 
-#ifdef BUILD_WITH_ENG_OPTIONS
-/******************************************************************/
-int extract_name_from_MOL(char *str, char *name, size_t max_symbols)
+/* Print program usage instructions */
+void print_help( void )
 {
-char *p;
-size_t ncopied;
-#define CNAMEL 4096
-char buf[CNAMEL];
+    fprintf( stderr, "Usage: \n" );
+    fprintf( stderr, "mol2inchi inputfilename [options]\n" );
+    fprintf( stderr, "Options:\n" );
+    fprintf( stderr, "\tSTART:k     - start from SDF record #k\n" );
+    fprintf( stderr, "\tEND:k       - end at SDF record #k\n" );
+    fprintf( stderr, "\tRECORD:k    - process only SDF record #k\n" );
+    fprintf( stderr, "\tTHREADS:n   - run n threads\n" );
+    fprintf( stderr, "\tPERTHREAD:m - run m tasks per thread (each task treats one record)\n" );
+    fprintf( stderr, "\tNOINCHI     - do not print InChI itself\n" );
+    fprintf( stderr, "\tKEY         - calc and print InChIKey\n" );
+    fprintf( stderr, "\tPOLYMERS    - treat polymers (experimental)\n" );
+    fprintf( stderr, "\tVERBOSE:n   - > 0 means more output\n" );
+    fprintf( stderr, "\t[common InChI API options]\n" );
+}
 
-    if (str==NULL)
-        return -1;
-    if (strlen(str)<1)
-        return -1;
 
-    p = get_substr_in_between(str, "", "\n", buf, CNAMEL-2, &ncopied);
+/*******************/
+/* m2i_WorkDetails */
+/*******************/
 
-    if ( ncopied )
+/****************************************************************************/
+int m2i_WorkDetails_init( m2i_WorkDetails *wd, int argc, char *argv[] )
+{
+    int i;
+    char *option1 = NULL;
+
+    if (!wd)
     {
-        if ( ncopied > max_symbols )
-            ncopied = max_symbols;
-        memcpy( name, buf, ncopied );
-        name[ncopied++]='\0';
+        return 0;
     }
 
-    return (int) ncopied;
-}
+    memset( wd, 0, sizeof( *wd ) );
 
+    wd->n_workers = 1;
+    wd->n_tasks_per_worker = 1;
+    wd->verbose = 1;
+    wd->rstart = 1;
+    wd->rend = 999999999;
 
-/***************************************************************************/
-int extract_counts_from_MOL_V3000(char *str, M2I_NUM *num_at, M2I_NUM *num_bo)
-{
-size_t n, ncopied;
-char *p, *pp, *next;
-#define CBUFL 16
-char buf[CBUFL];
+    /* Limit calculations by 60 sec */
+#ifdef _WIN32
+    strcpy( wd->options, "/W60" );
+#else
+    strcpy( wd->options, "-W60" );
+#endif
 
-
-    *num_at = *num_bo = -1;
-
-    if (str==NULL)
-        return -1;
-    if (strlen(str)<1)
-        return -2;
-
-    p = str;
-
-    n = 5;
-    while (n--)
-        while ((++p)[0]!='\n') ;
-    ++p;
-
-    next = get_substr_in_between(p, "M  V30 COUNTS ", " ", buf, CBUFL-2, &ncopied);
-
-    if ( !ncopied )
-        return -3;
-    if ( !strlen(buf) )
-        return -4;
-
-    *num_at = (M2I_NUM ) strtol(buf, NULL, 10);
-    if ( *num_at < 1)
-        return -5;
-
-    pp = p + strlen("M  V30 COUNTS ") + strlen(buf) +1;
-    buf[0] = '\0';
-    next = get_substr_in_between(pp, "", " ", buf, CBUFL-2, &ncopied);
-    if ( ncopied )
-        if ( strlen(buf) )
-            *num_bo = (M2I_NUM ) strtol(buf, NULL, 10);
-
-    return 0;
-}
-
-
-
-/***************************************************************************/
-int extract_MOL_counts_and_version(char *str, M2I_NUM *num_at, M2I_NUM *num_bo)
-{
-size_t n, ncopied;
-char *p, *pp, *next;
-#define CBUFL 16
-char buf[CBUFL];
-int version;
-char *p2000=NULL;
-
-    version = *num_at = *num_bo = -1;
-
-    if (str==NULL)
-        return -1;
-    if (strlen(str)<1)
-        return -2;
-
-    p = str;
-
-    n = 3;
-    while (n--)
-        while ((++p)[0]!='\n') ;
-    ++p;
-
-    p2000 = strstr(p, "V2000");
-    if ( p2000)
+    for (i = 2; i < argc; i++)
     {
-        int k;
-        char sna[4], snb[4];
-        if ( strlen(p) < 6 )
-            return version;
-        for (k=0; k<3; k++)
+        option1 = argv[i] + 1;
+        /* mol2inchi own switches */
+        if (!own_stricmp( option1, "NOINCHI" ))
         {
-            sna[k] = p[k];
-            snb[k] = p[k+3];
+            wd->do_not_print_inchi = 1;
         }
-        sna[3] = snb[3] = '\0';
-        *num_at = (M2I_NUM ) strtol(sna, NULL, 10);
-        if ( *num_at < 1)
-            return -5;
-        *num_bo = (M2I_NUM ) strtol(snb, NULL, 10);
-        version = 2000;
-        return version;
+        else if (!own_memicmp( option1, "VERBOSE:", 8 ))
+        {
+            wd->verbose = strtol( option1 + 8, NULL, 10 );
+            if (wd->verbose < 0)
+            {
+                wd->verbose = 0;
+            }
+        }
+        else if (!own_memicmp( option1, "START:", 6 ))
+        {
+            wd->rstart = strtol( option1 + 6, NULL, 10 );
+            if (wd->rstart < 1)
+            {
+                wd->rstart = 1;
+            }
+        }
+        else if (!own_memicmp( option1, "THREADS:", 8 ))
+        {
+            wd->n_workers = strtol( option1 + 8, NULL, 10 );
+            if (wd->n_workers < 1)
+            {
+                wd->n_workers = 1;
+            }
+            if (wd->n_workers > MAX_WORKERS)
+            {
+                wd->n_workers = MAX_WORKERS;
+                fprintf(stderr, "Too high number of threads requested, use %-d\n", MAX_WORKERS);
+            }
+        }
+        else if (!own_memicmp( option1, "PERTHREAD:", 10 ))
+        {
+            wd->n_tasks_per_worker = strtol( option1 + 10, NULL, 10 );
+            if (wd->n_tasks_per_worker < 1)
+            {
+                wd->n_tasks_per_worker = 1;
+            }
+            if (wd->n_tasks_per_worker > MAX_SLOTS)
+            {
+                wd->n_tasks_per_worker = MAX_SLOTS;
+                fprintf(stderr, "Too high number of slots per thread requested, use %-d\n", MAX_SLOTS);
+            }
+        }
+        else if (!own_memicmp( option1, "END:", 4 ))
+        {
+            wd->rend = strtol( option1 + 4, NULL, 10 );
+            if (wd->rend < 1)
+            {
+                wd->rend = 1;
+            }
+            if (wd->rend < wd->rstart)
+            {
+                wd->rend = wd->rstart;
+            }
+        }
+        else if (!own_memicmp( option1, "RECORD:", 7 ))
+        {
+            int num = strtol( option1 + 7, NULL, 10 );
+            wd->rstart = wd->rend = num;
+        }
+        else
+        {
+            if (!own_stricmp( option1, "KEY" ))
+            {
+                wd->get_inchikey = 1;
+            }
+            /* other switches to be passed to inchi-calc worker */
+            strcat( wd->options, " " );
+            strcat( wd->options, argv[i] );
+            if (!own_stricmp( option1, "LARGEMOLECULES" ))
+            {
+                wd->large_mols = 1;
+            }
+        }
     }
 
-    version = 3000;
-    p = str;
-    n = 5;
-    while (n--)
-        while ((++p)[0]!='\n') ;
-    ++p;
-
-    next = get_substr_in_between(p, "M  V30 COUNTS ", " ", buf, CBUFL-2, &ncopied);
-
-    if ( !ncopied )
-        return -3;
-    if ( !strlen(buf) )
-        return -4;
-
-    *num_at = (M2I_NUM ) strtol(buf, NULL, 10);
-    if ( *num_at < 1)
-        return -5;
-
-    pp = p + strlen("M  V30 COUNTS ") + strlen(buf) +1;
-    buf[0] = '\0';
-    next = get_substr_in_between(pp, "", " ", buf, CBUFL-2, &ncopied);
-    if ( ncopied )
-        if ( strlen(buf) )
-            *num_bo = (M2I_NUM ) strtol(buf, NULL, 10);
-
-    return version;
+    return 1;
 }
-#endif
+
+
+/***********************/
+/* m2i_WorkPool	object */
+/***********************/
+
+/****************************************************************************/
+int m2i_WorkPool_init( m2i_WorkPool *pool, m2i_WorkDetails *wd )
+{
+    int ret = 1;
+    long w;
+
+    memset( pool, 0, sizeof( *pool ) );
+    pool->n_total_workers = wd->n_workers;
+    pool->workers = (m2i_Worker *) calloc( pool->n_total_workers, sizeof( m2i_Worker ) );
+
+    if (!pool->workers)
+    {
+        fprintf(stderr, "Memory alloc fail %-s#%-d\n", __FILE__, __LINE__);
+        return 0;
+    }
+
+    for (w = 0; w < pool->n_total_workers; w++)
+    {
+        ret = m2i_Worker_init( &pool->workers[w], wd );
+        if (!ret)
+        {
+            fprintf(stderr, "m2i_Worker_init() returned error %-s#%-d\n", __FILE__, __LINE__);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+/****************************************************************************/
+void m2i_WorkPool_close( m2i_WorkPool *pool )
+{
+    long w;
+    for (w = 0; w < pool->n_total_workers; w++)
+    {
+        m2i_Worker_close( &pool->workers[w] );
+    }
+    free( pool->workers );
+}
+
+
+/****************************************************************************/
+void m2i_WorkPool_reset( m2i_WorkPool *pool )   /* do not touch already allocd pointers to workers */
+{
+    long w;
+    for (w = 0; w < pool->n_total_workers; w++)
+    {
+        m2i_Worker_reset( &pool->workers[w] );
+    }
+    pool->n_ready_workers = 0;
+}
+
+
+/*********************/
+/* m2i_Worker object */
+/*********************/
+
+/****************************************************************************/
+int m2i_Worker_init( m2i_Worker *w, m2i_WorkDetails *wd )
+{
+    int ret = 1;
+    long t;
+
+    memset( w, 0, sizeof( *w ) );
+    w->n_total_tasks = wd->n_tasks_per_worker;
+    w->n_ready_tasks = 0;
+    w->tasks = (m2i_Task *) calloc( w->n_total_tasks, sizeof( m2i_Task ) );
+    if (!w->tasks)
+    {
+        fprintf(stderr, "Memory alloc fail %-s#%-d\n", __FILE__, __LINE__);
+        return 0;
+    }
+    for (t = 0; t < w->n_total_tasks; t++)
+    {
+        ret = m2i_Task_init( &( w->tasks[t] ), wd );
+        if (!ret)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+/****************************************************************************/
+void m2i_Worker_reset( m2i_Worker *w )  /* do not touch already allocd pointers to tasks */
+{
+    long t;
+    for (t = 0; t < w->n_total_tasks; t++)
+    {
+        m2i_Task_reset( &( w->tasks[t] ) );
+    }
+    w->n_ready_tasks = 0;
+}
+
+
+/****************************************************************************/
+void m2i_Worker_close( m2i_Worker *w )
+{
+    long t;
+    for (t = 0; t < w->n_total_tasks; t++)
+    {
+        m2i_Task_close( &( w->tasks[t] ) );
+    }
+    free( w->tasks );
+}
+
+
+/*******************/
+/* m2i_Task object */
+/*******************/
+
+
+/****************************************************************************/
+void m2i_Task_reset( m2i_Task *task )
+{
+    GrowStr_reset( &task->in_buf );
+    GrowStr_reset( &task->output );
+    GrowStr_reset( &task->errstr );
+}
+
+
+/****************************************************************************/
+void m2i_Task_close( m2i_Task *task )
+{
+    GrowStr_close( &task->in_buf );
+    GrowStr_close( &task->output );
+    GrowStr_close( &task->errstr );
+}
+
+
+/****************************************************************************/
+int  m2i_Task_init( m2i_Task *task, m2i_WorkDetails *wd )
+{
+    int ret;
+    int bufsize0 = 4096; /*16384*/
+    int bufsize1 = 1024;
+    int bufsize2 = 128;
+
+    memset( task, 0, sizeof( *task ) );
+
+    task->index = -1;
+    task->retcode = 0;
+    task->nmol = -1;
+    task->wd = wd;
+
+    if (wd->large_mols)
+    {
+        bufsize0 = 32768; /*262144*/
+        bufsize1 = 4096;
+    }
+    ret = GrowStr_init( &task->in_buf, bufsize0, bufsize0 );
+    if (!ret || !task->in_buf.ps || !task->in_buf.allocated)
+    {
+        return 0;
+    }
+    ret = GrowStr_init( &task->output, bufsize1, bufsize1 );
+    if (!ret || !task->output.ps || !task->output.allocated)
+    {
+        return 0;
+    }
+    ret = GrowStr_init( &task->errstr, bufsize2, bufsize2 );
+    if (!ret || !task->errstr.ps || !task->errstr.allocated)
+    {
+        return 0;
+    }
+
+    return 1;
+}

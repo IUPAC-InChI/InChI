@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,14 +25,9 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
@@ -85,37 +80,37 @@ extern "C" {
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^*/
 
 
-void inchi_ios_init(INCHI_IOSTREAM *ios, int io_type, FILE *f);
-void inchi_ios_flush(INCHI_IOSTREAM *ios);
-void inchi_ios_flush2(INCHI_IOSTREAM *ios, FILE *f2);
-void inchi_ios_close(INCHI_IOSTREAM *ios);
-void inchi_ios_reset(INCHI_IOSTREAM *ios);
+    void inchi_ios_init( INCHI_IOSTREAM *ios, int io_type, FILE *f );
+    void inchi_ios_flush( INCHI_IOSTREAM *ios );
+    void inchi_ios_flush2( INCHI_IOSTREAM *ios, FILE *f2 );
+    void inchi_ios_close( INCHI_IOSTREAM *ios );
+    void inchi_ios_reset( INCHI_IOSTREAM *ios );
 
-int inchi_ios_gets( char *szLine, int len, INCHI_IOSTREAM *ios, int *bTooLongLine );
-int inchi_ios_getsTab( char *szLine, int len, INCHI_IOSTREAM *ios, int *bTooLongLine );
-int inchi_ios_getsTab1( char *szLine, int len, INCHI_IOSTREAM *ios, int *bTooLongLine );
+    int inchi_ios_gets( char *szLine, int len, INCHI_IOSTREAM *ios, int *bTooLongLine );
+    int inchi_ios_getsTab( char *szLine, int len, INCHI_IOSTREAM *ios, int *bTooLongLine );
+    int inchi_ios_getsTab1( char *szLine, int len, INCHI_IOSTREAM *ios, int *bTooLongLine );
 
-int inchi_ios_print( INCHI_IOSTREAM *ios, const char* lpszFormat, ... );
-int inchi_ios_print_nodisplay( INCHI_IOSTREAM *ios, const char* lpszFormat, ... );
+    int inchi_ios_print( INCHI_IOSTREAM *ios, const char* lpszFormat, ... );
+    int inchi_ios_print_nodisplay( INCHI_IOSTREAM *ios, const char* lpszFormat, ... );
 
-/* Print to string buffer or to file+stderr */
-int inchi_ios_eprint( INCHI_IOSTREAM *ios, const char* lpszFormat, ... );
+    /* Print to string buffer or to file+stderr */
+    int inchi_ios_eprint( INCHI_IOSTREAM *ios, const char* lpszFormat, ... );
 
 
-/*
-    PLAIN FILE OPERATIONS
-*/
+    /*
+        PLAIN FILE OPERATIONS
+    */
 
-/* Print to file, echoing to stderr */
-int inchi_fprintf( FILE* f, const char* lpszFormat, ... );
+    /* Print to file, echoing to stderr */
+    int inchi_fprintf( FILE* f, const char* lpszFormat, ... );
 
-char* inchi_fgetsLf( char* line, int line_len, FILE* inp );
-int inchi_fgetsLfTab( char *szLine, int len, FILE *f );
+    char* inchi_fgetsLf( char* line, int line_len, FILE* inp );
+    int inchi_fgetsLfTab( char *szLine, int len, FILE *f );
 
 
 #endif
 
-void e_PrintFileName( const char *fmt, FILE *output_file, const char *szFname );
+    void e_PrintFileName( const char *fmt, FILE *output_file, const char *szFname );
 
 #ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus

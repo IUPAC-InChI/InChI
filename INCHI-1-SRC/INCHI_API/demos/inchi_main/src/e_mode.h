@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,14 +25,9 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
@@ -80,7 +75,6 @@ TARGET_LIB_FOR_WINCHI
 #define TARGET_PLATFORM "Linux"
 #endif
 #endif
-
 
 /****************************/
 /*                          */
@@ -170,7 +164,7 @@ MS VC compiler pragmas
  C4996: 'identifier' was declared deprecated
 ========================================================================
 */
-   #pragma warning( disable : 4706 4127 4514 4100 4786 4996 4244 4267 )
+#pragma warning( disable : 4706 4127 4514 4100 4786 4996 4244 4267 )
 #endif
 
 
@@ -184,11 +178,15 @@ MS VC compiler pragmas
 /* Uncomment next line to go with STDINCHI API calls */
 /* #define USE_STDINCHI_API 1*/
 
-#ifndef CREATE_INCHI_STEP_BY_STEP
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.05 (Library call example, classic API)"
-#else
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.05 (Library call example, modularized API)"
+#ifdef APP_DESCRIPTION
+#undef APP_DESCRIPTION
 #endif
+#ifndef CREATE_INCHI_STEP_BY_STEP
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (Library call example, classic API)"
+#else
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (Library call example, modularized API)"
+#endif
+
 
 #ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
@@ -256,7 +254,7 @@ extern "C" {
 #endif
 
 
-/*#define RELEASE_IS_FINAL  0*//* 1=> pre-release version; comment out to disable */
+/*#define RELEASE_IS_FINAL  0*/    /* 1=> pre-release version; comment out to disable */
 #ifndef RELEASE_IS_FINAL
 #define RELEASE_IS_FINAL  1    /* final release */
 #endif
@@ -710,10 +708,10 @@ extern "C" {
 
 /* verify corectness of dependent settings */
 #if !defined( CT_ATOMID )
-  #error  You have to #define CT_ATOMID
+#error  You have to #define CT_ATOMID
 #else
 #if ( defined( CT_ATOMID ) && CT_ATOMID==CT_ATOMID_DONTINCLUDE )
-  #error  CT_DELIMITER should be #defined if CT_ATOMID is not included
+#error  CT_DELIMITER should be #defined if CT_ATOMID is not included
 #endif
 #endif
 
@@ -862,23 +860,23 @@ extern "C" {
 /*       */
 /*********/
 
-typedef struct tagOutputString
-{
-    char *pStr;
-    int  nAllocatedLength;
-    int  nUsedLength;
-    int  nPtr;
-} INCHI_IOSTREAM_STRING;
+    typedef struct tagOutputString
+    {
+        char *pStr;
+        int  nAllocatedLength;
+        int  nUsedLength;
+        int  nPtr;
+    } INCHI_IOSTREAM_STRING;
 
-typedef struct tagOutputStream
-{
-    /* output is directed either to resizable string buffer: */
-    INCHI_IOSTREAM_STRING s;
-    /* or to the plain file: */
-    FILE* f;
-    int type;
-} INCHI_IOSTREAM;
-/* INCHI_IOSTREAM.type values */
+    typedef struct tagOutputStream
+    {
+        /* output is directed either to resizable string buffer: */
+        INCHI_IOSTREAM_STRING s;
+        /* or to the plain file: */
+        FILE* f;
+        int type;
+    } INCHI_IOSTREAM;
+    /* INCHI_IOSTREAM.type values */
 #define INCHI_IOSTREAM_TYPE_NONE 0
 #define INCHI_IOSTREAM_TYPE_STRING 1
 #define INCHI_IOSTREAM_TYPE_FILE 2
@@ -1057,6 +1055,75 @@ do {\
     } while(0)
 
 
+char *e_GetChiralFlagString( int bChiralFlagOn );
+
+#ifdef CREATE_INCHI_STEP_BY_STEP
+void e_HelpCommandLineParmsReduced( INCHI_IOSTREAM *f );
+#endif
+
+
+/* Solely v. 1.06 specific */
+
+/* comment out the next line to enable polymeric debug */
+#define DEBUG_POLYMERS 0
+#ifndef DEBUG_POLYMERS
+#define DEBUG_POLYMERS  2
+#endif
+
+/****************************************************************************
+
+
+    Use of Zz ("Zz"/"*") pseudoelement ("star") atoms
+    =================================================
+
+    ZZ_NO           Completely disable Zz atoms, presence of them
+                    in input generates an error
+
+    ZZ_105          Treat Zz like in InChI Software v. 1.05:
+                    Only polymer-related Zz allowed, and only properly paired
+                    at polymer CRU brackets; hide Zz atoms at the end (remove
+                    them from InChI string)
+
+    ZZ_105_PLUS     Treat Zz like in InChI Software v. 1.05
+                    + allow any non-polymer ZZ (i.e. not properly paired
+                    at polymer brackets); hide polymer-related Zz atoms at
+                    the end (remove them from InChI string), do not hide
+                    non-polymeric ones.
+
+    ZZ_106          Allow polymer and non-polymer  (i.e. not properly paired
+                    at polymer brackets) ZZ. Both polymer-related and
+                    non-polymer ones are explicit (kept in InChI string).
+
+    ZZ_YES          Allow both polymer-related and non-polymer-related ZZ;
+                    do not hide any Zz atom at the end (keep in InChI string).
+
+    Zz appearance
+    =============
+
+    Note that in output (InChI string or MOL file) polymer related and
+    non-related pseudoelement atoms are always marked by "Zz" (not "*")
+
+
+****************************************************************************/
+
+
+#define ZZ_NO 0
+#define ZZ_105 1
+#define ZZ_105_PLUS 2
+#define ZZ_106 3
+#define ZZ_YES 4
+
+
+/*#define USE_ZZ ZZ_NO*/
+/*#define USE_ZZ ZZ_105_PLUS*/
+#define USE_ZZ ZZ_105_PLUS
+
+
+#define STEREO_AT_ZZ 0
+/* #define STEREO_AT_ZZ 1 */
+
+#define DO_POLYMER_FRAME_SHIFT_AT_STRUCT_TO_INCHI_CONVERSION 0
+#define DO_POST_105_POLYMER_STUFF 0
 
 
 #ifndef COMPILE_ALL_CPP

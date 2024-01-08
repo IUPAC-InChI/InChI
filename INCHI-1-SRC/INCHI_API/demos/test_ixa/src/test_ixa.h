@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,20 +25,17 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
 
 #ifndef _TEST_IXA_H_
 #define _TEST_IXA_H_
+
+/*#define BUILD_WITH_ENG_OPTIONS 1*/
 
 #ifdef _MSC_VER
 /*
@@ -61,14 +58,17 @@
 /* supposed maxsize of Molfile (within an SD File) */
 #define MOLBUFSIZE 16777216 /* 16 MB */
 
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.05 (test_ixa - Library call example, IXA API v. 1.05)"
+#ifdef APP_DESCRIPTION
+#undef APP_DESCRIPTION
+#endif
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (test_ixa - Library call example, IXA API v. 1.06)"
 
-/*#define RELEASE_IS_FINAL  0 *//* 1=> pre-release version; comment out to disable */
+/*#define RELEASE_IS_FINAL  0*/ /* 1=> pre-release version; comment out to disable */
 #ifndef RELEASE_IS_FINAL
 #define RELEASE_IS_FINAL  1    /* final release */
 #endif
 
 /* Print program usage instructions */
-void print_help(void);
+void print_help( void );
 
 #endif /* _TEST_IXA_H_ */

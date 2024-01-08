@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,16 +25,13 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
+
+
 
 
 /* input/output format */
@@ -49,19 +46,19 @@ extern "C" {
 #endif
 #endif
 
-int e_MolfileToInchi_Input( FILE *inp_molfile, inchi_Input *orig_at_data, int bMergeAllInputStructures,
-                       int bDoNotAddH, int bAllowEmptyStructure,
-                       const char *pSdfLabel, char *pSdfValue, long *lSdfId,
-                       long *lMolfileNumber, INCHI_MODE *pInpAtomFlags, int *err, char *pStrErr );
-int e_INChIToInchi_Input( INCHI_IOSTREAM *inp_molfile, inchi_Input *orig_at_data, int bMergeAllInputStructures,
-                       int bDoNotAddH, int vABParityUnknown, INPUT_TYPE nInputType,
-                       char *pSdfLabel, char *pSdfValue, long *lSdfId, INCHI_MODE *pInpAtomFlags,
-                       int *err, char *pStrErr );
+    int e_MolfileToInchi_Input( FILE *inp_molfile, inchi_InputEx *orig_at_data, int bMergeAllInputStructures,
+                           int bDoNotAddH, int bAllowEmptyStructure,
+                           const char *pSdfLabel, char *pSdfValue, long *lSdfId,
+                           long *lMolfileNumber, INCHI_MODE *pInpAtomFlags, int *err, char *pStrErr );
+    int e_INChIToInchi_Input( INCHI_IOSTREAM *inp_molfile, inchi_InputEx *orig_at_data, int bMergeAllInputStructures,
+                           int bDoNotAddH, int vABParityUnknown, INPUT_TYPE nInputType,
+                           char *pSdfLabel, char *pSdfValue, long *lSdfId, INCHI_MODE *pInpAtomFlags,
+                           int *err, char *pStrErr );
 
-int e_CopyMOLfile(FILE *inp_file, long fPtrStart, long fPtrEnd, FILE *prb_file, long nNumb);
+    int e_CopyMOLfile( FILE *inp_file, long fPtrStart, long fPtrEnd, FILE *prb_file, long nNumb );
 
 
-/* BILLY 8/6/04 */
+    /* BILLY 8/6/04 */
 #ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }

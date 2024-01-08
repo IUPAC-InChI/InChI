@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,14 +25,9 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
@@ -82,9 +77,9 @@
 /****************************************************************************/
 typedef struct tagMOL_HEADER_BLOCK {
     /* Line #1 */
-    char    szMoleculeName[MOLFILEMAXLINELEN+1]; /* up to 80 characters */
+    char    szMoleculeName[MOLFILEMAXLINELEN + 1]; /* up to 80 characters */
     /* Line #2: optional */
-    char    szMoleculeLine2[MOLFILEMAXLINELEN+1]; /* the whole line2 -- up to 80 characters */
+    char    szMoleculeLine2[MOLFILEMAXLINELEN + 1]; /* the whole line2 -- up to 80 characters */
     char    szUserInitials[3];      /* 2 bytes; char */
     char    szProgramName[9];       /* 8 bytes; char */
     char    cMonth;                 /* 2 bytes; integral */
@@ -192,13 +187,13 @@ extern "C" {
 #endif
 
 
-MOL_DATA* e_delete_mol_data( MOL_DATA* mol_data );
+    MOL_DATA* e_delete_mol_data( MOL_DATA* mol_data );
 
-MOL_DATA* e_read_sdfile_segment(FILE* inp, MOL_HEADER_BLOCK *OnlyHeaderBlock, MOL_CTAB *OnlyCtab,
-                              int bGetOrigCoord,
-                              char *pname, int lname,
-                              long *Id, const char *pSdfLabel, char *pSdfValue,
-                              int *err, char *pStrErr );
+    MOL_DATA* e_read_sdfile_segment( FILE* inp, MOL_HEADER_BLOCK *OnlyHeaderBlock, MOL_CTAB *OnlyCtab,
+                                  int bGetOrigCoord,
+                                  char *pname, int lname,
+                                  long *Id, const char *pSdfLabel, char *pSdfValue,
+                                  int *err, char *pStrErr );
 
 
 #ifndef COMPILE_ALL_CPP

@@ -17,7 +17,7 @@ LINUX_Z_RELRO = ,-z,relro
 endif
 # === version ===
 MAIN_VERSION = .1
-VERSION = $(MAIN_VERSION).05.00
+VERSION = $(MAIN_VERSION).06.00
 # === executable & library directory ===
 ifndef LIB_DIR
   LIB_DIR = ../../../bin/Linux
@@ -45,7 +45,11 @@ ifndef LINKER
   ifdef ISLINUX
 	 LINKER_CWD_PATH = -Wl,-R,""
   endif
-  LINKER = gcc -s $(LINKER_CWD_PATH)
+  ifndef CALLER_IS_MOL2INCHI  
+  	LINKER = gcc -s $(LINKER_CWD_PATH)
+  else
+  	LINKER = gcc -s -pthread $(LINKER_CWD_PATH)  
+  endif  	
 endif
 ifndef P_LIBR
 	P_LIBR = ../../../libinchi/src/
@@ -72,7 +76,7 @@ ifndef C_OPTIONS
   ifndef CALLER_IS_MOL2INCHI
 	C_OPTIONS = -ansi -O3 -c
   else
-	C_OPTIONS = -O3 -c
+	C_OPTIONS = -pthread -O3 -c
   endif
   ifdef ISLINUX
 	ifndef C_SO_OPTIONS
@@ -182,7 +186,7 @@ util.o
 # === InChI Library link rule =========
 $(INCHI_LIB_PATHNAME).so$(VERSION): $(INCHI_LIB_OBJS)
 	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME).so$(VERSION)	\
-$(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO),--no-undefined -Wl,-soname,$(INCHI_LIB_NAME).so$(MAIN_VERSION) -lm
+$(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO),--no-undefined -Wl,-soname,$(INCHI_LIB_NAME).so$(MAIN_VERSION) -L/usr/lib64/ -ltcmalloc -lm
 	ln -fs $(INCHI_LIB_NAME).so$(VERSION)	\
 $(INCHI_LIB_PATHNAME).so$(MAIN_VERSION)
 # === InChI Library compile rule =========

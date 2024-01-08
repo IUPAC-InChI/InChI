@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,14 +25,9 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
@@ -47,25 +42,26 @@
 
 
 /* Just print date & time */
-void print_time(void);
+void print_time( void );
 /* For portability - use own version of stricmp and memicmp */
 int own_stricmp( const char *s1, const char *s2 );
 int  own_memicmp( const void*, const void*, size_t );
 /* Yet anothe helper */
-char* get_substr_in_between(char *s,
-                            char *pat1, char *pat2,
-                            char *buf,
-                            size_t max_symbols, size_t *copied);
+char* get_substr_in_between( char *s,
+                             char *pat1,
+                             char *pat2,
+                             char *buf,
+                             size_t max_symbols,
+                             size_t *copied );
 
 
 /* (SD)File i/o related */
 
 /* Read Molfile (SDFile segment) to text buffer */
 /* Return 1 if got something otherwise 0        */
-int get_next_molfile_as_text( FILE *f, char *buf , size_t buflen );
+int get_next_molfile_as_text( FILE *f, char *buf, size_t buflen );
 /* Fgets which ensures single linefeed at the end */
 char* fgets_lf( char* line, int line_len, FILE *f );
-
-int is_empty_text(char *buf);
+int is_empty_text( char *buf );
 
 #endif /* _MOREUTIL_H_ */

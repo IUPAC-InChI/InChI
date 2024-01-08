@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -14,7 +14,7 @@
  *
  * IUPAC/InChI-Trust Licence No.1.0 for the
  * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust Limited
+ * Copyright (C) IUPAC and InChI Trust
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
@@ -25,14 +25,9 @@
  * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
  *
  * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please write to:
+ * Licence No. 1.0 with this library; if not, please e-mail:
  *
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
- *
- * or e-mail to alan@inchi-trust.org
+ * info@inchi-trust.org
  *
  */
 
@@ -84,88 +79,119 @@ typedef struct
 */
 typedef struct INCHIMOL_SGROUP
 {
-    int id;                /* it is what is called 'Sgroup number' in CTFILE */
-    int type;            /* type as by MDL format (STY) */
-    int subtype;        /* subtype as by MDL format (SST) */
-    int conn;            /* connection scheme  as by MDL format (SCN) */
-    int label;            /* it is what is called 'unique Sgroup identifier' in CTFILE */
-    int na;                /* number of atoms in the unit */
-    int nb;                /* number of bonds in the unit */
-    double xbr1[4];        /* bracket ends coordinates (SDI) */
-    double xbr2[4];        /* bracket ends coordinates (SDI) */
-    char smt[80];        /* Sgroup Subscript (SMT) */
-    int *alist;            /* atoms in the unit (SAL) */
-    int *blist;            /* bonds in the unit: as [atom1, atom2, atom1, atom2,.. ] for all bonds (as made from SBL) */
+    int    id;          /* it is what is called 'Sgroup number' in CTFILE   */
+    int    type;        /* type as by MDL format (STY)                      */
+    int    subtype;     /* subtype as by MDL format (SST)                   */
+    int    conn;        /* connection scheme  as by MDL format (SCN)        */
+    int    label;       /* it is what is called 'unique Sgroup              */
+                        /* identifier' in CTFILE                            */
+    int    na;          /* number of atoms in the unit                      */
+    int    nb;          /* number of bonds in the unit                      */
+    double xbr1[4];     /* bracket ends coordinates (SDI)                   */
+    double xbr2[4];     /* bracket ends coordinates (SDI)                   */
+    char   smt[80];     /* Sgroup Subscript (SMT)                           */
+    int    *alist;      /* atoms in unit (SAL)                              */
+    int    *blist;      /* bonds in unit [atom1, atom2, atom1, atom2,.. ]   */
+                        /* for all bonds (as made from SBL)                 */
 }  INCHIMOL_SGROUP;
+
 typedef struct INCHIMOL_POLYMER
 {
     INCHIMOL_SGROUP **units;        /* array of pointers */
-    int        n;
+    int             n;
 } INCHIMOL_POLYMER;
+
 /* Extended input supporting v. 1.05 extensions: V3000; polymers */
 typedef struct INCHIMOL_V3000
 {
     int n_non_star_atoms;
     int n_star_atoms;
-    int *atom_index_orig;    /* index as supplied for atoms */
-    int *atom_index_fin;    /* = index or -1 for star atom */
-    int n_sgroups;            /* currently, we do not use this. */
-    int n_3d_constraints;    /* currently, we do not use this. */
+    int *atom_index_orig;       /* index as supplied for atoms                      */
+    int *atom_index_fin;        /* = index or -1 for star atom                      */
+    int n_sgroups;              /* currently, we do not use this.                   */
+    int n_3d_constraints;       /* currently, we do not use this.                   */
     int n_collections;
     int n_non_haptic_bonds;
     int n_haptic_bonds;
-    int **lists_haptic_bonds;/* haptic_bonds[i] is pointer to int* which contains:             */
-                            /* bond_type, non-star atom number, nendpts, then endpts themselves */
+    int **lists_haptic_bonds;   /* haptic_bonds[i] is pointer to int* which contains*/
+                                /* bond_type, non-star atom number, nendpts,        */
+                                /* then endpts themselves */
     /* Enhanced stereo */
     int n_steabs;
-    int **lists_steabs;        /* steabs[k][0] - not used                            */
-                            /* steabs[k][1] -  number of members in collection    */
-                            /* steabs[k][2..] - member atom numbers                */
+    int **lists_steabs;         /* steabs[k][0] - not used                          */
+                                /* steabs[k][1] -  number of members in collection  */
+                                /* steabs[k][2..] - member atom numbers             */
     int n_sterel;
-    int **lists_sterel;        /* sterel[k][0] - n from "STERELn" tag                */
-                            /* sterel[k][1] -  number of members in collection    */
-                            /* sterel[k][2..] - member atom numbers                */
+    int **lists_sterel;         /* sterel[k][0] - n from "STERELn" tag              */
+                                /* sterel[k][1] -  number of members in collection  */
+                                /* sterel[k][2..] - member atom numbers             */
     int n_sterac;
-    int **lists_sterac;        /* sterac[k][0] - n from "STERACn" tag                */
-                            /* sterac[k][1] -  number of members in collection    */
-                            /* sterac[k][0] - number from "STERACn" tag            */
+    int **lists_sterac;         /* sterac[k][0] - n from "STERACn" tag              */
+                                /* sterac[k][1] -  number of members in collection  */
+                                /* sterac[k][0] - number from "STERACn" tag         */
 } INCHIMOL_V3000;
 /************************************************************************/
 
+
+#ifdef IXA_USES_SMART_ALLOCS
+#define INCHIMOL_ATOMS_START_SIZE   128
+#define INCHIMOL_BONDS_START_SIZE   128
+#define INCHIMOL_STEREOS_START_SIZE 64
+#define INCHIMOL_MAX_ATOMS   32767
+#define INCHIMOL_MAX_BONDS   INT_MAX
+#define INCHIMOL_MAX_STEREOS INT_MAX
+#define INCHIMOL_POLYMERUNITS_START_SIZE 2
+#define INCHIMOL_MAX_POLYMERUNITS INT_MAX
+
+
 typedef struct
 {
-    int                    atom_count;
-    INCHIMOL_ATOM        *atoms;
-
-    int                    bond_count;
-    INCHIMOL_BOND*        bonds;
-
-    int                    stereo_count;
-    INCHIMOL_STEREO        *stereos;
-
-    INCHIMOL_POLYMER    *polymer;
-    INCHIMOL_V3000        *v3000;
-
-    IXA_BOOL            chiral;
+    int              atom_count;
+    INCHIMOL_ATOM    *atoms;
+    int              bond_count;
+    INCHIMOL_BOND   *bonds;
+    int              stereo_count;
+    INCHIMOL_STEREO  *stereos;
+    INCHIMOL_POLYMER *polymer;
+    int              sgroup_count;
+    INCHIMOL_V3000   *v3000;
+    IXA_BOOL         chiral;
+    int              reserved_atom_count;
+    int              reserved_bond_count;
+    int              reserved_stereo_count;
+    int              reserved_sgroup_count;
 } INCHIMOL;
+#else
+typedef struct
+{
+    int              atom_count;
+    INCHIMOL_ATOM    *atoms;
+    int              bond_count;
+    INCHIMOL_BOND*   bonds;
+    int              stereo_count;
+    INCHIMOL_STEREO  *stereos;
+    INCHIMOL_POLYMER *polymer;
+    INCHIMOL_V3000   *v3000;
+    IXA_BOOL         chiral;
+} INCHIMOL;
+#endif
 
 
-INCHIMOL* MOL_Unpack(IXA_STATUS_HANDLE hStatus, IXA_MOL_HANDLE    HMol);
+INCHIMOL* MOL_Unpack( IXA_STATUS_HANDLE hStatus,
+                      IXA_MOL_HANDLE    HMol );
 
-IXA_ATOMID MOL_GetBondOtherAtom(IXA_STATUS_HANDLE hStatus,
-                                IXA_MOL_HANDLE    hMolecule,
-                                IXA_BONDID    vBond,
-                                IXA_ATOMID    vAtom);
+IXA_ATOMID MOL_GetBondOtherAtom( IXA_STATUS_HANDLE hStatus,
+                                 IXA_MOL_HANDLE    hMolecule,
+                                 IXA_BONDID        vBond,
+                                 IXA_ATOMID        vAtom );
 
 /****************************************************************************/
-/*                    Functions for treating extended input/output            */
-int  IXA_MOL_SetExtMolDataByInChIExtInput( IXA_STATUS_HANDLE hStatus,
-                                           IXA_MOL_HANDLE    hMolecule,
-                                           inchi_Output_Polymer    *polymer,
-                                           inchi_Output_V3000        *v3000,
-                                           int nat );
-
-void IXA_MOL_ClearExtMolData( INCHIMOL_POLYMER *pd, INCHIMOL_V3000 *v3k );
+/*                    Functions for treating extended input/output          */
+int  IXA_MOL_SetExtMolDataByInChIExtInput( IXA_STATUS_HANDLE    hStatus,
+                                           IXA_MOL_HANDLE       hMolecule,
+                                           inchi_Output_Polymer *polymer,
+                                           inchi_Output_V3000   *v3000,
+                                           int                  nat );
 
 
 #endif

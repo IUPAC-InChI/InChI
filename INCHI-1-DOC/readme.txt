@@ -1,49 +1,47 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.05
- * January 27, 2017
+ * Software version 1.06
+ * December 15, 2020
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST. 
+ * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
  * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file 
+ * (either contractor or volunteer) which are listed in the file
  * 'External-contributors' included in this distribution.
  *
- * IUPAC/InChI-Trust Licence No.1.0 for the 
- * International Chemical Identifier (InChI) 
- * Copyright (C) IUPAC and InChI Trust Limited
- * 
- * This library is free software; you can redistribute it and/or modify it 
- * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0, 
- * or any later version.
- * 
- * Please note that this library is distributed WITHOUT ANY WARRANTIES 
- * whatsoever, whether expressed or implied.  
- * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
- * 
- * You should have received a copy of the IUPAC/InChI Trust InChI 
- * Licence No. 1.0 with this library; if not, please write to:
- * 
- * The InChI Trust
- * 8 Cavendish Avenue
- * Cambridge CB1 7US
- * UK
+ * IUPAC/InChI-Trust Licence No.1.0 for the
+ * International Chemical Identifier (InChI)
+ * Copyright (C) IUPAC and InChI Trust
  *
- * or e-mail to alan@inchi-trust.org
- * 
+ * This library is free software; you can redistribute it and/or modify it
+ * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
+ * or any later version.
+ *
+ * Please note that this library is distributed WITHOUT ANY WARRANTIES
+ * whatsoever, whether expressed or implied.
+ * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
+ *
+ * You should have received a copy of the IUPAC/InChI Trust InChI
+ * Licence No. 1.0 with this library; if not, please e-mail:
+ *
+ * info@inchi-trust.org
+ *
  */
 
 
-This directory contains documentation related to InChI/InChIKey 
-identifiers, v. 1, and InChI/InChIKey software v. 1.05 (Winter 2017).
+This directory contains documentation (PDF format)related to 
+InChI Software v. 1.06.
 
 
-RelNotes.pdf                Release Notes
-InChI_UserGuide.pdf         InChI User's Guide
-InChI_API_Reference.pdf     InChI API Reference
-InChI_TechMan.pdf           InChI Technical Manual
-External-contributors.pdf   List of external contributors (other than InChITrust) 
+RelNotes                    Release Notes
+CHANGELOG                   list of changes made to previous version
+KNOWNISSUES                 list of yet unresolved issues
+InChI_UserGuide             InChI User's Guide
+InChI_API_Reference         InChI API Reference
+InChI_TechMan               InChI Technical Manual
+External-contributorsf      List of external contributors (other than InChITrust) 
                             who specifically contributed to this release
+LICENCE                     IUPAC/InChI Trust software licence
