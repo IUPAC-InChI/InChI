@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -33,13 +33,12 @@
 
 #pragma warning( disable : 4706 4127 4514 4100 4786 4996 4244 4267 )
 
-
-
 #include <string.h>
 
 #include "mode.h"
 #include "ichierr.h"
 
+#include "bcf_s.h"
 
 static int already_have_this_message( char *prev_messages, const char *new_message );
 
@@ -81,12 +80,12 @@ const char *ErrMsg( int nErrorCode )
         default:
             if (nErrorCode > CT_UNKNOWN_ERR)
             {
-                sprintf( szErrMsg, "No description(%d)", nErrorCode );
+                sprintf(szErrMsg, "No description(%d)", nErrorCode);
                 p = szErrMsg;
             }
             else
             {
-                sprintf( szErrMsg, "UNKNOWN_ERR(%d)", CT_UNKNOWN_ERR - nErrorCode );
+                sprintf(szErrMsg, "UNKNOWN_ERR(%d)", CT_UNKNOWN_ERR - nErrorCode);
                 p = szErrMsg;
             }
             break;
@@ -128,11 +127,11 @@ int AddErrorMessage( char *all_messages, const char *new_message )
         {
             if (all_messages[len_all - 1] != ':')
             {
-                strcat( all_messages, ";" );
+                strcat(all_messages, ";");
             }
-            strcat( all_messages, " " );
+            strcat(all_messages, " ");
         }
-        strcat( all_messages, new_message );
+        strcat(all_messages, new_message);
         return 1;
     }
 
@@ -143,7 +142,7 @@ int AddErrorMessage( char *all_messages, const char *new_message )
     }
     if (len_all + 3 < STR_ERR_LEN)
     {
-        strcat( all_messages, "..." );
+        strcat(all_messages, "...");
     }
 
     return 0;
@@ -159,12 +158,12 @@ int already_have_this_message( char *prev_messages, const char *new_message )
 
     if (p)
     {
-        have = ( p == prev_messages || *( p - 1 ) == ' ' && ( *( p - 2 ) == ';' || *( p - 2 ) == ':' ) );
+        have = ( p == prev_messages || (*( p - 1 ) == ' ' && ( *( p - 2 ) == ';' || *( p - 2 ) == ':' )) ); /* djb-rwth: addressing LLVM warning */
         if (have)
         {
             int len_prev = (int) strlen( prev_messages );
             int len = (int) strlen( new_message );
-            have = ( p + len == prev_messages + len_prev || p[len] == ';' && p[len + 1] == ' ' || p[len - 1] == ':' && p[len] == ' ' );
+            have = ( p + len == prev_messages + len_prev || (p[len] == ';' && p[len + 1] == ' ') || (p[len - 1] == ':' && p[len] == ' ') ); /* djb-rwth: addressing LLVM warning */
         }
     }
 

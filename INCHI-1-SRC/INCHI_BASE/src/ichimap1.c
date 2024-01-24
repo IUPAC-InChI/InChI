@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,13 +31,12 @@
  *
  */
 
-
 #include <string.h>
 
 #include "mode.h"
 #include "ichicomn.h"
 
-
+#include "bcf_s.h"
 
 /****************************************************************************
   Check if all equivalent to cr1 possibly stereogenic atoms:
@@ -182,11 +181,11 @@ int CompareLinCtStereoDble( AT_STEREO_DBLE *LinearCTStereoDble1,
         num = inchi_min( nLenLinearCTStereoDble1, nLenLinearCTStereoDble2 );
         for (i = 0; i < num; i++)
         {
-            if (ret = (int) LinearCTStereoDble1[i].at_num1 - (int) LinearCTStereoDble2[i].at_num1)
+            if ((ret = (int) LinearCTStereoDble1[i].at_num1 - (int) LinearCTStereoDble2[i].at_num1)) /* djb-rwth: addressing LLVM warning */
                 break;
-            if (ret = (int) LinearCTStereoDble1[i].at_num2 - (int) LinearCTStereoDble2[i].at_num2)
+            if ((ret = (int) LinearCTStereoDble1[i].at_num2 - (int) LinearCTStereoDble2[i].at_num2)) /* djb-rwth: addressing LLVM warning */
                 break;
-            if (ret = (int) LinearCTStereoDble1[i].parity - (int) LinearCTStereoDble2[i].parity)
+            if ((ret = (int) LinearCTStereoDble1[i].parity - (int) LinearCTStereoDble2[i].parity)) /* djb-rwth: addressing LLVM warning */
                 break;
         }
         if (!ret)
@@ -227,9 +226,9 @@ int CompareLinCtStereoCarb( AT_STEREO_CARB *LinearCTStereoCarb1,
         num = inchi_min( nLenLinearCTStereoCarb1, nLenLinearCTStereoCarb2 );
         for (i = 0; i < num; i++)
         {
-            if (ret = (int) LinearCTStereoCarb1[i].at_num - (int) LinearCTStereoCarb2[i].at_num)
+            if ((ret = (int) LinearCTStereoCarb1[i].at_num - (int) LinearCTStereoCarb2[i].at_num)) /* djb-rwth: addressing LLVM warning */
                 break;
-            if (ret = (int) LinearCTStereoCarb1[i].parity - (int) LinearCTStereoCarb2[i].parity)
+            if ((ret = (int) LinearCTStereoCarb1[i].parity - (int) LinearCTStereoCarb2[i].parity)) /* djb-rwth: addressing LLVM warning */
                 break;
         }
         if (!ret)
@@ -533,8 +532,8 @@ int Next_SB_At_CanonRanks2( AT_RANK *canon_rank1,
     int     iMax1, iMax2;
 
     if (canon_rank1_inp < *canon_rank1_min ||
-         canon_rank1_inp == *canon_rank1_min &&
-         canon_rank2_inp < *canon_rank2_min)
+         (canon_rank1_inp == *canon_rank1_min &&
+         canon_rank2_inp < *canon_rank2_min)) /* djb-rwth: addressing LLVM warning */
     {
 
         canon_rank1_inp = *canon_rank1_min;
@@ -560,15 +559,15 @@ int Next_SB_At_CanonRanks2( AT_RANK *canon_rank1,
             /*  mapping rank = r1. Check at[s1] stereo bonds */
             if (bAtomUsedForStereo[s1] && bAtomUsedForStereo[s1] < STEREO_AT_MARK)
             {
-                for (k = 0, s2 = 0; k < MAX_NUM_STEREO_BONDS && ( s2 = (int) at[s1].stereo_bond_neighbor[k] ); k++)
+                for (k = 0; k < MAX_NUM_STEREO_BONDS && ( s2 = (int) at[s1].stereo_bond_neighbor[k] ); k++) /* djb-rwth: removing redundant code */
                 {
                     /*  stereo bond at[s1]-at[s2] has been found */
                     if (bAtomUsedForStereo[--s2])
                     {
                         /*  stereo bonds have not been mapped. however, this check is not needed */
                         int cumulene_len = BOND_CHAIN_LEN( at[s1].stereo_bond_parity[k] );
-                        if (cumulene_len % 2 && !bAllene || /* 09-26-2003 */
-                             !( cumulene_len % 2 ) && bAllene)
+                        if ((cumulene_len % 2 && !bAllene) || /* 09-26-2003 */
+                             (!( cumulene_len % 2 ) && bAllene)) /* djb-rwth: addressing LLVM warning */
                         { /* 08-17-2003 Fix05 */
                             continue;
                         }
@@ -798,7 +797,7 @@ int CompareLinCtStereoDoubleToValues( AT_STEREO_DBLE *LinearCTStereoDble,
 void SetUseAtomForStereo( S_CHAR *bAtomUsedForStereo, sp_ATOM *at, int num_atoms )
 {
     int i, k;
-    memset( bAtomUsedForStereo, 0, sizeof( bAtomUsedForStereo[0] )*num_atoms );
+    memset( bAtomUsedForStereo, 0, sizeof( bAtomUsedForStereo[0] )*num_atoms ); /* djb-rwth: memset_s C11/Annex K variant? */
     for (i = 0; i < num_atoms; i++)
     {
         if (at[i].parity)
@@ -823,12 +822,12 @@ int CurTreeAlloc( CUR_TREE *cur_tree, int num_atoms )
             /*  do not reallocate */
             cur_tree->cur_len = 0;
             cur_tree->incr_len = num_atoms;
-            memset( cur_tree->tree, 0, cur_tree->max_len * sizeof( cur_tree->tree[0] ) );
+            memset( cur_tree->tree, 0, cur_tree->max_len * sizeof( cur_tree->tree[0] ) ); /* djb-rwth: memset_s C11/Annex K variant? */
             return 0; /*  ok */
         }
         inchi_free( cur_tree->tree );
-        memset( cur_tree, 0, sizeof( *cur_tree ) );
-        if (cur_tree->tree = (AT_NUMB *) inchi_calloc( num_atoms, sizeof( cur_tree->tree[0] ) ))
+        memset( cur_tree, 0, sizeof( *cur_tree ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        if ((cur_tree->tree = (AT_NUMB *) inchi_calloc( num_atoms, sizeof( cur_tree->tree[0] ) ))) /* djb-rwth: addressing LLVM warning */
         {
             cur_tree->incr_len =
                 cur_tree->max_len = num_atoms;
@@ -848,9 +847,9 @@ int CurTreeReAlloc( CUR_TREE *cur_tree )
         if (cur_tree->tree && cur_tree->max_len > 0 && cur_tree->incr_len > 0)
         {
             void *p = cur_tree->tree;
-            if (cur_tree->tree = (AT_NUMB *) inchi_calloc( cur_tree->max_len + cur_tree->incr_len, sizeof( cur_tree->tree[0] ) ))
+            if ((cur_tree->tree = (AT_NUMB *) inchi_calloc( (long long)cur_tree->max_len + (long long)cur_tree->incr_len, sizeof( cur_tree->tree[0] ) ))) /* djb-rwth: cast operators added; addressing LLVM warning */
             {
-                memcpy( cur_tree->tree, p, cur_tree->cur_len * sizeof( cur_tree->tree[0] ) );
+                memcpy(cur_tree->tree, p, cur_tree->cur_len * sizeof(cur_tree->tree[0]));
                 inchi_free( p );
                 cur_tree->max_len += cur_tree->incr_len;
                 return 0; /*  ok */
@@ -867,7 +866,7 @@ int CurTreeReAlloc( CUR_TREE *cur_tree )
     if (cur_tree)
     {
         inchi_free( cur_tree->tree );
-        memset( cur_tree, 0, sizeof( *cur_tree ) );
+        memset( cur_tree, 0, sizeof( *cur_tree ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     }
 }
 
@@ -965,9 +964,9 @@ void CurTreeKeepLastAtomsOnly( CUR_TREE *cur_tree, int tpos, int shift )
             /*  subtract (old segment length)-(new segment length) from the tree length  */
             /*  actual segment length including segment length value = (cur_tree->tree[cur_length_pos]+1) */
             cur_tree->cur_len -= (int) cur_tree->tree[cur_length_pos] - 2;
-            memmove( cur_tree->tree + cur_length_pos - cur_tree->tree[cur_length_pos] + 1, /*  1st atom pos */
-                     cur_tree->tree + cur_length_pos - 1,  /*  last atom in the current segment position */
-                     ( shift + 1 ) * sizeof( cur_tree->tree[0] ) );
+            memmove(cur_tree->tree + cur_length_pos - cur_tree->tree[cur_length_pos] + 1, /*  1st atom pos */
+                cur_tree->tree + cur_length_pos - 1,  /*  last atom in the current segment position */
+                ((long long)shift + 1) * sizeof(cur_tree->tree[0])); /* djb-rwth: cast operator added */
             /*  (current segment length) distance from the last tree element has not changed */
             cur_tree->tree[cur_tree->cur_len - shift] = 2;
             /*  add 3 to move to the previous segment length position */

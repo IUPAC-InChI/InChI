@@ -1,8 +1,8 @@
 /*
 * International Chemical Identifier (InChI)
 * Version 1
-* Software version 1.06
-* December 15, 2020
+* Software version 1.07
+* 20/11/2023
 *
 * The InChI library and programs are free software developed under the
 * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,7 +31,6 @@
 *
 */
 
-
 #include <string.h>
 
 #include "mode.h"
@@ -39,7 +38,7 @@
 #include "ichimain.h"
 #include "inchi_gui.h"
 
-
+#include "bcf_s.h"
 
 
 /****************************************************************************/
@@ -74,7 +73,7 @@ int DisplayStructure( struct tagCANON_GLOBALS   *pCG,
 
     if (CreateInfoAtomData( &inf_data, num_at, 1 ))
     {
-        err = 0;
+        /* djb-rwth: removing redundant code */
 
         FillOutInfAtom( pCG, at, &inf_data, num_at, num_removed_H, bAdd_DT_to_num_H,
                         nNumRemovedProtons, nNumRemovedProtonsIsotopic, bIsotopic,
@@ -110,7 +109,7 @@ int DisplayCompositeStructure( struct tagCANON_GLOBALS *pCG,
     INF_ATOM_DATA inf_data;
     int err = -1, ret;
 
-    memset( &inf_data, 0, sizeof( inf_data ) );
+    memset( &inf_data, 0, sizeof( inf_data ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     if (CreateInfoAtomData( &inf_data, ( composite_norm_data + bTautomeric )->num_at,
         ( composite_norm_data + bTautomeric )->num_components ))

@@ -202,6 +202,42 @@ static int ReadOptions( int argc,
         {
             IXA_INCHIBUILDER_SetOption( hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_15T, IXA_TRUE );
         }
+#if ( TAUT_PT_22_00 == 1 )
+        else if (OptionCompare(argv[index], "PT_22_00"))
+        {
+            IXA_INCHIBUILDER_SetOption(hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_PT_22_00, IXA_TRUE);
+        }
+#endif
+#if ( TAUT_PT_16_00 == 1 )
+        else if (OptionCompare(argv[index], "PT_16_00"))
+        {
+            IXA_INCHIBUILDER_SetOption(hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_PT_16_00, IXA_TRUE);
+        }
+#endif
+#if ( TAUT_PT_06_00 == 1 )
+        else if (OptionCompare(argv[index], "PT_06_00"))
+        {
+            IXA_INCHIBUILDER_SetOption(hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_PT_06_00, IXA_TRUE);
+        }
+#endif
+#if ( TAUT_PT_39_00 == 1 )
+        else if (OptionCompare(argv[index], "PT_39_00"))
+        {
+            IXA_INCHIBUILDER_SetOption(hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_PT_39_00, IXA_TRUE);
+        }
+#endif
+#if ( TAUT_PT_13_00 == 1 )
+        else if (OptionCompare(argv[index], "PT_13_00"))
+        {
+            IXA_INCHIBUILDER_SetOption(hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_PT_13_00, IXA_TRUE);
+        }
+#endif
+#if ( TAUT_PT_18_00 == 1 )
+        else if (OptionCompare(argv[index], "PT_18_00"))
+        {
+            IXA_INCHIBUILDER_SetOption(hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_PT_18_00, IXA_TRUE);
+        }
+#endif
         else if (OptionCompare( argv[index], "AuxNone" ))
         {
             IXA_INCHIBUILDER_SetOption( hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_AuxNone, IXA_TRUE );
@@ -215,7 +251,7 @@ static int ReadOptions( int argc,
         {
             IXA_INCHIBUILDER_SetOption( hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_LargeMolecules, IXA_TRUE );
         }
-#ifdef  BUILD_WITH_ENG_OPTIONS
+#ifdef  BUILD_TEST_IXA_WITH_ENG_OPTIONS
         else if (OptionCompare( argv[index], "DoDrv" ))
         {
             IXA_INCHIBUILDER_SetOption( hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_DoDrv, IXA_TRUE );
@@ -768,7 +804,7 @@ void print_help( void )
     fprintf( stderr, "  FoldCRU      Remove repeats within constitutional repeating units (CRU/SRU)\n");
     fprintf( stderr, "  NPZz         Allow non-polymer-related Zz atoms (pseudo element placeholders)\n");
     fprintf( stderr, "  SAtZz        Allow stereo at atoms connected to Zz\n");
-#ifdef  BUILD_WITH_ENG_OPTIONS
+#ifdef  BUILD_TEST_IXA_WITH_ENG_OPTIONS
     fprintf(stderr, "Engineering options:\n");
     fprintf(stderr, "  DoDrv                                                    \n");
     fprintf(stderr, "  DoDrvReport                                              \n");

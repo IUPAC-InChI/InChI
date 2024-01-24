@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -43,6 +43,7 @@
 #include "e_mode.h"
 
 #include "../../../../INCHI_BASE/src/inchi_api.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 
 #include "e_ctl_data.h"
 
@@ -127,10 +128,10 @@ int AddMOLfileError( char *pStrErr, const char *szMsg )
         int lenStrErr = strlen( pStrErr );
         int lenMsg = strlen( szMsg );
         char *p = strstr( pStrErr, szMsg );
-        if (p && ( p == pStrErr || *( p - 1 ) == ' ' && ( *( p - 2 ) == ';' || *( p - 2 ) == ':' ) ) &&
+        if (p && ( p == pStrErr || (*( p - 1 ) == ' ' && ( *( p - 2 ) == ';' || *( p - 2 ) == ':' )) ) &&
             ( p + lenMsg == pStrErr + lenStrErr ||
-                p[lenMsg] == ';' && p[lenMsg + 1] == ' ' ||
-                p[lenMsg - 1] == ':' && p[lenMsg] == ' ' ))
+                (p[lenMsg] == ';' && p[lenMsg + 1] == ' ') ||
+                (p[lenMsg - 1] == ':' && p[lenMsg] == ' ') )) /* djb-rwth: addressing LLVM warnings */
         {
             return 1; /*  reject duplicates */
         }
@@ -177,7 +178,7 @@ int mol_copy_check_empty( char* dest, char* source, int len, char **first_space 
     {
         ;
     }
-    *first_space = dest + ( i + 1 ); /* first blank or zero terminating byte in dest */
+    *first_space = dest + ((long long)i + 1); /* first blank or zero terminating byte in dest */ /* djb-rwth: cast operator added */
 
     return len; /* number of actually processed bytes; zero termination not included */
 }
@@ -213,7 +214,7 @@ int mol_read_datum( void* data, int field_len, int  data_type, char** line_ptr )
             len = mol_copy_check_empty( (char*) data, &p[i], field_len - i, &q );
             ret = ( q - (char*) data );/* actual data length */
             *q = '\0';                /* add zero termination to data if it is not there yet*/
-            *line_ptr += ( len + i );     /* ptr to the 1st byte of the next input field or to zero termination */
+            *line_ptr += ( (long long)len + i );     /* ptr to the 1st byte of the next input field or to zero termination */ /* djb-rwth: cast operator added */
             break;
 
         case MOL_CHAR_INT_DATA:
@@ -398,7 +399,7 @@ int mol_read_hdr( MOL_HEADER_BLOCK *hdr, FILE* inp, char *pStrErr )
     /* All input lines can have are up 80 characters */
     /* Header Block */
     char line[MOLFILEINPLINELEN]; /* + cr +lf +zero termination + reserve */
-    int  err = 0, len;
+    int  err = 0, len; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     const int  line_len = sizeof( line );
     char *p;
 
@@ -417,7 +418,7 @@ int mol_read_hdr( MOL_HEADER_BLOCK *hdr, FILE* inp, char *pStrErr )
         goto err_fin;
     }
     */
-    len = mol_read_datum( hdr->szMoleculeName, sizeof( hdr->szMoleculeName ) - 1, MOL_STRING_DATA, &p );
+    len = mol_read_datum( hdr->szMoleculeName, sizeof( hdr->szMoleculeName ) - 1, MOL_STRING_DATA, &p ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     /*----------- header line #2 -----------------------*/
     if (NULL == ( p = inchi_fgetsLf( line, line_len, inp ) ))
     {
@@ -432,10 +433,12 @@ int mol_read_hdr( MOL_HEADER_BLOCK *hdr, FILE* inp, char *pStrErr )
         goto err_fin;
     }
     */
+    /* djb-rwth: ignoring LLVM warning: variable used to store function return values */
     len = mol_read_datum( hdr->szUserInitials, sizeof( hdr->szUserInitials ) - 1, MOL_STRING_DATA, &p );
     len = mol_read_datum( hdr->szProgramName, sizeof( hdr->szProgramName ) - 1, MOL_STRING_DATA, &p );
 
     /*------------ Relax strictness -----------------------*/
+    /* djb-rwth: ignoring LLVM warning: variable used to store function return values */
     len = mol_read_datum( &hdr->cMonth, 2, MOL_CHAR_INT_DATA, &p );
     len = mol_read_datum( &hdr->cDay, 2, MOL_CHAR_INT_DATA, &p );
     len = mol_read_datum( &hdr->cYear, 2, MOL_CHAR_INT_DATA, &p );
@@ -449,7 +452,7 @@ int mol_read_hdr( MOL_HEADER_BLOCK *hdr, FILE* inp, char *pStrErr )
 
     /* save the whole line 2 */
     p = line;
-    len = mol_read_datum( hdr->szMoleculeLine2, sizeof( hdr->szMoleculeLine2 ) - 1, MOL_STRING_DATA, &p );
+    len = mol_read_datum( hdr->szMoleculeLine2, sizeof( hdr->szMoleculeLine2 ) - 1, MOL_STRING_DATA, &p ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 
     /*------------ header line #3: comment ----------------*/
     if (NULL == ( p = inchi_fgetsLf( line, line_len, inp ) ))
@@ -465,7 +468,7 @@ int mol_read_hdr( MOL_HEADER_BLOCK *hdr, FILE* inp, char *pStrErr )
         goto err_fin;
     }
     */
-    len = mol_read_datum( hdr->szComment, sizeof( hdr->szComment ) - 1, MOL_STRING_DATA, &p );
+    len = mol_read_datum( hdr->szComment, sizeof( hdr->szComment ) - 1, MOL_STRING_DATA, &p ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 
 err_fin:
 
@@ -479,7 +482,7 @@ int RemoveNonPrintable( char *line )
     int i, c, num = 0;
     if (line)
     {
-        for (i = 0; c = UCINT line[i]; i++)
+        for (i = 0; (c = UCINT line[i]); i++) /* djb-rwth: addressing LLVM warning */
         {
             /* assuming ASCII charset */
             if (c < ' ' || c >= 0x7F)
@@ -500,7 +503,7 @@ int mol_read_counts_line( MOL_CTAB* ctab, FILE *inp, char *pStrErr )
     char *p;
     char line[MOLFILEINPLINELEN];
     const int line_len = sizeof( line );
-    int   err = 0, len;
+    int   err = 0, len; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 
     if (NULL == ( p = inchi_fgetsLf( line, line_len, inp ) ))
     {
@@ -542,7 +545,7 @@ int mol_read_counts_line( MOL_CTAB* ctab, FILE *inp, char *pStrErr )
         goto err_fin;
     }
 
-    len = mol_read_datum( ctab->csCurrentCtabVersion, sizeof( ctab->csCurrentCtabVersion ) - 1, MOL_STRING_DATA, &p );
+    len = mol_read_datum( ctab->csCurrentCtabVersion, sizeof( ctab->csCurrentCtabVersion ) - 1, MOL_STRING_DATA, &p ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 
 err_fin:
 
@@ -786,8 +789,8 @@ int read_stext_block( MOL_CTAB* ctab, FILE *inp, int err, char *pStrErr )
 
     for (i = 0; i < 2 * ctab->nNumberOfStextEntries; i++)
     {
-
-        if (NULL == ( p = inchi_fgetsLf( line, line_len, inp ) ))
+        p = inchi_fgetsLf(line, line_len, inp); /* djb-rwth: addressing LLVM warning */
+        if (NULL == p)
         {
             if (!err)
             {
@@ -826,7 +829,7 @@ int read_properties_block( MOL_CTAB* ctab,
     S_SHORT i, j;
     char  charM[2];
     char  szBlank[3];
-    char  szType[4];
+    char  szType[4] = {'\0'}; /* djb-rwth: adding zero termination */
     S_SHORT  skip_lines = 0;
     S_SHORT  num_entries;
     S_SHORT  num_atoms = ctab->nNumberOfAtoms;
@@ -1137,7 +1140,7 @@ int read_properties_block( MOL_CTAB* ctab,
                 if (1 /* !ctab->MolAtom[atoms[j]-1].cAtomAliasedFlag */)
                 {
                     char *at = ctab->MolAtom[atoms[j] - 1].szAtomSymbol;
-                    if (at[1] || at[0] != 'D' && at[0] != 'T')
+                    if (at[1] || (at[0] != 'D' && at[0] != 'T')) /* djb-rwth: addressing LLVM warning */
                     {
                         /*  D & T cannot have ISO */
                         /*  need atomic weight to calculate isotope difference. 7-14-00 DCh. */
@@ -1201,7 +1204,7 @@ MOL_DATA* delete_mol_data( MOL_DATA* mol_data )
 
 /****************************************************************************
   Comletely ingnore STEXT block, queries, and 3D features
-/****************************************************************************/
+****************************************************************************/
 MOL_DATA* read_mol_file( FILE* inp,
                          MOL_HEADER_BLOCK *OnlyHeaderBlock,
                          MOL_CTAB *OnlyCtab,
@@ -1231,8 +1234,8 @@ MOL_DATA* read_mol_file( FILE* inp,
     {
         pHdr = OnlyHeaderBlock;
         pCtab = OnlyCtab ? OnlyCtab : &ctab;
-        memset( pHdr, 0, sizeof( MOL_HEADER_BLOCK ) );
-        memset( pCtab, 0, sizeof( MOL_CTAB ) );
+        memset( pHdr, 0, sizeof( MOL_HEADER_BLOCK ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset( pCtab, 0, sizeof( MOL_CTAB ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     }
     pCtab->MolBond = NULL;
     pCtab->MolAtom = NULL;
@@ -1375,7 +1378,7 @@ int identify_sdf_label( char* inp_line, const char *pSdfLabel )
     {
         memcpy( line, p + 1, len );
         line[len] = '\0';
-        for (i = 0; isspace( UCINT line[i] ); i++)
+        for (i = 0; isspace( UCINT line[i] ); i++) /* djb-rwth: ui_rr */
         {
             ;
         }

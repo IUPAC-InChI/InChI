@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -366,6 +366,26 @@ extern "C" {
 #endif
     int bIsCenterPointStrict( inp_ATOM *atom, int iat );
     int nGetEndpointInfo( inp_ATOM *atom, int iat, ENDPOINT_INFO *eif );
+
+#if ( TAUT_PT_22_00 == 1 )
+    int nGetEndpointInfo_PT_22_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif);
+#endif  
+#if ( TAUT_PT_16_00 == 1 )  
+    int nGetEndpointInfo_PT_16_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif);
+#endif
+#if ( TAUT_PT_06_00 == 1 )  
+    int nGetEndpointInfo_PT_06_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif);
+#endif
+#if ( TAUT_PT_39_00 == 1 )  
+    int nGetEndpointInfo_PT_39_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif);
+#endif
+#if ( TAUT_PT_13_00 == 1 )  
+    int nGetEndpointInfo_PT_13_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif);
+#endif
+#if ( TAUT_PT_18_00 == 1 )  
+    int nGetEndpointInfo_PT_18_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif);
+#endif   
+
 #if ( KETO_ENOL_TAUT == 1 )
     int nGetEndpointInfo_KET( inp_ATOM *atom, int iat, ENDPOINT_INFO *eif );
 #endif

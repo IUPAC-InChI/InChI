@@ -61,8 +61,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,6,0
- PRODUCTVERSION 1,0,6,0
+ FILEVERSION 1,0,6,1
+ PRODUCTVERSION 1,0,6,1
  FILEFLAGSMASK 0x37L
 #ifdef _DEBUG
  FILEFLAGS 0x21L
@@ -77,13 +77,13 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.06, December 2020. Demo program exemplifying use of InChI IXA API"
+            VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.061, 2021. Demo program exemplifying use of InChI IXA API"
             VALUE "FileDescription", "Demo app test_ixa"
-            VALUE "FileVersion", "1.0.6.0"
+            VALUE "FileVersion", "1.0.6.1"
             VALUE "InternalName", "test_ixa"
             VALUE "OriginalFilename", "test_ixa.exe"
-            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.06, December 2020. Demo program exemplifying use of InChI IXA API"
-            VALUE "ProductVersion", "1.0.6.0"
+            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.061, 2021. Demo program exemplifying use of InChI IXA API"
+            VALUE "ProductVersion", "1.0.6.1"
         END
     END
     BLOCK "VarFileInfo"

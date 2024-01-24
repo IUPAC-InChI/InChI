@@ -1,8 +1,8 @@
 /*
 * International Chemical Identifier (InChI)
 * Version 1
-* Software version 1.06
-* December 15, 2020
+* Software version 1.07
+* 20/11/2023
 *
 * The InChI library and programs are free software developed under the
 * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -48,6 +48,8 @@
 #include "ikey_base26.h"
 
 #include "mode.h"
+
+#include "bcf_s.h"
 
  /*
      Triplets
@@ -1154,7 +1156,7 @@ static const char d26[][3] =
     Also tabulate 26 base-26 chars.
 */
 
-static const char* const c26 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+/* djb-rwth: removing redundant variables */
 
 
 /****************************************************************************
@@ -1304,10 +1306,10 @@ void get_xtra_hash_major_hex( const unsigned char *a, char* szXtra )
 #else
     c = a[start_byte] & 0x7f;  /* 0111 1111  */
 #endif
-    j = sprintf( szXtra, "%02x", c );
+    j = sprintf(szXtra, "%02x", c);
     for (i = start_byte + 1; i < 32; i++)
     {
-        j += sprintf( szXtra + j, "%02x", a[i] );
+        j += sprintf(szXtra + j, "%02x", a[i]);
     }
 }
 
@@ -1325,9 +1327,9 @@ void get_xtra_hash_minor_hex( const unsigned char *a, char* szXtra )
 #else
     c = a[start_byte] & 0x07;  /* 0000 0111  */
 #endif
-    j = sprintf( szXtra, "%02x", c );
+    j = sprintf(szXtra, "%02x", c);
     for (i = start_byte + 1; i < 32; i++)
     {
-        j += sprintf( szXtra + j, "%02x", a[i] );
+        j += sprintf(szXtra + j, "%02x", a[i]);
     }
 }

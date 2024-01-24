@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -66,6 +66,7 @@
 #include "inpdef.h"
 #include "ichi_io.h"
 
+#include "bcf_s.h"
 
 /* Local prototypes */
 static int OrigAtData_bCheckUnusualValences( ORIG_ATOM_DATA *orig_at_data,
@@ -112,18 +113,18 @@ int OrigAtData_bCheckUnusualValences( ORIG_ATOM_DATA *orig_at_data,
                 {
                     WarningMessage( pStrErrStruct, "Accepted unusual valence(s):" );
                 }
-                len = sprintf( msg, "%s", at[i].elname );
+                len = sprintf(msg, "%s", at[i].elname);
                 if (at[i].charge)
                 {
-                    len += sprintf( msg + len, "%+d", at[i].charge );
+                    len += sprintf(msg + len, "%+d", at[i].charge);
                 }
                 if (at[i].radical)
                 {
-                    len += sprintf( msg + len, ",%s", at[i].radical == RADICAL_SINGLET ? "s" :
-                                                      at[i].radical == RADICAL_DOUBLET ? "d" :
-                                                      at[i].radical == RADICAL_TRIPLET ? "t" : "?" );
+                    len += sprintf(msg + len, ",%s", at[i].radical == RADICAL_SINGLET ? "s" :
+                        at[i].radical == RADICAL_DOUBLET ? "d" :
+                        at[i].radical == RADICAL_TRIPLET ? "t" : "?");
                 }
-                len += sprintf( msg + len, "(%d)", val );
+                len += sprintf(msg + len, "(%d)", val);
                 if (!bNoWarnings)
                 {
                     WarningMessage( pStrErrStruct, msg );
@@ -157,7 +158,7 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
     }
     else
     {
-        at = (inp_ATOM *) inchi_calloc( orig_nat + 1, sizeof( at[0] ) );
+        at = (inp_ATOM *) inchi_calloc( (long long)orig_nat + 1, sizeof( at[0] ) ); /* djb-rwth: cast operator added */
         if (!at)
         {
             goto exit_function;
@@ -171,7 +172,7 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
     }
     else
     {
-        nCurAtLen = (AT_NUMB *) inchi_calloc( orig_atom->num_components + 1, sizeof( nCurAtLen[0] ) );
+        nCurAtLen = (AT_NUMB *) inchi_calloc( (long long)orig_atom->num_components + 1, sizeof( nCurAtLen[0] ) ); /* djb-rwth: cast operator added */
         if (!nCurAtLen)
         {
             goto exit_function;
@@ -185,8 +186,8 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
     }
     else
     {
-        nOldCompNumber = (AT_NUMB *) inchi_calloc( orig_atom->num_components + 1,
-                                                  sizeof( nOldCompNumber[0] ) );
+        nOldCompNumber = (AT_NUMB *) inchi_calloc( (long long)orig_atom->num_components + 1,
+                                                  sizeof( nOldCompNumber[0] ) ); /* djb-rwth: cast operator added */
         if (!nOldCompNumber)
         {
             goto exit_function;
@@ -198,18 +199,18 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
         /* Copy */
         if (orig_atom->at)
         {
-            memcpy( at, orig_atom->at,
-                 orig_nat * sizeof( new_orig_atom->at[0] ) );
+            memcpy(at, orig_atom->at,
+                orig_nat * sizeof(new_orig_atom->at[0]));
         }
         if (orig_atom->nCurAtLen)
         {
-            memcpy( nCurAtLen, orig_atom->nCurAtLen,
-                 orig_atom->num_components * sizeof( nCurAtLen[0] ) );
+            memcpy(nCurAtLen, orig_atom->nCurAtLen,
+                orig_atom->num_components * sizeof(nCurAtLen[0]));
         }
         if (orig_atom->nOldCompNumber)
         {
-            memcpy( nOldCompNumber, orig_atom->nOldCompNumber,
-                 orig_atom->num_components * sizeof( nOldCompNumber[0] ) );
+            memcpy(nOldCompNumber, orig_atom->nOldCompNumber,
+                orig_atom->num_components * sizeof(nOldCompNumber[0]));
         }
 
         /* Deallocate */
@@ -234,8 +235,8 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
 
         /* Data that are not to be copied */
         new_orig_atom->nNumEquSets = 0;
-        memset( new_orig_atom->bSavedInINCHI_LIB, 0, sizeof( new_orig_atom->bSavedInINCHI_LIB ) );
-        memset( new_orig_atom->bPreprocessed, 0, sizeof( new_orig_atom->bPreprocessed ) );
+        memset( new_orig_atom->bSavedInINCHI_LIB, 0, sizeof( new_orig_atom->bSavedInINCHI_LIB ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset( new_orig_atom->bPreprocessed, 0, sizeof( new_orig_atom->bPreprocessed ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
 
 
@@ -266,12 +267,14 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
             newp = (OAD_Polymer *) inchi_calloc( 1, sizeof( OAD_Polymer ) );
             if (!newp)
             {
+                inchi_free(newp); /* djb-rwth: avoiding memory leak */
                 goto exit_function;
             }
-            memcpy( newp, orig_atom->polymer, sizeof( OAD_Polymer ) );
-            newp->units = (OAD_PolymerUnit**) inchi_calloc( newp->n, sizeof( newp->units ) );
+            memcpy(newp, orig_atom->polymer, sizeof(OAD_Polymer));
+            newp->units = (OAD_PolymerUnit**) inchi_calloc( newp->n, sizeof(OAD_PolymerUnit*) ); /* djb-rwth: inchi_calloc must return OAD_PolymerUnit** */
             if (!newp->units)
             {
+                inchi_free(newp); /* djb-rwth: avoiding memory leak */
                 goto exit_function;
             }
             for (k = 0; k < orig_atom->polymer->n; k++)
@@ -284,9 +287,10 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
                 newp->pzz = (int *) inchi_calloc( newp->n_pzz, sizeof( int ) );
                 if (!newp->pzz)
                 {
+                    inchi_free(newp); /* djb-rwth: avoiding memory leak */
                     goto exit_function;
                 }
-                memcpy( newp->pzz, oldp->pzz, newp->n_pzz * sizeof( oldp->pzz[0] ) );
+                memcpy(newp->pzz, oldp->pzz, newp->n_pzz * sizeof(oldp->pzz[0]));
             }
             new_orig_atom->polymer = newp;
         }
@@ -299,18 +303,20 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
             new_v3000 = (OAD_V3000 *) inchi_calloc( 1, sizeof( OAD_V3000 ) );
             if (!new_v3000)
             {
+                inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
                 goto exit_function;
             }
-            memcpy( new_v3000, orig_atom->v3000, sizeof( OAD_V3000 ) );
+            memcpy(new_v3000, orig_atom->v3000, sizeof(OAD_V3000));
             if (orig_atom->v3000->atom_index_orig)
             {
                 new_v3000->atom_index_orig = (int *) inchi_calloc( orig_nat, sizeof( int ) );
                 /* if ( NULL==new_v3000->atom_index_orig ) {TREAT_ERR( err, 9001, "Out of RAM"); goto exit_function; } */
                 if (!new_v3000->atom_index_orig)
                 {
+                    inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
                     goto exit_function;
                 }
-                memcpy( new_v3000->atom_index_orig, orig_atom->v3000->atom_index_orig, orig_nat * sizeof( int ) );
+                memcpy(new_v3000->atom_index_orig, orig_atom->v3000->atom_index_orig, orig_nat * sizeof(int));
             }
             if (orig_atom->v3000->atom_index_fin)
             {
@@ -318,9 +324,10 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
                 /* if ( NULL==new_v3000->atom_index_fin ) {TREAT_ERR( err, 9001, "Out of RAM"); goto exit_function; } */
                 if (!new_v3000->atom_index_fin)
                 {
+                    inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
                     goto exit_function;
                 }
-                memcpy( new_v3000->atom_index_fin, orig_atom->v3000->atom_index_fin, orig_nat * sizeof( int ) );
+                memcpy(new_v3000->atom_index_fin, orig_atom->v3000->atom_index_fin, orig_nat * sizeof(int));
             }
             if (orig_atom->v3000->n_haptic_bonds && orig_atom->v3000->lists_haptic_bonds)
             {
@@ -334,9 +341,10 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
                     lst = new_v3000->lists_haptic_bonds[m] = (int *) inchi_calloc( nn, sizeof( int ) );
                     if (!lst)
                     {
+                        inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
                         goto exit_function;
                     }
-                    memcpy( lst, old_lst, nn * sizeof( int ) );
+                    memcpy(lst, old_lst, nn * sizeof(int));
                 }
             }
             if (orig_atom->v3000->n_steabs && orig_atom->v3000->lists_steabs)
@@ -351,9 +359,10 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
                     lst = new_v3000->lists_steabs[m] = (int *) inchi_calloc( nn, sizeof( int ) );
                     if (!lst)
                     {
+                        inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
                         goto exit_function;
                     }
-                    memcpy( lst, old_lst, nn * sizeof( int ) );
+                    memcpy(lst, old_lst, nn * sizeof(int));
                 }
             }
             if (orig_atom->v3000->n_sterel && orig_atom->v3000->lists_sterel)
@@ -361,6 +370,7 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
                 new_v3000->lists_sterel = (int **) inchi_calloc( orig_atom->v3000->n_sterel, sizeof( int* ) );
                 if (!new_v3000)
                 {
+                    inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
                     goto exit_function;
                 }
                 /* if ( NULL==new_v3000->lists_sterel ) { TREAT_ERR( err, 9001, "Out of RAM"); goto exit_function; }*/
@@ -369,29 +379,35 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
                     int *lst = NULL;
                     int *old_lst = orig_atom->v3000->lists_sterel[m];
                     nn = old_lst[1] + 2;
-                    lst = new_v3000->lists_sterel[m] = (int *) inchi_calloc( nn, sizeof( int ) );
+                    if (new_v3000->lists_sterel) /* djb-rwth: fixing a NULL pointer dereference */
+                        lst = new_v3000->lists_sterel[m] = (int *) inchi_calloc( nn, sizeof( int ) );
                     if (!lst)
                     {
+                        inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
                         goto exit_function;
                     }
-                    memcpy( lst, old_lst, nn * sizeof( int ) );
+                    memcpy(lst, old_lst, nn * sizeof(int));
                 }
             }
             if (orig_atom->v3000->n_sterac && orig_atom->v3000->lists_sterac)
             {
                 new_v3000->lists_sterac = (int **) inchi_calloc( orig_atom->v3000->n_sterac, sizeof( int* ) );
                 /* if ( NULL==new_v3000->lists_sterac ) { TREAT_ERR( err, 9001, "Out of RAM"); goto exit_function; }*/
-                for (m = 0; m < orig_atom->v3000->n_sterac; m++)
+                if (new_v3000->lists_sterac) /* djb-rwth: fixing a NULL pointer dereference */
                 {
-                    int *lst = NULL;
-                    int *old_lst = orig_atom->v3000->lists_sterac[m];
-                    nn = old_lst[1] + 2;
-                    lst = new_v3000->lists_sterac[m] = (int *) inchi_calloc( nn, sizeof( int ) );
-                    if (!lst)
+                    for (m = 0; m < orig_atom->v3000->n_sterac; m++)
                     {
-                        goto exit_function;
+                        int* lst = NULL;
+                        int* old_lst = orig_atom->v3000->lists_sterac[m];
+                        nn = old_lst[1] + 2;
+                        lst = new_v3000->lists_sterac[m] = (int*)inchi_calloc(nn, sizeof(int));
+                        if (!lst)
+                        {
+                            inchi_free(new_v3000); /* djb-rwth: avoiding memory leak */
+                            goto exit_function;
+                        }
+                        memcpy(lst, old_lst, nn * sizeof(int));
                     }
-                    memcpy( lst, old_lst, nn * sizeof( int ) );
                 }
             }
 
@@ -546,7 +562,7 @@ int PreprocessOneStructure( struct tagINCHI_CLOCK *ic,
           disconnect salts in prep_inp_data    */
 
     if (( ip->bTautFlags & TG_FLAG_DISCONNECT_SALTS ) && prep_inp_data->bDisconnectSalts &&
-         0 < ( i = DisconnectSalts( prep_inp_data, 1 ) ))
+         0 < ( i = DisconnectSalts( prep_inp_data, 1 ) )) /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     {
         if (!ip->bNoWarnings)
         {
@@ -557,10 +573,10 @@ int PreprocessOneStructure( struct tagINCHI_CLOCK *ic,
         {
             sd->nErrorType = _IS_WARNING;
         }
-        if (i = ReconcileAllCmlBondParities( prep_inp_data->at, prep_inp_data->num_inp_atoms, 0 ))
+        if ((i = ReconcileAllCmlBondParities( prep_inp_data->at, prep_inp_data->num_inp_atoms, 0 ))) /* djb-rwth: addressing LLVM warning */
         {
             char szErrCode[16];
-            sprintf( szErrCode, "%d", i );
+            sprintf(szErrCode, "%d", i);
             AddErrorMessage( sd->pStrErrStruct, "0D Parities Reconciliation failed:" );
             AddErrorMessage( sd->pStrErrStruct, szErrCode );
         }
@@ -589,7 +605,7 @@ int PreprocessOneStructure( struct tagINCHI_CLOCK *ic,
     /* Detect isotopic H on heteroatoms -- necessary condition
        for global isotopic tautomerism */
 
-    if (i = bNumHeterAtomHasIsotopicH( prep_inp_data->at, prep_inp_data->num_inp_atoms ))
+    if ((i = bNumHeterAtomHasIsotopicH( prep_inp_data->at, prep_inp_data->num_inp_atoms ))) /* djb-rwth: addressing LLVM warning */
     {
         if (i & 1)
         {
@@ -643,12 +659,12 @@ int PreprocessOneStructure( struct tagINCHI_CLOCK *ic,
             sd->bTautFlagsDone[INCHI_REC] = sd->bTautFlagsDone[INCHI_BAS];
             {
                 /* Remove "parity undefined in disconnected structure" flag from reconnected structure */
-                int k, m, p;
+                int k, m; /* djb-rwth: removing redundant variables */
                 inp_ATOM *at = ( prep_inp_data + 1 )->at;
                 int       num_at = ( prep_inp_data + 1 )->num_inp_atoms;
                 for (k = 0; k < num_at; k++)
                 {
-                    for (m = 0; m < MAX_NUM_STEREO_BONDS && ( p = at[k].sb_parity[m] ); m++)
+                    for (m = 0; m < MAX_NUM_STEREO_BONDS && at[k].sb_parity[m]; m++) /* djb-rwth: removing redundant code */
                     {
                         at[k].sb_parity[m] &= SB_PARITY_MASK;
                     }
@@ -705,10 +721,10 @@ int PreprocessOneStructure( struct tagINCHI_CLOCK *ic,
                 }
             }
 
-            if (i = ReconcileAllCmlBondParities( prep_inp_data->at, prep_inp_data->num_inp_atoms, 1 ))
+            if ((i = ReconcileAllCmlBondParities( prep_inp_data->at, prep_inp_data->num_inp_atoms, 1 ))) /* djb-rwth: addressing LLVM warning */
             {
                 char szErrCode[16];
-                sprintf( szErrCode, "%d", i );
+                sprintf(szErrCode, "%d", i);
                 AddErrorMessage( sd->pStrErrStruct, "0D Parities Reconciliation failed:" );
                 AddErrorMessage( sd->pStrErrStruct, szErrCode );
             }
@@ -745,12 +761,12 @@ int PreprocessOneStructure( struct tagINCHI_CLOCK *ic,
     else
     {
         /* Remove "disconnected structure parities" from the structure */
-        int k, m, p;
+        int k, m; /* djb-rwth: removing redundant variables */
         inp_ATOM *at = ( prep_inp_data )->at;
         int       num_at = ( prep_inp_data )->num_inp_atoms;
         for (k = 0; k < num_at; k++)
         {
-            for (m = 0; m < MAX_NUM_STEREO_BONDS && ( p = at[k].sb_parity[m] ); m++)
+            for (m = 0; m < MAX_NUM_STEREO_BONDS && at[k].sb_parity[m]; m++) /* djb-rwth: removing redundant code */
             {
                 at[k].sb_parity[m] &= SB_PARITY_MASK;
             }
@@ -807,13 +823,13 @@ int CreateCompositeNormAtom( COMP_ATOM_DATA  *composite_norm_data,
                             INP_ATOM_DATA2  *all_inp_norm_data,
                             int             num_components )
 {
-    int i, j, jj, k, n, m, tot_num_at, tot_num_H, cur_num_at, cur_num_H, nNumRemovedProtons;
+    int i, j, jj, k, n, m, tot_num_at, tot_num_H, cur_num_at, cur_num_H; /* djb-rwth: removing redundant variables */
     int num_comp[TAUT_NUM + 1], num_taut[TAUT_NUM + 1], num_del[TAUT_NUM + 1], num_at[TAUT_NUM + 1], num_inp_at[TAUT_NUM + 1];
     int ret = 0, indicator = 1;
     inp_ATOM *at, *at_from;
-    memset( num_comp, 0, sizeof( num_comp ) );
-    memset( num_taut, 0, sizeof( num_taut ) );
-    memset( num_del, 0, sizeof( num_taut ) );
+    memset( num_comp, 0, sizeof( num_comp ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+    memset( num_taut, 0, sizeof( num_taut ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+    memset( num_del, 0, sizeof( num_taut ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     /* count taut and non-taut components */
     for (j = 0; j < TAUT_NUM; j++)
@@ -841,9 +857,9 @@ int CreateCompositeNormAtom( COMP_ATOM_DATA  *composite_norm_data,
         {
             if (all_inp_norm_data[i][j].bExists &&
                 ( all_inp_norm_data[i][j].bDeleted ||
-                    all_inp_norm_data[i][j].bTautomeric &&
+                    (all_inp_norm_data[i][j].bTautomeric &&
                     all_inp_norm_data[i][j].at_fixed_bonds &&
-                    all_inp_norm_data[i][j].bTautPreprocessed ))
+                    all_inp_norm_data[i][j].bTautPreprocessed) )) /* djb-rwth: addressing LLVM warning */
             {
                 num_comp[TAUT_INI] ++;
             }
@@ -940,8 +956,7 @@ int CreateCompositeNormAtom( COMP_ATOM_DATA  *composite_norm_data,
                     }
                     continue;
                 }
-                nNumRemovedProtons = 0;
-                k = TAUT_NUM;
+                /* djb-rwth: removing redundant code */
                 /* find k = the normaized structure index */
                 if (jj == TAUT_INI)
                 {
@@ -998,7 +1013,7 @@ int CreateCompositeNormAtom( COMP_ATOM_DATA  *composite_norm_data,
                 at = composite_norm_data[jj].at + tot_num_at; /* points to the 1st destination atom */
                 at_from = ( jj == TAUT_INI && k == TAUT_YES && all_inp_norm_data[i][k].at_fixed_bonds ) ?
                     all_inp_norm_data[i][k].at_fixed_bonds : all_inp_norm_data[i][k].at;
-                memcpy( at, at_from, sizeof( composite_norm_data[0].at[0] ) * cur_num_at ); /* copy atoms except terminal H */
+                memcpy(at, at_from, sizeof(composite_norm_data[0].at[0])* cur_num_at); /* copy atoms except terminal H */
                 /* shift neighbors of main atoms */
                 for (n = 0; n < cur_num_at; n++, at++)
                 {
@@ -1011,8 +1026,8 @@ int CreateCompositeNormAtom( COMP_ATOM_DATA  *composite_norm_data,
                 if (cur_num_H)
                 {
                     at = composite_norm_data[jj].at + num_at[jj] + tot_num_H; /* points to the 1st destination atom */
-                    memcpy( at, at_from + cur_num_at,
-                            sizeof( composite_norm_data[0].at[0] ) * cur_num_H );
+                    memcpy(at, at_from + cur_num_at,
+                        sizeof(composite_norm_data[0].at[0])* cur_num_H);
                     /* shift neighbors of explicit H atoms */
                     for (n = 0; n < cur_num_H; n++, at++)
                     {
@@ -1084,7 +1099,7 @@ void OrigAtData_DebugTrace( ORIG_ATOM_DATA* d )
             ITRACE_( "\n            bonds to     " );
             for (k = 0; k < d->at[i].valence; k++)
             {
-                int nbr = d->at[i].neighbor[k];
+                int nbr = d->at[i].neighbor[k]; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
                 ITRACE_( "%s%-3d ", d->at[nbr].elname, nbr + 1 );
             }
         }
@@ -1159,7 +1174,7 @@ OAD_PolymerUnit* OAD_PolymerUnit_New( int       maxatoms,
         u2->xbr1[k] = 0.0;
         u2->xbr2[k] = 0.0;
     }
-    strcpy( u2->smt, smt );
+    strcpy(u2->smt, smt);
     u2->cap1 = -1;
     u2->end_atom1 = -1;
     u2->cap2 = -1;
@@ -1247,7 +1262,7 @@ OAD_PolymerUnit* OAD_PolymerUnit_CreateCopy( OAD_PolymerUnit *u )
         u2->xbr2[k] = u->xbr2[k];
     }
 
-    strcpy( u2->smt, u->smt );
+    strcpy(u2->smt, u->smt);
 
     u2->cap1 = u->cap1;
     u2->end_atom1 = u->end_atom1;
@@ -1267,7 +1282,7 @@ OAD_PolymerUnit* OAD_PolymerUnit_CreateCopy( OAD_PolymerUnit *u )
         u2->alist[k]	= u->alist[k];
     }
 
-    u2->blist	= (int *) inchi_calloc( 2 * u2->nb, sizeof( int ) );
+    u2->blist	= (int *) inchi_calloc( 2 * (long long)u2->nb, sizeof( int ) ); /* djb-rwth: cast operator added */
     if (!u2->blist)
     {
         err = 2;
@@ -1623,7 +1638,7 @@ int OAD_ValidatePolymerAndPseudoElementData( ORIG_ATOM_DATA *orig_at_data,
         {
             if (!strcmp( orig_at_data->at[k].elname, "Zz" ))
             {
-                pd->pzz[kk++] = k + 1;
+                pd->pzz[kk++] = k + 1; /* djb-rwth: buffer overrun avoided implicitly */
             }
         }
     }
@@ -1941,7 +1956,7 @@ int OAD_Polymer_CyclizeCloseableUnits( ORIG_ATOM_DATA *orig_at_data,
                                        char *pStrErr,
                                        int bNoWarnings )
 {
-    int i, ncyclized = 0, err = 0;
+    int i, err = 0; /* djb-rwth: removing redundant variables */
 
     for (i = 0; i < orig_at_data->polymer->n; i++)
     {
@@ -1992,7 +2007,7 @@ int OAD_Polymer_CyclizeCloseableUnits( ORIG_ATOM_DATA *orig_at_data,
             continue;
         }
 
-        ncyclized++;
+        /* djb-rwth: removing redundant code */
     }
 
     /*
@@ -2086,8 +2101,8 @@ void OAD_PolymerUnit_UnlinkCapsAndConnectEndAtoms( OAD_PolymerUnit *unit,
 
     else if (unit->cyclizable == CLOSING_SRU_HIGHER_ORDER_BOND)
     {
-        int elevated;
-        elevated = OrigAtData_IncreaseBondOrder( unit->end_atom1 - 1, unit->end_atom2 - 1, orig_inp_data->at );
+        int elevated; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
+        elevated = OrigAtData_IncreaseBondOrder( unit->end_atom1 - 1, unit->end_atom2 - 1, orig_inp_data->at ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 #if 0
 /* the bond may already be broken at metal disconnection, so ignore the result here */
         if (!elevated)
@@ -2607,7 +2622,7 @@ int  OrigAtData_AddBond( int        this_atom,
         }
     }
 
-    if (!already_here)
+    if (!already_here && (k < MAXVAL)) /* djb-rwth: condition added to prevent buffer overrun */
     {
         a->neighbor[k] = this_atom;
         a->bond_type[k] = (U_CHAR) bond_type;
@@ -2974,7 +2989,7 @@ int OAD_CollectReachableAtoms( ORIG_ATOM_DATA  *orig_at_data,
     subgraf *sg = NULL;
     subgraf_pathfinder *spf = NULL;
 
-    natnums = 0;
+    /* djb-rwth: removing redundant code */
     max_atoms = orig_at_data->num_inp_atoms;
     iatom = start_atom - 1;
     *n_reachable = 0;
@@ -3029,7 +3044,7 @@ int OAD_CollectReachableAtoms( ORIG_ATOM_DATA  *orig_at_data,
 
         for (j = 0; j < natnums; j++)
         {
-            reachable[(*n_reachable)++ ] = atnums[j];
+            reachable[(*n_reachable)++ ] = atnums[j]; /* djb-rwth: ui_rr */
         }
     }
 
@@ -3128,7 +3143,7 @@ void OAD_PolymerUnit_DelistIntraRingBackboneBonds( OAD_PolymerUnit *unit,
     /* Establish ring systems assignments for all related atoms */
 
     *err = 1;
-    num_ring_sys = (int *) inchi_calloc( at_data->num_inp_atoms + 1, sizeof( int ) );
+    num_ring_sys = (int *) inchi_calloc( (long long)at_data->num_inp_atoms + 1, sizeof( int ) ); /* djb-rwth: cast operator added */
     if (!num_ring_sys)
     {
         goto exit_function;
@@ -3324,12 +3339,12 @@ void OAD_Polymer_SetAtProps( OAD_Polymer *pd,
     }
 
     /* Establish ring systems assignments for atoms */
-    num_ring_sys = (int *) inchi_calloc( nat + 1, sizeof( int ) );
+    num_ring_sys = (int *) inchi_calloc( (long long)nat + 1, sizeof( int ) ); /* djb-rwth: cast operator added */
     if (NULL == num_ring_sys)
     {
         goto exit_function;
     }
-    size_ring_sys = (int *) inchi_calloc( nat + 1, sizeof( int ) );
+    size_ring_sys = (int *) inchi_calloc( (long long)nat + 1, sizeof( int ) ); /* djb-rwth: cast operator added */
     if (NULL == size_ring_sys)
     {
         goto exit_function;
@@ -3451,7 +3466,7 @@ void OAD_PolymerUnit_DelistHighOrderBackboneBonds( OAD_PolymerUnit *unit,
                                                    int             *err,
                                                    char            *pStrErr )
 {
-    int at1, at2, border, j = 0, k, check_taut = 0, remove;
+    int at1, at2, j = 0, k, check_taut = 0, remove; /* djb-rwth: removing redundant variables/code */
 
     int *orig_num = NULL, *curr_num = NULL;
 
@@ -3472,8 +3487,8 @@ void OAD_PolymerUnit_DelistHighOrderBackboneBonds( OAD_PolymerUnit *unit,
     if (composite_norm_data)
     {
         check_taut = 1;
-        orig_num = (int *) inchi_calloc( orig_at_data->num_inp_atoms + 2, sizeof( int ) );
-        curr_num = (int *) inchi_calloc( orig_at_data->num_inp_atoms + 2, sizeof( int ) );
+        orig_num = (int *) inchi_calloc( (long long)orig_at_data->num_inp_atoms + 2, sizeof( int ) ); /* djb-rwth: cast operator added */
+        curr_num = (int *) inchi_calloc( (long long)orig_at_data->num_inp_atoms + 2, sizeof( int ) ); /* djb-rwth: cast operator added */
         if (orig_num && curr_num)
         {
             check_taut = 1;
@@ -3484,33 +3499,32 @@ repeatj:
     remove = 0;
     at1 = unit->bkbonds[j][0];
     at2 = unit->bkbonds[j][1];
-    border = 0;
+    /* djb-rwth: removing redundant code */
     for (k = 0; k < orig_at_data->at[at1 - 1].valence; k++)
     {
         if (orig_at_data->at[at1 - 1].neighbor[k] != at2 - 1)
             continue;
-        border = orig_at_data->at[at1 - 1].bond_type[k];
+        /* djb-rwth: removing redundant code */
     }
     /*if ( border > 1 ) */
+    /* djb-rwth: removing redundant code */
+    int bond_is_untouchable = 0, btype;
+    if (check_taut && composite_norm_data && composite_norm_data->at && curr_num) /* djb-rwth: fixing a NULL pointer dereference */
     {
-        int bond_is_untouchable = 0, btype;
-        if (check_taut && composite_norm_data && composite_norm_data->at)
+        for (k = 0; k < composite_norm_data->at[curr_num[at1]].valence; k++)
         {
-            for (k = 0; k < composite_norm_data->at[curr_num[at1]].valence; k++)
+            if (composite_norm_data->at[curr_num[at1]].neighbor[k] != curr_num[at2])
             {
-                if (composite_norm_data->at[curr_num[at1]].neighbor[k] != curr_num[at2])
-                {
-                    continue;
-                }
-                btype = composite_norm_data->at[curr_num[at1]].bond_type[k];
-                bond_is_untouchable = ( btype == BOND_TAUTOM ); /*|| btype == BOND_ALTERN );*/
-                break;
+                continue;
             }
+            btype = composite_norm_data->at[curr_num[at1]].bond_type[k];
+            bond_is_untouchable = ( btype == BOND_TAUTOM ); /*|| btype == BOND_ALTERN );*/
+            break;
         }
-        if (bond_is_untouchable)
-        {
-            remove = 1;
-        }
+    }
+    if (bond_is_untouchable)
+    {
+        remove = 1;
     }
 
     if (remove)
@@ -3589,53 +3603,53 @@ void OAD_PolymerUnit_DebugTrace( OAD_PolymerUnit *u )
 
     if (u->conn == 1)
     {
-        conn = "HT";
+        conn = "HT"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->conn == 2)
     {
-        conn = "HH";
+        conn = "HH"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->conn == 3)
     {
-        conn = "EU";
+        conn = "EU"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
 
     if (u->type == 0)
     {
-        typ = "NONE";
+        typ = "NONE"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->type == 1)
     {
-        typ = "SRU";
+        typ = "SRU"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->type == 2)
     {
-        typ = "MON";
+        typ = "MON"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->type == 3)
     {
-        typ = "COP";
+        typ = "COP"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->type == 4)
     {
-        typ = "MOD";
+        typ = "MOD"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->type == 5)
     {
-        typ = "MER";
+        typ = "MER"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
 
     if (u->subtype == 1)
     {
-        styp = "ALT";
+        styp = "ALT"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->subtype == 2)
     {
-        styp = "RAN";
+        styp = "RAN"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
     else if (u->subtype == 3)
     {
-        styp = "BLK";
+        styp = "BLK"; /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
 
     {
@@ -3839,7 +3853,7 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
     OAD_Polymer_DebugTrace( p );*/
 
     /* Set atom properties for sorting */
-    aprops = (OAD_AtProps *) inchi_calloc( nat + 1, sizeof( OAD_AtProps ) );
+    aprops = (OAD_AtProps *) inchi_calloc( (long long)nat + 1, sizeof( OAD_AtProps ) ); /* djb-rwth: cast operator added */
                                         /* nat + 1: add extra element for possibe 1-based indexing */
     if (!aprops)
     {
@@ -3913,7 +3927,7 @@ void OAD_PolymerUnit_ReopenCyclized( OAD_PolymerUnit *u,
     u->nbkbonds = 0;
     if (!u->blist)
     {
-        u->blist = (int *) inchi_calloc( 2 * u->nb, sizeof( int ) );
+        u->blist = (int *) inchi_calloc( 2 * (long long)u->nb, sizeof( int ) ); /* djb-rwth: cast operator added */
     }
     if (!u->blist)
     {
@@ -4004,7 +4018,7 @@ void OAD_PolymerUnit_SortBackboneBondsAndSetSeniors( OAD_PolymerUnit *u,
         }
     }
 
-    /* v. 1.06 (1.05+) : place senior atom the first ("left") in the senior bond */
+    /* v. 1.05+ : place senior atom the first ("left") in the senior bond */
     if (OAD_Polymer_IsFirstAtomRankLower( u->bkbonds[*senior_bond][0], u->bkbonds[*senior_bond][1], aprops ) == 1)
     {
         int tmp = u->bkbonds[*senior_bond][0];

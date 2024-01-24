@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -45,6 +44,7 @@
 #include "strutil.h"
 #include "util.h"
 
+#include "bcf_s.h"
 
 #ifndef INCHI_ADD_STR_LEN
 #define INCHI_ADD_STR_LEN   32768
@@ -77,7 +77,7 @@ int inchi_vfprintf( FILE* f, const char* lpszFormat, va_list argList );
 ****************************************************************************/
 void inchi_ios_init( INCHI_IOSTREAM* ios, int io_type, FILE *f )
 {
-    memset( ios, 0, sizeof( *ios ) );
+    memset( ios, 0, sizeof( *ios ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     switch (io_type)
     {
         case INCHI_IOS_TYPE_FILE:
@@ -98,30 +98,31 @@ void inchi_ios_init( INCHI_IOSTREAM* ios, int io_type, FILE *f )
 ****************************************************************************/
 int inchi_ios_create_copy( INCHI_IOSTREAM* ios, INCHI_IOSTREAM* ios0 )
 {
-    if (ios)
+    if (ios) /* djb-rwth: fixing a NULL pointer dereference */
     {
-        memset( ios, 0, sizeof( *ios ) );
-    }
-    ios->type = ios0->type;
-    if (ios->type == INCHI_IOS_TYPE_STRING)
-    {
-        if (ios->s.pStr)
-        {
-            inchi_free( ios->s.pStr );
-        }
-        ios->s.pStr = (char *) inchi_calloc( ios0->s.nAllocatedLength, sizeof( char ) );
-        if (ios->s.pStr)
-        {
-            ios->s.nUsedLength = ios0->s.nUsedLength;
-            ios->s.nPtr = ios0->s.nPtr;
-        }
-        else
-        {
-            return -1; /* no memory */
-        }
-    }
-    ios->f = ios0->f;
+        memset( ios, 0, sizeof( *ios ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        ios->type = ios0->type;
 
+        if (ios->type == INCHI_IOS_TYPE_STRING)
+        {
+            if (ios->s.pStr)
+            {
+                inchi_free(ios->s.pStr);
+            }
+            ios->s.pStr = (char*)inchi_calloc(ios0->s.nAllocatedLength, sizeof(char));
+            if (ios->s.pStr)
+            {
+                ios->s.nUsedLength = ios0->s.nUsedLength;
+                ios->s.nPtr = ios0->s.nPtr;
+            }
+            else
+            {
+                return -1; /* no memory */
+            }
+        }
+        ios->f = ios0->f;
+    }
+    
     return 0;
 }
 
@@ -491,14 +492,14 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
                 /* enlarge output string */
                 int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
                 char *new_str =
-                    (char *) inchi_calloc( ios->s.nAllocatedLength + nAddLength, sizeof( char ) );
+                    (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + (long long)nAddLength, sizeof( char ) ); /* djb-rwth: cast operators added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
                     {
                         if (ios->s.nUsedLength > 0)
                         {
-                            memcpy( new_str, ios->s.pStr, sizeof( new_str[0] )* ios->s.nUsedLength );
+                            memcpy(new_str, ios->s.pStr, sizeof(new_str[0]) * ios->s.nUsedLength);
                         }
                         inchi_free( ios->s.pStr );
                     }
@@ -512,7 +513,7 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
             }
             /* output */
             my_va_start( argList, lpszFormat );
-            ret = vsprintf( ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList );
+            ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
             va_end( argList );
             if (ret >= 0)
             {
@@ -617,14 +618,14 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
             {
                 /* enlarge output string */
                 int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
-                char *new_str = (char *) inchi_calloc( ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) );
+                char *new_str = (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + (long long)nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operators added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
                     {
                         if (ios->s.nUsedLength > 0)
                         {
-                            memcpy( new_str, ios->s.pStr, sizeof( new_str[0] )*ios->s.nUsedLength );
+                            memcpy(new_str, ios->s.pStr, sizeof(new_str[0]) * ios->s.nUsedLength);
                         }
                         inchi_free( ios->s.pStr );
                     }
@@ -638,7 +639,7 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
             }
             /* output */
             my_va_start( argList, lpszFormat );
-            ret = vsprintf( ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList );
+            ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
             va_end( argList );
             if (ret >= 0)
             {
@@ -675,14 +676,14 @@ int inchi_ios_flush_not_displayed( INCHI_IOSTREAM * ios )
         return -1;
     }
 
-    obuf = (char *) inchi_calloc( ios->s.nUsedLength + 1, sizeof( char ) );
+    obuf = (char *) inchi_calloc( (long long)ios->s.nUsedLength + 1, sizeof( char ) ); /* djb-rwth: cast operator added */
 
     if (!obuf)
     {
         return -1;
     }
 
-    strcpy( obuf, ios->s.pStr );
+    strcpy(obuf, ios->s.pStr);
     ios->s.nUsedLength = 0;
     ret = inchi_ios_print( ios, "%s", obuf );
     inchi_free( obuf );
@@ -721,14 +722,14 @@ int inchi_ios_eprint( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
             {
                 /* enlarge output string */
                 nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
-                new_str = (char *) inchi_calloc( ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) );
+                new_str = (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + (long long)nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operators added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
                     {
                         if (ios->s.nUsedLength > 0)
                         {
-                            memcpy( new_str, ios->s.pStr, sizeof( new_str[0] )* ios->s.nUsedLength );
+                            memcpy(new_str, ios->s.pStr, sizeof(new_str[0]) * ios->s.nUsedLength);
                         }
                         inchi_free( ios->s.pStr );
                     }
@@ -743,7 +744,7 @@ int inchi_ios_eprint( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
 
             /* output */
             my_va_start( argList, lpszFormat );
-            ret = vsprintf( ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList );
+            ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
             va_end( argList );
             if (ret >= 0)
             {
@@ -817,30 +818,33 @@ int inchi_fprintf( FILE* f, const char* lpszFormat, ... )
 int inchi_vfprintf( FILE* f, const char* lpszFormat, va_list argList )
 {
     int ret = 0;
-    if (f == stderr && lpszFormat && lpszFormat[0] && '\r' == lpszFormat[strlen( lpszFormat ) - 1])
+    if (lpszFormat && lpszFormat[0]) /* djb-rwth: condition added as lpszFormat == 0 may lead to undefined ret value */
     {
+        if (f == stderr && '\r' == lpszFormat[strlen(lpszFormat) - 1])
+        {
 #define CONSOLE_LINE_LEN 80
 #ifndef COMPILE_ANSI_ONLY
-        char szLine[CONSOLE_LINE_LEN];
+            char szLine[CONSOLE_LINE_LEN];
 
-        ret = _vsnprintf( szLine, CONSOLE_LINE_LEN - 1, lpszFormat, argList );
+            ret = _vsnprintf(szLine, CONSOLE_LINE_LEN - 1, lpszFormat, argList);
 
-        if (ret < 0)
-        {
-            /*  output is longer than the console line */
-            /* Fixed bug: (CONSOLE_LINE_LEN-4) --> (CONSOLE_LINE_LEN-4-1) 11-22-08 IPl */
-            strcpy( szLine + CONSOLE_LINE_LEN - 5, "...\r" );
-        }
+            if (ret < 0)
+            {
+                /*  output is longer than the console line */
+                /* Fixed bug: (CONSOLE_LINE_LEN-4) --> (CONSOLE_LINE_LEN-4-1) 11-22-08 IPl */
+                strcpy(szLine + CONSOLE_LINE_LEN - 5, "...\r");
+            }
 
-        fputs( szLine, f );
+            fputs(szLine, f);
 #else
-        ret = vfprintf( f, lpszFormat, argList );
+            ret = vfprintf(f, lpszFormat, argList);
 #endif
 #undef CONSOLE_LINE_LEN
-    }
-    else
-    {
-        ret = vfprintf( f, lpszFormat, argList );
+        }
+        else
+        {
+            ret = vfprintf(f, lpszFormat, argList);
+        }
     }
 
     return ret;
@@ -866,8 +870,7 @@ int inchi_print_nodisplay( FILE* f, const char* lpszFormat, ... )
     }
 
     my_va_start( argList, lpszFormat );
-    ret = vfprintf( fi, lpszFormat, argList );
-
+    ret = vfprintf(fi, lpszFormat, argList);
     return ret;
 }
 
@@ -895,7 +898,7 @@ int inchi_fgetsLfTab( char *szLine, int len, FILE *f )
     while (!length);
     if (bTooLongLine)
     {
-        while (p = inchi_fgetsTab( szSkip, sizeof( szSkip ) - 1, f ))
+        while ((p = inchi_fgetsTab( szSkip, sizeof( szSkip ) - 1, f ))) /* djb-rwth: ignoring LLVM warning: function returning value */
         {
             if (strchr( szSkip, '\n' ))
                 break;
@@ -990,7 +993,7 @@ char* inchi_fgetsLf( char* line, int line_len, INCHI_IOSTREAM* inp_stream )
     {
         /* Read from file */
         finp = inp_stream->f;
-        memset( line, 0, line_len );
+        memset( line, 0, line_len ); /* djb-rwth: memset_s C11/Annex K variant? */
         if (NULL != ( p = fgets( line, line_len, finp ) ) &&
              NULL == strchr( p, '\n' ))
         {
@@ -1005,7 +1008,7 @@ char* inchi_fgetsLf( char* line, int line_len, INCHI_IOSTREAM* inp_stream )
     else if (inp_stream->type == INCHI_IOS_TYPE_STRING)
     {
         /* Read from supplied string representing Molfile */
-        memset( line, 0, line_len );
+        memset( line, 0, line_len ); /* djb-rwth: memset_s C11/Annex K variant? */
         if (NULL != ( p = inchi_sgets( line, line_len, inp_stream ) ) &&
              NULL == strchr( p, '\n' ))
         {
@@ -1024,7 +1027,7 @@ char* inchi_fgetsLf( char* line, int line_len, INCHI_IOSTREAM* inp_stream )
 
     if (p)
     {
-        if (q = strchr( line, '\r' ))
+        if ((q = strchr( line, '\r' ))) /* djb-rwth: addressing LLVM warning */
         {
             /*  fix CR CR LF line terminator. */
             q[0] = '\n';
@@ -1190,18 +1193,25 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
         }
 
         /* now should be on specifier */
+        
+        /* djb-rwth: return values needed for va_arg; djb-rwth: ignoring LLVM warnings: function returning value */
+        int ivarg;
+        double dvarg;
+        void* ivvarg;
+        int* ipvarg;
+        
         switch (*lpsz | nModifier)
         {
         /* single characters*/
             case 'c':
             case 'C':
                 nItemLen = 2;
-                va_arg( argList, int );
+                ivarg = va_arg( argList, int ); /* djb-rwth: int return value; ignoring LLVM warning */
                 break;
             case 'c' | FORCE_ANSI:
             case 'C' | FORCE_ANSI:
                 nItemLen = 2;
-                va_arg( argList, int );
+                ivarg = va_arg( argList, int ); /* djb-rwth: int return value; ignoring LLVM warning */
                 break;
             case 'c' | FORCE_UNICODE:
             case 'C' | FORCE_UNICODE:
@@ -1254,7 +1264,7 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
                 case 'x':
                 case 'X':
                 case 'o':
-                    va_arg( argList, int );
+                    ivarg = va_arg( argList, int ); /* djb-rwth: int return value; ignoring LLVM warning */
                     nItemLen = 32;
                     nItemLen = inchi_max( nItemLen, nWidth + nPrecision );
                     break;
@@ -1263,20 +1273,20 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
                 case 'f':
                 case 'g':
                 case 'G':
-                    va_arg( argList, double );
+                    dvarg = va_arg( argList, double ); /* djb-rwth: double return value; ignoring LLVM warning */
                     nItemLen = 32;
                     nItemLen = inchi_max( nItemLen, nWidth + nPrecision );
                     break;
 
                 case 'p':
-                    va_arg( argList, void* );
+                    ivvarg = va_arg( argList, void* ); /* djb-rwth: void* return value; ignoring LLVM warning */
                     nItemLen = 32;
                     nItemLen = inchi_max( nItemLen, nWidth + nPrecision );
                     break;
 
                /* no output */
                 case 'n':
-                    va_arg( argList, int* );
+                    ipvarg = va_arg( argList, int* ); /* djb-rwth: int* return value; ignoring LLVM warning */
                     break;
 
                 default:
@@ -1350,7 +1360,7 @@ char *inchi_sgets( char *s, int n, INCHI_IOSTREAM* ios )
 int inchi_strbuf_init( INCHI_IOS_STRING *buf, int start_size, int incr_size )
 {
     char *new_str = NULL;
-    memset( buf, 0, sizeof( *buf ) );
+    memset( buf, 0, sizeof( *buf ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     if (start_size <= 0)
     {
@@ -1410,7 +1420,7 @@ void inchi_strbuf_close( INCHI_IOS_STRING *buf )
         inchi_free( buf->pStr );
     }
 
-    memset( buf, 0, sizeof( *buf ) );
+    memset( buf, 0, sizeof( *buf ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 }
 
 
@@ -1458,8 +1468,8 @@ int inchi_strbuf_update( INCHI_IOS_STRING *buf, int new_addition_size )
         int  nAddLength = inchi_max( buf->nPtr, new_addition_size );
                                     /* buf->nPtr stores size increment for this buffer */
         char *new_str =
-            (char *) inchi_calloc( buf->nAllocatedLength + nAddLength,
-                                   sizeof( new_str[0] ) );
+            (char *) inchi_calloc( (long long)buf->nAllocatedLength + (long long)nAddLength,
+                                   sizeof( new_str[0] ) ); /* djb-rwth: cast operators added */
         if (!new_str)
         {
             return -1; /* failed */
@@ -1468,7 +1478,7 @@ int inchi_strbuf_update( INCHI_IOS_STRING *buf, int new_addition_size )
         {
             if (buf->nUsedLength > 0)
             {
-                memcpy( new_str, buf->pStr, sizeof( new_str[0] )* buf->nUsedLength );
+                memcpy(new_str, buf->pStr, sizeof(new_str[0]) * buf->nUsedLength);
             }
             inchi_free( buf->pStr );
         }
@@ -1505,7 +1515,7 @@ int inchi_strbuf_printf( INCHI_IOS_STRING *buf, const char* lpszFormat, ... )
     inchi_strbuf_update( buf, max_len );
 
     my_va_start( argList, lpszFormat );
-    ret = vsprintf( buf->pStr + buf->nUsedLength, lpszFormat, argList );
+    ret = vsprintf(buf->pStr + buf->nUsedLength, lpszFormat, argList);
     va_end( argList );
     if (ret >= 0)
     {
@@ -1546,7 +1556,7 @@ int inchi_strbuf_printf_from( INCHI_IOS_STRING *buf,
     inchi_strbuf_update( buf, max_len );
 
     my_va_start( argList, lpszFormat );
-    ret = vsprintf( buf->pStr + npos, lpszFormat, argList );
+    ret = vsprintf(buf->pStr + npos, lpszFormat, argList);
     va_end( argList );
     if (ret >= 0)
     {
@@ -1657,18 +1667,23 @@ int inchi_strbuf_addline( INCHI_IOS_STRING *buf,
 
 
 /****************************************************************************/
-int _inchi_trace( char *format, ... )
+/* djb-rwth: placed as a global variable to avoid function buffer issues */
+char it_buffer[32767]; 
+int _inchi_trace(char* format, ...)
 {
-   /*TCHAR buffer[32767];*/
+    /*
+    TCHAR buffer[32767];
     char buffer[32767];
-    va_list argptr;
-    va_start( argptr, format );
-    /*wvsprintf(buffer, format, argptr);*/
-    vsprintf( buffer, format, argptr );
-    va_end( argptr );
-    OutputDebugString( buffer );
+    */
+    int ret;
 
-    return 1;
+        va_list argptr;
+        va_start(argptr, format);
+        /*wvsprintf(buffer, format, argptr);*/
+        ret = vsprintf(it_buffer, format, argptr);
+        va_end(argptr);
+        OutputDebugString(it_buffer);
+        return 1;
 }
 #else
 int _inchi_trace( char *format, ... )

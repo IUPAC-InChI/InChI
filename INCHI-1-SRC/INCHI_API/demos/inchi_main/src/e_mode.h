@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -182,9 +182,9 @@ MS VC compiler pragmas
 #undef APP_DESCRIPTION
 #endif
 #ifndef CREATE_INCHI_STEP_BY_STEP
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (Library call example, classic API)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (Library call example, classic API)"
 #else
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (Library call example, modularized API)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (Library call example, modularized API)"
 #endif
 
 
@@ -1062,7 +1062,7 @@ void e_HelpCommandLineParmsReduced( INCHI_IOSTREAM *f );
 #endif
 
 
-/* Solely v. 1.06 specific */
+/* Solely v. 1.06+ specific */
 
 /* comment out the next line to enable polymeric debug */
 #define DEBUG_POLYMERS 0

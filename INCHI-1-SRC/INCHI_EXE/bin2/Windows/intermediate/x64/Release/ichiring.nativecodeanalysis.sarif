@@ -1,0 +1,115 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json",
+  "runs": [
+    {
+      "results": [],
+      "tool": {
+        "driver": {
+          "name": "PREfast",
+          "fullName": "PREfast Code Analysis",
+          "version": "14.37.32822.0",
+          "informationUri": "https://aka.ms/cpp/ca"
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true
+        }
+      ],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/ichiring.c"
+          },
+          "roles": [
+            "analysisTarget"
+          ],
+          "hashes": {
+            "sha-256": "457e6cc3b1be94836303677966bf47c1c3c0354328060d2255c7429700bdc90d"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/mode.h"
+          },
+          "hashes": {
+            "sha-256": "f792cd62ccd4eda0309b2cd181d8f61ba5e0d94e8855768f92152c3d041d93bd"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/ichiring.h"
+          },
+          "hashes": {
+            "sha-256": "b14f3346ae8ceb60b44748b4d613a6195745839af9d802e5ddaafdd87c4d4667"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/extr_ct.h"
+          },
+          "hashes": {
+            "sha-256": "d3319351ef105dbfa7c91bb9dda0ad802281d7f08fd934075950b7465c2be924"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/ichisize.h"
+          },
+          "hashes": {
+            "sha-256": "dc5cdf1896f0ee32b86ed8bc5310e5cce7757b0071834864999fd3abaf4ef60c"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/util.h"
+          },
+          "hashes": {
+            "sha-256": "720ea6460eef2a46731d7a2280257bcad62846118c79f90d6203f274cad97125"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/inpdef.h"
+          },
+          "hashes": {
+            "sha-256": "cb5867161a9de3690fd2d7340edc78a96eeba20a0235a274e6fdabf622bdc45b"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/ichidrp.h"
+          },
+          "hashes": {
+            "sha-256": "2aa9ae71888a8c08a97dbc7c705a0ced0a0883ffc8227059ceb3564e209e2c51"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/incomdef.h"
+          },
+          "hashes": {
+            "sha-256": "6286603f80a010a7b54429a9b36941a575df797c21df290c232c4e10eff9228a"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/mol_fmt.h"
+          },
+          "hashes": {
+            "sha-256": "3e5b4a69d52d918bbf231335f71578a2cdcf1b0da2435c1dd8b4142a3870717e"
+          }
+        },
+        {
+          "location": {
+            "uri": "file:///d:/posao/code/dev_api_bcf/inchi_base/src/bcf_s.h"
+          },
+          "hashes": {
+            "sha-256": "c2f01351b792a413ac489aed45f902af0551b73be194dacb62d7b48e3e11fb09"
+          }
+        }
+      ]
+    }
+  ]
+}

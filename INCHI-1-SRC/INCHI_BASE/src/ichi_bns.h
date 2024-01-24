@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -346,6 +346,25 @@ typedef struct tagBNS_FLOW_CHANGES {
 #define ALT_PATH_MODE_REM_PROTON 9   /* remove proton, adjust bonds, charges, H-counts 2004-03-05 */
 #if ( KETO_ENOL_TAUT == 1 )
 #define ALT_PATH_MODE_TAUTOM_KET 10  /* same as ALT_PATH_MODE_TAUTOM, applies to C=-OH or CH-=O; H may be (-) */
+#endif
+
+#if ( TAUT_PT_22_00 == 1 )
+#define ALT_PATH_MODE_TAUTOM_PT_22_00 11
+#endif
+#if ( TAUT_PT_16_00 == 1 )
+#define ALT_PATH_MODE_TAUTOM_PT_16_00 12
+#endif
+#if ( TAUT_PT_06_00 == 1 )
+#define ALT_PATH_MODE_TAUTOM_PT_06_00 13
+#endif
+#if ( TAUT_PT_39_00 == 1 )
+#define ALT_PATH_MODE_TAUTOM_PT_39_00 14
+#endif
+#if ( TAUT_PT_13_00 == 1 )
+#define ALT_PATH_MODE_TAUTOM_PT_13_00 15
+#endif
+#if ( TAUT_PT_18_00 == 1 )
+#define ALT_PATH_MODE_TAUTOM_PT_18_00 16
 #endif
 
 typedef U_SHORT  bitWord;

@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -41,6 +41,7 @@
 #include "e_mode.h"
 
 #include "../../../../INCHI_BASE/src/inchi_api.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 
 #include "e_ctl_data.h"
 #include "e_ichi_io.h"
@@ -71,7 +72,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
     int           i, k, c;
     const char    *q;
     unsigned long ul;
-    int           nFontSize = -9;
+    int           nFontSize = -9; /* djb-rwth: ignoring LLVM warning: variable used */
     int           nMode = 0;
 
     int           nReleaseMode = nMode | ( REQ_MODE_BASIC | REQ_MODE_TAUT | REQ_MODE_ISO | REQ_MODE_STEREO );
@@ -118,7 +119,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
     int           bAcidTautomerism = ( DISCONNECT_SALTS == 1 ) ? ( TEST_REMOVE_S_ATOMS == 1 ? 2 : 1 ) : 0;
     int           bUnchargedAcidTaut = ( CHARGED_SALTS_ONLY == 0 );
     int           bMergeSaltTGroups = ( DISCONNECT_SALTS == 1 );
-    int           bDisplayCompositeResults;
+    int           bDisplayCompositeResults; /* djb-rwth: ignoring LLVM warning: variable used */
 
 #define VER103_DEFAULT_MODE    (REQ_MODE_TAUT | REQ_MODE_ISO | REQ_MODE_STEREO |\
                                 REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU)
@@ -167,7 +168,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
     int bFoldPolymerSRU = 0;
     int bFrameShiftScheme = FSS_STARS_CYCLED;
     int bLooseTSACheck = 0;
-    int bStereoAtZz = 0;
+    /* djb-rwth: removing redundant variables */
     int bUseZz = USE_ZZ;
     int bNoWarnings = 0;
 
@@ -175,7 +176,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
     int timeout_set_error = 0;
 
 
-    bDisplayCompositeResults = 0;
+    bDisplayCompositeResults = 0; /* djb-rwth: ignoring LLVM warning: value used */
 
     ext[0] = ".mol";
     ext[1] = bVer1Options ? ".txt" : ".ich";
@@ -190,7 +191,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
 
     /*  Init table parms */
 
-    memset( ip, 0, sizeof( *ip ) );
+    memset( ip, 0, sizeof( *ip ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     /* Default are standard InChI generation options */
 
@@ -205,9 +206,9 @@ int ReadCommandLineParms( int argc, const char *argv[],
     ip->dp.pdp = &ip->pdp;
 #endif
 
-    memset( szNameSuffix, 0, sizeof( szNameSuffix ) );
+    memset( szNameSuffix, 0, sizeof( szNameSuffix ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     bNameSuffix = 0;
-    memset( szOutputPath, 0, sizeof( szOutputPath ) );
+    memset( szOutputPath, 0, sizeof( szOutputPath ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     bOutputPath = 0;
 #if( OUTPUT_FILE_EXT == 1 )
     memset( szOutNameExt, 0, sizeof( szOutNameExt ) );
@@ -847,7 +848,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
                                                                 k++;
                                                             }
                                                             t = strtod( pArg + k + 1, (char**) &q ); /*  cast deliberately discards 'const' qualifier */
-                                                            if (q > pArg + k + 1 && errno == ERANGE || t < 0.0 || t*1000.0 >( double )ULONG_MAX)
+                                                            if ((q > pArg + k + 1 && errno == ERANGE) || t < 0.0 || t*1000.0 >( double )ULONG_MAX) /* djb-rwth: addressing LLVM warning */
                                                             {
                                                                 ul = 0;
                                                             }
@@ -876,7 +877,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
                                                                 k = q - pArg - 1;
                                                                 if (abs( c ) > 5)
                                                                 {
-                                                                    nFontSize = -c;  /* font size 5 or less is too small */
+                                                                    nFontSize = -c;  /* font size 5 or less is too small */ /* djb-rwth: ignoring LLVM warning: value used */
                                                                 }
                                                             }
                                                             break;
@@ -1082,7 +1083,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
             }
             else if (!inchi_memicmp( pArg, "F", 1 ) && ( c = (int) strtol( pArg + 1, (char**) &q, 10 ), q > pArg + 1 ))
             {
-                nFontSize = -c;                      /* struct. display font size */
+                nFontSize = -c; /* struct. display font size */ /* djb-rwth: ignoring LLVM warning: value used */
             }
             else if (!inchi_stricmp( pArg, "EQU" ))
             {
@@ -1272,7 +1273,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
 #if ( USE_ZZ == ZZ_YES )
             else if (!inchi_stricmp( pArg, "StereoZz" ))
             {
-                bStereoAtZz = 1;
+                /* djb-rwth: removing redundant code */
             }
             else if (!inchi_stricmp( pArg, "NoZz" ))
             {
@@ -1678,7 +1679,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
             if (argv[i] && argv[i][0])
 #endif
             {
-                if (sz = (char*) inchi_malloc( ( strlen( argv[i] ) + 1 ) * sizeof( sz[0] ) ))
+                if ((sz = (char*) inchi_malloc( ( strlen( argv[i] ) + 1 ) * sizeof( sz[0] ) ))) /* djb-rwth: addressing LLVM warning */
                 {
                     strcpy( sz, argv[i] );
                 }
@@ -1705,7 +1706,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
 
         if (( ip->bAbcNumbers == 1 ) && ( ip->bCtPredecessors == 1 ))
         {
-            bHashKey = 0;
+            /* djb-rwth: removing redundant code */
 #ifndef TARGET_LIB_FOR_WINCHI
             inchi_ios_eprint( log_file, "Terminating: generation of InChIKey is not available with 'Compress' option\n" );
             return -1;
@@ -1713,7 +1714,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
         }
         if (ip->nInputType == INPUT_INCHI)
         {
-            bHashKey = 0;
+            /* djb-rwth: removing redundant code */
 #ifndef TARGET_LIB_FOR_WINCHI
             inchi_ios_eprint( log_file, "Terminating: generation of InChIKey is not available in InChI conversion mode\n" );
             return -1;
@@ -1722,7 +1723,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
         else
             if (bOutputMolfileOnly == 1)
             {
-                bHashKey = 0;
+                /* djb-rwth: removing redundant code */
 #ifndef TARGET_LIB_FOR_WINCHI
                 inchi_ios_eprint( log_file, "Terminating: generation of InChIKey is not available with 'OutputSDF' option\n" );
                 return -1;
@@ -1778,7 +1779,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
                 char *pLastExt = NULL;
 #endif
                 len = (int) strlen( p ) + strlen( szNameSuffix ) + strlen( ext[i] );
-                if (sz = (char*) inchi_malloc( ( len + 1 ) * sizeof( sz[0] ) ))
+                if ((sz = (char*) inchi_malloc( ( (long long)len + 1 ) * sizeof( sz[0] ) ))) /* djb-rwth: cast operator added; addressing LLVM warning */
                 {
                     strcpy( sz, p );
 #if ( BUILD_WITH_AMI == 1 ) && ( OUTPUT_FILE_EXT == 1 )
@@ -1800,7 +1801,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
             }
             else if (!inchi_stricmp( ip->path[i], szNUL ))
             {
-                inchi_free( (char *) ip->path[i] ); /* cast deliberately const qualifier */
+                /* inchi_free((char*)ip->path[i]); */ /* cast deliberately const qualifier */ /* djb-rwth: ip->path used after memory is freed */
                 ip->path[i] = NULL;
             }
         }
@@ -1855,7 +1856,7 @@ int ReadCommandLineParms( int argc, const char *argv[],
 #if ( defined(COMPILE_ANSI_ONLY) || defined(TARGET_LIB_FOR_WINCHI) )
     if (bCompareComponents && !( bDisplay & 1 ))
     {
-        bCompareComponents = 0;
+        bCompareComponents = 0; /* djb-rwth: ignoring LLVM warning: value used */
     }
 #endif
 
@@ -2503,7 +2504,7 @@ int PrintInputParms( INCHI_IOSTREAM *log_file,
     {
         /* unsigned long seconds = ip->msec_MaxTime / 1000;
         unsigned long milliseconds = (ip->msec_MaxTime%1000);
-        inchi_ios_eprint( log_file, "Timeout per structure: %lu/*.%03lu sec\n", seconds, milliseconds);
+        inchi_ios_eprint( log_file, "Timeout per structure: %lu/*.%03lu sec\n", seconds, milliseconds); -- djb-rwth: ignoring LLVM warning: asterisk used
         inchi_ios_eprint( log_file, "Timeout per structure: %lu sec\n", seconds );
         */
         inchi_ios_eprint( log_file, "Timeout per structure: %ld msec\n", ip->msec_MaxTime );
@@ -2630,7 +2631,7 @@ int PrintInputParms( INCHI_IOSTREAM *log_file,
 
 
 /****************************************************************************/
-void HelpCommandLineParms( INCHI_IOSTREAM *f )
+void HelpCommandLineParms(INCHI_IOSTREAM* f)
 {
     if (!f)
     {
@@ -2638,124 +2639,170 @@ void HelpCommandLineParms( INCHI_IOSTREAM *f )
     }
 
 #if ( bRELEASE_VERSION == 1 )
-
-    inchi_ios_print_nodisplay( f,
+    inchi_ios_print_nodisplay(f,
 #ifdef TARGET_EXE_USING_API
         "%s %-s\n%-s Build (%-s%-s) of %s %-s %-s\n\nUsage:\ninchi_main inputFile [outputFile [logFile [problemFile]]] [%coption[ %coption...]]\n",
         APP_DESCRIPTION, INCHI_SRC_REV,
         INCHI_BUILD_PLATFORM, INCHI_BUILD_COMPILER, INCHI_BUILD_DEBUG, __DATE__, __TIME__,
         RELEASE_IS_FINAL ? "" : " *** pre-release, for evaluation only ***",
-        INCHI_OPTION_PREFX, INCHI_OPTION_PREFX );
+        INCHI_OPTION_PREFX, INCHI_OPTION_PREFX);
 #else
-        "%s %-s\n%-s Build (%-s%-s) of %s %-s %-s\n\nUsage:\ninchi_main inputFile [outputFile [logFile [problemFile]]] [%coption[ %coption...]]\n",
+        "%s %-s\n%-s Build (%-s%-s) of %s %-s %-s\n\nUsage:\ninchi-1 inputFile [outputFile [logFile [problemFile]]] [%coption[ %coption...]]\n",
         APP_DESCRIPTION, INCHI_SRC_REV,
         INCHI_BUILD_PLATFORM, INCHI_BUILD_COMPILER, INCHI_BUILD_DEBUG, __DATE__, __TIME__,
         RELEASE_IS_FINAL ? "" : " *** pre-release, for evaluation only ***",
         INCHI_OPTION_PREFX, INCHI_OPTION_PREFX );
-#if ( BUILD_WITH_AMI == 1 )
 
-    inchi_ios_print_nodisplay( f,
+#if ( BUILD_WITH_AMI == 1 )
+    inchi_ios_print_nodisplay(f,
         "inchi-1 inputFiles... %cAMI [%coption[ %coption...]]\n",
-        INCHI_OPTION_PREFX, INCHI_OPTION_PREFX, INCHI_OPTION_PREFX );
+        INCHI_OPTION_PREFX, INCHI_OPTION_PREFX, INCHI_OPTION_PREFX);
 #endif
 #endif
 
-    inchi_ios_print_nodisplay( f, "\nOptions:\n" );
+    inchi_ios_print_nodisplay(f, "\nOptions:\n");
 
-    inchi_ios_print_nodisplay( f, "\nInput\n" );
-    inchi_ios_print_nodisplay( f, "  STDIO       Use standard input/output streams\n" );
-    inchi_ios_print_nodisplay( f, "  InpAux      Input structures in %s default aux. info format\n              (for use with STDIO)\n", INCHI_NAME );
-    inchi_ios_print_nodisplay( f, "  SDF:DataHeader Read from the input SDfile the ID under this DataHeader\n" );
+    inchi_ios_print_nodisplay(f, "\nInput\n");
+    inchi_ios_print_nodisplay(f, "  STDIO       Use standard input/output streams\n");
+    inchi_ios_print_nodisplay(f, "  InpAux      Input structures in %s default aux. info format\n              (for use with STDIO)\n", INCHI_NAME);
+    inchi_ios_print_nodisplay(f, "  SDF:DataHeader Read from the input SDfile the ID under this DataHeader\n");
 
-    /*
-    inchi_ios_print_nodisplay( f, "  START:n     Skip structures up to n-th one\n");
-    inchi_ios_print_nodisplay( f, "  END:m       Skip structures after m-th one\n");
-    */
+    inchi_ios_print_nodisplay(f, "  START:n     Start at n-th input structure\n");
+    inchi_ios_print_nodisplay(f, "  END:n       Stop after n-th input structure\n");
+    inchi_ios_print_nodisplay(f, "  RECORD:n    Treat only n-th input structure\n");
 
 #if ( BUILD_WITH_AMI == 1 )
-    inchi_ios_print_nodisplay( f, "  AMI         Allow multiple input files (wildcards supported)\n" );
+    inchi_ios_print_nodisplay(f, "  AMI         Allow multiple input files (wildcards supported)\n");
+    inchi_ios_print_nodisplay(f, "  AMIOutStd   Write output to stdout (in AMI mode)\n");
+    inchi_ios_print_nodisplay(f, "  AMILogStd   Write log to stderr (in AMI mode)\n");
+    inchi_ios_print_nodisplay(f, "  AMIPrbNone  Suppress creation of problem files (in AMI mode)\n");
 #endif
 
-    inchi_ios_print_nodisplay( f, "Output\n" );
-    inchi_ios_print_nodisplay( f, "  NoWarnings  Suppress all warning messages(default: show)\n" );
-    inchi_ios_print_nodisplay( f, "  AuxNone     Omit auxiliary information (default: Include)\n" );
-    inchi_ios_print_nodisplay( f, "  SaveOpt     Save custom InChI creation options (non-standard InChI)\n" );
-    inchi_ios_print_nodisplay( f, "  NoLabels    Omit structure number, DataHeader and ID from %s output\n", INCHI_NAME );
-    inchi_ios_print_nodisplay( f, "  Tabbed      Separate structure number, %s, and AuxInfo with tabs\n", INCHI_NAME );
+
+    inchi_ios_print_nodisplay(f, "Output\n");
+    inchi_ios_print_nodisplay(f, "  NoLabels    Omit structure number, DataHeader and ID from %s output\n", INCHI_NAME);
+    inchi_ios_print_nodisplay(f, "  NoWarnings  Suppress all warning messages\n");
+    inchi_ios_print_nodisplay(f, "  AuxNone     Omit auxiliary information\n");
+    inchi_ios_print_nodisplay(f, "  SaveOpt     Save custom InChI creation options (non-standard InChI)\n");
+    inchi_ios_print_nodisplay(f, "  Tabbed      Separate structure number, %s, and AuxInfo with tabs\n", INCHI_NAME);
+    inchi_ios_print_nodisplay(f, "  MergeHash   Combine InChIKey with extra hash(es) if present\n");
+    inchi_ios_print_nodisplay(f, "  NoInChI     Do not print InChI string itself\n");
 #ifndef TARGET_EXE_USING_API
-#ifdef ERR_INCHI_STRING_ALLOWED
-    inchi_ios_print_nodisplay( f, "  OutErrInChI On fail, print empty InChI (default: nothing)\n" );
+    inchi_ios_print_nodisplay(f, "  OutErrInChI On fail, print empty InChI (default: nothing)\n");
 #endif
+#if ( defined(_WIN32) && defined(_MSC_VER) && !defined(COMPILE_ANSI_ONLY) && !defined(TARGET_API_LIB) )
+    inchi_ios_print_nodisplay(f, "  D           Display the structures\n");
+    inchi_ios_print_nodisplay(f, "  EQU         Display sets of identical components\n");
+    inchi_ios_print_nodisplay(f, "  Fnumber     Set display Font size in number of points\n");
 #endif
+    inchi_ios_print_nodisplay(f, "  OutputSDF   Convert %s created with default aux. info to SDfile\n", INCHI_NAME);
+#if ( SDF_OUTPUT_DT == 1 )
+    inchi_ios_print_nodisplay(f, "  SdfAtomsDT  Output Hydrogen Isotopes to SDfile as Atoms D and T\n");
+#endif
+
+    inchi_ios_print_nodisplay(f, "Structure perception\n");
+    inchi_ios_print_nodisplay(f, "  SNon        Exclude stereo (default: include absolute stereo)\n");
+    inchi_ios_print_nodisplay(f, "  NEWPSOFF    Both ends of wedge point to stereocenters (default: a narrow end)\n");
+    inchi_ios_print_nodisplay(f, "  LooseTSACheck   Relax criteria of ambiguous drawing for in-ring tetrahedral stereo\n");
+    inchi_ios_print_nodisplay(f, "  DoNotAddH   All H are explicit (default: add H according to usual valences)\n");
+#ifndef USE_STDINCHI_API
+    inchi_ios_print_nodisplay(f, "Stereo perception modifiers (non-standard InChI)\n");
+    inchi_ios_print_nodisplay(f, "  SRel        Relative stereo\n");
+    inchi_ios_print_nodisplay(f, "  SRac        Racemic stereo\n");
+    inchi_ios_print_nodisplay(f, "  SUCF        Use Chiral Flag: On means Absolute stereo, Off - Relative\n");
+
+    inchi_ios_print_nodisplay(f, "Customizing InChI creation (non-standard InChI)\n");
+    inchi_ios_print_nodisplay(f, "  SUU         Always include omitted unknown/undefined stereo\n");
+    inchi_ios_print_nodisplay(f, "  SLUUD       Make labels for unknown and undefined stereo different\n");
+    inchi_ios_print_nodisplay(f, "  RecMet      Include reconnected metals results\n");
+    inchi_ios_print_nodisplay(f, "  FixedH      Include Fixed H layer\n");
+    inchi_ios_print_nodisplay(f, "  KET         Account for keto-enol tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  15T         Account for 1,5-tautomerism (experimental)\n");
+
+    inchi_ios_print_nodisplay(f, "  PT_22_00    Account for PT_22_00 tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_16_00    Account for PT_16_00 tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_06_00    Account for PT_06_00 tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_39_00    Account for PT_39_00 tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_13_00    Account for PT_13_00 tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_18_00    Account for PT_18_00 tautomerism (experimental)\n");
+
+
+    inchi_ios_print_nodisplay(f, "Generation\n");
+    inchi_ios_print_nodisplay(f, "  Wnumber     Set time-out per structure in seconds; W0 means unlimited\n");
+    inchi_ios_print_nodisplay(f, "  WMnumber    Set time-out per structure in milliseconds (int); WM0 means unlimited\n");
+    inchi_ios_print_nodisplay(f, "  LargeMolecules Treat molecules up to 32766 atoms (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  WarnOnEmptyStructure Warn and produce empty %s for empty structure\n", INCHI_NAME);
+    /*inchi_ios_print_nodisplay( f, "  MismatchIsError Treat problem/mismatch on inchi2struct conversion as error\n");*/
+
+    inchi_ios_print_nodisplay(f, "  Polymers    Allow processing of polymers (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  Polymers105 Allow processing of polymers (experimental, legacy mode of v. 1.05)\n");
+    inchi_ios_print_nodisplay(f, "  FoldCRU     Fold polymer CRU if inner repeats occur\n");
+    inchi_ios_print_nodisplay(f, "  NoFrameShift Disable polymer CRU frame shift\n");
+    inchi_ios_print_nodisplay(f, "  NoEdits     Disable polymer CRU frame shift and folding\n");
+    inchi_ios_print_nodisplay(f, "  NPZz        Allow non-polymer-related Zz atoms (pseudo element placeholders)\n");
+    inchi_ios_print_nodisplay(f, "  SAtZz       Allow stereo at atoms connected to Zz(default: disabled)\n");
+#endif
+
+
+    inchi_ios_print_nodisplay(f, "  Key         Generate InChIKey\n");
+    inchi_ios_print_nodisplay(f, "  XHash1      Generate hash extension (to 256 bits) for 1st block of InChIKey\n");
+    inchi_ios_print_nodisplay(f, "  XHash2      Generate hash extension (to 256 bits) for 2nd block of InChIKey\n");
+
+    inchi_ios_print_nodisplay(f, "Conversion\n");
+#ifdef TARGET_EXE_USING_API
+    inchi_ios_print_nodisplay(f, "  InChI2Struct Test mode: Mol/SDfile -> %s -> Structure -> (%s+AuxInfo)\n", INCHI_NAME, INCHI_NAME);
+    inchi_ios_print_nodisplay(f, "  InChI2InChI  Convert  Convert %s string(s) into %s string(s)\n", INCHI_NAME, INCHI_NAME);
+#else
+    inchi_ios_print_nodisplay(f, "  InChI2Struct Convert InChI string(s) to structure(s) in InChI aux.info format\n");
+    inchi_ios_print_nodisplay(f, "  InChI2InChI  Convert  Convert %s string(s) into %s string(s)\n", INCHI_NAME, INCHI_NAME);
+#endif
+
+#if (BUILD_WITH_ENG_OPTIONS==1)
+    inchi_ios_print_nodisplay(f, "Engineering/hidden\n");
+#ifdef TARGET_EXE_USING_API
+    inchi_ios_print_nodisplay(f, "  InChI2InChI  Test mode: Mol/SDfile -> %s -> %s\n", INCHI_NAME, INCHI_NAME);
+#endif
+
     /*inchi_ios_print_nodisplay( f, "  Compress    Compressed output\n"); */
     /*inchi_ios_print_nodisplay( f, "    FULL        Standard set of options for Full Verbose Output\n");*/
     /*inchi_ios_print_nodisplay( f, "    MIN         Standard set of options for Minimal Concise Output\n");*/
 
-#if ( defined(_WIN32) && defined(_MSC_VER) && !defined(COMPILE_ANSI_ONLY) && !defined(TARGET_API_LIB) )
-    inchi_ios_print_nodisplay( f, "  D           Display the structures\n" );
-    inchi_ios_print_nodisplay( f, "  EQU         Display sets of identical components\n" );
-    inchi_ios_print_nodisplay( f, "  Fnumber     Set display Font size in number of points\n" );
+#if ALLOW_SUBSTRUCTURE_FILTERING==1
+    inchi_ios_print_nodisplay(f, "  FilterSS    Select input SDF records using (hard-coded) substructure filter\n");
+    inchi_ios_print_nodisplay(f, "  InvFilterSS Invert match for (hard-coded) substructure filter\n");
 #endif
 
-    inchi_ios_print_nodisplay( f, "  OutputSDF   Convert %s created with default aux. info to SDfile\n", INCHI_NAME );
+    inchi_ios_print_nodisplay(f, "  Compress    Compressed output\n");
+    inchi_ios_print_nodisplay(f, "  MERGE       Use bMergeAllInputStructures\n");
+    inchi_ios_print_nodisplay(f, "  PGO         Use bSaveAllGoodStructsAsProblem\n");
+    inchi_ios_print_nodisplay(f, "  DCR         Use bDisplayCompositeResults\n");
+    inchi_ios_print_nodisplay(f, "  DSB         Use REQ_MODE_NO_ALT_SBONDS \n");
+    inchi_ios_print_nodisplay(f, "  NOHDR       Use bNoStructLabels\n");
+    inchi_ios_print_nodisplay(f, "  NoVarH      Set bTgFlagVariableProtons=0\n");
+    inchi_ios_print_nodisplay(f, "  NOUUSB      Use REQ_MODE_SB_IGN_ALL_UU\n");
+    inchi_ios_print_nodisplay(f, "  NOUUSC      Use REQ_MODE_SC_IGN_ALL_UU\n");
+    inchi_ios_print_nodisplay(f, "  FixRad      Set bFixAdjacentRad\n");
+    inchi_ios_print_nodisplay(f, "  TestRenum   Generate InChI upon random atom renumbering\n");
+    inchi_ios_print_nodisplay(f, "  DoDRV       Set bUnderivatize=1\n");
+    inchi_ios_print_nodisplay(f, "  DoDrvReport Set bUnderivatize=3\n");
+    inchi_ios_print_nodisplay(f, "  DoR2C       Set bRing2Chain\n");
+    inchi_ios_print_nodisplay(f, "  DoneOnly    Set bIgnoreUnchanged\n");
+    inchi_ios_print_nodisplay(f, "  NoADP       Set bTgFlagHardAddRenProtons=0\n");
+    inchi_ios_print_nodisplay(f, "  MOVEPOS:0|1 Set bMovePositiveCharges\n");
+    inchi_ios_print_nodisplay(f, "  RSB:n       Set nMinDbRinSize\n");
+    inchi_ios_print_nodisplay(f, "  DISCONSALT:0|1     Set bDisconnectSalts\n");
+    inchi_ios_print_nodisplay(f, "  DISCONMETAL:0|1    Set bDisconnectCoord\n");
+    inchi_ios_print_nodisplay(f, "  DISCONMETALCHKVAL:0|1 Set bDisconnectCoordChkVal \n");
+    inchi_ios_print_nodisplay(f, "  RECONMETAL:0|1     Set bReconnectCoord\n");
+    inchi_ios_print_nodisplay(f, "  MERGESALTTG:0|1    Set bMergeSaltTGroups\n");
+    inchi_ios_print_nodisplay(f, "  UNCHARGEDACIDS:0|1 Set bUnchargedAcidTaut \n");
+    inchi_ios_print_nodisplay(f, "  ACIDTAUT:0|1|2     Set bAcidTautomerism\n");
+    inchi_ios_print_nodisplay(f, "  AUXINFO:0|1|2      Set AuxInfo print options\n");
+    inchi_ios_print_nodisplay(f, "  KeepBalanceP...  \n");
+    inchi_ios_print_nodisplay(f, "  SDFID       ...\n");
+    inchi_ios_print_nodisplay(f, "  PLAINP      ....\n");
+    inchi_ios_print_nodisplay(f, "  ANNPLAIN    ....\n");
 
-#if ( SDF_OUTPUT_DT == 1 )
-    inchi_ios_print_nodisplay( f, "  SdfAtomsDT  Output Hydrogen Isotopes to SDfile as Atoms D and T\n" );
-#endif
-
-#if ( BUILD_WITH_AMI == 1 )
-    inchi_ios_print_nodisplay( f, "  AMIOutStd   Write output to stdout (in AMI mode)\n" );
-    inchi_ios_print_nodisplay( f, "  AMILogStd   Write log to stderr (in AMI mode)\n" );
-    inchi_ios_print_nodisplay( f, "  AMIPrbNone  Suppress creation of problem files (in AMI mode)\n" );
-#endif
-
-    inchi_ios_print_nodisplay( f, "Structure perception\n" );
-    inchi_ios_print_nodisplay( f, "  SNon        Exclude stereo (default: include absolute stereo)\n" );
-    inchi_ios_print_nodisplay( f, "  NEWPSOFF    Both ends of wedge point to stereocenters (default: a narrow end)\n" );
-    inchi_ios_print_nodisplay( f, "  LooseTSACheck   Relax criteria of ambiguous drawing for in-ring tetrahedral stereo\n" );
-    inchi_ios_print_nodisplay( f, "  DoNotAddH   All H are explicit (default: add H according to usual valences)\n" );
-
-#ifndef USE_STDINCHI_API
-    inchi_ios_print_nodisplay( f, "Stereo perception modifiers (non-standard InChI)\n" );
-    inchi_ios_print_nodisplay( f, "  SRel        Relative stereo\n" );
-    inchi_ios_print_nodisplay( f, "  SRac        Racemic stereo\n" );
-    inchi_ios_print_nodisplay( f, "  SUCF        Use Chiral Flag: On means Absolute stereo, Off - Relative\n" );
-
-    inchi_ios_print_nodisplay( f, "Customizing InChI creation (non-standard InChI)\n" );
-    inchi_ios_print_nodisplay( f, "  SUU         Always include omitted unknown/undefined stereo\n" );
-    inchi_ios_print_nodisplay( f, "  SLUUD       Make labels for unknown and undefined stereo different\n" );
-    inchi_ios_print_nodisplay( f, "  RecMet      Include reconnected metals results\n" );
-    inchi_ios_print_nodisplay( f, "  FixedH      Include Fixed H layer\n" );
-    inchi_ios_print_nodisplay( f, "  KET         Account for keto-enol tautomerism (experimental)\n" );
-    inchi_ios_print_nodisplay( f, "  15T         Account for 1,5-tautomerism (experimental)\n" );
-#endif
-
-    inchi_ios_print_nodisplay( f, "Generation\n" );
-    inchi_ios_print_nodisplay( f, "  Wnumber     Set time-out per structure in seconds; W0 means unlimited\n" );
-    inchi_ios_print_nodisplay( f, "  WMnumber    Set time-out per structure in milliseconds (int); WM0 means unlimited\n" );
-    inchi_ios_print_nodisplay( f, "  ExpoZz      Expose Zz atoms if present (experimental)\n" );
-    inchi_ios_print_nodisplay( f, "  Polymers     Allow processing of polymers (experimental)\n" );
-    inchi_ios_print_nodisplay( f, "  FoldCRU      Remove repeats within constitutional repeating units (CRU/SRU)\n" );
-    inchi_ios_print_nodisplay( f, "  NoFrameShift Turn OFF polymer frame shift\n" );
-#if ( USE_ZZ == ZZ_YES )
-    inchi_ios_print_nodisplay( f, "  StereoZZ     Do not ignore stereo at centers adjacent to Zz atoms\n" );
-#endif
-    inchi_ios_print_nodisplay( f, "  LargeMolecules Treat molecules up to 32766 atoms (experimental)\n" );
-    inchi_ios_print_nodisplay( f, "  WarnOnEmptyStructure Warn and produce empty %s for empty structure\n", INCHI_NAME );
-    /*inchi_ios_print_nodisplay( f, "  MismatchIsError Treat problem/mismatch on inchi2struct conversion as error\n");*/
-    inchi_ios_print_nodisplay( f, "  Key         Generate InChIKey\n" );
-    inchi_ios_print_nodisplay( f, "  XHash1      Generate hash extension (to 256 bits) for 1st block of InChIKey\n" );
-    inchi_ios_print_nodisplay( f, "  XHash2      Generate hash extension (to 256 bits) for 2nd block of InChIKey\n" );
-
-
-    inchi_ios_print_nodisplay( f, "Conversion\n" );
-
-#ifdef TARGET_EXE_USING_API
-    inchi_ios_print_nodisplay( f, "  InChI2InChI  Test mode: Mol/SDfile -> %s -> %s\n", INCHI_NAME, INCHI_NAME );
-    inchi_ios_print_nodisplay( f, "  InChI2Struct Test mode: Mol/SDfile -> %s -> Structure -> (%s+AuxInfo)\n", INCHI_NAME, INCHI_NAME );
-#else
-    inchi_ios_print_nodisplay( f, "  InChI2InChI  Convert %s string(s) into %s string(s)\n", INCHI_NAME, INCHI_NAME );
-    inchi_ios_print_nodisplay( f, "  InChI2Struct Convert InChI string(s) to structure(s) in InChI aux.info format\n" );
 #endif
 
 #endif
@@ -2905,7 +2952,7 @@ int OpenFiles( FILE **inp_file,
     /*  Problem file */
     if (ip->path[3] && ip->path[3][0])
     {
-        const char *fmode = "w";
+        const char *fmode = "w"; /* djb-rwth: ignoring LLVM warning: value used */
 
 #if ( defined(_MSC_VER)&&defined(_WIN32) || defined(__BORLANDC__)&&defined(__WIN32__) || defined(__GNUC__)&&defined(__MINGW32__)&&defined(_WIN32) )
         fmode = "wb";
@@ -2982,20 +3029,20 @@ int DetectInputINChIFileType( FILE **inp_file, INPUT_PARMS *ip, const char *fmod
 
     if (!bInitilized)
     {
-        lenPlnVersion[0] = sprintf( szPlnVersion[0], "%s=%s/", INCHI_NAME, INCHI_VERSION );
-        lenPlnVersion[1] = sprintf( szPlnVersion[1], "INChI=1.12Beta/" );
-        lenPlnVersion[2] = sprintf( szPlnVersion[2], "INChI=1.0RC/" );
-        lenPlnVersion[3] = sprintf( szPlnVersion[3], "InChI=1.0RC/" );
-        lenPlnVersion[4] = sprintf( szPlnVersion[4], "InChI=1/" );
-        lenPlnVersion[5] = sprintf( szPlnVersion[5], "MoChI=1a/" );
-        lenPlnVersion[6] = sprintf( szPlnVersion[6], "InChI=1S/" );
-        lenPlnAuxVer[0] = sprintf( szPlnAuxVer[0], "AuxInfo=%s/", INCHI_VERSION );
-        lenPlnAuxVer[1] = sprintf( szPlnAuxVer[1], "AuxInfo=1.12Beta/" );
-        lenPlnAuxVer[2] = sprintf( szPlnAuxVer[2], "AuxInfo=1.0RC/" );
-        lenPlnAuxVer[3] = sprintf( szPlnAuxVer[3], "AuxInfo=1.0RC/" );
-        lenPlnAuxVer[4] = sprintf( szPlnAuxVer[4], "AuxInfo=1/" );
-        lenPlnAuxVer[5] = sprintf( szPlnAuxVer[5], "AuxInfo=1a/" );
-        lenPlnAuxVer[6] = sprintf( szPlnAuxVer[6], "AuxInfo=1/" );
+        lenPlnVersion[0] = sprintf(szPlnVersion[0], "%s=%s/", INCHI_NAME, INCHI_VERSION);
+        lenPlnVersion[1] = sprintf(szPlnVersion[1], "INChI=1.12Beta/");
+        lenPlnVersion[2] = sprintf(szPlnVersion[2], "INChI=1.0RC/");
+        lenPlnVersion[3] = sprintf(szPlnVersion[3], "InChI=1.0RC/");
+        lenPlnVersion[4] = sprintf(szPlnVersion[4], "InChI=1/");
+        lenPlnVersion[5] = sprintf(szPlnVersion[5], "MoChI=1a/");
+        lenPlnVersion[6] = sprintf(szPlnVersion[6], "InChI=1S/");
+        lenPlnAuxVer[0] = sprintf(szPlnAuxVer[0], "AuxInfo=%s/", INCHI_VERSION);
+        lenPlnAuxVer[1] = sprintf(szPlnAuxVer[1], "AuxInfo=1.12Beta/");
+        lenPlnAuxVer[2] = sprintf(szPlnAuxVer[2], "AuxInfo=1.0RC/");
+        lenPlnAuxVer[3] = sprintf(szPlnAuxVer[3], "AuxInfo=1.0RC/");
+        lenPlnAuxVer[4] = sprintf(szPlnAuxVer[4], "AuxInfo=1/");
+        lenPlnAuxVer[5] = sprintf(szPlnAuxVer[5], "AuxInfo=1a/");
+        lenPlnAuxVer[6] = sprintf(szPlnAuxVer[6], "AuxInfo=1/");
 
 #if ( FIX_DALKE_BUGS == 1 )
         bInitilized = 1;

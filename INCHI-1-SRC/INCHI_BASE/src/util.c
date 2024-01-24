@@ -1,8 +1,8 @@
 /*
 * International Chemical Identifier (InChI)
 * Version 1
-* Software version 1.06
-* December 15, 2020
+* Software version 1.07
+* 20/11/2023
 *
 * The InChI library and programs are free software developed under the
 * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,22 +31,30 @@
 *
 */
 
-
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 
 #include "mode.h"
 
-#if defined(COMPILE_ANSI_ONLY) && defined(__APPLE__)
+#if defined(COMPILE_ANSI_ONLY) && (defined(__APPLE__) || defined(__EMSCRIPTEN__))
 /*    For build under OSX, advice from Burt Leland */
 #include "ichicomp.h"    /* Needed for __isascii define */
+#endif
+
+/* djb-rwth: defining __isascii */
+#if defined(__isascii)
+#define is_ascii __isascii
+#elif defined(isascii)
+#define is_ascii isascii
+#else
+#define is_ascii(c)   ((unsigned)(c) < 0x80)
 #endif
 
 #include "util.h"
 #include "extr_ct.h"
 
-
+#include "bcf_s.h"
 
 #define MIN_ATOM_CHARGE        (-2)
 #define MAX_ATOM_CHARGE         2
@@ -283,13 +291,12 @@ int get_element_chemical_symbol( int nAtNum, char *szElement )
     if (0 <= nAtNum && nAtNum < nElDataLen)
     {
         /* valid element symbol found */
-        strcpy( szElement, ElData[nAtNum].szElName );
+        strcpy(szElement, ElData[nAtNum].szElName);
         return 0;
     }
 
     /* not found */
-    strcpy( szElement, "??" );
-
+    strcpy(szElement, "??");
     return -1;
 }
 
@@ -312,18 +319,18 @@ int get_element_or_pseudoelement_symbol( int nAtNum,
     if (0 <= nAtNum && nAtNum < nElDataLen)
     {
         /* valid element symbol found */
-        strcpy( szElement, ElData[nAtNum].szElName );
+        strcpy(szElement, ElData[nAtNum].szElName);
 
         if (!strcmp( szElement, "Zy" ))
         {
-            strcpy( szElement, "Zz" );
+            strcpy(szElement, "Zz");
         }
 
         return 0;
     }
 
     /* not found */
-    strcpy( szElement, "??" );
+    strcpy(szElement, "??");
 
     return -1;
 }
@@ -464,7 +471,7 @@ int needed_unusual_el_valence( int nPeriodicNum,
                                int num_H, int
                                num_bonds )
 {
-    int chem_valence, num_H_expected;
+    int chem_valence, num_H_expected; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     char szElement[4];
 
     /*
@@ -484,8 +491,8 @@ int needed_unusual_el_valence( int nPeriodicNum,
     chem_valence = bonds_valence + num_H;
 
 #if ( (BUILD_WITH_ENG_OPTIONS==1) && (SDF_OUTPUT_HETERO_VALENCE==1) )
-    if (nPeriodicNum == 1 && chem_valence != 1 /* H */ || nPeriodicNum == 6 && chem_valence != 4 /* C */ ||
-         nPeriodicNum != 1 && nPeriodicNum != 6 || charge || radical)
+    if ((nPeriodicNum == 1 && chem_valence != 1) /* H */ || (nPeriodicNum == 6 && chem_valence != 4) /* C */ ||
+        (nPeriodicNum != 1 && nPeriodicNum != 6) || charge || radical) /* djb-rwth: addressing LLVM warning */
     {
         return chem_valence ? chem_valence : -1;
     }
@@ -641,12 +648,12 @@ int is_el_a_metal( int nPeriodicNum )
 int extract_charges_and_radicals( char *elname, int *pnRadical, int *pnCharge )
 {
     char *q, *r, *p;
-    int  nCharge = 0, nRad = 0, charge_len = 0, k, nVal, nSign, nLastSign = 1, len;
+    int  nCharge = 0, nRad = 0, charge_len = 0, k, nVal, nSign, nLastSign = 1; /* djb-rwth: removing redundant variables */
 
     p = elname;
 
     /*  extract radicals & charges */
-    while (q = strpbrk( p, "+-^" ))
+    while ((q = strpbrk(p, "+-^"))) /* djb-rwth: addressing LLVM warning */
     {
         switch (*q)
         {
@@ -657,7 +664,7 @@ int extract_charges_and_radicals( char *elname, int *pnRadical, int *pnCharge )
                     nVal += ( nLastSign = nSign );
                     charge_len++;
                 }
-                if (nSign = (int) strtol( q + k, &r, 10 ))
+                if ((nSign = (int)strtol(q + k, &r, 10))) /* djb-rwth: addressing LLVM warning */
                 {
                     /*  fixed 12-5-2001 */
                     nVal += nLastSign * ( nSign - 1 );
@@ -676,17 +683,17 @@ int extract_charges_and_radicals( char *elname, int *pnRadical, int *pnCharge )
                 }
                 break;
         }
-        memmove( q, q + charge_len, strlen( q + charge_len ) + 1 );
+        memmove(q, q + charge_len, strlen(q + charge_len) + 1);
     }
 
-    len = (int) strlen( p );
+    /* djb-rwth: removing redundant code */
 
     /*  radical */
     if (( q = strrchr( p, ':' ) ) && !q[1])
     {
         nRad = RADICAL_SINGLET;
         q[0] = '\0';
-        len--;
+        /* djb-rwth: removing redundant code */
     }
     else
     {
@@ -694,7 +701,7 @@ int extract_charges_and_radicals( char *elname, int *pnRadical, int *pnCharge )
         {
             nRad++;
             q[0] = '\0';
-            len--;
+            /* djb-rwth: removing redundant code */
         }
 
         nRad = nRad == 1 ? RADICAL_DOUBLET :
@@ -772,7 +779,7 @@ int extract_H_atoms( char *elname, S_CHAR num_iso_H[] )
 
             /*  remove the hydrogen atom from the string */
             len -= (int) ( q - elname ) - i;
-            memmove( elname + i, q, len + 1 );
+            memmove(elname + i, q, (long long)len + 1); /* djb-rwth: cast operator added */
             /*  c =  UCINT elname[i]; */
         }
         else
@@ -855,7 +862,7 @@ int get_num_H( const char* elname,
         /* add hydrogen atoms according to standard element valence */
         if (radical && radical != RADICAL_SINGLET)
         {
-            if (val = ElData[el_number].cValence[NEUTRAL_STATE + charge][0])
+            if ((val = ElData[el_number].cValence[NEUTRAL_STATE + charge][0])) /* djb-rwth: addressing LLVM warning */
             {
                 val -= ( radical == RADICAL_DOUBLET ) ? 1
                     : ( radical == RADICAL_SINGLET || radical == RADICAL_TRIPLET ) ? 2 : val;
@@ -1040,12 +1047,12 @@ int is_ilist_inside( int *ilist, int nlist, int *ilist2, int nlist2 )
 /****************************************************************************/
 int nBondsValToMetal( inp_ATOM* at, int iat )
 {
-    int i, neigh, bond_type, nVal2Metal = 0;
+    int i, bond_type, nVal2Metal = 0; /* djb-rwth: removing redundant variables */
     inp_ATOM* a = at + iat;
 
     for (i = 0; i < a->valence; i++)
     {
-        neigh = a->neighbor[i];
+        /* djb-rwth: removing redundant code */
 
         if (is_el_a_metal( at[(int) a->neighbor[i]].el_number ))
         {
@@ -1383,8 +1390,8 @@ int MakeRemovedProtonsString( int nNumRemovedProtons,
 
     if (nNumRemovedProtons)
     {
-        len = sprintf( szRemovedProtons, "Proton balance: %c %d H+",
-                        nNumRemovedProtons >= 0 ? '+' : '-', abs( nNumRemovedProtons ) );
+        len = sprintf(szRemovedProtons, "Proton balance: %c %d H+",
+            nNumRemovedProtons >= 0 ? '+' : '-', abs(nNumRemovedProtons));
     }
 
     if (bIsotopic && ( nNumRemovedProtonsIsotopic || nNumExchgIsotopicH ))
@@ -1398,15 +1405,15 @@ int MakeRemovedProtonsString( int nNumRemovedProtons,
 
             if (num)
             {
-                len += sprintf( szRemovedProtons + len, "%s %d^%dH",
-                                j ? ", " : "  [ removed ", num, i + 1 );
+                len += sprintf(szRemovedProtons + len, "%s %d^%dH",
+                    j ? ", " : "  [ removed ", num, i + 1);
                 j++;
             }
         }
 
         if (j)
         {
-            len += sprintf( szRemovedProtons + len, " ]" );
+            len += sprintf(szRemovedProtons + len, " ]");
             if (num_removed_iso_H)
             {
                 *num_removed_iso_H = j;
@@ -1548,7 +1555,7 @@ int normalize_string( char* name )
         {
             if (n > 0)
             {
-                memmove( (void*) &name[i - n], (void*) &name[i], len - i + 1 );
+                memmove((void*)&name[i - n], (void*)&name[i], (long long)len - (long long)i + 1); /* djb-rwth: cast operators added */
                 i -= n;
                 len -= n;
             }
@@ -1578,7 +1585,7 @@ int dotify_non_printable_chars( char *line )
 
     if (line)
     {
-        for (i = 0; c = UCINT line[i]; i++)
+        for (i = 0; (c = UCINT line[i]); i++) /* djb-rwth: addressing LLVM warning */
         {
             /* assuming ASCII charset */
             if (c < ' ' || c >= 0x7F)
@@ -1712,7 +1719,7 @@ int mystrncpy( char *target, const char *source, unsigned maxlen )
         return 0;
     }
 
-    if (p = (const char*) memchr( source, 0, maxlen ))
+    if ((p = (const char*)memchr(source, 0, maxlen))) /* djb-rwth: addressing LLVM warning */
     {    /* maxlen does not include the found zero termination */
         len = (int) ( p - source );
     }
@@ -1723,10 +1730,10 @@ int mystrncpy( char *target, const char *source, unsigned maxlen )
 
     if (len)
     {
-        memmove( target, source, len );
+        memmove(target, source, len);
     }
 
-    memset( target + len, 0, maxlen - len ); /*  zero termination */
+    memset(target + len, 0, maxlen - len); /*  zero termination */ /* djb-rwth: memset_s C11/Annex K variant? */
 
     return 1;
 }
@@ -1741,13 +1748,17 @@ char* lrtrim( char *p, int* nLen )
 
     if (p && ( len = (int) strlen( p ) ))
     {
-        for (i = 0; i < len && __isascii( p[i] ) && isspace( p[i] ); i++)
+        for (i = 0; i < len && is_ascii( p[i] ) && isspace( p[i] ); i++)
         {
             ;
         }
         if (i)
-            (memmove) ( p, p + i, ( len -= i ) + 1 );
-        for (; 0 < len && __isascii( p[len - 1] ) && isspace( p[len - 1] ); len--)
+        {
+            len -= i; /* djb-rwth: variable has to be decreased before memmove */
+            (memmove)(p, p + i, ((long long)len + 1)); /* djb-rwth: now cast operator can be added */
+        }
+            
+        for (; 0 < len && is_ascii( p[len - 1] ) && isspace( p[len - 1] ); len--)
         {
             ;
         }
@@ -1791,9 +1802,10 @@ void extract_inchi_substring( char ** buf, const char *str, size_t slen )
 {
     size_t i;
     const char *p;
+    char* bufp;
     char pp;
 
-
+    bufp = *buf;
     *buf = NULL;
 
     if (str == NULL)
@@ -1838,8 +1850,9 @@ void extract_inchi_substring( char ** buf, const char *str, size_t slen )
     }
 
     *buf = (char*) inchi_calloc( i + 1, sizeof( char ) );
-    memcpy( *buf, p, i );
-    ( *buf )[i] = '\0';
+    memcpy(*buf, p, i);
+    if (*buf)
+        (*buf)[i] = '\0';
 
     return;
 }
@@ -1850,9 +1863,10 @@ void extract_auxinfo_substring( char ** buf, const char *str, size_t slen )
 {
     size_t i;
     const char *p;
+    char* bufp;
     char pp;
 
-
+    bufp = *buf;
     *buf = NULL;
 
     if (str == NULL)
@@ -1877,8 +1891,9 @@ void extract_auxinfo_substring( char ** buf, const char *str, size_t slen )
     }
 
     *buf = (char*) inchi_calloc( i + 1, sizeof( char ) );
-    memcpy( *buf, p, i );
-    ( *buf )[i] = '\0';
+    memcpy(*buf, p, i);
+    if (*buf)
+        (*buf)[i] = '\0';
 
     return;
 }
@@ -1967,7 +1982,7 @@ char *inchi__strdup( const char *string )
         p = (char *) inchi_malloc( length + 1 );
         if (p)
         {
-            strcpy( p, string );
+            strcpy(p, string);
         }
     }
 

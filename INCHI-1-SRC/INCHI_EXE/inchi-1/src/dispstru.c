@@ -2,7 +2,7 @@
  * International Chemical Identifier (InChI)
  * Version 1
  * Software version 1.06
- * December 15, 2020
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -42,7 +42,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <math.h>
-
+#include <string.h>
 
 #include "../../../INCHI_BASE/src/incomdef.h"
 #include "../../../INCHI_BASE/src/ichidrp.h"
@@ -59,6 +59,9 @@
 #define SETWINDLONG SetWindowLong( hWnd, GWL_USERDATA, (long)&WinData )
 #endif
 
+#include <string.h>
+
+#include "../../../INCHI_BASE/src/bcf_s.h"
 
 /* Font size */
 #define FONT_NAME "Arial"     /* "MS Sans Serif"; */
@@ -196,7 +199,7 @@ HWND GetConsoleHwnd( void )
 
     /* Format a "unique" NewWindowTitle. */
     wsprintf( pszNewWindowTitle, "InChITmpWnd%ul/%ul",
-        (unsigned long) GetTickCount( ),
+        (unsigned long) GetTickCount64( ),
         (unsigned long) GetCurrentProcessId( ) );
 
     /* Change current window title. */
@@ -485,7 +488,7 @@ int DrawStructure( HDC           pDC,
     {
         for (i = 0; i < num_at; i++)
         {
-            strcpy( str, inf_at[i].at_string );
+            strcpy(str, inf_at[i].at_string);
             DrawPreparedString( pDC, str, -inf_at[i].DrawingLabelLeftShift, nRound( at[i].x + xoff ), nRound( at[i].y + yoff ), inf_at[i].cHighlightTheAtom );
         }
     }
@@ -507,11 +510,11 @@ int DrawStructure( HDC           pDC,
                 int atw = get_atomic_mass_from_elnum( (int) at[i].el_number );
                 if (atw)
                 {
-                    k += sprintf( str + k, "^%d", atw + at[i].iso_atw_diff - ( at[i].iso_atw_diff > 0 ) );
+                    k += sprintf(str + k, "^%d", atw + at[i].iso_atw_diff - (at[i].iso_atw_diff > 0));
                 }
                 else
                 {
-                    k += sprintf( str + k, "^+%d", at[i].iso_atw_diff - ( at[i].iso_atw_diff > 0 ) );
+                    k += sprintf(str + k, "^+%d", at[i].iso_atw_diff - (at[i].iso_atw_diff > 0));
                 }
             }
             /* obsolete section, this never happens for now */
@@ -521,7 +524,7 @@ int DrawStructure( HDC           pDC,
                 /* this allows to draw up to 5 numbers from 1..255 range. */
                 int t;
                 int ch = ' ' + atname[0]; /* delimiter */
-                k += sprintf( str + k, "%u", (unsigned) (unsigned char) atname[1] );
+                k += sprintf(str + k, "%u", (unsigned)(unsigned char)atname[1]);
                 for (t = 2; t < sizeof( at->elname ); t++)
                 {
                     if (atname[t])
@@ -532,11 +535,11 @@ int DrawStructure( HDC           pDC,
                         }
                         if (ch != '/' && ch != ',')
                         {
-                            k += sprintf( str + k, "(%c)%u", ch, (unsigned) (unsigned char) atname[t] );
+                            k += sprintf(str + k, "(%c)%u", ch, (unsigned)(unsigned char)atname[t]);
                         }
                         else
                         {
-                            k += sprintf( str + k, "%c%u", ch, (unsigned) (unsigned char) atname[t] );
+                            k += sprintf(str + k, "%c%u", ch, (unsigned)(unsigned char)atname[t]);
                         }
                         ch = '/';
                     }
@@ -545,55 +548,55 @@ int DrawStructure( HDC           pDC,
             else
             {
                 /* this is the main section to display hydrogen atoms, charges, radicals */
-                strncpy( str + k, atname + j, sizeof( at->elname ) - j );
+                strncpy(str + k, atname + j, sizeof(at->elname) - j);
                 str[sizeof( at->elname ) + k - j] = '\0';
                 k = strlen( str );
                 if (at[i].num_H)
                 {
-                    strcat( str, "H" );
+                    strcat(str, "H");
                     k++;
                     if (at[i].num_H > 1)
                     {
-                        k += sprintf( str + k, "%d", (int) at[i].num_H );
+                        k += sprintf(str + k, "%d", (int)at[i].num_H);
                     }
                 }
                 for (j = 0; j < NUM_H_ISOTOPES; j++)
                 {
                     if (at[i].num_iso_H[j])
                     {
-                        if (j == 0 || j != 1 && j != 2)
+                        if (j == 0 || (j != 1 && j != 2)) /* djb-rwth: addressing LLVM warning */
                         {
-                            k += sprintf( str + k, "^%dH", j + 1 );
+                            k += sprintf(str + k, "^%dH", j + 1);
                         }
                         else
                         {
-                            k += sprintf( str + k, j == 1 ? "D" : "T" );
+                            k += sprintf(str + k, j == 1 ? "D" : "T");
                         }
                         if (at[i].num_iso_H[j] > 1)
                         {
-                            k += sprintf( str + k, "%d", (int) at[i].num_iso_H[j] );
+                            k += sprintf(str + k, "%d", (int)at[i].num_iso_H[j]);
                         }
                     }
                 }
                 if (abs( at[i].charge ) > 1)
                 {
-                    sprintf( str + k, "%+d", at[i].charge );
+                    sprintf(str + k, "%+d", at[i].charge);
                 }
                 else
                 {
                     if (abs( at[i].charge ) == 1)
                     {
-                        strcat( str, at[i].charge > 0 ? "+" : "-" );
+                        strcat(str, at[i].charge > 0 ? "+" : "-");
                     }
                 }
                 if (at[i].radical)
                 {
-                    strcat( str, at[i].radical == RADICAL_SINGLET ? ":" :
-                                    at[i].radical == RADICAL_DOUBLET ? "." :
-                                    at[i].radical == RADICAL_TRIPLET ? "^^" : "?" );
+                    strcat(str, at[i].radical == RADICAL_SINGLET ? ":" :
+                        at[i].radical == RADICAL_DOUBLET ? "." :
+                        at[i].radical == RADICAL_TRIPLET ? "^^" : "?");
                 }
                 k = strlen( str );
-                sprintf( str + k, "/%d", i + 1 ); /* atom ordering number, 1,2,... */
+                sprintf(str + k, "/%d", i + 1); /* atom ordering number, 1,2,... */
             }
 
             DrawString( pDC, str, shift, nRound( at[i].x + xoff ), nRound( at[i].y + yoff ) );
@@ -633,22 +636,22 @@ int DrawBond( HDC      pDC,
 
     if (!b_stereo ||
          /* => no stereo */
-         b_type == BOND_TYPE_DOUBLE && abs_value_of_stereo != STEREO_DBLE_EITHER ||
+         (b_type == BOND_TYPE_DOUBLE && abs_value_of_stereo != STEREO_DBLE_EITHER) || /* djb-rwth: addressing LLVM warning */
          /* => ignore unknown double bond stereo */
          b_type >= BOND_TYPE_TRIPLE ||
          /* => ignore bond stereo in case of triple bonds */
-         b_type == BOND_TYPE_SINGLE && !( abs_value_of_stereo == STEREO_SNGL_UP ||
+         b_type == (BOND_TYPE_SINGLE && !( abs_value_of_stereo == STEREO_SNGL_UP)) || /* djb-rwth: addressing LLVM warning */
              abs_value_of_stereo == STEREO_SNGL_EITHER ||
              abs_value_of_stereo == STEREO_SNGL_DOWN )
-         /* => ignore unknown single bond stereo */)
-    {
-        /*if ( b_type || !abs_value_of_stereo || (abs_value_of_stereo != 1 && abs_value_of_stereo != 4 && abs_value_of_stereo != 6) ) */
-        ret = DrawBondNoStereo( pDC, x1, y1, x2, y2, b_type, 0 != bond_highlight, clrPen, nPenWidth );
-    }
+         /* => ignore unknown single bond stereo */ /* djb-rwth: removing brackets */
+        {
+            /*if ( b_type || !abs_value_of_stereo || (abs_value_of_stereo != 1 && abs_value_of_stereo != 4 && abs_value_of_stereo != 6) ) */
+            ret = DrawBondNoStereo( pDC, x1, y1, x2, y2, b_type, 0 != bond_highlight, clrPen, nPenWidth );
+        }
     else
-    {
-        ret = DrawBondStereo( pDC, x1, y1, x2, y2, b_stereo, 0 != bond_highlight, bInvertBonds, clrPen, nPenWidth );
-    }
+        {
+            ret = DrawBondStereo( pDC, x1, y1, x2, y2, b_stereo, 0 != bond_highlight, bInvertBonds, clrPen, nPenWidth );
+        }
     if (b_parity /* bond_parity_mark*/)
     {
         DrawBondParity( pDC, x1, y1, x2, y2, b_parity );
@@ -720,7 +723,8 @@ void DrawPenColorFilledPolygon( HDC pDC, const POINT *pnt, int num )
     /* do not need to delete stock object penNew */
     if (ret)
     {
-        if (brushNew = CreateSolidBrush( LogPen.lopnColor ))
+        brushNew = CreateSolidBrush(LogPen.lopnColor); /* djb-rwth: addressing LLVM warning */
+        if (brushNew)
         {
             brushOld = (HBRUSH) SelectObject( pDC, brushNew );
             Polygon( pDC, pnt, num );
@@ -850,8 +854,8 @@ int DrawBondStereo( HDC      pDC,
         }
     }
 
-    dx = x2 - x1;
-    dy = y2 - y1;
+    dx = (double)x2 - (double)x1; /* djb-rwth: cast operators added */
+    dy = (double)y2 - (double)y1; /* djb-rwth: cast operators added */
     lambda = dx*dx + dy*dy;
     if (lambda == 0.0)
         return 0;
@@ -912,8 +916,8 @@ int DrawBondStereo( HDC      pDC,
             for (i = 1; i <= 3 * n / 2; i++)
             {
                 mult = (double) i / (double) n / 1.5;
-                dx1 = ( x2 - x1 )*mult;
-                dy1 = ( y2 - y1 )*mult;
+                dx1 = ( (double)x2 - (double)x1 )*mult; /* djb-rwth: cast operators added */
+                dy1 = ( (double)y2 - (double)y1 )*mult; /* djb-rwth: cast operators added */
                 if (i % 2)
                 {
                     dx1 += ax1*mult;
@@ -944,8 +948,8 @@ int DrawBondStereo( HDC      pDC,
             {
                 mult = (double) i / (double) n;
 
-                dx = dx1 = ( x2 - x1 )*mult; /* x1,y1 offset */
-                dy = dy1 = ( y2 - y1 )*mult;
+                dx = dx1 = ( (double)x2 - (double)x1 )*mult; /* x1,y1 offset */ /* djb-rwth: cast operators added */
+                dy = dy1 = ( (double)y2 - (double)y1 )*mult; /* djb-rwth: cast operators added */
 
                 mult = (double) ( i ) / (double) ( n );
 
@@ -1273,8 +1277,8 @@ int DrawBondNoStereo( HDC      pDC,
             }
         }
 
-        lambda = ( (double) ( x2 - x1 ) ) * ( x2 - x1 ) +
-            ( (double) ( y2 - y1 ) ) * ( y2 - y1 );
+        lambda = ( ((double)x2 - (double)x1 ) ) * ( (double)x2 - (double)x1 ) +
+            ( ((double)y2 - (double)y1 ) ) * ( (double)y2 - (double)y1 ); /* djb-rwth: cast operators added */
 
         if (lambda > 0.0)
         {
@@ -1288,10 +1292,10 @@ int DrawBondNoStereo( HDC      pDC,
         for (i = 0; i < 2; i++, lambda = -lambda)
         {
             c = i ? r : l;
-            ax1 = lambda * ( y1 - y2 ) + x1;
-            ay1 = lambda * ( x2 - x1 ) + y1;
-            ax2 = lambda * ( y1 - y2 ) + x2;
-            ay2 = lambda * ( x2 - x1 ) + y2;
+            ax1 = lambda * ((double)y1 - (double)y2 ) + (double)x1; /* djb-rwth: cast operators added */
+            ay1 = lambda * ((double)x2 - (double)x1 ) + (double)y1; /* djb-rwth: cast operators added */
+            ax2 = lambda * ((double)y1 - (double)y2 ) + (double)x2; /* djb-rwth: cast operators added */
+            ay2 = lambda * ((double)x2 - (double)x1 ) + (double)y2; /* djb-rwth: cast operators added */
 
             if (c == 'S')
             {
@@ -1349,7 +1353,7 @@ int MoveHydrogenAtomToTheLeft( char *s,int  start, int  H )
 {
     int  len, c, num_alpha;
     char szBuffer[16];
-    char *pH = strchr( s + start, H );
+    char *pH; /* djb-rwth: unused initialisation */
 
     for (pH = s + start, num_alpha = 0; ( c = UCINT*pH ) && c != H && c != '/'; pH++)
     {
@@ -1366,9 +1370,9 @@ int MoveHydrogenAtomToTheLeft( char *s,int  start, int  H )
         {
             return start; /* too long string */
         }
-        memcpy( szBuffer, pH, len );
-        memmove( s + len, s, pH - s );
-        memmove( s, szBuffer, len );
+        memcpy(szBuffer, pH, len);
+        memmove(s + len, s, pH - s);
+        memmove(s, szBuffer, len);
         return start + len; /* (pH-s)+i; */
     }
 
@@ -1544,7 +1548,7 @@ int DrawColorString( HDC pDC,const char *st, int xs, int ys, int bHighlightTheAt
                 /* turn Superscript on */
                 if (!bSuperscript && !bSubscript &&
                     ( p[i] == '^' || p[i] == '.' ||
-                    ( p[i] == '+' || p[i] == '-' ) && ( i && p[i - 1] != ' ' ) ))
+                    (( p[i] == '+' || p[i] == '-' ) && ( i && p[i - 1] != ' ' ) ))) /* djb-rwth: addressing LLVM warning */
                 {
                     pt.y -= nShift;
                     bSuperscript += 1;
@@ -1597,7 +1601,7 @@ int DrawColorString( HDC pDC,const char *st, int xs, int ys, int bHighlightTheAt
 #endif
         /* output one character; special treatment for '.' */
     output_the_string:
-        bBypassCurrentChar = ( p[i] == '.' && bSuperscript || p[i] == '^' );
+        bBypassCurrentChar = ( (p[i] == '.' && bSuperscript) || p[i] == '^' ); /* djb-rwth: addressing LLVM warning */
         if (bBypassCurrentChar || bNewBkColor || bMoveToEx)
         {
             /* output the accumulated string */
@@ -1653,7 +1657,7 @@ int DrawColorString( HDC pDC,const char *st, int xs, int ys, int bHighlightTheAt
     if (bWritingAtomStringColored)
     {
         SetTextColor( pDC, OrigTxColor );
-        bWritingAtomStringColored = 0;
+        /* djb-rwth: removing redundant code */
     }
 
     return ( 1 );
@@ -1684,7 +1688,7 @@ int DrawString( HDC pDC, char *st1, int shift, int x, int y )
     /*    int  nNumSlash = 0;   */
     /*    COLORREF  OrigBkColor;*/
 
-    strncpy( st, st1, sizeof( st ) - 1 );
+    strncpy(st, st1, sizeof(st) - 1);
     st[sizeof( st ) - 1] = '\0';
 
     l = GetStringWidth( pDC, st );
@@ -1702,10 +1706,11 @@ int DrawString( HDC pDC, char *st1, int shift, int x, int y )
     /* Changing order for right/left connection */
     if (shift)
     {
+        /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
         int start = 0;
-        start = MoveHydrogenAtomToTheLeft( st, start, 'T' );
-        start = MoveHydrogenAtomToTheLeft( st, start, 'D' );
-        start = MoveHydrogenAtomToTheLeft( st, start, 'H' );
+        start = MoveHydrogenAtomToTheLeft(st, start, 'T');
+        start = MoveHydrogenAtomToTheLeft(st, start, 'D');
+        start = MoveHydrogenAtomToTheLeft(st, start, 'H');
         /* determine the position */
         if (( strlen( st ) == 2 ) && islower( st[1] )) 
         {
@@ -1744,7 +1749,7 @@ int  nGetNumLegendOptions( inf_ATOM *inf_at, int num_at )
     char *p;
     for (i = 0; i < num_at; i++)
     {
-        for (n = 0, p = inf_at[i].at_string; p = strchr( p, '/' ); p++, n++)
+        for (n = 0, p = inf_at[i].at_string; (p = strchr( p, '/' )); p++, n++) /* djb-rwth: addressing LLVM warning */
         {
             ;
         }
@@ -1813,7 +1818,7 @@ int DrawTheInputStructure( inp_ATOM      *at,
             num_str = sizeof( StrInfo ) / sizeof( StrInfo[0] );
             for (i = 0, LastString[0] = '\0'; i < n_opt && LastStr[i][0]; i++)
             {
-                strcat( LastString, LastStr[i] );
+                strcat(LastString, LastStr[i]);
             }
         }
         rgbColor = SetBkColor( pDC, CLR_CYAN );
@@ -1846,9 +1851,9 @@ int DrawTheInputStructure( inp_ATOM      *at,
     }
     else
     {
-        rgbColor = SetTextColor( pDC, CLR_RED );
+        rgbColor = SetTextColor(pDC, CLR_RED); /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
         TextOut( pDC, nFontAveWidth + tx_off, nFontHeight / 5 + ty_off, NoRoom, (int) strlen( NoRoom ) );
-        rgbColor = SetTextColor( pDC, rgbColor );
+        rgbColor = SetTextColor(pDC, rgbColor); /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
     }
 
     return RetVal;
@@ -1882,8 +1887,10 @@ void CalcTblParms( HDC            hMemoryDC,
                    int            yoffs1 )
 {
     int i, j, n, w, h;
+    w = 0; /* initialisation needed in for loop */
+    h = 0; /* initialisation needed in for loop */
     tp->tblCols = tdp->bDrawTbl;
-    tp->tblRows = 0;
+    /* djb-rwth: removing redundant code */
     for (i = 0; i < tp->tblCols; i++)
     {
         ( tdp->nOrientation ? GetVertTextSize
@@ -1938,14 +1945,14 @@ int DrawTheTable( HDC            hDC,
                   int            x_offs,
                   int            y_offs )
 {
-    int i, j, ret;
+    int i, j, ret; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     int dx = tp->tcellWidth / 2;
     int dy = tp->tcellHeight / 2;
     int x1, y1, x2, y2;
     
     /* draw frame around the table */
-    ret = Rectangle( hDC, tp->xtblOffs + dx + x_offs, tp->ytblOffs + dy + y_offs, tp->xtblOffs + tp->tblWidth - dx + x_offs, tp->ytblOffs + tp->tblHeight - dy + y_offs );
-    
+    ret = Rectangle( hDC, tp->xtblOffs + dx + x_offs, tp->ytblOffs + dy + y_offs, tp->xtblOffs + tp->tblWidth - dx + x_offs, tp->ytblOffs + tp->tblHeight - dy + y_offs ); /* djb-rwth: removing redundant variable *//* djb-rwth: ignoring LLVM warning: variable used to store function return value */
+
     /* draw lines between labeled rows or columns */
     for (i = 1; i < tp->tblCols; i++)
     {
@@ -2028,24 +2035,24 @@ int DrawTheTable( HDC            hDC,
 
 
 /****************************************************************************/
-void GetStructSizes( HDC            hDC,
-                     inf_ATOM       *inf_at,
-                     inp_ATOM       *at0,
-                     inp_ATOM       *at1,
-                     int            num_at,
-                     int            *xoffs1,
-                     int            *xoffs2,
-                     INT_DRAW_PARMS *idp )
+void GetStructSizes(HDC            hDC,
+    inf_ATOM* inf_at,
+    inp_ATOM* at0,
+    inp_ATOM* at1,
+    int            num_at,
+    int* xoffs1,
+    int* xoffs2,
+    INT_DRAW_PARMS* idp)
 {
-    int i, j, k, num_bonds;
-    double xmin, xmax, ymin, ymax;
+    int i, j, k; /* djb-rwth: removing redundant variables */
+    double xmin = 0.0, xmax = 0.0, ymin = 0.0, ymax = 0.0;
     double x2, x, y2, y, dist;
-    char  *str;
+    char* str;
     int    len, cur_len, half_char_width;
     int    Left_shift, Right_shift, Other_shift;
     char   cLeftChar, cRightChar;
-    int    max_left_label_width_pix=0;
-    int    max_right_label_width_pix=0;
+    int    max_left_label_width_pix = 0;
+    int    max_right_label_width_pix = 0;
 
     if (idp)
     {
@@ -2072,111 +2079,116 @@ void GetStructSizes( HDC            hDC,
         }
     }
 
-    xmin = xmax = at0[0].x;
-    ymin = ymax = at0[0].y;
-
-    for (num_bonds = 0, i = 0; i < num_at; i++)
+    if (at0) /* djb-rwth: fixing a NULL pointer dereference */
     {
+        xmin = xmax = at0[0].x;
+        ymin = ymax = at0[0].y;
 
-        x = at0[i].x;
-        y = at0[i].y;
-        Left_shift = Right_shift = Other_shift = 0;
-
-        for (j = 0; j < at0[i].valence; j++)
+        for (i = 0; i < num_at; i++) /* djb-rwth: removing redundant code */
         {
-            k = at0[i].neighbor[j];
-            x2 = at0[k].x;
-            y2 = at0[k].y;
-            dist = sqrt( ( x - x2 )*( x - x2 ) + ( y - y2 )*( y - y2 ) );
-            if (x < x2 - 0.2*dist)
+
+            x = at0[i].x;
+            y = at0[i].y;
+            Left_shift = Right_shift = Other_shift = 0;
+
+            for (j = 0; j < at0[i].valence; j++)
             {
-                Left_shift++;
-            }
-            else
-            {
-                if (x > x2 + 0.1*dist)
+                k = at0[i].neighbor[j];
+                x2 = at0[k].x;
+                y2 = at0[k].y;
+                dist = sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
+                if (x < x2 - 0.2 * dist)
                 {
-                    Right_shift++;
+                    Left_shift++;
                 }
                 else
                 {
-                    Other_shift++;
-                }
-            }
-        }
-
-        if (inf_at)
-        {
-            len = 0;
-            str = inf_at[i].at_string;
-            do
-            {
-                if (cur_len = strcspn( str, "^" ))
-                {
-                    if (!len)
+                    if (x > x2 + 0.1 * dist)
                     {
-                        cLeftChar = str[0];
+                        Right_shift++;
                     }
-                    cRightChar = str[cur_len - 1];
-                    len += GetSubstringWidth( hDC, cur_len, str );
+                    else
+                    {
+                        Other_shift++;
+                    }
                 }
-                str += cur_len + 1;
             }
-            while (str[0]);
-            inf_at[i].DrawingLabelLength = len;
-            if (Left_shift && !Right_shift)
+
+            if (inf_at)
             {
-                /* Atom label should be to the left from the vertex */
-                half_char_width = len ? GetOneCharInStringWidth( hDC, &cRightChar ) / 2 : 0;
-                inf_at[i].DrawingLabelLeftShift = len - half_char_width;
-                if (idp)
-                {
-                    idp->max_left_label_width_pix = inchi_max( idp->max_left_label_width_pix, inf_at[i].DrawingLabelLeftShift );
-                    idp->max_right_label_width_pix = inchi_max( idp->max_right_label_width_pix, half_char_width );
-                }
-                else
-                {
-                    max_left_label_width_pix = inchi_max( max_left_label_width_pix, inf_at[i].DrawingLabelLeftShift );
-                    max_right_label_width_pix = inchi_max( max_right_label_width_pix, half_char_width );
-                }
-                /* convert NH2 to H2N, etc. */
                 len = 0;
                 str = inf_at[i].at_string;
-                len = MoveHydrogenAtomToTheLeft( str, len, 'T' );
-                len = MoveHydrogenAtomToTheLeft( str, len, 'D' );
-                len = MoveHydrogenAtomToTheLeft( str, len, 'H' );
-            }
-            else
-            {
-                /* Atom label should be to the right from the vertex */
-                half_char_width = len ? GetOneCharInStringWidth( hDC, &cLeftChar ) / 2 : 0;
-                inf_at[i].DrawingLabelLeftShift = half_char_width;
-                if (idp)
+                do
                 {
-                    idp->max_left_label_width_pix = inchi_max( idp->max_left_label_width_pix, half_char_width );
-                    idp->max_right_label_width_pix = inchi_max( idp->max_right_label_width_pix,
-                                                          inf_at[i].DrawingLabelLength
-                                                        - inf_at[i].DrawingLabelLeftShift );
+                    cur_len = strcspn(str, "^"); /* djb-rwth: addressing LLVM warning */
+                    if (cur_len)
+                    {
+                        if (!len)
+                        {
+                            cLeftChar = str[0];
+                        }
+                        cRightChar = str[cur_len - 1];
+                        len += GetSubstringWidth(hDC, cur_len, str);
+                    }
+                    str += (long long)cur_len + 1; /* djb-rwth: cast operator added */
+                } while (str[0]);
+                inf_at[i].DrawingLabelLength = len;
+                if (Left_shift && !Right_shift)
+                {
+                    /* Atom label should be to the left from the vertex */
+                    half_char_width = len ? GetOneCharInStringWidth(hDC, &cRightChar) / 2 : 0;
+                    inf_at[i].DrawingLabelLeftShift = len - half_char_width;
+                    if (idp)
+                    {
+                        idp->max_left_label_width_pix = inchi_max(idp->max_left_label_width_pix, inf_at[i].DrawingLabelLeftShift);
+                        idp->max_right_label_width_pix = inchi_max(idp->max_right_label_width_pix, half_char_width);
+                    }
+                    else
+                    {
+                        max_left_label_width_pix = inchi_max(max_left_label_width_pix, inf_at[i].DrawingLabelLeftShift);
+                        max_right_label_width_pix = inchi_max(max_right_label_width_pix, half_char_width);
+                    }
+                    /* convert NH2 to H2N, etc. */
+                    /* djb-rwth: removing redundant code */
+                    str = inf_at[i].at_string;
+                    len = MoveHydrogenAtomToTheLeft(str, len, 'T');
+                    len = MoveHydrogenAtomToTheLeft(str, len, 'D');
+                    len = MoveHydrogenAtomToTheLeft(str, len, 'H');
                 }
                 else
                 {
-                    max_left_label_width_pix = inchi_max( max_left_label_width_pix, half_char_width );
-                    max_right_label_width_pix = inchi_max( max_right_label_width_pix,
-                                                          inf_at[i].DrawingLabelLength
-                                                        - inf_at[i].DrawingLabelLeftShift );
+                    /* Atom label should be to the right from the vertex */
+                    half_char_width = len ? GetOneCharInStringWidth(hDC, &cLeftChar) / 2 : 0;
+                    inf_at[i].DrawingLabelLeftShift = half_char_width;
+                    if (idp)
+                    {
+                        idp->max_left_label_width_pix = inchi_max(idp->max_left_label_width_pix, half_char_width);
+                        idp->max_right_label_width_pix = inchi_max(idp->max_right_label_width_pix,
+                            inf_at[i].DrawingLabelLength
+                            - inf_at[i].DrawingLabelLeftShift);
+                    }
+                    else
+                    {
+                        max_left_label_width_pix = inchi_max(max_left_label_width_pix, half_char_width);
+                        max_right_label_width_pix = inchi_max(max_right_label_width_pix,
+                            inf_at[i].DrawingLabelLength
+                            - inf_at[i].DrawingLabelLeftShift);
+                    }
                 }
             }
-        }
-        else
-        {
-            at1[i].bDrawingLabelLeftShift = ( Left_shift && !Right_shift );
-        }
+            else
+            {
+                if (at1) /* djb-rwth: fixing a NULL pointer dereference */
+                    at1[i].bDrawingLabelLeftShift = (Left_shift && !Right_shift);
+            }
 
-        xmin = inchi_min( xmin, x );
-        xmax = inchi_max( xmax, x );
-        ymin = inchi_min( ymin, y );
-        ymax = inchi_max( ymax, y );
+            xmin = inchi_min(xmin, x);
+            xmax = inchi_max(xmax, x);
+            ymin = inchi_min(ymin, y);
+            ymax = inchi_max(ymax, y);
+        }
     }
+
     if (idp)
     {
         idp->xmin = xmin;
@@ -2286,7 +2298,7 @@ void ResizeAtomForDrawing( inf_ATOM         *inf_at,
         {
             goto done;
         }
-        if (new_dx < (double) new_width && new_dx >( double )( new_width - 2 * nFontWidth ))
+        if ((new_dx < (double)new_width) && (new_dx > ((double)new_width - 2 * (double)nFontWidth )))
         {
             goto done;
         }
@@ -2305,7 +2317,7 @@ void ResizeAtomForDrawing( inf_ATOM         *inf_at,
         new_xmax = -1.0e32;
         for (i = 0; i < num_at; i++)
         {
-            dy = at1[i].y = ( ymax - at0[i].y )*coeff + yShift; /* screen y axis is directed down */
+            at1[i].y = ( ymax - at0[i].y )*coeff + yShift; /* screen y axis is directed down */ /* djb-rwth: removing redundant code */
             dx = at1[i].x = ( at0[i].x - xmin )*coeff + xShift;
             dx1 = dx - inf_at[i].DrawingLabelLeftShift;
             dx2 = dx1 + inf_at[i].DrawingLabelLength;
@@ -2354,10 +2366,11 @@ void InpStructureMarkEquComponents( MY_WINDOW_DATA *pWinData,
             ni = (int) at0[i].orig_at_number - 1;
             if (0 <= ni && ni < num_at)
             {
-                if (nNewEquLabel == nEquLabels[ni] ||
-                     1 == at0[i].el_number && 1 == at0[i].chem_bonds_valence &&
-                     0 <= ( nh = (int) at0[at0[i].neighbor[0]].orig_at_number - 1 ) &&
-                     nh < num_at && nNewEquLabel == nEquLabels[nh])
+                /* djb-rwth: addressing LLVM warnings */
+                if ((nNewEquLabel == nEquLabels[ni]) ||
+                     ((1 == at0[i].el_number) && (1 == at0[i].chem_bonds_valence) &&
+                     (0 <= ( nh = (int) at0[at0[i].neighbor[0]].orig_at_number - 1 )) &&
+                     nh < num_at && (nNewEquLabel == nEquLabels[nh])))
                 {
                     inf_at[i].cHighlightTheAtom = 1; /* highlight the atom */
                     bHighlight |= 1;
@@ -2452,7 +2465,7 @@ int CreateInputStructPicture( HDC            hDC,
     int bm_top = rc->top;
     int bm_left = rc->left;
 
-    int bm_width = rc->right - rc->left;
+    /* djb-rwth: removing redundant variables */
     int bm_height = rc->bottom - rc->top;
 
     TBL_PARMS       tp;
@@ -2489,10 +2502,10 @@ int CreateInputStructPicture( HDC            hDC,
         idp = &pWinData->idp;
         tdp = &pWinData->tdp;
         bStereoFlags = pWinData->inf_at_data.StereoFlags;
-        if (bPrint)
+        if (bPrint) /* djb-rwth: this is never executed as bPrint is 0 in the only call of this function */
         {
             idp = &idp_print;
-            memset( idp, 0, sizeof( idp[0] ) );
+            memset(idp, 0, sizeof(idp[0])); /* djb-rwth: memset_s C11/Annex K variant? */
         }
 
         if (pWinData->nCurEquLabel != nNewEquLabel &&
@@ -2520,7 +2533,7 @@ int CreateInputStructPicture( HDC            hDC,
         bm_top = 0;
         bm_left = 0;
         bm_height = win_height - win_top;
-        bm_width = win_width - win_left;
+        /* djb-rwth: removing redundant code */
     }
     else
     {
@@ -2530,7 +2543,7 @@ int CreateInputStructPicture( HDC            hDC,
     if (pWinData)
     {
         /* create drawing tools: font */
-        memset( &MyLogFont, 0, sizeof( LOGFONT ) );
+        memset(&MyLogFont, 0, sizeof(LOGFONT)); /* djb-rwth: memset_s C11/Annex K variant? */
         if (nFontSize < 0)
         {
             int iLogPixsY = GetDeviceCaps( hDC, LOGPIXELSY );
@@ -2541,7 +2554,7 @@ int CreateInputStructPicture( HDC            hDC,
         MyLogFont.lfHeight = nFontSize;
         MyLogFont.lfWeight = FW_NORMAL;
         /* MyLogFont.lfItalic = 1; */ /* test MyTextOutABC() */
-        strncpy( MyLogFont.lfFaceName, FaceName, LF_FACESIZE );
+        strncpy(MyLogFont.lfFaceName, FaceName, LF_FACESIZE);
         Font = CreateFontIndirect( &MyLogFont ); /* black */
 
         /* create drawing tools: pen */
@@ -2554,7 +2567,7 @@ int CreateInputStructPicture( HDC            hDC,
         /* find sizes */
         nFontHeight = GetFontHeight( hMemoryDC );
         nFontWidth = GetFontAveWidth( hMemoryDC );
-        afont = GetFontAscent( hMemoryDC );
+        afont = GetFontAscent(hMemoryDC);
 
         /* offsets within the (0, 0, xStructSize, yStructSize) rectangle */
         xoffs1 = xoffs2 = 16 * nFontWidth;     /* define structure atom coordinate margins here */
@@ -2565,30 +2578,33 @@ int CreateInputStructPicture( HDC            hDC,
         /***********************************************/
         /*         Calculate structure size            */
         /***********************************************/
-        if (idp->bInit)
+        if (!bPrint) /* djb-rwth: bPrint is always equal to 0 as it is called just one time with 0 value */
         {
-            /* structure sizes are known */
-            xoffs1 = idp->max_left_label_width_pix;
-            xoffs2 = idp->max_right_label_width_pix;
-        }
-        else
-        {
-            GetStructSizes( hMemoryDC, inf_at, at0, at1, num_at, &xoffs1, &xoffs2, idp );
-            idp->bInit = 1;
+            if (idp->bInit)
+            {
+                /* structure sizes are known */
+                xoffs1 = idp->max_left_label_width_pix;
+                xoffs2 = idp->max_right_label_width_pix;
+            }
+            else
+            {
+                GetStructSizes(hMemoryDC, inf_at, at0, at1, num_at, &xoffs1, &xoffs2, idp);
+                idp->bInit = 1;
+            }
         }
 
         /***********************************************/
         /* Calculate requested/Shown/Found table sizes */
         /***********************************************/
-
-        memset( &tp, 0, sizeof( tp ) );
+        memset(&tp, 0, sizeof(tp)); /* djb-rwth: memset_s C11/Annex K variant? */
+        
 #ifdef TARGET_LIB_FOR_WINCHI
         bDrawTbl = 0;
 #else
         bDrawTbl = tdp && tdp->bDrawTbl;
         /*bDrawTbl = 0;*/
 #endif
-        if (bDrawTbl)
+        if (!bPrint && bDrawTbl)
         {
             double dx = idp->xmax - idp->xmin;
             double dy = idp->ymax - idp->ymin;
@@ -2597,7 +2613,7 @@ int CreateInputStructPicture( HDC            hDC,
             {
                 int xStructOffs_tmp0 = xStructOffs, yStructOffs_tmp0 = yStructOffs;
                 int xStructSize_tmp0 = xStructSize, yStructSize_tmp0 = yStructSize;
-                int twidth0;
+                /* djb-rwth: removing redundant variables */
                 /*
                 int xStructOffs_tmp1=xStructOffs, yStructOffs_tmp1=yStructOffs;
                 int xStructSize_tmp1=xStructSize, yStructSize_tmp1=yStructSize;
@@ -2606,7 +2622,7 @@ int CreateInputStructPicture( HDC            hDC,
                 tdp->nOrientation = 0;
                 CalcTblParms( hMemoryDC, &tp, tdp,
                               &xStructOffs_tmp0, &yStructOffs_tmp0, &xStructSize_tmp0, &yStructSize_tmp0, yoffs0 + yoffs1 );
-                twidth0 = tp.tblWidth;
+                /*djb - rwth: removing redundant code */
                 xStructSize_tmp0 -= xoffs1 + xoffs2;
                 yStructSize_tmp0 -= yoffs1 + yoffs2;
                 /*
@@ -2624,7 +2640,7 @@ int CreateInputStructPicture( HDC            hDC,
                 }
             }
             tdp->nOrientation = nOrientation_tmp;
-            memset( &tp, 0, sizeof( tp ) );
+            memset( &tp, 0, sizeof( tp ) ); /* djb-rwth: memset_s C11/Annex K variant? */
             CalcTblParms( hMemoryDC, &tp, tdp,
                           &xStructOffs, &yStructOffs, &xStructSize, &yStructSize, yoffs0 + yoffs1 );
         }
@@ -2660,7 +2676,8 @@ int CreateInputStructPicture( HDC            hDC,
 
     if (pWinData)
     {
-        char str[128] = "";
+        char str[128];
+        str[0] = '\0'; /* djb-rwth: proper initialisation */
         /* exact rectangle around the structure drawing */
         /*Rectangle( hMemoryDC, xStructOffs+xs-1, yStructOffs+ys+yoffs1-afont-1, xStructOffs+xs+xoffs1+xoffs2+w+1, yStructOffs+ys+yoffs1+nFontHeight+h+1); */
         Res = DrawTheInputStructure( at1, &pWinData->inf_at_data, num_at, hMemoryDC,
@@ -2690,28 +2707,28 @@ int CreateInputStructPicture( HDC            hDC,
                 switch (bStereoFlags & INF_STEREO_ABS_REL_RAC)
                 {
                     case INF_STEREO_ABS:
-                        strcat( str, "Absolute" );
+                        strcat(str, "Absolute");
                         break;
                     case INF_STEREO_REL:
-                        strcat( str, "Relative" );
+                        strcat(str, "Relative");
                         break;
                     case INF_STEREO_RAC:
-                        strcat( str, "Racemic mixture" );
+                        strcat(str, "Racemic mixture");
                         break;
                 }
                 if (str[0])
                 {
-                    strcat( str, " stereo" );
+                    strcat(str, " stereo");
                     switch (bStereoFlags & INF_STEREO_NORM_INV)
                     {
                         case INF_STEREO_NORM:
-                            strcat( str, " (normal)" );
+                            strcat(str, " (normal)");
                             break;
                         case INF_STEREO_INV:
-                            strcat( str, " (inverted)" );
+                            strcat(str, " (inverted)");
                             break;
                         case INF_STEREO_NORM_INV:
-                            strcat( str, " (normal and inverted)" );
+                            strcat(str, " (normal and inverted)");
                             break;
                     }
                 }
@@ -2721,39 +2738,40 @@ int CreateInputStructPicture( HDC            hDC,
                 int bTaut = 0, bIso = 0, bSter = 0;
                 if (str[0])
                 {
-                    strcat( str, ";  " );
+                    strcat(str, ";  ");
                 }
                 bTaut = ( NULL != memchr( tdp->ReqShownFound[ilSHOWN], 'T', TDP_NUM_PAR ) );
                 bIso = ( NULL != memchr( tdp->ReqShownFound[ilSHOWN], 'I', TDP_NUM_PAR ) );
                 bSter = ( NULL != memchr( tdp->ReqShownFound[ilSHOWN], 'S', TDP_NUM_PAR ) ) ||
                     ( NULL != memchr( tdp->ReqShownFound[ilSHOWN], 's', TDP_NUM_PAR ) );
-                strcat( str, "Abbreviation" );
+                strcat(str, "Abbreviation");
                 if (bTaut + bIso + bSter > 1)
                 {
-                    strcat( str, "s:" );
+                    strcat(str, "s:");
                 }
                 else
                 {
-                    strcat( str, ":" );
+                    strcat(str, ":");
                 }
                 if (bTaut) 
                 {
-                    strcat( str, " Mobile H" );
+                    strcat(str, " Mobile H");
                 }
                 if (bIso) 
                 {
-                    strcat( str, " Isotopic" );
+                    strcat(str, " Isotopic");
                 }
                 if (bSter) 
                 {
-                    strcat( str, " Stereo" );
+                    strcat(str, " Stereo");
                 }
                 DrawTheTable( hMemoryDC, &tp, tdp, bm_left, bm_top );
             }
             if (pWinData->inf_at_data.szRemovedProtons[0])
             {
-                if (str[0]) strcat( str, ";    " );
-                strcat( str, pWinData->inf_at_data.szRemovedProtons );
+                if (str[0]) 
+                    strcat( str, ";    " ); /* djb-rwth: function replaced with its safe C11 variant */
+                strcat(str, pWinData->inf_at_data.szRemovedProtons);
             }
             /*TextOut( hMemoryDC, nFontWidth+bm_left, bm_height - nFontHeight +bm_top, str, strlen(str) );*/
             /*DrawColorString( hMemoryDC, str, nFontWidth+bm_left, bm_height - nFontHeight +bm_top, 0 );*/
@@ -2908,8 +2926,9 @@ LRESULT CALLBACK WndProcDisplayInputStructure( HWND   hWnd,
     {
 
         case WM_COMMAND:
-            wmId = LOWORD( wParam ); /* Remember, these are... */
-            wmEvent = HIWORD( wParam ); /* ...different for Win32! */
+            /* djb-rwth: ignoring LLVM warning: possible presence of global variables */
+            wmId = LOWORD(wParam); /* Remember, these are... */
+            wmEvent = HIWORD(wParam); /* ...different for Win32! */
             break;
 
         case WM_CLOSE:
@@ -3092,7 +3111,7 @@ int DisplayInputStructure( char          *szOutputString,
     RECT      rc, rc2, rc3;
     MSG       msg;
     MY_WINDOW_DATA WinData;
-    int       ret, ret2, ret3, bRectVisible;
+    int       ret, ret2, ret3, bRectVisible; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     HDC       hDesktopDC;
     inf_ATOM  *inf_at = inf_at_data ? inf_at_data->at : NULL;
     /*WINDOWPLACEMENT wndpl = {sizeof(WINDOWPLACEMENT),}; */ /*set wndpl.length */
@@ -3115,11 +3134,11 @@ int DisplayInputStructure( char          *szOutputString,
 
     /* we will create graphics window of the same size and position as our console window */
     /* to do that we need to get console app window size and position. */
-    ret = GetWindowRect( hConsoleWnd, &rc );
+    ret = GetWindowRect( hConsoleWnd, &rc ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     /*printf( "ConsoleWnd: ret=%d, rc=%ld %ld %ld %ld\n", ret, rc.left, rc.top, rc.right, rc.bottom); */
     /* full screen: "ConsoleWnd: ret=1, rc=-32000 -32000 -31840 -31976" */
 
-    ret2 = GetWindowRect( hDesktopWnd, &rc2 );
+    ret2 = GetWindowRect( hDesktopWnd, &rc2 ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     /*printf( "DesktopWnd: ret=%d, rc2=%ld %ld %ld %ld\n", ret, rc2.left, rc2.top, rc2.right, rc2.bottom); */
     /* full screen: "DesktopWnd: ret=1, rc2=0 0 1280 1024" */
 
@@ -3133,7 +3152,7 @@ int DisplayInputStructure( char          *szOutputString,
     /*printf( "DesktopClip: ret=%d, rc3=%ld %ld %ld %ld\n", ret3, rc3.left, rc3.top, rc3.right, rc3.bottom); */
     /* full screen: "DesktopClip: ret=3, rc3=0 0 0 0", 3=COMPLEXREGION */
 
-    ret3 = ReleaseDC( hDesktopWnd, hDesktopDC );
+    ret3 = ReleaseDC( hDesktopWnd, hDesktopDC ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     if (!bRectVisible)
         return ( FALSE ); /* usually happens in MS-DOS full-screen mode, but the API call may fail and return TRUE */
 
@@ -3184,13 +3203,13 @@ int DisplayInputStructure( char          *szOutputString,
     }
 
     /* provide window procedure with the pointer to the chemical structure */
-    memset( &WinData, 0, sizeof( WinData ) );
-    WinData.at0 = (inp_ATOM *) inchi_calloc( num_at + 1, sizeof( WinData.at0[0] ) );
-    WinData.at1 = (inp_ATOM *) inchi_calloc( num_at + 1, sizeof( WinData.at1[0] ) );
+    memset( &WinData, 0, sizeof( WinData ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+    WinData.at0 = (inp_ATOM*)inchi_calloc((long long)num_at + 1, sizeof(WinData.at0[0])); /* djb-rwth: cast operator added */
+    WinData.at1 = (inp_ATOM*)inchi_calloc((long long)num_at + 1, sizeof(WinData.at1[0])); /* djb-rwth: cast operator added */
 
     if (dp->nEquLabels && dp->nNumEquSets)
     {
-        WinData.nEquLabels = (AT_NUMB *) inchi_calloc( num_at + 1, sizeof( WinData.nEquLabels[0] ) );
+        WinData.nEquLabels = (AT_NUMB*)inchi_calloc((long long)num_at + 1, sizeof(WinData.nEquLabels[0])); /* djb-rwth: cast operator added */
         WinData.nNumEquSets = dp->nNumEquSets;
         WinData.nCurEquLabel = 0;
         WinData.nNewEquLabel = dp->nCurEquLabel;
@@ -3203,25 +3222,25 @@ int DisplayInputStructure( char          *szOutputString,
     {
         DuplicateInfoAtomData( &WinData.inf_at_data, inf_at_data );
     }
-    if (!WinData.at0 || !WinData.at1 || inf_at && !WinData.inf_at_data.at
-        || dp->nEquLabels && dp->nNumEquSets && !WinData.nEquLabels
+    if (!WinData.at0 || !WinData.at1 || (inf_at && !WinData.inf_at_data.at) /* djb-rwth: addressing LLVM warning */
+        || (dp->nEquLabels && dp->nNumEquSets && !WinData.nEquLabels)
         )
     {
         FreeWinData( &WinData );
     }
     else
     {
-        memcpy( WinData.at0, at, sizeof( at[0] )*num_at );
+        memcpy(WinData.at0, at, sizeof(at[0]) * num_at);
         if (inf_at)
         {
-            memcpy( WinData.inf_at_data.at, inf_at, sizeof( inf_at[0] )*num_at );
+            memcpy(WinData.inf_at_data.at, inf_at, sizeof(inf_at[0]) * num_at);
         }
-        if (WinData.nEquLabels)
+        if (WinData.nEquLabels && dp->nEquLabels) /* djb-rwth: testing if third argument is NULL */
         {
-            memcpy( WinData.nEquLabels, dp->nEquLabels, num_at * sizeof( WinData.nEquLabels[0] ) );
+            memcpy(WinData.nEquLabels, dp->nEquLabels, num_at * sizeof(WinData.nEquLabels[0]));
         }
 
-        memcpy( WinData.at1, WinData.at0, sizeof( at[0] )*num_at );
+        memcpy(WinData.at1, WinData.at0, sizeof(at[0]) * num_at);
 
         WinData.num_at = num_at;
         WinData.bOrigAtom = dp->sdp.bOrigAtom;

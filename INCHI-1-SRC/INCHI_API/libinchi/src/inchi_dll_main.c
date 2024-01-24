@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -35,6 +35,7 @@
 /* inchi_dll_main.c : Defines the entry point for the DLL application. */
 
 #include "../../../INCHI_BASE/src/mode.h"
+#include "../../../INCHI_BASE/src/bcf_s.h"
 
 #if defined(_WIN32) && defined(_USRDLL) && defined(_DEBUG) && !(defined(__STDC__) && __STDC__ == 1)
 #include "inchi_dll_main.h"

@@ -1,8 +1,8 @@
 /*
 * International Chemical Identifier (InChI)
 * Version 1
-* Software version 1.06
-* December 15, 2020
+* Software version 1.07
+* 20/11/2023
 *
 * The InChI library and programs are free software developed under the
 * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,7 +31,6 @@
 *
 */
 
-
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -46,6 +45,7 @@
 #include "util.h"
 #include "ichi_io.h"
 
+#include "bcf_s.h"
 
 /*
     MolFile related procedures - 2
@@ -64,7 +64,7 @@ int MolfileStrnread( char* dest, char* source, int len, char **first_space )
 
     if (len > 0)
     {
-        strncpy( dest, source, len );
+        strncpy(dest, source, len);
     }
     dest[len] = '\0';
 
@@ -72,7 +72,7 @@ int MolfileStrnread( char* dest, char* source, int len, char **first_space )
 
     for (i = ( len - 1 ); i >= 0 && 0 != ( c = source[i] ) && isspace( UCINT c ); i--);
 
-    *first_space = dest + ( i + 1 ); /* first blank or zero terminating byte in dest */
+    *first_space = dest + ( (long long)i + 1 ); /* first blank or zero terminating byte in dest */ /* djb-rwth: cast operator added */
 
     return len; /* number of actually processed bytes excluding zero terminator */
 }
@@ -136,7 +136,7 @@ int MolfileReadField( void* data,
 
             ret = ( q - (char*) data );/* actual data length */
             *q = '\0';                /* add zero termination to data if it is not there yet*/
-            *line_ptr += ( len + i );     /* ptr to the 1st byte of the next input field or to zero termination */
+            *line_ptr += ( (long long)len + (long long)i );     /* ptr to the 1st byte of the next input field or to zero termination */ /* djb-rwth: cast operators added */
             break;
 
 
@@ -430,9 +430,9 @@ int MolfileSaveCopy( INCHI_IOSTREAM *inp_file,
             {
                 int len;
                 lrtrim( line, &len );
-                len = sprintf( szNumber, "#%ld%s", num, len ? "/" : "" );
+                len = sprintf(szNumber, "#%ld%s", num, len ? "/" : "");
                 mystrncpy( line + len, line, sizeof( line ) - len - 1 );
-                memcpy( line, szNumber, len );
+                memcpy(line, szNumber, len);
             }
 
             if (!strchr( line, '\n' ))

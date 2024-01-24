@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -44,24 +44,24 @@
 #include "../../../../INCHI_BASE/src/util.h"
 #include "../../../../INCHI_BASE/src/mol_fmt.h"
 #include "../../../../INCHI_BASE/src/ichi_io.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 
 #include "ixa_status.h"
 #include "ixa_mol.h"
 
 /* #define memicmp strncasecmp */
 
-
+/* djb-rwth: removing redundant code */
 /****************************************************************************
 Generic reader
 Read Molfile (throuh call to InChI native ReadMolfile() )
 and pack the data into INCHIMOL
-****************************************************************************/
 
 static void IXA_MOL_GenericReadMolfile( IXA_STATUS_HANDLE hStatus,
                                         IXA_MOL_HANDLE    hMolecule,
                                         const char*       pBytes,
                                         int               pseudos_allowed);
-
+****************************************************************************/
 
 
 /****************************************************************************
@@ -82,7 +82,7 @@ void INCHI_DECL IXA_MOL_ReadMolfile(IXA_STATUS_HANDLE hStatus,
     IXA_BONDID    bond;
     int           bond_count;
     IXA_BOND_TYPE bond_type;
-    const char*   p_cursor;
+    /* djb-rwth: removing redundant variables */
     INCHI_IOSTREAM instr;
     INCHI_IOSTREAM *inp_file = &instr;
     S_CHAR orig_mass_diff;
@@ -109,7 +109,7 @@ void INCHI_DECL IXA_MOL_ReadMolfile(IXA_STATUS_HANDLE hStatus,
        to eliminate the internal struct and read directly into the IXA molecule object but that
        would mean rewriting a lot of code and also mask the relationship between this MolFile
        reading function and those used in previous InChI code. */
-    p_cursor = pBytes;
+    /* djb-rwth: removing redundant code */
     mol_data = ReadMolfile( inp_file,
                             NULL,       /*    MOL_FMT_HEADER_BLOCK *OnlyHeaderBlock, */
                             &OnlyCtab,
@@ -153,7 +153,7 @@ void INCHI_DECL IXA_MOL_ReadMolfile(IXA_STATUS_HANDLE hStatus,
     if (mol_data->ctab.n_atoms > 0)
     {
 #ifdef IXA_USES_SMART_ALLOCS
-        /* v. 1.06 pre-allocate the space */
+        /* v. 1.06+ pre-allocate the space */
         IXA_MOL_ReserveSpace( hStatus, hMolecule, mol_data->ctab.n_atoms, mol_data->ctab.n_bonds, 0 );
 #endif
 
@@ -497,10 +497,11 @@ void INCHI_DECL IXA_MOL_ReadMolfile(IXA_STATUS_HANDLE hStatus,
                 }
                 if (nb > 0)
                 {
-                    blist = (int *) inchi_calloc( 2 * nb, sizeof( int ) );
+                    blist = (int *) inchi_calloc( 2 * (long long)nb, sizeof( int ) ); /* djb-rwth: cast operator added */
                     if (!blist)
                     {
                         STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Out of memory" );
+                        inchi_free(alist); /* djb-rwth: avoiding memory leak */
                         goto exit_function;
                     }
                     for (m = 0; m < nb; m++)
@@ -510,6 +511,8 @@ void INCHI_DECL IXA_MOL_ReadMolfile(IXA_STATUS_HANDLE hStatus,
                         if (ib<1 || ib>mol_data->ctab.n_bonds)
                         {
                             STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "IXA polymer unit in Molfile contains invalid bond" );
+                            inchi_free(alist); /* djb-rwth: avoiding memory leak */
+                            inchi_free(blist); /* djb-rwth: avoiding memory leak */
                             goto exit_function;
                         }
                         ia1 = mol_data->ctab.bonds[ib - 1].atnum1;

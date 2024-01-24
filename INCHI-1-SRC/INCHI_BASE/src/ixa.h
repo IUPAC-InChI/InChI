@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -192,7 +192,7 @@ typedef enum
     IXA_INCHIBUILDER_OPTION_LooseTSACheck,
     IXA_INCHIBUILDER_OPTION_OutErrInChI,
     IXA_INCHIBUILDER_OPTION_NoWarnings
-#if BUILD_WITH_ENG_OPTIONS==1
+/*#if BUILD_WITH_ENG_OPTIONS==1*/
     ,IXA_INCHIBUILDER_OPTION_DoDrv,
     IXA_INCHIBUILDER_OPTION_DoDrvReport,
     IXA_INCHIBUILDER_OPTION_DoR2C,
@@ -200,7 +200,13 @@ typedef enum
     IXA_INCHIBUILDER_OPTION_OnlyRecSalt,
     IXA_INCHIBUILDER_OPTION_OnlyExact,
     IXA_INCHIBUILDER_OPTION_OnlyRecMet
-#endif   
+/*#endif*/   
+    , IXA_INCHIBUILDER_OPTION_PT_22_00,
+    IXA_INCHIBUILDER_OPTION_PT_16_00,
+    IXA_INCHIBUILDER_OPTION_PT_06_00,
+    IXA_INCHIBUILDER_OPTION_PT_39_00,
+    IXA_INCHIBUILDER_OPTION_PT_13_00,
+    IXA_INCHIBUILDER_OPTION_PT_18_00
 } IXA_INCHIBUILDER_OPTION;
 
 typedef enum

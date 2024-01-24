@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -46,7 +46,6 @@
 #endif
 #endif
 
-
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -57,6 +56,8 @@
 #include "mode.h"
 #include "inchi_api.h"
 #include "util.h"
+
+#include "bcf_s.h"
 
 /*    Local options */
 
@@ -301,7 +302,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
 
 
     /* Trim 'InChI=1[S]/' */
-    memcpy( smajor, str + pos_slash1 + 1, ncp * sizeof( str[0] ) );
+    memcpy(smajor, str + pos_slash1 + 1, ncp * sizeof(str[0]));
     smajor[ncp] = '\0';
 
 
@@ -309,7 +310,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     if (jproto)
     {
         /* 2009-01-07 fix bug/typo: assigned incorrect length to the protonation segment of
-        /* source string ( was sproto[ncp]='\0'; should be sproto[lenproto]='\0'; )  */
+           source string ( was sproto[ncp]='\0'; should be sproto[lenproto]='\0'; )  */
         int lenproto = j - (int) jproto;
         if (lenproto < 3)
         {
@@ -318,7 +319,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
             goto fin;
         }
 
-        memcpy( sproto, str + pos_slash1 + ncp + 1, lenproto * sizeof( str[0] ) );
+        memcpy(sproto, str + pos_slash1 + ncp + 1, lenproto * sizeof(str[0]));   
         sproto[lenproto] = '\0';
 
         nprotons = strtol( sproto + 2, NULL, 10 );
@@ -358,7 +359,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     if (j != slen + 1)    /* check that something exists at right.*/
     {
         ncp = slen - j;
-        memcpy( sminor, str + j, ( ncp ) * sizeof( str[0] ) );
+        memcpy(sminor, str + j, (ncp) * sizeof(str[0]));
         sminor[ncp] = '\0';
     }
     else
@@ -384,11 +385,11 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
 
     sha2_csum( (unsigned char *) smajor, (int) strlen( smajor ), digest_major );
 
-    sprintf( tmp, "%-.3s%-.3s%-.3s%-.3s%-.2s",
-             base26_triplet_1( digest_major ), base26_triplet_2( digest_major ),
-             base26_triplet_3( digest_major ), base26_triplet_4( digest_major ),
-             base26_dublet_for_bits_56_to_64( digest_major ) );
-    strcat( szINCHIKey, tmp );
+    sprintf(tmp, "%-.3s%-.3s%-.3s%-.3s%-.2s",
+        base26_triplet_1(digest_major), base26_triplet_2(digest_major),
+        base26_triplet_3(digest_major), base26_triplet_4(digest_major),
+        base26_dublet_for_bits_56_to_64(digest_major));
+    strcat(szINCHIKey, tmp);
 #if (INCHIKEY_DEBUG>1)
     fprint_digest( stderr, "Major hash, full SHA-256", digest_major );
 #endif
@@ -402,8 +403,8 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     slen = strlen( sminor );
     if (( slen > 0 ) && ( slen < 255 ))
     {
-        strcpy( stmp, sminor );
-        strcpy( sminor + slen, stmp );
+        strcpy(stmp, sminor);
+        strcpy(sminor + slen, stmp);
     }
 
     sha2_csum( (unsigned char *) sminor, (int) strlen( sminor ), digest_minor );
@@ -412,13 +413,12 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     fprint_digest( stderr, "Minor hash, full SHA-256", digest_minor );
 #endif
 
-    strcat( szINCHIKey, "-" );
-    sprintf( tmp, "%-.3s%-.3s%-.2s",
-             base26_triplet_1( digest_minor ),
-             base26_triplet_2( digest_minor ),
-             base26_dublet_for_bits_28_to_36( digest_minor ) );
-    strcat( szINCHIKey, tmp );
-
+    strcat(szINCHIKey, "-");
+    sprintf(tmp, "%-.3s%-.3s%-.2s",
+        base26_triplet_1(digest_minor),
+        base26_triplet_2(digest_minor),
+        base26_dublet_for_bits_28_to_36(digest_minor));
+    strcat(szINCHIKey, tmp);
     /* Append a standard/non-standard flag */
     slen = strlen( szINCHIKey );
     if (is_stdinchi == 1)

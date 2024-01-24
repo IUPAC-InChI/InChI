@@ -35,7 +35,7 @@
 #ifndef _TEST_IXA_H_
 #define _TEST_IXA_H_
 
-/*#define BUILD_WITH_ENG_OPTIONS 1*/
+/*#define BUILD_TEST_IXA_WITH_ENG_OPTIONS 1*/
 
 #ifdef _MSC_VER
 /*
@@ -61,7 +61,7 @@
 #ifdef APP_DESCRIPTION
 #undef APP_DESCRIPTION
 #endif
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (test_ixa - Library call example, IXA API v. 1.06)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.061 (test_ixa - Library call example, IXA API v. 1.061)"
 
 /*#define RELEASE_IS_FINAL  0*/ /* 1=> pre-release version; comment out to disable */
 #ifndef RELEASE_IS_FINAL

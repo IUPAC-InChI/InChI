@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,11 +31,12 @@
  *
  */
 
-
 #include <string.h>
 
 #include "mode.h"
 #include "ichicomn.h"
+
+#include "bcf_s.h"
 
 #define SB_DEPTH 6
 
@@ -100,7 +101,7 @@ int map_stereo_bonds4( struct tagINCHI_CLOCK *ic,
                           */
     int tpos1 = 0;
     AT_STEREO_DBLE prevBond;
-    memset( &prevBond, 0, sizeof( prevBond ) );
+    memset( &prevBond, 0, sizeof( prevBond ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     tpos1 = CurTreeGetPos( cur_tree );
 
 total_restart:
@@ -108,7 +109,7 @@ total_restart:
     if (!nNumMappedBonds)
     {
 
-        memset( pCS->bRankUsedForStereo, 0, sizeof( pCS->bRankUsedForStereo[0] )*num_atoms );
+        memset( pCS->bRankUsedForStereo, 0, sizeof( pCS->bRankUsedForStereo[0] )*num_atoms ); /* djb-rwth: memset_s C11/Annex K variant? */
         SetUseAtomForStereo( pCS->bAtomUsedForStereo, at, num_atoms );
 
         if (pCS->bFirstCT && nSymmStereo && !pCS->bKeepSymmRank)
@@ -170,10 +171,10 @@ total_restart:
     next_canon_ranks:
 
             /*  Save time: avoid calling Next_SB_At_CanonRanks2() */
-        if (!pCS->bStereoIsBetter /* ??? && !pCS->bFirstCT ???*/ &&
-              at_rank_canon1 > pCS->LinearCTStereoDble[nNumMappedBonds].at_num1 ||
-              at_rank_canon1 == pCS->LinearCTStereoDble[nNumMappedBonds].at_num1 &&
-              at_rank_canon2 >= pCS->LinearCTStereoDble[nNumMappedBonds].at_num2)
+        if ((!pCS->bStereoIsBetter /* ??? && !pCS->bFirstCT ???*/ &&
+              at_rank_canon1 > pCS->LinearCTStereoDble[nNumMappedBonds].at_num1) ||
+              (at_rank_canon1 == pCS->LinearCTStereoDble[nNumMappedBonds].at_num1 &&
+              at_rank_canon2 >= pCS->LinearCTStereoDble[nNumMappedBonds].at_num2)) /* djb-rwth: addressing LLVM warning */
         {
 
             if (!nTotSuccess)
@@ -203,12 +204,12 @@ total_restart:
                 /* all stereobond have been processed; try to find allene to continue */
                 AT_RANK at_rank_canon1_Allene = 0, canon_min1_Allene = 0;
                 AT_RANK at_rank_canon2_Allene = 0, canon_min2_Allene = 0;
-                if (ret1 = Next_SB_At_CanonRanks2( &at_rank_canon1_Allene, &at_rank_canon2_Allene,
+                if ((ret1 = Next_SB_At_CanonRanks2( &at_rank_canon1_Allene, &at_rank_canon2_Allene,
                     &canon_min1_Allene, &canon_min2_Allene,
                     &bFirstCanonRank, pCS->bAtomUsedForStereo,
                     pRankStack1, pRankStack2,
                     nCanonRankFrom, nAtomNumberCanonFrom,
-                    at, num_atoms, 1 ))
+                    at, num_atoms, 1 ))) /* djb-rwth: addressing LLVM warning */
                 {
                     at_rank_canon1 = at_rank_canon1_Allene;
                     at_rank_canon2 = at_rank_canon2_Allene;
@@ -219,10 +220,10 @@ total_restart:
             }
         }
 
-        if (!ret1 || !pCS->bStereoIsBetter &&
+        if (!ret1 || (!pCS->bStereoIsBetter &&
             ( at_rank_canon1 > pCS->LinearCTStereoDble[nNumMappedBonds].at_num1 ||
-                at_rank_canon1 == pCS->LinearCTStereoDble[nNumMappedBonds].at_num1 &&
-                at_rank_canon2 > pCS->LinearCTStereoDble[nNumMappedBonds].at_num2 ))
+                (at_rank_canon1 == pCS->LinearCTStereoDble[nNumMappedBonds].at_num1 &&
+                at_rank_canon2 > pCS->LinearCTStereoDble[nNumMappedBonds].at_num2) ))) /* djb-rwth: addressing LLVM warnings */
         {
             /* new ranks provide greater pCS->LinearCTStereoDble[nNumMappedBonds] and therefore rejected */
             if (!nTotSuccess)
@@ -375,10 +376,10 @@ total_restart:
         }
 
         bAllParitiesIdentical = 0;
-        bAllParitiesIdentical2 = 0;
+        /* djb-rwth: removing redundant code */
         LastMappedTo1 = -1;
         bStereoIsBetterWasSetHere = 0;
-        istk = istk2 = istk3 = 0;
+        /* djb-rwth: removing redundant code */
 
         if (!nNumMappedBonds && prev_stereo_bond_parity != stereo_bond_parity)
             pCS->bStereoIsBetter = 0;  /*  the first stereo feature in the canonical CT; moved here 5-24-2002 */
@@ -731,7 +732,7 @@ total_restart:
 
                 /*  --- try all possible mappings of the stereo bond ending atoms' neighbors --- */
                 at_rank_canon_n1 = 0;
-                at_rank_canon_n2 = 0;
+                /* djb-rwth: removing redundant code */
                 for (i = 0; i < num1; i++)
                 {
                     int at_from_n1, at_to_n1, at_no_n1_num_success = 0;
@@ -807,7 +808,7 @@ total_restart:
                     at_rank_canon_n2 = 0;
                     for (j = 0; j < num2; j++)
                     {
-                        int at_from_n2, at_to_n2;
+                        int at_from_n2, at_to_n2 = 0;
                         istk3 = istk2;
                         if (num2 == 2)
                         {
@@ -894,7 +895,7 @@ total_restart:
                         c = CompareLinCtStereoDoubleToValues( pCS->LinearCTStereoDble + nNumMappedBonds,
                                                   at_rank_canon1, at_rank_canon2, (U_CHAR) bond_parity );
                         if (sb_parity_calc != bond_parity ||
-                             c < 0 && !pCS->bStereoIsBetter)
+                             (c < 0 && !pCS->bStereoIsBetter)) /* djb-rwth: addressing LLVM warning */
                         {
                             /*  reject */
                             pCS->lNumRejectedCT++;
@@ -1155,7 +1156,7 @@ int map_stereo_atoms4( struct tagINCHI_CLOCK *ic,
         /* AT_RANK *nRankFrom=*pRankStack1++,  AT_RANK *nAtomNumberFrom=pRankStack1++; */
         /* AT_RANK *nRankTo  =*pRankStack2++,  AT_RANK *nAtomNumberTo  =pRankStack2++; */
         int j1, at_from1, at_to1, /*at_from2, at_to2,*/ iMax, lvl, bStereoIsBetterWasSetHere;
-        int istk, istk2, bAddStack, nNumAtTo1Success, c, bFirstTime = 1, bAllParitiesIdentical;
+        int istk, bAddStack, nNumAtTo1Success, c, bFirstTime = 1, bAllParitiesIdentical; /* djb-rwth: removing redundant variables */
         EQ_NEIGH EN[5], *pEN;
         int nStackPtr[5], nMappedRanks[5], j[5], *nSP, *nMR, bLastLvlFailed;
 
@@ -1163,7 +1164,7 @@ int map_stereo_atoms4( struct tagINCHI_CLOCK *ic,
         AT_RANK canon_rank1_min = 0;
         int at_rank1; /*  rank for mapping */
         int nNumChoices, nNumUnkn, nNumUndf, nNumWorse, nNumBest, nNumCalc;
-        int stereo_center_parity = 0, prev_stereo_center_parity, sb_parity_calc, pass;
+        int stereo_center_parity = 0, sb_parity_calc, pass; /* djb-rwth: removing redundant variable */
         AT_STEREO_CARB prevAtom2;
 
         prevAtom = pCS->LinearCTStereoCarb[nNumMappedAtoms]; /*  save to restore in case of failure */
@@ -1193,8 +1194,8 @@ bypass_next_canon_rank_check:
         if (!Next_SC_At_CanonRank2( &at_rank_canon1, &canon_rank1_min, &bFirstTime,
             pCS->bAtomUsedForStereo, pRankStack1, pRankStack2,
             nAtomNumberCanonFrom, num_atoms ) ||
-              !pCS->bStereoIsBetter &&
-              at_rank_canon1 > pCS->LinearCTStereoCarb[nNumMappedAtoms].at_num)
+              (!pCS->bStereoIsBetter &&
+              at_rank_canon1 > pCS->LinearCTStereoCarb[nNumMappedAtoms].at_num)) /* djb-rwth: addressing LLVM warning */
         {
             /*  cannot find next available canonical number */
             if (!nTotSuccess)
@@ -1211,7 +1212,7 @@ bypass_next_canon_rank_check:
         nNumWorse = 0;
         nNumCalc = 0;
         pass = 0;
-        prev_stereo_center_parity = 0;
+        /* djb-rwth: removing redundant code */
 
         /*  get mapping rank for the canon. number */
         at_rank1 = pRankStack1[0][at_from1 = (int) nAtomNumberCanonFrom[at_rank_canon1 - 1]];
@@ -1289,7 +1290,7 @@ bypass_next_canon_rank_check:
         }
         else
         {
-            prev_stereo_center_parity = stereo_center_parity;
+            /* djb-rwth: removing redundant code */
             j1 = NextStereoParity2Test( &stereo_center_parity, &sb_parity_calc,
                                      nNumBest, nNumWorse, nNumUnkn, nNumUndf, nNumCalc,
                                      vABParityUnknown );
@@ -1326,9 +1327,9 @@ bypass_next_canon_rank_check:
             }
         }
 
-        bAllParitiesIdentical = 0;
+        /* djb-rwth: removing redundant code */
         bStereoIsBetterWasSetHere = 0;
-        istk = istk2 = 0;
+        /* djb-rwth: removing redundant code */
         CurTreeSetPos( cur_tree, tpos1 );  /*  start over */
 
         /*
@@ -1467,9 +1468,9 @@ bypass_next_canon_rank_check:
             /***********************************************************************
              * no need to map the neighbors: parity is known or has been calculated
              */
-            if (stereo_center_parity == sb_parity_calc && !EN[istk].num_to ||
+            if ((stereo_center_parity == sb_parity_calc && !EN[istk].num_to) ||
                  /*  now well-defined, but unknown in advance atom parity  OR   */
-                 stereo_center_parity != sb_parity_calc)
+                 stereo_center_parity != sb_parity_calc) /* djb-rwth: addressing LLVM warning */
                  /*  known in advance parity = stereo_center_parity */
             {
                 /*  do not need to map the neighbors */
@@ -1697,7 +1698,7 @@ bypass_next_canon_rank_check:
                 c = CompareLinCtStereoAtomToValues( pCS->LinearCTStereoCarb + nNumMappedAtoms,
                                             at_rank_canon1, (U_CHAR) parity1 );
                 if (sb_parity_calc != parity1 ||
-                     c < 0 && !pCS->bStereoIsBetter)
+                     (c < 0 && !pCS->bStereoIsBetter)) /* djb-rwth: addressing LLVM warning */
                 {
                     pCS->lNumRejectedCT++;
                     bLastLvlFailed = 1;
@@ -1847,8 +1848,8 @@ done:;      /*  at this point lvl=0. */
          *
          ****************************************************/
 
-        if (UserAction && USER_ACTION_QUIT == ( *UserAction )( ) ||
-             ConsoleQuit && ( *ConsoleQuit )( ))
+        if ((UserAction && USER_ACTION_QUIT == ( *UserAction )( )) ||
+             (ConsoleQuit && ( *ConsoleQuit )( ))) /* djb-rwth: addressing LLVM warning */
         {
             return CT_USER_QUIT_ERR;
         }
@@ -1885,7 +1886,7 @@ done:;      /*  at this point lvl=0. */
              * are equal and all ranks are different, that is, we have a full mapping
              * Copy so far best canonical numbering from "from" to "to".
              */
-            memset( pCS->nPrevAtomNumber, 0, num_at_tg * sizeof( pCS->nPrevAtomNumber[0] ) );
+            memset( pCS->nPrevAtomNumber, 0, num_at_tg * sizeof( pCS->nPrevAtomNumber[0] ) ); /* djb-rwth: memset_s C11/Annex K variant? */
             for (i1 = 0; i1 < num_at_tg; i1++)
             {
                 n1 = pRankStack1[1][i1];
@@ -1936,8 +1937,7 @@ done:;      /*  at this point lvl=0. */
             }
 #endif /* } REMOVE_CALC_NONSTEREO */
 
-            pRankStack1 -= 2;
-            pRankStack2 -= 2;
+            /* djb-rwth: removing redundant code */
         }
         else
         {

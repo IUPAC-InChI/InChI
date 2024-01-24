@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -60,28 +60,30 @@
 
 #if defined(TARGET_EXE_STANDALONE)
 /* Uncomment the next line to perform atom ordering/renumbering tests (internal only) */
-/*#define RENUMBER_ATOMS_AND_RECALC_V106 1*/
+#define RENUMBER_ATOMS_AND_RECALC_V106 1
 #ifdef      RENUMBER_ATOMS_AND_RECALC_V106
 /* Comment the next line to print all renumbering changing the initial InChIKey */
 #define STOP_AFTER_FIRST_CHANGE_ON_RENUMBERING 1
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (inchi-1 executable) \n*** INTERNAL TEST MODE: ATOM RENUMBERING TEST IS ACTIVE ***"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (inchi-1 executable)"
+/*#define APP_DESCRIPTION "InChI version 1, Software v. 1.06-PT6 (inchi-1 executable) \n*** INTERNAL TEST MODE: ATOM RENUMBERING TEST IS ACTIVE ***"*/
 #else
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (inchi-1 executable)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (inchi-1 executable)***"
+/*#define APP_DESCRIPTION "InChI version 1, Software v. 1.06-PT6 (inchi-1 executable) \n*** UNOFFICIAL TEST VERSION: 6 PT TAUTO RULES AVAILABLE ***"*/
 #endif
 
 #elif defined(TARGET_API_LIB)
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (API Library)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (API Library)"
 
 #elif defined(TARGET_EXE_USING_API)
 #ifndef APP_DESCRIPTION
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (executable calling API Library)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (executable calling API Library)"
 #endif
 
 #elif defined(TARGET_LIB_FOR_WINCHI)
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (Library for wInChI GUI executable)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (Library for wInChI GUI executable)"
 
 #elif defined(TARGET_WINCHI)
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.06 (wInChI GUI executable)"
+#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (wInChI GUI executable)"
 
 #else
 #error  No build target #defined, pls check compiler options... (TARGET_EXE_STANDALONE|TARGET_API_LIB|TARGET_EXE_USING_API|TARGET_LIB_FOR_WINCHI)
@@ -120,11 +122,11 @@ BUILD_WITH_AMI
 
 /* #define BUILD_LINK_AS_DLL */
 
-/*
+
 #ifndef BUILD_WITH_ENG_OPTIONS
-#define BUILD_WITH_ENG_OPTIONS 1
+#define BUILD_WITH_ENG_OPTIONS 0
 #endif
-*/
+
 
 
 #ifndef BUILD_WITH_AMI
@@ -345,7 +347,13 @@ extern "C" {
                                         /* atom in aromatic ring */
 
 
-/* Software version 1.06 */
+/* Software version 1.07 */
+
+/* INTENTIONALLY DISABLE 1.06 FIXES */
+/*#define DISABLE_106_FIXES 1  */
+
+#ifndef DISABLE_106_FIXES
+
 #define FIX_STEREOCOUNT_ERR           1 /* (2018-01-09) Supplied by DT                              */
                                         /* Fix for InChI Error -30010 (STEREOCOUNT_ERR)             */
                                         /* appeared on PubChem CIDs 124897603, 124921144            */
@@ -379,7 +387,7 @@ extern "C" {
 #define FIX_GAF_2019_1 1
 #define FIX_GAF_2019_2 1
 
-/* v. 1.06 December 2020 */
+/* v. 1.06 October 2023 */
 /*  Sep-Dec 2020 Fixed oss-fuzz issues:
     25604 25607 25609 25618 25726 25727 25728 25730 25731 25735
     25736 25737 25741 25830 25835 26514 27901 27903 27905
@@ -391,6 +399,10 @@ extern "C" {
 #define FIX_GAF_2020_25607 1
 #define FIX_GAF_2020_25726 1
 #define FIX_GAF_2020_25741 1
+
+/* v. 1.061 August 2021 */
+#define FIX_OSS_FUZZ_30162_30343 1
+#define FIX_OSS_FUZZ_25734_28139 1
 
 /* internal v. 1.052, January 2020 */
 /* Thanks to CURE53 for detecting and reporting the issues */
@@ -404,7 +416,7 @@ extern "C" {
                                         */
 #define FIX_GAF_2019_3 1
 #define FIX_ONE_LINE_INCHI_INPUT_CONVERSION_ISSUE 1
-
+#endif
 
 #define ALLOW_EMPTY_INCHI_AS_INPUT    1 /* Allow "InChI=1//" and standard/beta analogues in input   */
 
@@ -452,11 +464,18 @@ extern "C" {
 #define KETO_ENOL_TAUT             1 /* include keto-enol tautomerism */
 #define TAUT_15_NON_RING           1 /* 1,5 tautomerism with endpoints not in ring */
 
+#define TAUT_PT_22_00              1 /* tautomerism rule PT_22_00 */
+#define TAUT_PT_16_00              1 /* tautomerism rule PT_16_00 */
+#define TAUT_PT_06_00              1 /* tautomerism rule PT_06_00 */
+#define TAUT_PT_39_00              1 /* tautomerism rule PT_39_00 */
+#define TAUT_PT_13_00              1 /* tautomerism rule PT_13_00 */
+#define TAUT_PT_18_00              1 /* tautomerism rule PT_18_00 */  
 
-#if 0
+#ifdef  BUILD_WITH_ENG_OPTIONS
 #define UNDERIVATIZE               1 /* split to possible underivatized fragments */
 #define RING2CHAIN                 1 /* open rings R-C(-OH)-O-R => R-C(=O) OH-R   */
-#endif 
+#endif
+
 
 #if( UNDERIVATIZE == 1 )
 #define UNDERIVATIZE_REPORT        1 /* if SdfValue found, add to SdfValue a list of removed deriv. agents */
@@ -953,6 +972,12 @@ extern "C" {
 #define TG_FLAG_FIX_ISO_FIXEDH_BUG       0x00200000   /* fix bug found after v.102b (isotopic H representation)  */
 #define TG_FLAG_FIX_TERM_H_CHRG_BUG      0x00400000   /* fix bug found after v.102b (moving H charge in 'remove_terminal_HDT') */
 
+#define TG_FLAG_PT_22_00                 0x00800000
+#define TG_FLAG_PT_16_00                 0x01000000
+#define TG_FLAG_PT_06_00                 0x02000000
+#define TG_FLAG_PT_39_00                 0x04000000
+#define TG_FLAG_PT_13_00                 0x08000000
+#define TG_FLAG_PT_18_00                 0x10000000
 
 /* output bTautFlags flags */
 
@@ -1160,7 +1185,7 @@ do {\
 #define qzfree(X)   do{if(X){inchi_free(X);(X)=NULL;}}while(0)
 
 /* rellocation */
-
+/* djb-rwth: avoiding memory leaks */
 #define MYREALLOC2(PTRTYPE1, PTRTYPE2, PTR1, PTR2, LEN1, LEN2, ERR) \
     do { \
         if( (LEN1) <= (LEN2) ) {\
@@ -1180,6 +1205,8 @@ do {\
                 (LEN1) = (LEN2);  \
                 (ERR)  = 0; \
             } else {        \
+                inchi_free(newPTR1); \
+                inchi_free(newPTR2); \
                 (ERR)  = 1; \
             }               \
         } else { (ERR) = 0; } \
@@ -1195,9 +1222,9 @@ do {\
 #endif
 
 #define POLYMERS_NO 0		/* ignore polymers										*/
-#define POLYMERS_MODERN 1	/* current (1.06) way to treat polymers with Zz			*/
-#define POLYMERS_LEGACY 2	/* 1.05 mode, no explicit Zz (internally they are here) */
-#define POLYMERS_LEGACY_PLUS 3	/* 1.05 mode with an addition of that in all
+#define POLYMERS_MODERN 1	/* v. 1.06+ way to treat polymers with Zz			*/
+#define POLYMERS_LEGACY 2	/* v. 1.05 mode, no explicit Zz (internally they are here) */
+#define POLYMERS_LEGACY_PLUS 3	/* v. 1.05 mode with an addition of that in all
                                    frame-shiftable-bistar-CRUs their backbone bonds 
                                    are reordered in descending seniority order. 
                                    Used as hidden 1st pass in 1.06 treatment		*/
@@ -1208,7 +1235,7 @@ do {\
 /* #define STEREO_AT_ZZ 1 */
 
 /* Set to 1 and use in engineering mode, if necessary */
-/*#define ALLOW_SUBSTRUCTURE_FILTERING 1 */
+#define ALLOW_SUBSTRUCTURE_FILTERING 1
 
 
 #ifndef COMPILE_ALL_CPP

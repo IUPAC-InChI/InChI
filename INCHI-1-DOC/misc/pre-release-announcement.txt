@@ -1,0 +1,17 @@
+InChI Software version 1.05 (Fall 2016) pre-release is
+now available for download from the InChI Trust website:
+
+ 
+http://www.inchi-trust.org/...insert-url=here...
+
+ 
+
+In this version:
+-	support for chemical element numbers 113-118 was newly added;
+-	experimental support of InChI/InChIKey for simple regular single-strand polymers was implemented;
+-	experimental support of large molecules containing up to 32767 atoms was added;
+-	ability to read necessary for large molecules input files in Molfile V3000 format was added;
+-   provisional support for extended features of Molfile V3000 was added;
+-	InChI API Library was significantly updated; in particular, a novel API procedure for direct conversion of Molfile input to InChI has been added; 
+	a whole new set of API procedures for both low and high-level operations (InChI extensible interface, IXA) has been added;
+-	the source code was significantly modified in order to ensure multi-thread execution safety of the InChI Library; several minor bugfixes/changes were made and several convenience options were added to the inchi-1 executable.

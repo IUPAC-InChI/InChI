@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -272,7 +272,7 @@ char *FindToken( INCHI_IOSTREAM *inp_molfile, int *bTooLongLine, const char *sTo
         if (( q = strrchr( p, '/' ) ) && ( q + lToken > szLine + *res ))
         {
             *res -= q - szLine; /* res = the length of the szLine to be left in */
-            memmove( szLine, q, *res + 1 );
+            memmove( szLine, q, (long long)*res + 1 ); /* djb-rwth: cast operator added */
         }
         else
         {
@@ -305,7 +305,7 @@ char *LoadLine( INCHI_IOSTREAM *inp_molfile, int *bTooLongLine, int *bItemIsOver
         if (pos)
         {
             *res -= pos;
-            memmove( szLine, p, *res + 1 );
+            memmove( szLine, p, (long long)*res + 1 ); /* djb-rwth: cast operator added */
             p = szLine;
             if (*s)
             {
@@ -433,7 +433,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                 {
          /* has label name */
          /*p ++;*/
-                    if (q = strchr( p, '=' ))
+                    if ((q = strchr( p, '=' ))) /* djb-rwth: addressing LLVM warning */
                     {
 /* '=' separates label name from the value */
                         len = inchi_min( q - p + 1, MAX_SDF_HEADER - 1 );
@@ -456,7 +456,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
 
                     }
                     else
-                        if (q = strstr( p, sStructHdrPlnNoLblVal ))
+                        if ((q = strstr( p, sStructHdrPlnNoLblVal ))) /* djb-rwth: addressing LLVM warning */
                         {
                             len = inchi_min( q - p + 1, MAX_SDF_HEADER - 1 );
                             if (pSdfLabel)
@@ -700,7 +700,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                             }
                             i++;
                         }
-                        if (!bItemIsOver || i != num_atoms || s && p != s)
+                        if (!bItemIsOver || i != num_atoms || (s && p != s)) /* djb-rwth: addressing LLVM warning */
                         {
                             num_atoms = INCHI_INP_ERROR_RET; /* error */
                             *err = INCHI_INP_ERROR_ERR;
@@ -738,7 +738,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                         {
                             p = LoadLine( inp_molfile, &bTooLongLine, &bItemIsOver, &s,
                                           szLine, sizeof( szLine ), INCHI_LINE_ADD, p, &res );
-                            if (i >= num_atoms || s && p >= s)
+                            if (i >= num_atoms || (s && p >= s)) /* djb-rwth: addressing LLVM warning */
                             {
                                 break; /* end of bonds (plain) */
                             }
@@ -925,7 +925,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                 len_stereo0D++;
                             }
                         }
-                        if (!bItemIsOver || i != num_atoms || s && p != s)
+                        if (!bItemIsOver || i != num_atoms || (s && p != s)) /* djb-rwth: addressing LLVM warning */
                         {
                             num_atoms = INCHI_INP_ERROR_RET; /* error */
                             *err = INCHI_INP_ERROR_ERR;
@@ -950,7 +950,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                     else
                     {
                                  /* coordinates block started */
-                        if (pszCoord = (MOL_COORD*) inchi_malloc( inchi_max( num_atoms, 1 ) * sizeof( MOL_COORD ) ))
+                        if ((pszCoord = (MOL_COORD*) inchi_malloc( inchi_max( num_atoms, 1 ) * sizeof( MOL_COORD ) ))) /* djb-rwth: addressing LLVM warning */
                         {
                             memset( pszCoord, ' ', inchi_max( num_atoms, 1 ) * sizeof( MOL_COORD ) );
                         }
@@ -968,7 +968,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                         {
                             p = LoadLine( inp_molfile, &bTooLongLine, &bItemIsOver, &s,
                                           szLine, sizeof( szLine ), INCHI_LINE_ADD, p, &res );
-                            if (i >= num_atoms || s && p >= s)
+                            if (i >= num_atoms || (s && p >= s)) /* djb-rwth: addressing LLVM warning */
                             {
                                 break; /* end of bonds (plain) */
                             }
@@ -1007,7 +1007,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                         bNonZeroXYZ = fabs( xyz ) > MIN_BOND_LENGTH;
                                         if (q != NULL)
                                         {
-                                            memcpy( pszCoord[i] + LEN_COORD*k, p, q - p );
+                                            memcpy( pszCoord[i] + LEN_COORD*(long long)k, p, q - p ); /* djb-rwth: cast operator added */
                                             if (*q == ',')
                                                 q++;
                                             p = q;
@@ -1046,7 +1046,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                 goto bypass_end_of_INChI_plain;
                             }
                         }
-                        if (!bItemIsOver || s && p != s || i != num_atoms)
+                        if (!bItemIsOver || (s && p != s) || i != num_atoms) /* djb-rwth: addressing LLVM warning */
                         {
                             num_atoms = INCHI_INP_ERROR_RET; /* error */
                             *err = INCHI_INP_ERROR_ERR;
@@ -1155,8 +1155,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                  *  Set number of hydrogen atoms
                                  */
                                     {
-                                        int num_iso_H;
-                                        num_iso_H = atom[a1].num_iso_H[1] + atom[a1].num_iso_H[2] + atom[a1].num_iso_H[3];
+                                        /* djb-rwth: removing redundant variables/code */ 
                                         if (valence == ISOLATED_ATOM)
                                         {
                                             atom[a1].num_iso_H[0] = 0;
@@ -1389,13 +1388,13 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                         {
 /* Detected well-defined disconnected stereo
  * locate first non-metal neighbors */
-                                            int    a, n, j, /* k,*/ sb_ord, cur_neigh, min_neigh;
+                                            int    a, j, sb_ord, cur_neigh, min_neigh; /* djb-rwth: removing redundant variables */
                                             for (k = 0; k < 2; k++)
                                             {
                                                 a = k ? atom_stereo0D[i].neighbor[2] : atom_stereo0D[i].neighbor[1];
                                                 sb_ord = k ? sb_ord_from_a2 : sb_ord_from_a1;
                                                 min_neigh = num_atoms;
-                                                for (n = j = 0; j < AT_NUM_BONDS( atom[a] ); j++)
+                                                for (j = 0; j < AT_NUM_BONDS( atom[a] ); j++) /* djb-rwth: removing redundant code */
                                                 {
                                                     cur_neigh = atom[a].neighbor[j];
                                                     if (j != sb_ord && !IS_METAL_ATOM( atom, cur_neigh ))
@@ -1555,7 +1554,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                 longID = 0;
                 num_atoms = 0;
                 /* structure number */
-                if (q = strstr( p, sStructHdrXmlNumber ))
+                if ((q = strstr( p, sStructHdrXmlNumber ))) /* djb-rwth: addressing LLVM warning */
                 {
                     p = q + sizeof( sStructHdrXmlNumber ) - 1;
                     longID = strtol( p, &q, 10 );
@@ -1571,7 +1570,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                     pSdfValue[0] = '\0';
                 }
                 /* pSdfLabel */
-                if (q = strstr( p, sStructHdrXmlIdName ))
+                if ((q = strstr( p, sStructHdrXmlIdName ))) /* djb-rwth: addressing LLVM warning */
                 {
                     p = q + sizeof( sStructHdrXmlIdName ) - 1;
                     q = strchr( p, '\"' );
@@ -1586,7 +1585,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                     }
                 }
                 /* pSdfValue */
-                if (q = strstr( p, sStructHdrXmlIdValue ))
+                if ((q = strstr( p, sStructHdrXmlIdValue ))) /* djb-rwth: addressing LLVM warning */
                 {
                     p = q + sizeof( sStructHdrXmlIdValue ) - 1;
                     q = strchr( p, '\"' );
@@ -1606,9 +1605,20 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                 bErrorMsg = bRestoreInfo = 0;
             }
             else
-                if (bHeaderRead && ( bFatal = 0, len = sizeof( sStructMsgXmlErr ) - 1, !memcmp( szLine, sStructMsgXmlErr, len ) ) ||
-                     bHeaderRead && ( len = sizeof( sStructMsgXmlErrFatal ) - 1, !memcmp( szLine, sStructMsgXmlErrFatal, len ) ) && ( bFatal = 1 ))
+                if ((bHeaderRead && !memcmp( szLine, sStructMsgXmlErr, sizeof(sStructMsgXmlErr) - 1)) ||
+                     (bHeaderRead && !memcmp( szLine, sStructMsgXmlErrFatal, sizeof(sStructMsgXmlErrFatal) - 1)) ) /* djb-rwth: fixed incorrectly written operators */
                 {
+                    /* djb-rwth: remaining block from the above condition */
+                    if (bHeaderRead && !memcmp(szLine, sStructMsgXmlErr, sizeof(sStructMsgXmlErr) - 1))
+                    {
+                        bFatal = 0;
+                        len = sizeof(sStructMsgXmlErr) - 1;
+                    }
+                    if (bHeaderRead && !memcmp(szLine, sStructMsgXmlErrFatal, sizeof(sStructMsgXmlErrFatal) - 1))
+                    {
+                        bFatal = 1;
+                        len = sizeof(sStructMsgXmlErrFatal) - 1;
+                    }
                     p = szLine + len;
                     q = strchr( p, '\"' );
                     if (q && !bFindNext)
@@ -1752,7 +1762,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                                 res -= pos;  /* number of chars left to process in szLine */
                                                 memmove( szLine, p, res * sizeof( szLine[0] ) ); /* move them to the start of the line */
                                             }
-                                            memcpy( szLine + res, szNextLine, ( res2 + 1 ) * sizeof( szNextLine[0] ) );
+                                            memcpy( szLine + res, szNextLine, ( (long long)res2 + 1 ) * sizeof( szNextLine[0] ) ); /* djb-rwth: cast operator added */
                                             res += res2;
                                             szLine[res] = '\0';
                                             bTooLongLine = bTooLongLine2;
@@ -1927,7 +1937,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                                 res -= pos;  /* number of chars left to process in szLine */
                                                 memmove( szLine, p, res * sizeof( szLine[0] ) ); /* move them to the start of the line */
                                             }
-                                            memcpy( szLine + res, szNextLine, ( res2 + 1 ) * sizeof( szNextLine[0] ) );
+                                            memcpy( szLine + res, szNextLine, ( (long long)res2 + 1 ) * sizeof( szNextLine[0] ) ); /* djb-rwth: cast operator added */
                                             res += res2;
                                             szLine[res] = '\0';
                                             bTooLongLine = bTooLongLine2;
@@ -2133,7 +2143,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                     goto bypass_end_of_INChI;
                                 }
                                 /********************** coordinates xml ****************************/
-                                if (pszCoord = (MOL_COORD*) inchi_malloc( inchi_max( num_atoms, 1 ) * sizeof( MOL_COORD ) ))
+                                if ((pszCoord = (MOL_COORD*) inchi_malloc( inchi_max( num_atoms, 1 ) * sizeof( MOL_COORD ) ))) /* djb-rwth: addressing LLVM warning */
                                 {
                                     memset( pszCoord, ' ', inchi_max( num_atoms, 1 ) * sizeof( MOL_COORD ) );
                                     res = inchi_ios_gets( szLine, sizeof( szLine ) - 1, inp_molfile, &bTooLongLine );
@@ -2173,7 +2183,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                                     res -= pos;  /* number of chars left to process in szLine */
                                                     memmove( szLine, p, res * sizeof( szLine[0] ) ); /* move them to the start of the line */
                                                 }
-                                                memcpy( szLine + res, szNextLine, ( res2 + 1 ) * sizeof( szNextLine[0] ) );
+                                                memcpy( szLine + res, szNextLine, ( (long long)res2 + 1 ) * sizeof( szNextLine[0] ) ); /* djb-rwth: cast operator added */
                                                 res += res2;
                                                 szLine[res] = '\0';
                                                 bTooLongLine = bTooLongLine2;
@@ -2218,7 +2228,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                                     bNonZeroXYZ = fabs( xyz ) > MIN_BOND_LENGTH;
                                                     if (q != NULL)
                                                     {
-                                                        memcpy( pszCoord[i] + LEN_COORD*k, p, q - p );
+                                                        memcpy( pszCoord[i] + LEN_COORD*(long long)k, p, q - p ); /* djb-rwth: cast operator added */
                                                         if (*q == ',')
                                                             q++;
                                                         p = q;
@@ -2374,8 +2384,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                  *  Set number of hydrogen atoms
                                  */
                                                 {
-                                                    int num_iso_H;
-                                                    num_iso_H = atom[a1].num_iso_H[1] + atom[a1].num_iso_H[2] + atom[a1].num_iso_H[3];
+                                                    /* djb-rwth: removing redundant variables/code */
                                                     if (valence == ISOLATED_ATOM)
                                                     {
                                                         atom[a1].num_iso_H[0] = 0;
@@ -2608,13 +2617,13 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                                                     {
 /* Detected well-defined disconnected stereo
  * locate first non-metal neighbors */
-                                                        int    a, n, j, /* k,*/ sb_ord, cur_neigh, min_neigh;
+                                                        int    a, j, sb_ord, cur_neigh, min_neigh; /* djb-rwth: removing redundant variables */
                                                         for (k = 0; k < 2; k++)
                                                         {
                                                             a = k ? atom_stereo0D[i].neighbor[2] : atom_stereo0D[i].neighbor[1];
                                                             sb_ord = k ? sb_ord_from_a2 : sb_ord_from_a1;
                                                             min_neigh = num_atoms;
-                                                            for (n = j = 0; j < AT_NUM_BONDS( atom[a] ); j++)
+                                                            for (j = 0; j < AT_NUM_BONDS( atom[a] ); j++) /* djb-rwth: removing redundant variables/code */
                                                             {
                                                                 cur_neigh = atom[a].neighbor[j];
                                                                 if (j != sb_ord && !IS_METAL_ATOM( atom, cur_neigh ))
@@ -2773,7 +2782,7 @@ int INChIToInchi_Input( INCHI_IOSTREAM *inp_molfile,
     inchi_Stereo0D *stereo0D_old = NULL;
     int             nNumAtoms = 0, nNumStereo0D = 0;
     MOL_COORD      *szCoordNew = NULL;
-    MOL_COORD      *szCoordOld = NULL;
+    /* djb-rwth: removing redundant variables */
     int            i, j;
 
     if (pStrErr)
@@ -2789,7 +2798,7 @@ int INChIToInchi_Input( INCHI_IOSTREAM *inp_molfile,
 
         at_old = orig_at_data ? orig_at_data->atom : NULL; /*  save pointer to the previous allocation */
         stereo0D_old = orig_at_data ? orig_at_data->stereo0D : NULL;
-        szCoordOld = NULL;
+        /* djb-rwth: removing redundant code */
         num_inp_atoms_new =
             INChIToInchi_Atom( inp_molfile, orig_at_data ? &stereo0D_new : NULL, &num_inp_0D_new,
                           bDoNotAddH, vABParityUnknown, nInputType,
@@ -2829,7 +2838,7 @@ int INChIToInchi_Input( INCHI_IOSTREAM *inp_molfile,
                             orig_at_data->num_stereo0D = num_inp_0D_new;    num_inp_0D_new = 0;
                         }
                         else
-                            if (orig_at_data->atom = CreateInchi_Atom( nNumAtoms ))
+                            if ((orig_at_data->atom = CreateInchi_Atom( nNumAtoms ))) /* djb-rwth: addressing LLVM warning */
                             {
 /*  switch at_new <--> orig_at_data->at; */
                                 if (orig_at_data->num_atoms)
@@ -2846,13 +2855,12 @@ int INChIToInchi_Input( INCHI_IOSTREAM *inp_molfile,
                                 }
                                 FreeInchi_Atom( &at_old );
                                 /*  copy newly read structure */
-                                memcpy( orig_at_data->atom + orig_at_data->num_atoms,
-                                        at_new,
-                                        num_inp_atoms_new * sizeof( orig_at_data->atom[0] ) );
+                                if (at_new) /* djb-rwth: fixing a NULL pointer dereference */
+                                    memcpy( orig_at_data->atom + orig_at_data->num_atoms, at_new, num_inp_atoms_new * sizeof( orig_at_data->atom[0] ) );
                                 /*  cpy newly read 0D stereo */
                                 if (num_inp_0D_new > 0 && stereo0D_new)
                                 {
-                                    if (orig_at_data->stereo0D = CreateInchi_Stereo0D( nNumStereo0D ))
+                                    if ((orig_at_data->stereo0D = CreateInchi_Stereo0D( nNumStereo0D ))) /* djb-rwth: addressing LLVM warning */
                                     {
                                         memcpy( orig_at_data->stereo0D, stereo0D_old, orig_at_data->num_stereo0D * sizeof( orig_at_data->stereo0D[0] ) );
                                         /*  adjust numbering in the newly read structure */

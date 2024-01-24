@@ -1,8 +1,8 @@
 /*
 * International Chemical Identifier (InChI)
 * Version 1
-* Software version 1.06
-* December 15, 2020
+* Software version 1.07
+* 20/11/2023
 *
 * The InChI library and programs are free software developed under the
 * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,7 +31,6 @@
 *
 */
 
-
 #include <string.h>
 
 /*#define CHECK_WIN32_VC_HEAP*/
@@ -40,6 +39,7 @@
 #include "ichitime.h"
 #include "ichirvrs.h"
 
+#include "bcf_s.h"
 
 #if ( READ_INCHI_STRING == 1 )
 
@@ -113,7 +113,7 @@ int FillTgDiffHChgFH( TgDiffHChgFH tdhc[],
                       EDGE_LIST *pAtomIndList )
 {
 
-    int i, j, iat, itg, itg_prev, num, itg_out, bOverflow;
+    int i, j, iat, itg, num, itg_out; /* djb-rwth: removing redundant variables */
     EDGE_LIST IndList;   /* type, itg */
     TgDiffHChgFH cur_tdhc;
     AT_NUMB    *pEndp0;
@@ -123,12 +123,12 @@ int FillTgDiffHChgFH( TgDiffHChgFH tdhc[],
     AllocEdgeList( &IndList, EDGE_LIST_CLEAR );
     pAtomIndList->num_edges = 0;
     itg_out = 0;
-    bOverflow = 0;
-    memset( tdhc, 0, max_tdhc * sizeof( tdhc[0] ) );
+    /* djb-rwth: removing redundant code */
+    memset( tdhc, 0, max_tdhc ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     for (itg = 0; itg < ti->num_t_groups; itg++)
     {
-        memset( &cur_tdhc, 0, sizeof( cur_tdhc ) );
+        memset( &cur_tdhc, 0, sizeof( cur_tdhc ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
         cur_tdhc.itg = itg;
         cur_tdhc.nNumHInchi = ti->t_group[itg].num[0] - ti->t_group[itg].num[1];
@@ -250,7 +250,7 @@ int FillTgDiffHChgFH( TgDiffHChgFH tdhc[],
         }
         else
         {
-            bOverflow |= 1;
+            /* djb-rwth: removing redundant code */
             IndList.num_edges = nCurIndListLen;
             break;
         }
@@ -259,14 +259,14 @@ int FillTgDiffHChgFH( TgDiffHChgFH tdhc[],
     /* fill out atom index list */
     if (itg_out)
     {
-        itg_prev = IndList.pnEdges[1]; /* the 1st saved t-group number */
+        /* djb-rwth: removing redundant code */
         for (type = 0; type < fNumAllChgT; type++)
         {
             j = 0;
             for (i = 0; i < itg_out; i++)
             {
                 num = 0;
-                itg = tdhc[i].itg;
+                itg = tdhc[i].itg; /* djb-rwth: ui_rr? */
                 tdhc[i].i[type] = -999; /* empty */
                 while (IndList.pnEdges[j + 1] == itg)
                 {
@@ -276,7 +276,7 @@ int FillTgDiffHChgFH( TgDiffHChgFH tdhc[],
                         {
                             tdhc[i].i[type] = pAtomIndList->num_edges;
                         }
-                        if (ret = AddToEdgeList( pAtomIndList, IndList.pnEdges[j + 2], INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList( pAtomIndList, IndList.pnEdges[j + 2], INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
@@ -311,6 +311,17 @@ exit_function:
 
 
 /****************************************************************************/
+/* djb-rwth: placed as global variables to avoid function buffer issues */
+short iat_DB_O[MAX_DIFF_FIXH], iat_SB_O_Minus[MAX_DIFF_FIXH];
+short iat_DB_O_Plus[MAX_DIFF_FIXH], iat_SB_NH[MAX_DIFF_FIXH];
+short iat_SB_N_Minus[MAX_DIFF_FIXH], iat_DB_N[MAX_DIFF_FIXH];
+short iat_SB_Neutr[MAX_DIFF_FIXH], iat_DB_Charged[MAX_DIFF_FIXH];
+short iat_DB_NHn_Plus[MAX_DIFF_FIXH], iat_SB_NHm_Neutr[MAX_DIFF_FIXH];
+short iat_DB_O_Neutr[MAX_DIFF_FIXH], iat_DB_N_Neutr[MAX_DIFF_FIXH];
+short iat_SB_N_Neutr[MAX_DIFF_FIXH], iat_N_V_Array[MAX_DIFF_FIXH];
+short iat_Central[MAX_DIFF_FIXH], iat_NO2[MAX_DIFF_FIXH];
+TgDiffHChgFH tdhc[MAX_DIFF_FIXH];
+
 int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                                 INCHI_CLOCK *ic,
                                 ICHICONST INPUT_PARMS *ip,
@@ -351,11 +362,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
     Vertex     vPathStart, vPathEnd;
     int        nPathLen, nDeltaH, nDeltaCharge, nNumVisitedAtoms;
 
-    int        nNumRunBNS = 0, forbidden_edge_mask_inv = ~forbidden_edge_mask;
+    int        nNumRunBNS = 0, forbidden_edge_mask_inv = ~forbidden_edge_mask; /* djb-rwth: ignoring LLVM warning: variable used */
 
     INCHI_HEAPCHK
 
-        AllocEdgeList( &AllChargeEdges, EDGE_LIST_CLEAR );
+    AllocEdgeList( &AllChargeEdges, EDGE_LIST_CLEAR );
     AllocEdgeList( &CurrEdges, EDGE_LIST_CLEAR );
     AllocEdgeList( &NFlowerEdges, EDGE_LIST_CLEAR );
     AllocEdgeList( &SFlowerEdges, EDGE_LIST_CLEAR );
@@ -379,7 +390,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         }
         if (( e = pVA[i].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
         {
-            if (ret = AddToEdgeList( &AllChargeEdges, e, INC_ADD_EDGE ))
+            if ((ret = AddToEdgeList( &AllChargeEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -396,18 +407,18 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
 
                 if (pBNS->edge[j].flow)
                 {
-                    if (ret = AddToEdgeList( &AllChargeEdges, j, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList( &AllChargeEdges, j, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
-                    if (ret = AddToEdgeList( &NFlowerEdges, j, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList( &NFlowerEdges, j, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
                 else
                 {
-                    if (ret = AddToEdgeList( &OtherNFlowerEdges, j, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList( &OtherNFlowerEdges, j, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
@@ -427,7 +438,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
 
                     if (pBNS->edge[j].flow)
                     {
-                        if (ret = AddToEdgeList( &SFlowerEdges, j, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList( &SFlowerEdges, j, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
@@ -440,7 +451,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             k = at2[i].neighbor[j];
             if (k < i && !pBNS->edge[e = pBNS->vert[i].iedge[j]].forbidden)
             {
-                if (ret = AddToEdgeList( &AllBondEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList( &AllBondEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -468,12 +479,12 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
     }
 
     INCHI_HEAPCHK
-        if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+        if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
         {
             goto exit_function;
         }
     INCHI_HEAPCHK
-        if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+        if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
         {
             goto exit_function;
         }
@@ -481,10 +492,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
     INCHI_HEAPCHK
 
         if (!pc2i->bHasDifference ||
-             !pc2i->len_c2at && pc2i->nNumTgRevrs == pc2i->nNumTgInChI &&
+             (!pc2i->len_c2at && pc2i->nNumTgRevrs == pc2i->nNumTgInChI &&
              pc2i->nNumEndpRevrs == pc2i->nNumRemHInChI &&
              pc2i->nNumEndpRevrs == pc2i->nNumEndpInChI &&
-             !pc2i->nNumTgDiffMinus && !pc2i->nNumTgDiffH)
+             !pc2i->nNumTgDiffMinus && !pc2i->nNumTgDiffH)) /* djb-rwth: addressing LLVM warning */
         {
             goto exit_function; /* nothing to do */
         }
@@ -502,24 +513,24 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (-) from B-O(-) to O=A              */
         /*----------------------------------------------------*/
         int num_DB_O = 0, num_SB_O_Minus = 0, iat;
-        short iat_DB_O[MAX_DIFF_FIXH], iat_SB_O_Minus[MAX_DIFF_FIXH];
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if (pc2i->c2at[i].nValElectr == 6 /* && !pc2i->c2at[i].endptInChI -- mod#1*/ &&
-                ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
             {
                 if ( /* orig. InChI info: */
-                     num_SB_O_Minus < MAX_DIFF_FIXH &&
-                     pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
-                     /* reversed structure info: */
-                     pc2i->c2at[i].nFixHRevrs == -1 && pc2i->c2at[i].nMobHRevrs == 1 &&
-                     pc2i->c2at[i].nAtChargeRevrs == -1 && !at2[iat].num_H && /* at2 is Fixed-H */
-                     at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 1)
+                    num_SB_O_Minus < MAX_DIFF_FIXH &&
+                    pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
+                    /* reversed structure info: */
+                    pc2i->c2at[i].nFixHRevrs == -1 && pc2i->c2at[i].nMobHRevrs == 1 &&
+                    pc2i->c2at[i].nAtChargeRevrs == -1 && !at2[iat].num_H && /* at2 is Fixed-H */
+                    at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 1)
                 {
                     iat_SB_O_Minus[num_SB_O_Minus++] = iat;
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
@@ -527,15 +538,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 else
                 {
                     if ( /* orig. InChI info: */
-                         num_DB_O < MAX_DIFF_FIXH &&
-                         pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
-                         /* reversed structure info: */
-                         pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
-                         pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                         at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
+                        num_DB_O < MAX_DIFF_FIXH &&
+                        pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
+                        /* reversed structure info: */
+                        pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
+                        pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                        at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
                     {
                         iat_DB_O[num_DB_O++] = iat;
-                        if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
@@ -543,11 +554,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_O_Minus, num_DB_O ))
+        if ((num_try = inchi_min(num_SB_O_Minus, num_DB_O))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_O_Minus && cur_success < num_try; i++)
             {
@@ -555,8 +566,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta; /* remove (-) from AB-O(-) */
@@ -564,15 +575,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Added (-)charge to O=AB => nDeltaCharge == -1 */
                     /* Flow change on pe (-)charge edge (atom B-O(-)) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -589,23 +600,23 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
             CurrEdges.num_edges = 0; /* clear current edge list */
         }
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic,
-                                                            ip, sd, pBNS, pStruct,
-                                                            at, at2, at3, pVA,
-                                                            pTCGroups,
-                                                            ppt_group_info, ppat_norm,
-                                                            ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic,
+                ip, sd, pBNS, pStruct,
+                at, at2, at3, pVA,
+                pTCGroups,
+                ppt_group_info, ppat_norm,
+                ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -613,7 +624,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -635,29 +646,29 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (+) from O(+) to NH2                          */
         /*--------------------------------------------------------------*/
         int num_DB_O_Plus = 0, num_SB_NH = 0, iat;
-        short iat_DB_O_Plus[MAX_DIFF_FIXH], iat_SB_NH[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : NULL;
         cur_success = 0;
         num_zero_ret = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: =NH2(+), =OH(+) */
-                 num_SB_NH < MAX_DIFF_FIXH &&
-                 ( pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1 ||
-                   pc2i->c2at[i].nValElectr == 6 ) /* N, O, S, Se, Te */ &&
-                 /*!pc2i->c2at[i].endptInChI &&*/ /* <=== relaxation */
-                   ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI>0 /*== 1 --modification#2*/ && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
-                                                                         /* reversed structure info: */
-                 pc2i->c2at[i].nFixHRevrs == 0 && /* pc2i->c2at[i].nMobHRevrs == 0 &&*/
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && at2[iat].num_H &&
-                 at2[iat].valence == at2[iat].chem_bonds_valence)
+                num_SB_NH < MAX_DIFF_FIXH &&
+                ((pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1) ||
+                    pc2i->c2at[i].nValElectr == 6) /* N, O, S, Se, Te */ &&
+                /*!pc2i->c2at[i].endptInChI &&*/ /* <=== relaxation */
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI>0 /*== 1 --modification#2*/ && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
+                /* reversed structure info: */
+                pc2i->c2at[i].nFixHRevrs == 0 && /* pc2i->c2at[i].nMobHRevrs == 0 &&*/
+                pc2i->c2at[i].nAtChargeRevrs == 0 && at2[iat].num_H &&
+                at2[iat].valence == at2[iat].chem_bonds_valence) /* djb-rwth: addressing LLVM warning */
             {
                 iat_SB_NH[num_SB_NH++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -668,30 +679,30 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom: charge=+1, no H, has double bond, P, As, O, S, Se, Te, F, Cl, Br, I */
-                 num_DB_O_Plus < MAX_DIFF_FIXH &&
-                 at2[iat].charge == 1 && !at2[iat].num_H &&
-                 at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 ( pVA[iat].cNumValenceElectrons == 6 || pVA[iat].cNumValenceElectrons == 7 ||
-                   pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber > 1 ) &&
-                 /* in orig.InChI: not an endpoint, has no H */
-                 !pStruct->endpoint[i] &&
-                 !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                 !( nMobHInChI && nMobHInChI[i] ) &&
-                 /* has (+) edge */
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_DB_O_Plus < MAX_DIFF_FIXH &&
+                at2[iat].charge == 1 && !at2[iat].num_H &&
+                at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                (pVA[iat].cNumValenceElectrons == 6 || pVA[iat].cNumValenceElectrons == 7 ||
+                    (pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber > 1)) &&
+                /* in orig.InChI: not an endpoint, has no H */
+                !pStruct->endpoint[i] &&
+                !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                !(nMobHInChI && nMobHInChI[i]) &&
+                /* has (+) edge */
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
             {
                 iat_DB_O_Plus[num_DB_O_Plus++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
             }
         }
-        if (num_try = inchi_min( num_DB_O_Plus, num_SB_NH ))
+        if ((num_try = inchi_min(num_DB_O_Plus, num_SB_NH))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
         repeat_02_allow_NV:
             for (i = 0; i < num_SB_NH && cur_success < num_try; i++)
@@ -700,8 +711,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCPlusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -709,15 +720,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warning */
                 {
                     /* Removed charge from O(+) => nDeltaCharge == -1 */
                     /* Flow change on pe (+)charge edge (atom NH2) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -737,24 +748,24 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
             if (num_zero_ret == num_try && !bAllowedNFlowerEdges && NFlowerEdges.num_edges)
             {
-                RemoveForbiddenEdgeMask( pBNS, &NFlowerEdges, forbidden_edge_mask );
+                RemoveForbiddenEdgeMask(pBNS, &NFlowerEdges, forbidden_edge_mask);
                 bAllowedNFlowerEdges = 1;
                 goto repeat_02_allow_NV;
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            bAllowedNFlowerEdges = 0;
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            /* djb-rwth: removing redundant code */
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -762,7 +773,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -788,7 +799,6 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /*           these atoms are tautomeric in restored structure   */
         /*--------------------------------------------------------------*/
         int num_SB_N_Minus = 0, num_DB_O = 0, iat;
-        short iat_SB_N_Minus[MAX_DIFF_FIXH], iat_DB_O[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         inp_ATOM *at_Mobile_H_Revrs = ( pStruct->pOne_norm_data[1] &&
                                         pStruct->pOne_norm_data[1]->at ) ? pStruct->pOne_norm_data[1]->at : NULL;
@@ -797,23 +807,24 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         pInChI[0] && pInChI[0]->nNum_H? pInChI[0]->nNum_H : 0;
         */
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: -O(-) */
-                 num_DB_O < MAX_DIFF_FIXH &&
-                 pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
-                 !pc2i->c2at[i].endptInChI &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
-                 /* reversed structure info: */
-                 pc2i->c2at[i].endptRevrs &&
-                 pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                 at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
+                num_DB_O < MAX_DIFF_FIXH &&
+                pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
+                !pc2i->c2at[i].endptInChI &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
+                /* reversed structure info: */
+                pc2i->c2at[i].endptRevrs &&
+                pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
+                pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
             {
                 iat_DB_O[num_DB_O++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -824,32 +835,32 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom N: charge=-1, no H, has no double bond, endpoint */
-                 num_SB_N_Minus < MAX_DIFF_FIXH &&
-                 at2[iat].charge == -1 && /*!at2[iat].num_H &&*/
-                 at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
-                 at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint &&
-                 /* in orig.InChI: not an endpoint, has no H */
-                 /* !pStruct->endpoint[i] && */
-                 /*
-                 !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
-                 !(nMobHInChI && nMobHInChI[i] ) &&
-                 */
-                 /* has (-) edge */
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_SB_N_Minus < MAX_DIFF_FIXH &&
+                at2[iat].charge == -1 && /*!at2[iat].num_H &&*/
+                at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
+                at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint &&
+                /* in orig.InChI: not an endpoint, has no H */
+                /* !pStruct->endpoint[i] && */
+                /*
+                !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                !(nMobHInChI && nMobHInChI[i] ) &&
+                */
+                /* has (-) edge */
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
             {
                 iat_SB_N_Minus[num_SB_N_Minus++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_N_Minus, num_DB_O ))
+        if ((num_try = inchi_min(num_SB_N_Minus, num_DB_O))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_N_Minus && cur_success < num_try; i++)
             {
@@ -857,8 +868,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1; /* 2006-03-03: changed from CPlusGroupEdge */
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -866,15 +877,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warning */
                 {
                     /* Added (-) charge to =O => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (atom -N(-)-) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -891,19 +902,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -911,7 +922,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -937,7 +948,6 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /*           these atoms are tautomeric in restored structure   */
         /*--------------------------------------------------------------*/
         int num_SB_N_Minus = 0, num_DB_O = 0, iat;
-        short iat_SB_N_Minus[MAX_DIFF_FIXH], iat_DB_O[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         inp_ATOM *at_Mobile_H_Revrs = ( pStruct->pOne_norm_data[1] &&
                                         pStruct->pOne_norm_data[1]->at ) ? pStruct->pOne_norm_data[1]->at : NULL;
@@ -947,45 +957,46 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
 
         cur_success = 0;
         CurrEdges.num_edges = 0;
+
         for (i = 0; i < pStruct->num_atoms; i++)
         { /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom N: charge=-1, no H, has no double bond, endpoint */
-                 num_SB_N_Minus < MAX_DIFF_FIXH &&
-                 at2[iat].charge == -1 && /*!at2[iat].num_H &&*/
-                 at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
-                 at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint &&
-                 /* in orig.InChI: may be an endpoint, has no H */
-                 /* has (-) edge */
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_SB_N_Minus < MAX_DIFF_FIXH &&
+                at2[iat].charge == -1 && /*!at2[iat].num_H &&*/
+                at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
+                at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint &&
+                /* in orig.InChI: may be an endpoint, has no H */
+                /* has (-) edge */
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
             {
                 iat_SB_N_Minus[num_SB_N_Minus++] = iat;
             }
             else
                 if (num_DB_O < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && /*!at2[iat].num_H &&*/
-                     at2[iat].valence + 1 == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     pVA[iat].cNumValenceElectrons == 6 &&
-                     at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint && /* endpoint in Reconstructed */
-                     ( pStruct->endpoint[i] || /* endpoint or H(+) acceptor in original */
-                       pnMobHInChI && pnMobHInChI[i] == 1 && pnFixHInChI && pnFixHInChI[i] == -1 ) &&
-                     /* has (-) edge */
-                       ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                    at2[iat].charge == 0 && /*!at2[iat].num_H &&*/
+                    at2[iat].valence + 1 == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    pVA[iat].cNumValenceElectrons == 6 &&
+                    at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint && /* endpoint in Reconstructed */
+                    (pStruct->endpoint[i] || /* endpoint or H(+) acceptor in original */
+                        (pnMobHInChI && pnMobHInChI[i] == 1 && pnFixHInChI && pnFixHInChI[i] == -1)) &&
+                    /* has (-) edge */
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
                 {
                     iat_DB_O[num_DB_O++] = iat;
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
         }
-        if (num_try = inchi_min( num_SB_N_Minus, num_DB_O ))
+        if ((num_try = inchi_min(num_SB_N_Minus, num_DB_O))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
             /* allow charge transfer to all found =O */
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_N_Minus && cur_success < num_try; i++)
             {
@@ -993,8 +1004,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -1002,15 +1013,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Added (-) charge to =O => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (atom -N(-)-) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -1027,19 +1038,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1047,7 +1058,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1071,31 +1082,31 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (+) from O(+) to NH2                          */
         /*--------------------------------------------------------------*/
         int num_SB_Neutr = 0, num_DB_Charged = 0, iat;
-        short iat_SB_Neutr[MAX_DIFF_FIXH], iat_DB_Charged[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         cur_success = 0;
+
         for (i = 0; i < pStruct->num_atoms; i++)
         { /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom: charge=+1, has H, has double bond, N, O, S, Se, Te */
-                 num_DB_Charged < MAX_DIFF_FIXH &&
-                 at2[iat].charge == 1 && at2[iat].num_H &&
-                 at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 ( pVA[iat].cNumValenceElectrons == 6 ||
-                   pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 ) &&
-                 /* in orig.InChI: an endpoint, has fixed-H */
-                 pStruct->endpoint[i] &&
-                 ( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                 /*!(nMobHInChI && nMobHInChI[i] ) &&*/
-                 /* has (+) edge */
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_DB_Charged < MAX_DIFF_FIXH &&
+                at2[iat].charge == 1 && at2[iat].num_H &&
+                at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                (pVA[iat].cNumValenceElectrons == 6 ||
+                    (pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1)) &&
+                /* in orig.InChI: an endpoint, has fixed-H */
+                pStruct->endpoint[i] &&
+                (pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                /*!(nMobHInChI && nMobHInChI[i] ) &&*/
+                /* has (+) edge */
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
             {
 
                 iat_DB_Charged[num_DB_Charged++] = iat;
 
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -1103,34 +1114,34 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             else
             {
                 if ( /* in restored atom: charge=0, has no H, has no double bond, N, P, O, S, Se, Te */
-                     num_SB_Neutr < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H &&
-                     at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     ( pVA[iat].cNumValenceElectrons == 6 ||
-                       pVA[iat].cNumValenceElectrons == 5 ) &&
-                     /* in orig.InChI: an endpoint, has fixed-H */
-                     /* pStruct->endpoint[i] && */
-                     !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                     !( nMobHInChI && nMobHInChI[i] ) &&
-                     /* has (+) edge */
-                     ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 &&
-                     0 == pBNS->edge[e].forbidden)
+                    num_SB_Neutr < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H &&
+                    at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    (pVA[iat].cNumValenceElectrons == 6 ||
+                        pVA[iat].cNumValenceElectrons == 5) &&
+                    /* in orig.InChI: an endpoint, has fixed-H */
+                    /* pStruct->endpoint[i] && */
+                    !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                    !(nMobHInChI && nMobHInChI[i]) &&
+                    /* has (+) edge */
+                    (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 &&
+                    0 == pBNS->edge[e].forbidden)
                 {
 
                     iat_SB_Neutr[num_SB_Neutr++] = iat;
 
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_Neutr, num_DB_Charged ))
+        if ((num_try = inchi_min(num_SB_Neutr, num_DB_Charged))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_Neutr && cur_success < num_try; i++)
             {
@@ -1138,8 +1149,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCPlusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -1147,15 +1158,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Removed charge from O(+) => nDeltaCharge == -1 */
                     /* Flow change on pe (+)charge edge (atom NH2) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -1172,19 +1183,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1192,7 +1203,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1213,26 +1224,26 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: Separate charges                                   */
         /*--------------------------------------------------------------*/
         int num_DB_O = 0, num_SB_NH = 0, iat;
-        short iat_DB_O[MAX_DIFF_FIXH], iat_SB_NH[MAX_DIFF_FIXH];
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: =NH2(+), =OH(+) */
-                 num_SB_NH < MAX_DIFF_FIXH &&
-                 ( pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1 ||
-                   pc2i->c2at[i].nValElectr == 6 ) /* N, O, S, Se, Te */ &&
-                 !pc2i->c2at[i].endptInChI &&
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI == 1 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
-                                                  /* reversed structure info: */
-                 pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs &&
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && at2[iat].num_H &&
-                 !pc2i->c2at[i].endptRevrs &&
-                 at2[iat].valence == at2[iat].chem_bonds_valence)
+                num_SB_NH < MAX_DIFF_FIXH &&
+                ((pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1) ||
+                    pc2i->c2at[i].nValElectr == 6) /* N, O, S, Se, Te */ &&
+                !pc2i->c2at[i].endptInChI &&
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI == 1 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
+                /* reversed structure info: */
+                pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs &&
+                pc2i->c2at[i].nAtChargeRevrs == 0 && at2[iat].num_H &&
+                !pc2i->c2at[i].endptRevrs &&
+                at2[iat].valence == at2[iat].chem_bonds_valence)
             {
                 iat_SB_NH[num_SB_NH++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -1240,30 +1251,30 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             else
             {
                 if ( /* orig. InChI info: -O(-) */
-                     num_DB_O < MAX_DIFF_FIXH &&
-                     ( pc2i->c2at[i].nValElectr == 6 ) /* O, S, Se, Te */ &&
-                     !pc2i->c2at[i].endptInChI &&
-                     ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                     pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
-                     /* reversed structure info: */
-                     pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
-                     pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                     !pc2i->c2at[i].endptRevrs &&
-                     at2[iat].valence + 1 == at2[iat].chem_bonds_valence)
+                    num_DB_O < MAX_DIFF_FIXH &&
+                    (pc2i->c2at[i].nValElectr == 6) /* O, S, Se, Te */ &&
+                    !pc2i->c2at[i].endptInChI &&
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                    pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
+                    /* reversed structure info: */
+                    pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
+                    pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                    !pc2i->c2at[i].endptRevrs &&
+                    at2[iat].valence + 1 == at2[iat].chem_bonds_valence)
                 {
                     iat_DB_O[num_DB_O++] = iat;
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( num_DB_O, num_SB_NH ))
+        if ((num_try = inchi_min(num_DB_O, num_SB_NH))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_NH && cur_success < num_try; i++)
             {
@@ -1271,8 +1282,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCPlusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -1280,15 +1291,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Added charge to =O => nDeltaCharge == 1 */
                     /* Flow change on pe (+)charge edge (atom NH2) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -1305,19 +1316,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1325,7 +1336,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1370,9 +1381,9 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             /* atoms -NH- from which H(+) were removed by the Normalization in orig. InChI */
             iat = pc2i->c2at[i].atomNumber;
             if (( pc2i->c2at[i].nValElectr == 6 ||
-                  pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1 ) &&
+                  (pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1) ) &&
                  !pc2i->c2at[i].endptInChI &&
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
             {
                 if ( /* orig. InChI info: -NH- */
                      pc2i->c2at[i].nFixHInChI == 1 && pc2i->c2at[i].nMobHInChI == 0 &&
@@ -1381,7 +1392,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                      /*pc2i->c2at[i].nAtChargeRevrs == 0 &&*/ at2[iat].num_H && /* at2 is Fixed-H */
                      at2[iat].valence == at2[iat].chem_bonds_valence)
                 {
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
@@ -1420,7 +1431,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
             }
         }
-        if (num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))
+        if ((num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
             SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
@@ -1443,8 +1454,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                       &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                  (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warning */
                 {
                     /* Removed (+)charge from -NH- => nDeltaCharge == -1 */
                     /* Flow change on pe (+)charge edge (atom NHm(+)) is not known to RunBnsTestOnce()) */
@@ -1482,7 +1493,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1490,7 +1501,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1538,12 +1549,12 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                   pc2i->c2at[i].nFixHRevrs > 0 && !pc2i->c2at[i].endptRevrs &&
                   pc2i->c2at[i].nAtChargeRevrs == 1 &&
                   /* original InChI: non-taut & has H or an endpoint, has Fixed H */
-                  ( !pc2i->c2at[i].nFixHInChI && pc2i->c2at[i].nMobHInChI == pc2i->c2at[i].nFixHRevrs ||
-                    pc2i->c2at[i].nFixHInChI == pc2i->c2at[i].nFixHRevrs && pc2i->c2at[i].endptInChI ) ) &&
-                 0 <= ( e = pVA[iat].nCPlusGroupEdge - 1 ) && !pBNS->edge[e].forbidden && !pBNS->edge[e].flow)
+                  ( (!pc2i->c2at[i].nFixHInChI && pc2i->c2at[i].nMobHInChI == pc2i->c2at[i].nFixHRevrs) ||
+                    (pc2i->c2at[i].nFixHInChI == pc2i->c2at[i].nFixHRevrs && pc2i->c2at[i].endptInChI) ) ) &&
+                 0 <= ( e = pVA[iat].nCPlusGroupEdge - 1 ) && !pBNS->edge[e].forbidden && !pBNS->edge[e].flow) /* djb-rwth: addressing LLVM warnings */
             {
 
-                if (ret = AddToEdgeList( &CurChargeEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList( &CurChargeEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_case_06d;
                 }
@@ -1556,20 +1567,20 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                       pc2i->c2at[i].nFixHInChI > 0 && !pc2i->c2at[i].endptInChI &&
                       pc2i->c2at[i].nAtChargeRevrs == 0 &&
                       /* reconstructed InChI: non-taut & has H or an endpoint, has Fixed H */
-                      ( !pc2i->c2at[i].nFixHRevrs && pc2i->c2at[i].nMobHRevrs == pc2i->c2at[i].nFixHInChI ||
-                        pc2i->c2at[i].nFixHRevrs == pc2i->c2at[i].nFixHInChI && pc2i->c2at[i].endptRevrs ) ) &&
+                      ( (!pc2i->c2at[i].nFixHRevrs && pc2i->c2at[i].nMobHRevrs == pc2i->c2at[i].nFixHInChI) ||
+                        (pc2i->c2at[i].nFixHRevrs == pc2i->c2at[i].nFixHInChI && pc2i->c2at[i].endptRevrs) ) ) &&
                      0 <= ( e = pVA[iat].nCPlusGroupEdge - 1 ) && !pBNS->edge[e].forbidden &&
-                     pBNS->edge[e].flow)
+                     pBNS->edge[e].flow) /* djb-rwth: addressing LLVM warnings */
                 {
 
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_case_06d;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))
+        if ((num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
             int bSFlowerEdgesMayBeForbidden = ( SFlowerEdges.num_edges > 0 );
@@ -1602,8 +1613,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                           &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                    if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                      vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                    if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                      (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warnings */
                     {
                         /* Removed (+)charge from -NH- => nDeltaCharge == -1 */
                         /* Flow change on pe (+)charge edge (atom NHm(+)) is not known to RunBnsTestOnce()) */
@@ -1639,7 +1650,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1647,7 +1658,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1668,26 +1679,26 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (+) from NHn(+) to NHn                  */
         /*--------------------------------------------------------*/
         int num_DB_NHn_Plus = 0, num_SB_NHm_Neutr = 0, iat;
-        short iat_DB_NHn_Plus[MAX_DIFF_FIXH], iat_SB_NHm_Neutr[MAX_DIFF_FIXH];
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
-            if (( pc2i->c2at[i].nValElectr == 6 ||
-                  pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1 ) &&
-                 !pc2i->c2at[i].endptInChI &&
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+            if ((pc2i->c2at[i].nValElectr == 6 ||
+                (pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1)) &&
+                !pc2i->c2at[i].endptInChI &&
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
             {
                 if ( /* orig. InChI info: NHm */
-                     num_SB_NHm_Neutr < MAX_DIFF_FIXH &&
-                     pc2i->c2at[i].nFixHInChI == 1 && /*pc2i->c2at[i].nMobHInChI == 0 &&*/
-                                                      /* reversed structure info: */
-                     pc2i->c2at[i].nFixHRevrs == 0 && /*pc2i->c2at[i].nMobHRevrs == 1 &&*/
-                     pc2i->c2at[i].nAtChargeRevrs == 0 && at2[iat].num_H && /* at2 is Fixed-H */
-                     at2[iat].valence == at2[iat].chem_bonds_valence)
+                    num_SB_NHm_Neutr < MAX_DIFF_FIXH &&
+                    pc2i->c2at[i].nFixHInChI == 1 && /*pc2i->c2at[i].nMobHInChI == 0 &&*/
+                    /* reversed structure info: */
+                    pc2i->c2at[i].nFixHRevrs == 0 && /*pc2i->c2at[i].nMobHRevrs == 1 &&*/
+                    pc2i->c2at[i].nAtChargeRevrs == 0 && at2[iat].num_H && /* at2 is Fixed-H */
+                    at2[iat].valence == at2[iat].chem_bonds_valence)
                 {
                     iat_SB_NHm_Neutr[num_SB_NHm_Neutr++] = iat;
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
@@ -1695,15 +1706,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 else
                 {
                     if ( /* orig. InChI info: */
-                         num_DB_NHn_Plus < MAX_DIFF_FIXH &&
-                         pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI &&*/
-                                                          /* reversed structure info: */
-                         pc2i->c2at[i].nFixHRevrs == 1 && /*pc2i->c2at[i].nMobHRevrs ==  0 &&*/
-                         pc2i->c2at[i].nAtChargeRevrs == 1 && at2[iat].num_H &&
-                         at2[iat].valence < at2[iat].chem_bonds_valence)
+                        num_DB_NHn_Plus < MAX_DIFF_FIXH &&
+                        pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI &&*/
+                        /* reversed structure info: */
+                        pc2i->c2at[i].nFixHRevrs == 1 && /*pc2i->c2at[i].nMobHRevrs ==  0 &&*/
+                        pc2i->c2at[i].nAtChargeRevrs == 1 && at2[iat].num_H &&
+                        at2[iat].valence < at2[iat].chem_bonds_valence)
                     {
                         iat_DB_NHn_Plus[num_DB_NHn_Plus++] = iat;
-                        if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
@@ -1711,11 +1722,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_NHm_Neutr, num_DB_NHn_Plus ))
+        if ((num_try = inchi_min(num_SB_NHm_Neutr, num_DB_NHn_Plus))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_NHm_Neutr && cur_success < num_try; i++)
             {
@@ -1723,8 +1734,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCPlusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta; /* add (+) to -NHm */
@@ -1732,15 +1743,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Removed (+)charge from -NHn => nDeltaCharge == -1 */
                     /* Flow change on pe (+)charge edge (atom NHm(+)) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -1757,19 +1768,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1777,7 +1788,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1788,10 +1799,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         }
     }
 
-    if (( pc2i->nNumTgInChI > pc2i->nNumTgRevrs && pc2i->nNumTgRevrs == 1 ||
+    if (( (pc2i->nNumTgInChI > pc2i->nNumTgRevrs && pc2i->nNumTgRevrs == 1) ||
           pc2i->nNumEndpInChI < pc2i->nNumEndpRevrs ) &&
          pStruct->nNumRemovedProtonsMobHInChI == pStruct->One_ti.tni.nNumRemovedProtons &&
-         pStruct->fixed_H && pStruct->endpoint && pStruct->pOne_norm_data[TAUT_YES]->at_fixed_bonds)
+         pStruct->fixed_H && pStruct->endpoint && pStruct->pOne_norm_data[TAUT_YES] && pStruct->pOne_norm_data[TAUT_YES]->at_fixed_bonds) /* djb-rwth: addressing LLVM warning; fixing a NULL pointer dereference */
     {
         /*----------------------------------------------------------*/
         /* case 06a: restored: N'(+)=-AB-NH    orig.: N'-=AB=NH(+)  */
@@ -1825,10 +1836,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 continue;
             }
             /* -NH-, -OH */
-            if (pStruct->fixed_H[i] && !nMobHInChI[i] &&
+            if (pStruct->fixed_H[i] && nMobHInChI && !nMobHInChI[i] &&
                  at2[iat].charge == 0 && at2[iat].radical == 0 &&
                  0 <= ( e = pVA[iat].nCPlusGroupEdge - 1 ) && !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
-                 ( ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ) ))
+                 ( ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ) )) /* djb-rwth: fixing a NULL pointer dereference */
             {
                 goto exit_case_06a;
             }
@@ -1845,7 +1856,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
             }
         }
-        if (num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))
+        if ((num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
             SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
@@ -1868,8 +1879,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                       &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                  (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Removed (+)charge from -NH- => nDeltaCharge == -1 */
                     /* Flow change on pe (+)charge edge (atom NHm(+)) is not known to RunBnsTestOnce()) */
@@ -1903,7 +1914,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1911,7 +1922,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -1921,11 +1932,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     }
-    if (( pc2i->nNumTgInChI > pc2i->nNumTgRevrs && pc2i->nNumTgRevrs == 1 ||
+    if (( (pc2i->nNumTgInChI > pc2i->nNumTgRevrs && pc2i->nNumTgRevrs == 1) ||
           pc2i->nNumEndpInChI < pc2i->nNumEndpRevrs ) &&
           ( pStruct->nNumRemovedProtonsMobHInChI == pStruct->One_ti.tni.nNumRemovedProtons ||
             pStruct->nNumRemovedProtonsMobHInChI > pStruct->One_ti.tni.nNumRemovedProtons ) &&
-         pStruct->fixed_H && pStruct->endpoint && pStruct->pOne_norm_data[TAUT_YES]->at_fixed_bonds)
+         pStruct->fixed_H && pStruct->endpoint && pStruct->pOne_norm_data[TAUT_YES] && pStruct->pOne_norm_data[TAUT_YES]->at_fixed_bonds) /* djb-rwth: addressing LLVM warning; fixing a NULL pointer dereference */
     {
         /*----------------------------------------------------------*/
         /* case 06b: restored: X(+)=-AB-NH    orig.: X-=AB=NH(+)    */
@@ -1960,10 +1971,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 continue;
             }
             /* -NH-, -OH */
-            if (pStruct->fixed_H[i] && !nMobHInChI[i] &&
+            if (pStruct->fixed_H[i] && nMobHInChI && !nMobHInChI[i] &&
                  at2[iat].charge == 0 && at2[iat].radical == 0 &&
                  0 <= ( e = pVA[iat].nCPlusGroupEdge - 1 ) && !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
-                 ( ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ) ))
+                 ( ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ) )) /* djb-rwth: fixing a NULL pointer dereference */
             {
                 goto exit_case_06b;
             }
@@ -1980,7 +1991,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
             }
         }
-        if (num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))
+        if ((num_try = inchi_min( CurrEdges.num_edges, CurChargeEdges.num_edges ))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
             int bSFlowerEdgesMayBeForbidden = ( SFlowerEdges.num_edges > 0 );
@@ -2013,8 +2024,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                           &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                    if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                      vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                    if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                      (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warnings */
                     {
                         /* Removed (+)charge from -NH- => nDeltaCharge == -1 */
                         /* Flow change on pe (+)charge edge (atom NHm(+)) is not known to RunBnsTestOnce()) */
@@ -2050,7 +2061,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2058,7 +2069,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2114,7 +2125,6 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         pInChI[0] && pInChI[0]->nNum_H? pInChI[0]->nNum_H : 0;
         */
         EDGE_LIST CurChargeEdges /* source of (+)*/, EndpList;
-        TgDiffHChgFH tdhc[MAX_DIFF_FIXH];
         BNS_VERTEX *pv1n, *pv2n;
         BNS_EDGE   *pe1n, *pe2n;
         Vertex      v1n, v2n;
@@ -2123,33 +2133,34 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         AllocEdgeList( &CurChargeEdges, EDGE_LIST_CLEAR );
         AllocEdgeList( &EndpList, EDGE_LIST_CLEAR );
         CurrEdges.num_edges = 0; /* receptors of (+) */
+        
         if (!atfMobile_H_Revrs)
         {
             goto exit_case_06e;
         }
-        nNumWrongTg = FillTgDiffHChgFH( tdhc, MAX_DIFF_FIXH, at2, atfMobile_H_Revrs,
-                                        nCanon2AtnoRevrs, pVA, &pStruct->ti, &EndpList );
+        nNumWrongTg = FillTgDiffHChgFH(tdhc, MAX_DIFF_FIXH, at2, atfMobile_H_Revrs,
+            nCanon2AtnoRevrs, pVA, &pStruct->ti, &EndpList);
         if (nNumWrongTg < 1)
         {
             goto exit_case_06e; /* for now only transfer (+) from one Mobile-H group to another */
         }
-        nNum2RemovePlus = nNum2AddPlus = nNum2MovePlus = 0;
+        nNum2RemovePlus = nNum2AddPlus = 0; /* djb-rwth: removing redundant code */
         for (i = 0; i < nNumWrongTg; i++)
         {
             /* detect t-group that has extra (+) on H */
             if (tdhc[i].nNumHInchi > tdhc[i].nNumHNorml &&
-                 tdhc[i].nNumPRevrs > tdhc[i].nNumPNorml && tdhc[i].n[fNumRPosChgH])
+                tdhc[i].nNumPRevrs > tdhc[i].nNumPNorml && tdhc[i].n[fNumRPosChgH])
             {
                 /* count how many (+) to remove */
                 /* store XH(+) atom numbers */
-                int nNumNeeded = inchi_min( tdhc[i].nNumHInchi - tdhc[i].nNumHNorml, tdhc[i].n[fNumRPosChgH] );
+                int nNumNeeded = inchi_min(tdhc[i].nNumHInchi - tdhc[i].nNumHNorml, tdhc[i].n[fNumRPosChgH]);
                 nNum2RemovePlus += nNumNeeded;
                 jjoffs = tdhc[i].i[fNumRPosChgH];
                 for (jj = 0; jj < tdhc[i].n[fNumRPosChgH]; jj++)
                 {
                     iat = EndpList.pnEdges[jjoffs + jj];
                     e = pVA[iat].nCPlusGroupEdge - 1;
-                    if (ret = AddToEdgeList( &CurChargeEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurChargeEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_case_06e;
                     }
@@ -2161,14 +2172,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 if (tdhc[i].nNumHInchi < tdhc[i].nNumHNorml && tdhc[i].n[fNumRNeutrlH])
                 {
                     /* store XH atom numbers */
-                    int nNumNeeded = inchi_min( tdhc[i].nNumHNorml - tdhc[i].nNumHInchi, tdhc[i].n[fNumRNeutrlH] );
+                    int nNumNeeded = inchi_min(tdhc[i].nNumHNorml - tdhc[i].nNumHInchi, tdhc[i].n[fNumRNeutrlH]);
                     nNum2AddPlus += nNumNeeded;
                     jjoffs = tdhc[i].i[fNumRNeutrlH];
                     for (jj = 0; jj < tdhc[i].n[fNumRNeutrlH]; jj++)
                     {
                         iat = EndpList.pnEdges[jjoffs + jj];
                         e = pVA[iat].nCPlusGroupEdge - 1;
-                        if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_case_06e;
                         }
@@ -2176,14 +2187,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
             }
         }
-        nNum2MovePlus = inchi_min( nNum2RemovePlus, nNum2AddPlus );
+        nNum2MovePlus = inchi_min(nNum2RemovePlus, nNum2AddPlus);
         if (CurrEdges.num_edges > 0 && CurChargeEdges.num_edges > 0)
         {
             for (i = 0; 0 < nNum2MovePlus && i < nNumWrongTg; i++)
             {
                 /* detect t-group that has extra (+) on H */
                 if (tdhc[i].nNumHInchi > tdhc[i].nNumHNorml &&
-                     tdhc[i].nNumPRevrs > tdhc[i].nNumPNorml && tdhc[i].n[fNumRPosChgH])
+                    tdhc[i].nNumPRevrs > tdhc[i].nNumPNorml && tdhc[i].n[fNumRPosChgH])
                 {
                     int nNum2Remove = tdhc[i].nNumHInchi - tdhc[i].nNumHNorml;
                     if (nNum2Remove < tdhc[i].n[fNumRPosChgH])
@@ -2192,8 +2203,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     }
                     /* store XH(+) atom numbers */
                     jjoffs = tdhc[i].i[fNumRPosChgH];
-                    SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-                    RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+                    SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+                    RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
                     for (jj = 0; 0 < nNum2MovePlus && 0 < nNum2Remove && jj < tdhc[i].n[fNumRPosChgH]; jj++)
                     {
                         iat = EndpList.pnEdges[jjoffs + jj];
@@ -2201,15 +2212,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         pe = pBNS->edge + pVA[iat].nCPlusGroupEdge - 1;
                         if (pe->flow)
                             continue;
-                        pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                        pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                        pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                        pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                         for (j = pv1->num_adj_edges - 1; 0 <= j; j--)
                         {
                             pe1n = pBNS->edge + pv1->iedge[j];
                             if (pe1n->flow && !pe1n->forbidden)
                             {
-                                pv1n = pBNS->vert + ( v1n = pe1n->neighbor12 ^ v1 );
+                                pv1n = pBNS->vert + (v1n = pe1n->neighbor12 ^ v1);
                                 break;
                             }
                         }
@@ -2222,7 +2233,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             pe2n = pBNS->edge + pv2->iedge[j];
                             if (pe2n->flow && !pe2n->forbidden)
                             {
-                                pv2n = pBNS->vert + ( v2n = pe2n->neighbor12 ^ v2 );
+                                pv2n = pBNS->vert + (v2n = pe2n->neighbor12 ^ v2);
                                 break;
                             }
                         }
@@ -2238,14 +2249,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         pv2n->st_edge.flow -= delta;
                         pBNS->tot_st_flow -= 2 * delta;
 
-                        ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                              &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                        ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                            &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                        if (ret == 1 && ( vPathEnd == v1n && vPathStart == v2n ||
-                                          vPathEnd == v2n && vPathStart == v1n ) &&
-                                          ( nDeltaCharge == 0 || nDeltaCharge == 1 ))
+                        if (ret == 1 && ((vPathEnd == v1n && vPathStart == v2n) ||
+                            (vPathEnd == v2n && vPathStart == v1n)) &&
+                            (nDeltaCharge == 0 || nDeltaCharge == 1)) /* djb-rwth: addressing LLVM warnings */
                         {
-                            ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                            ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                             if (ret > 0)
                             {
                                 nNumRunBNS++;
@@ -2263,29 +2274,29 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             pv2n->st_edge.flow += delta;
                             pBNS->tot_st_flow += 2 * delta;
                         }
-                        if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE)))
                         {
                             goto exit_case_06e;
                         }
                     }
-                    RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+                    RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
                 }
             }
         }
     exit_case_06e:
         CurrEdges.num_edges = 0; /* clear current edge list */
-        AllocEdgeList( &CurChargeEdges, EDGE_LIST_FREE );
-        AllocEdgeList( &EndpList, EDGE_LIST_FREE );
+        AllocEdgeList(&CurChargeEdges, EDGE_LIST_FREE);
+        AllocEdgeList(&EndpList, EDGE_LIST_FREE);
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2293,7 +2304,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2316,29 +2327,29 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (-) from O(-)-AB to AB=O                      */
         /*--------------------------------------------------------------*/
         int num_SB_O_Minus = 0, num_DB_O_Neutr = 0, iat;
-        short iat_SB_O_Minus[MAX_DIFF_FIXH], iat_DB_O_Neutr[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         inp_ATOM *at_Mobile_H_Revrs = ( pStruct->pOne_norm_data[1] &&
                                         pStruct->pOne_norm_data[1]->at ) ? pStruct->pOne_norm_data[1]->at : NULL;
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: -O(-), non-taut */
-                 num_DB_O_Neutr < MAX_DIFF_FIXH &&
-                 pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
-                 !pc2i->c2at[i].endptInChI &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
-                 /* reversed structure info: */
-                 pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                 at2[iat].valence < at2[iat].chem_bonds_valence)
+                num_DB_O_Neutr < MAX_DIFF_FIXH &&
+                pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
+                !pc2i->c2at[i].endptInChI &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
+                /* reversed structure info: */
+                pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
+                pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                at2[iat].valence < at2[iat].chem_bonds_valence)
             {
                 iat_DB_O_Neutr[num_DB_O_Neutr++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -2349,30 +2360,30 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom: charge=-1, no H, has single bond, O, S, Se, Te */
-                 num_SB_O_Minus < MAX_DIFF_FIXH &&
-                 at2[iat].charge == -1 && !at2[iat].num_H &&
-                 at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 pVA[iat].cNumValenceElectrons == 6 &&
-                 at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint &&
-                 /* in orig.InChI: not an endpoint, has no H */
-                 /*pStruct->endpoint[i] && -- modificatuion#1 */
-                 !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                 !( nMobHInChI && nMobHInChI[i] ) &&
-                 /* has (-) edge */
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_SB_O_Minus < MAX_DIFF_FIXH &&
+                at2[iat].charge == -1 && !at2[iat].num_H &&
+                at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                pVA[iat].cNumValenceElectrons == 6 &&
+                at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint &&
+                /* in orig.InChI: not an endpoint, has no H */
+                /*pStruct->endpoint[i] && -- modificatuion#1 */
+                !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                !(nMobHInChI && nMobHInChI[i]) &&
+                /* has (-) edge */
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
             {
                 iat_SB_O_Minus[num_SB_O_Minus++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_O_Minus, num_DB_O_Neutr ))
+        if ((num_try = inchi_min(num_SB_O_Minus, num_DB_O_Neutr))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_O_Minus && cur_success < num_try; i++)
             {
@@ -2380,8 +2391,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -2389,15 +2400,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warning */
                 {
                     /* Moved (-) charge to AB=O => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (O(-)-AB) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -2414,19 +2425,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2434,7 +2445,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2457,27 +2468,27 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (-) from O(-)-AB to AB=O                      */
         /*--------------------------------------------------------------*/
         int num_SB_O_Minus = 0, num_DB_O_Neutr = 0, iat, iN;
-        short iat_SB_O_Minus[MAX_DIFF_FIXH], iat_DB_O_Neutr[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: -O(-), non-taut */
-                 num_DB_O_Neutr < MAX_DIFF_FIXH &&
-                 pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
-                 !pc2i->c2at[i].endptInChI &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
-                 /* reversed structure info: */
-                 pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                 at2[iat].valence < at2[iat].chem_bonds_valence)
+                num_DB_O_Neutr < MAX_DIFF_FIXH &&
+                pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
+                !pc2i->c2at[i].endptInChI &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI == -1 && pc2i->c2at[i].nMobHInChI == 1 &&
+                /* reversed structure info: */
+                pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
+                pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                at2[iat].valence < at2[iat].chem_bonds_valence)
             {
                 iat_DB_O_Neutr[num_DB_O_Neutr++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -2488,33 +2499,33 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom: charge=-1, no H, has single bond, O, S, Se, Te */
-                 num_SB_O_Minus < MAX_DIFF_FIXH &&
-                 at2[iat].charge == -1 && !at2[iat].num_H &&
-                 at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 pVA[iat].cNumValenceElectrons == 6 &&
-                 /*at_Mobile_H_Revrs && !at_Mobile_H_Revrs[iat].endpoint &&*/
-                 /* in orig.InChI: not an endpoint, has no H */
-                 !pStruct->endpoint[i] &&
-                 !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                 !( nMobHInChI && nMobHInChI[i] ) &&
-                 /* has N(V) neighbor */
-                 1 == at2[iat].valence && at2[iN = at2[iat].neighbor[0]].chem_bonds_valence == 5 &&
-                 !at2[iN].charge && pVA[iN].cNumValenceElectrons == 5 &&
-                 /* has (-) edge */
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_SB_O_Minus < MAX_DIFF_FIXH &&
+                at2[iat].charge == -1 && !at2[iat].num_H &&
+                at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                pVA[iat].cNumValenceElectrons == 6 &&
+                /*at_Mobile_H_Revrs && !at_Mobile_H_Revrs[iat].endpoint &&*/
+                /* in orig.InChI: not an endpoint, has no H */
+                !pStruct->endpoint[i] &&
+                !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                !(nMobHInChI && nMobHInChI[i]) &&
+                /* has N(V) neighbor */
+                1 == at2[iat].valence && at2[iN = at2[iat].neighbor[0]].chem_bonds_valence == 5 &&
+                !at2[iN].charge && pVA[iN].cNumValenceElectrons == 5 &&
+                /* has (-) edge */
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
             {
                 iat_SB_O_Minus[num_SB_O_Minus++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_O_Minus, num_DB_O_Neutr ))
+        if ((num_try = inchi_min(num_SB_O_Minus, num_DB_O_Neutr))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_O_Minus && cur_success < num_try; i++)
             {
@@ -2522,8 +2533,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -2531,15 +2542,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Moved (-) charge to AB=O => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (O(-)-AB) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -2556,19 +2567,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2576,7 +2587,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2586,8 +2597,9 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     }
+
     if ( /*(pc2i->len_c2at >= 1 || pc2i->nNumRemHRevrs) &&*/ pc2i->nNumTgInChI == 1 && /* ADP in InChI */
-        ( pc2i->nNumEndpRevrs < pc2i->nNumEndpInChI || pc2i->nNumTgRevrs > 1 ))
+        (pc2i->nNumEndpRevrs < pc2i->nNumEndpInChI || pc2i->nNumTgRevrs > 1))
     {
         /*----------------------------------------------------------------*/
         /* case 08: restored: O(-)-AB=N- OH- orig.   O=AB-N(-)- OH-       */
@@ -2599,31 +2611,32 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (-) from O(-) to =N-; avoid stereogenic DB on N */
         /*----------------------------------------------------------------*/
         int num_DB_N_Neutr = 0, num_SB_O_Minus = 0, iat;
-        short iat_DB_N_Neutr[MAX_DIFF_FIXH], iat_SB_O_Minus[MAX_DIFF_FIXH];
-        AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
-        S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
+
+        AT_NUMB* nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
+        S_CHAR* nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         cur_success = 0;
+
         for (i = 0; i < pStruct->num_atoms; i++)
         {
             /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom: charge=-1, has no H, has single bond, O, S, Se, Te */
-                 num_SB_O_Minus < MAX_DIFF_FIXH &&
-                 at2[iat].charge == -1 && !at2[iat].num_H &&
-                 at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 pVA[iat].cNumValenceElectrons == 6 &&
-                 /* in orig.InChI: an endpoint, may have fixed-H */
-                 pStruct->endpoint[i] &&
-                 /*!(pStruct->fixed_H && pStruct->fixed_H[i]) &&*/
-                 !( nMobHInChI && nMobHInChI[i] ) &&
-                 /* has (-) edge */
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_SB_O_Minus < MAX_DIFF_FIXH &&
+                at2[iat].charge == -1 && !at2[iat].num_H &&
+                at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                pVA[iat].cNumValenceElectrons == 6 &&
+                /* in orig.InChI: an endpoint, may have fixed-H */
+                pStruct->endpoint[i] &&
+                /*!(pStruct->fixed_H && pStruct->fixed_H[i]) &&*/
+                !(nMobHInChI && nMobHInChI[i]) &&
+                /* has (-) edge */
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
             {
 
                 iat_SB_O_Minus[num_SB_O_Minus++] = iat;
 
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -2631,36 +2644,36 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             else
             {
                 if ( /* in restored atom: charge=0, has no H, has double non-stereogenic bond, N */
-                     num_DB_N_Neutr < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H && !at2[iat].sb_parity[0] &&
-                     at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
-                     /* in orig.InChI: an endpoint, has no fixed-H */
-                     pStruct->endpoint[i] &&
-                     !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                     !( nMobHInChI && nMobHInChI[i] ) &&
-                     /* has (-) edge */
-                     ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 &&
-                     0 == pBNS->edge[e].forbidden)
+                    num_DB_N_Neutr < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H && !at2[iat].sb_parity[0] &&
+                    at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
+                    /* in orig.InChI: an endpoint, has no fixed-H */
+                    pStruct->endpoint[i] &&
+                    !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                    !(nMobHInChI && nMobHInChI[i]) &&
+                    /* has (-) edge */
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 &&
+                    0 == pBNS->edge[e].forbidden)
                 {
 
                     iat_DB_N_Neutr[num_DB_N_Neutr++] = iat;
 
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( num_DB_N_Neutr, num_SB_O_Minus ))
+        if ((num_try = inchi_min(num_DB_N_Neutr, num_SB_O_Minus))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             /* allow stereobonds in rings change */
             if (forbidden_stereo_edge_mask)
-                RemoveForbiddenEdgeMask( pBNS, &FixedLargeRingStereoEdges, forbidden_stereo_edge_mask );
+                RemoveForbiddenEdgeMask(pBNS, &FixedLargeRingStereoEdges, forbidden_stereo_edge_mask);
 
             delta = 1;
             for (i = 0; i < num_SB_O_Minus && cur_success < num_try; i++)
@@ -2669,8 +2682,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -2678,15 +2691,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warning */
                 {
                     /* Moved (-) charge to =N- => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (atom (-)O-) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -2703,21 +2716,21 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
             if (forbidden_stereo_edge_mask)
-                SetForbiddenEdgeMask( pBNS, &FixedLargeRingStereoEdges, forbidden_stereo_edge_mask );
+                SetForbiddenEdgeMask(pBNS, &FixedLargeRingStereoEdges, forbidden_stereo_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2725,7 +2738,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2762,7 +2775,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                  ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
             {
                 EdgeIndex eNC = NO_VERTEX, eCPlusC;
-                int       iNH2, iatC, iatNH2, icNH2;
+                int       iNH2, iatC, iatNH2; /* djb-rwth: removing redundant variables */
                 /* found NH2(+)=; locate =C< and find whether it has -NH2 neighbor */
                 for (j = 0; j < at2[iat].valence; j++)
                 {
@@ -2787,7 +2800,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     if (iatNH2 == iat || pVA[iatNH2].cNumValenceElectrons != 5 ||
                          pVA[iatNH2].cPeriodicRowNumber != 1 || !at2[iatNH2].num_H || at2[iatNH2].charge)
                         continue;
-                    icNH2 = pStruct->nAtno2Canon[0][iatNH2];
+                    /* djb-rwth: removing redundant code */
                     for (iNH2 = 0; iNH2 < pc2i->len_c2at; iNH2++)
                     {
                         if (iatNH2 == pc2i->c2at[iNH2].atomNumber)
@@ -2810,11 +2823,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     {
                         /* we have found NH2(+)=, =C<, and bond between them */
 
-                        if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
-                        if (ret = AddToEdgeList( &CurrEdges, eCPlusC, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList( &CurrEdges, eCPlusC, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
@@ -2837,8 +2850,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                               &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                        if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                          vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 0)
+                        if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                          (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == 0) /* djb-rwth: addressing LLVM warnings */
                         {
                             /* Removed (+)charge from -NHn => nDeltaCharge == -1 */
                             /* Flow change on pe (+)charge edge (atom NHm(+)) is not known to RunBnsTestOnce()) */
@@ -2874,7 +2887,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2882,7 +2895,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -2910,7 +2923,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 continue;
             iat = pc2i->c2at[i].atomNumber;
             if (( pc2i->c2at[i].nValElectr == 6 ||
-                  pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1 ) &&
+                  (pc2i->c2at[i].nValElectr == 5 && pc2i->c2at[i].nPeriodNum == 1) ) &&
                  /* orig. InChI info: */
                  pc2i->c2at[i].endptInChI &&
                  pc2i->c2at[i].nFixHInChI && !pc2i->c2at[i].nMobHInChI &&
@@ -2919,11 +2932,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                  !pc2i->c2at[i].nFixHRevrs && pc2i->c2at[i].nMobHRevrs &&
                  pc2i->c2at[i].nAtChargeRevrs == 0 &&
                  at2[iat].valence == at2[iat].chem_bonds_valence &&
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
             {
 
                 EdgeIndex eCPlusC, eCPlusNH2, bContinue = 1;
-                int       iNH2, iatC, iatNH2, icNH2, j1, j2;
+                int       iNH2, iatC, iatNH2, j1, j2; /* djb-rwth: removing redundant variables */
                 BNS_EDGE *pe_iat, *pe_iNH2;
                 /* found NH2- locate -X(+) and find whether it has another -NH2 neighbor */
                 for (j1 = 0; j1 < at2[iat].valence && bContinue; j1++)
@@ -2949,7 +2962,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                                     if (iatNH2 != pc2i->c2at[iNH2].atomNumber || pc2i->c2at[iNH2].nValue)
                                         continue;
                                     /* check the second -NH */
-                                    icNH2 = pStruct->nAtno2Canon[0][iatNH2]; /* canon number -1 */
+                                    /* djb-rwth: removing redundant code */
                                     if ( /* orig. InChI info: */
                                          pc2i->c2at[iNH2].endptInChI &&
                                          pc2i->c2at[iNH2].nFixHInChI && !pc2i->c2at[iNH2].nMobHInChI &&
@@ -2975,7 +2988,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                                             {
                                                 continue; /* none of the two -X(+)- bonds may be changed */
                                             }
-                                        if (ret = AddToEdgeList( &CurrEdges, eCPlusC, INC_ADD_EDGE ))
+                                        if ((ret = AddToEdgeList( &CurrEdges, eCPlusC, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                                         {
                                             goto exit_function;
                                         }
@@ -2995,8 +3008,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                                         ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                                               &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                                        if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                                          vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == -1)
+                                        if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                                          (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == -1) /* djb-rwth: addressing LLVM warnings */
                                         {
                                             /* Removed (+)charge from -NHn => nDeltaCharge == -1 */
                                             /* Flow change on pe (+)charge edge (atom NHm(+)) is not known to RunBnsTestOnce()) */
@@ -3046,7 +3059,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -3054,7 +3067,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -3078,28 +3091,28 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (+) from NH(+) to -N<                         */
         /*--------------------------------------------------------------*/
         int num_SB_Neutr = 0, num_DB_Charged = 0, iat;
-        short iat_SB_Neutr[MAX_DIFF_FIXH], iat_DB_Charged[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         cur_success = 0;
+
         /* search for NH(+)= */
-        /* search for -N< */
+/* search for -N< */
         for (i = 0; i < pStruct->num_atoms; i++)
         { /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom: charge=0, has no H, has no double bond, N only */
-                 num_DB_Charged < MAX_DIFF_FIXH &&
-                 at2[iat].charge == 1 && at2[iat].num_H &&
-                 at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 ( pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 ||
-                   pVA[iat].cNumValenceElectrons == 6 ) &&
-                 /* in orig.InChI: an endpoint, has fixed-H */
-                 /*pStruct->endpoint[i] &&*/
-                   ( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                 /*!(nMobHInChI && nMobHInChI[i] ) &&*/
-                 /* has (+) edge */
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && 0 == pBNS->edge[e].forbidden)
+                num_DB_Charged < MAX_DIFF_FIXH &&
+                at2[iat].charge == 1 && at2[iat].num_H &&
+                at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                ((pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1) ||
+                    pVA[iat].cNumValenceElectrons == 6) &&
+                /* in orig.InChI: an endpoint, has fixed-H */
+                /*pStruct->endpoint[i] &&*/
+                (pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                /*!(nMobHInChI && nMobHInChI[i] ) &&*/
+                /* has (+) edge */
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && 0 == pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
             {
 
                 iat_DB_Charged[num_DB_Charged++] = iat;
@@ -3112,35 +3125,35 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             else
             {
                 if ( /* in restored atom: charge=0, has no H, has no double bond, N only */
-                     num_SB_Neutr < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H &&
-                     at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     ( pVA[iat].cNumValenceElectrons == 5 &&
-                       pVA[iat].cPeriodicRowNumber == 1 ) &&
-                     /* in orig.InChI: an endpoint, has fixed-H */
-                     /*pStruct->endpoint[i] &&*/
-                     !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                     !( nMobHInChI && nMobHInChI[i] ) &&
-                     /* has (+) edge */
-                     ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && 0 == pBNS->edge[e].forbidden)
+                    num_SB_Neutr < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H &&
+                    at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    (pVA[iat].cNumValenceElectrons == 5 &&
+                        pVA[iat].cPeriodicRowNumber == 1) &&
+                    /* in orig.InChI: an endpoint, has fixed-H */
+                    /*pStruct->endpoint[i] &&*/
+                    !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                    !(nMobHInChI && nMobHInChI[i]) &&
+                    /* has (+) edge */
+                    (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && 0 == pBNS->edge[e].forbidden)
                 {
 
                     iat_SB_Neutr[num_SB_Neutr++] = iat;
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_Neutr, num_DB_Charged ))
+        if ((num_try = inchi_min(num_SB_Neutr, num_DB_Charged))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            BNS_VERTEX *pv1n, *pv2n;
-            BNS_EDGE   *pe1n, *pe2n;
+            BNS_VERTEX* pv1n, * pv2n;
+            BNS_EDGE* pe1n, * pe2n;
             Vertex      v1n, v2n;
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_DB_Charged && cur_success < num_try; i++)
             {
@@ -3148,15 +3161,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCPlusGroupEdge - 1;
                 if (pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 for (j = pv1->num_adj_edges - 1; 0 <= j; j--)
                 {
                     pe1n = pBNS->edge + pv1->iedge[j];
                     if (pe1n->flow && !pe1n->forbidden)
                     {
-                        pv1n = pBNS->vert + ( v1n = pe1n->neighbor12 ^ v1 );
+                        pv1n = pBNS->vert + (v1n = pe1n->neighbor12 ^ v1);
                         break;
                     }
                 }
@@ -3170,7 +3183,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pe2n = pBNS->edge + pv2->iedge[j];
                     if (pe2n->flow && !pe2n->forbidden)
                     {
-                        pv2n = pBNS->vert + ( v2n = pe2n->neighbor12 ^ v2 );
+                        pv2n = pBNS->vert + (v2n = pe2n->neighbor12 ^ v2);
                         break;
                     }
                 }
@@ -3186,12 +3199,12 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2n->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1n && vPathStart == v2n ||
-                                  vPathEnd == v2n && vPathStart == v1n ) &&
-                                  ( nDeltaCharge == 0 || nDeltaCharge == 1 ))
+                if (ret == 1 && ((vPathEnd == v1n && vPathStart == v2n) ||
+                    (vPathEnd == v2n && vPathStart == v1n)) &&
+                    (nDeltaCharge == 0 || nDeltaCharge == 1)) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* before setting flows the structure could be:
                     [NH+ neigh, v1n]=e1n=[NH+,v1]-pe-[+,v2]=e2n=[another at or its chargeStruct]
@@ -3226,7 +3239,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     */
                     /* Removed charge from O(+) => nDeltaCharge == -1 */
                     /* Flow change on pe (+)charge edge (atom NH2) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -3244,19 +3257,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -3264,7 +3277,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -3292,37 +3305,37 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /*           allow moving charge to N(V) to make it N(IV)(+)    */
         /*--------------------------------------------------------------*/
         int bOnly_N_V = 1;
-        cur_success = 0;
+        /* djb-rwth: removing redundant code */
         while (1)
         {
             int num_SB_N_Neutr = 0, num_DB_O = 0, iat, num_N_V = 0, bN_V;
-            short iat_SB_N_Neutr[MAX_DIFF_FIXH], iat_DB_O[MAX_DIFF_FIXH];
             AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
             inp_ATOM *at_Mobile_H_Revrs = ( pStruct->pOne_norm_data[1] &&
                                             pStruct->pOne_norm_data[1]->at ) ? pStruct->pOne_norm_data[1]->at : NULL;
             S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
                 pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
             cur_success = 0;
+
             for (i = 0; i < pc2i->len_c2at; i++)
             {
                 iat = pc2i->c2at[i].atomNumber;
                 if ( /* orig. InChI info: -O(-) */
-                     num_DB_O < MAX_DIFF_FIXH &&
-                     ( pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ ||
-                       pc2i->c2at[i].nValElectr == 5 &&
-                       pc2i->c2at[i].nPeriodNum == 1 /* N */ ) &&
-                     pc2i->c2at[i].endptInChI &&
-                     ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                     pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
-                     /* reversed structure info: */
-                     !pc2i->c2at[i].endptRevrs &&
-                     pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
-                     pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                     ( ( pc2i->c2at[i].nValElectr == 6 ) ?
-                     ( at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2 ) :
-                       ( pc2i->c2at[i].nValElectr == 5 ) ?
-                       ( at2[iat].valence == 2 && at2[iat].chem_bonds_valence == 3 ) :
-                       0 ))
+                    num_DB_O < MAX_DIFF_FIXH &&
+                    (pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ ||
+                        (pc2i->c2at[i].nValElectr == 5 &&
+                        pc2i->c2at[i].nPeriodNum == 1) /* N */) && /* djb-rwth: addressing LLVM warning */
+                    pc2i->c2at[i].endptInChI &&
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                    pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
+                    /* reversed structure info: */
+                    !pc2i->c2at[i].endptRevrs &&
+                    pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
+                    pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                    ((pc2i->c2at[i].nValElectr == 6) ?
+                        (at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2) :
+                        (pc2i->c2at[i].nValElectr == 5) ?
+                        (at2[iat].valence == 2 && at2[iat].chem_bonds_valence == 3) :
+                        0))
                 {
 
                     iat_DB_O[num_DB_O++] = iat;
@@ -3339,24 +3352,24 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 iat = nCanon2AtnoRevrs[i];
                 bN_V = 0;
                 if ( /* in restored atom N: charge=0, no H, has no double bond, not an endpoint */
-                     num_SB_N_Neutr < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H &&
-                     ( at2[iat].valence == at2[iat].chem_bonds_valence ||
-                     ( bN_V = at2[iat].valence + 2 == at2[iat].chem_bonds_valence ) ) &&
-                     !pVA[iat].cMetal &&
-                     pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
-                     !( at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint ) &&
-                     /* in orig.InChI: not an endpoint, has no H */
-                     !pStruct->endpoint[i] &&
-                     !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                     !( nMobHInChI && nMobHInChI[i] ) &&
-                     /* has (+) edge */
-                     ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                    num_SB_N_Neutr < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H &&
+                    (at2[iat].valence == at2[iat].chem_bonds_valence ||
+                        (bN_V = at2[iat].valence + 2 == at2[iat].chem_bonds_valence)) &&
+                    !pVA[iat].cMetal &&
+                    pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
+                    !(at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint) &&
+                    /* in orig.InChI: not an endpoint, has no H */
+                    !pStruct->endpoint[i] &&
+                    !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                    !(nMobHInChI && nMobHInChI[i]) &&
+                    /* has (+) edge */
+                    (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
                 {
 
                     if (bOnly_N_V && bN_V &&
-                         NO_VERTEX != ( j = GetChargeFlowerUpperEdge( pBNS, pVA, e ) ) &&
-                         !pBNS->edge[j].forbidden && !pBNS->edge[j].flow)
+                        NO_VERTEX != (j = GetChargeFlowerUpperEdge(pBNS, pVA, e)) &&
+                        !pBNS->edge[j].forbidden && !pBNS->edge[j].flow)
                     {
                         if (!num_N_V)
                         {
@@ -3366,11 +3379,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         }
                         iat_SB_N_Neutr[num_SB_N_Neutr++] = iat;
                         num_N_V++;
-                        if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
-                        if (ret = AddToEdgeList( &CurrEdges, j, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList(&CurrEdges, j, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
@@ -3380,15 +3393,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         if (!num_N_V)
                         {
                             iat_SB_N_Neutr[num_SB_N_Neutr++] = iat;
-                            if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                            if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                             {
                                 goto exit_function;
                             }
                             /* in addition, permit N(V)=>N(IV)(+) change by allowing charge flower edge change flow */
-                            if (bN_V && NO_VERTEX != ( j = GetChargeFlowerUpperEdge( pBNS, pVA, e ) ) &&
-                                 !pBNS->edge[j].forbidden && !pBNS->edge[j].flow)
+                            if (bN_V && NO_VERTEX != (j = GetChargeFlowerUpperEdge(pBNS, pVA, e)) &&
+                                !pBNS->edge[j].forbidden && !pBNS->edge[j].flow)
                             {
-                                if (ret = AddToEdgeList( &CurrEdges, j, INC_ADD_EDGE ))
+                                if ((ret = AddToEdgeList(&CurrEdges, j, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                                 {
                                     goto exit_function;
                                 }
@@ -3397,12 +3410,12 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     }
                 }
             }
-            if (num_try = inchi_min( num_SB_N_Neutr, num_DB_O ))
+            if ((num_try = inchi_min(num_SB_N_Neutr, num_DB_O))) /* djb-rwth: addressing LLVM warning */
             {
                 /* detected; attempt to fix */
-                BNS_EDGE *pe_CMinus;
-                SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-                RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+                BNS_EDGE* pe_CMinus;
+                SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+                RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
                 delta = 1;
                 for (i = 0; i < num_DB_O && cur_success < num_try; i++)
                 {
@@ -3413,8 +3426,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pe = pBNS->edge + pBNS->vert[iat].iedge[0]; /* double bond O=...*/
                     if (!pe->flow)
                         continue;
-                    pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                    pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                    pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                    pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                     pe->forbidden |= forbidden_edge_mask; /* change bond O=X to O(rad)-X(rad) */
                     pe->flow -= delta;
@@ -3422,14 +3435,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pv2->st_edge.flow -= delta;
                     pBNS->tot_st_flow -= 2 * delta;
 
-                    ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                          &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                    ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                        &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                    if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                      vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 2)
+                    if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                        (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 2) /* djb-rwth: addressing LLVM warnings */
                     {
                         /* Added (-) charge to =O and (+) charge to N => nDeltaCharge == 2 */
-                        ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                        ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                         if (ret > 0)
                         {
                             nNumRunBNS++;
@@ -3446,19 +3459,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pe->forbidden &= forbidden_edge_mask_inv; /* allow changes to O=X bond */
                     INCHI_HEAPCHK
                 }
-                RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+                RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
             }
             CurrEdges.num_edges = 0; /* clear current edge list */
             if (cur_success)
             {
                 tot_succes += cur_success;
                 /* recalculate InChI from the structure */
-                if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                                ppt_group_info, ppat_norm, ppat_prep ) ))
+                if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                    ppt_group_info, ppat_norm, ppat_prep)))
                 {
                     goto exit_function;
                 }
-                if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+                if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -3466,7 +3479,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     goto exit_function;  /* no fixed-H found */
                 }
-                if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+                if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -3489,6 +3502,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     }
+
 
     if (pc2i->nNumTgDiffMinus /*|| pc2i->nNumTgDiffH */ /* no ADP in InChI needed */)
     {
@@ -3519,7 +3533,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             pStruct->pOneINChI[0]->nNum_H : NULL;
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
-        cur_success = 0;
+        /* djb-rwth: removing redundant code */
         /* find whether this may help */
         for (itg = 0; itg < pStruct->ti.num_t_groups && itg < pStruct->One_ti.num_t_groups; itg++)
         {
@@ -3530,24 +3544,24 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 /* restored InChI t-group has more (-) and same number of H */
                 int num_SB_N_Neutr = 0, num_DB_O = 0, iat;
-                short iat_SB_N_Neutr[MAX_DIFF_FIXH], iat_DB_O[MAX_DIFF_FIXH];
                 cur_success = 0;
+
                 for (i = 0; i < pStruct->num_atoms; i++)
                 { /* i = canonical number - 1 */
                     iat = nCanon2AtnoRevrs[i];
                     if ( /* orig. InChI info: -O(-) */
-                         num_DB_O < MAX_DIFF_FIXH &&
-                         ( pVA[i].cNumValenceElectrons == 6 /* O, S, Se, Te */ ) &&
-                         pStruct->endpoint[i] == itg + 1 &&
-                         ( e = pVA[i].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                         !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                         !( nMobHInChI && nMobHInChI[i] ) &&
-                         /* reversed structure info: */
-                         /*!pc2i->c2at[i].endptRevrs &&*/
-                         !( num_Fixed_H_Revrs && num_Fixed_H_Revrs[iat] ) &&
-                         !( pnMobHRevrs && pnMobHRevrs[iat] ) &&
-                         at2[iat].charge == 0 && at2[iat].num_H == 0 &&
-                         at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
+                        num_DB_O < MAX_DIFF_FIXH &&
+                        (pVA[i].cNumValenceElectrons == 6 /* O, S, Se, Te */) &&
+                        pStruct->endpoint[i] == itg + 1 &&
+                        (e = pVA[i].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                        !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                        !(nMobHInChI && nMobHInChI[i]) &&
+                        /* reversed structure info: */
+                        /*!pc2i->c2at[i].endptRevrs &&*/
+                        !(num_Fixed_H_Revrs && num_Fixed_H_Revrs[iat]) &&
+                        !(pnMobHRevrs && pnMobHRevrs[iat]) &&
+                        at2[iat].charge == 0 && at2[iat].num_H == 0 &&
+                        at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
                     {
 
                         iat_DB_O[num_DB_O++] = iat;
@@ -3560,35 +3574,35 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     else
                     {
                         if ( /* in restored atom N: charge=0, no H, has no double bond, not an endpoint */
-                             num_SB_N_Neutr < MAX_DIFF_FIXH &&
-                             at2[iat].charge == 0 && !at2[iat].num_H &&
-                             /*at2[iat].valence == at2[iat].chem_bonds_valence ||*/
-                             ( at2[iat].valence == 4 && at2[iat].chem_bonds_valence == 5 ) &&
-                             !pVA[iat].cMetal &&
-                             pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber >= 1 &&
-                             !( at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint ) &&
-                             /* in orig.InChI: not an endpoint, has no H */
-                             !pStruct->endpoint[i] &&
-                             !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                             !( nMobHInChI && nMobHInChI[i] ) &&
-                             /* has (+) edge */
-                             ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                            num_SB_N_Neutr < MAX_DIFF_FIXH &&
+                            at2[iat].charge == 0 && !at2[iat].num_H &&
+                            /*at2[iat].valence == at2[iat].chem_bonds_valence ||*/
+                            (at2[iat].valence == 4 && at2[iat].chem_bonds_valence == 5) &&
+                            !pVA[iat].cMetal &&
+                            pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber >= 1 &&
+                            !(at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint) &&
+                            /* in orig.InChI: not an endpoint, has no H */
+                            !pStruct->endpoint[i] &&
+                            !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                            !(nMobHInChI && nMobHInChI[i]) &&
+                            /* has (+) edge */
+                            (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
                         {
 
                             iat_SB_N_Neutr[num_SB_N_Neutr++] = iat;
-                            if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                            if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                             {
                                 goto exit_function;
                             }
                         }
                     }
                 }
-                if (num_try = inchi_min( num_SB_N_Neutr, num_DB_O ))
+                if ((num_try = inchi_min(num_SB_N_Neutr, num_DB_O))) /* djb-rwth: addressing LLVM warning */
                 {
                     /* detected; attempt to fix */
-                    BNS_EDGE *pe_CMinus;
-                    SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-                    RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+                    BNS_EDGE* pe_CMinus;
+                    SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+                    RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
                     delta = 1;
                     for (i = 0; i < num_DB_O && cur_success < num_try; i++)
                     {
@@ -3599,8 +3613,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         pe = pBNS->edge + pBNS->vert[iat].iedge[0]; /* double bond O=...*/
                         if (!pe->flow)
                             continue;
-                        pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                        pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                        pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                        pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                         pe->forbidden |= forbidden_edge_mask; /* change bond O=X to O(rad)-X(rad) */
                         pe->flow -= delta;
@@ -3608,14 +3622,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         pv2->st_edge.flow -= delta;
                         pBNS->tot_st_flow -= 2 * delta;
 
-                        ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                              &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                        ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                            &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                        if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                          vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 2)
+                        if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                            (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 2) /* djb-rwth: addressing LLVM warning */
                         {
                             /* Added (-) charge to =O and (+) charge to N => nDeltaCharge == 2 */
-                            ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                            ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                             if (ret > 0)
                             {
                                 nNumRunBNS++;
@@ -3632,19 +3646,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         pe->forbidden &= forbidden_edge_mask_inv; /* allow changes to O=X bond */
                         INCHI_HEAPCHK
                     }
-                    RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+                    RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
                 }
                 CurrEdges.num_edges = 0; /* clear current edge list */
                 if (cur_success)
                 {
                     tot_succes += cur_success;
                     /* recalculate InChI from the structure */
-                    if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                                    ppt_group_info, ppat_norm, ppat_prep ) ))
+                    if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                        ppt_group_info, ppat_norm, ppat_prep)))
                     {
                         goto exit_function;
                     }
-                    if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+                    if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
@@ -3652,7 +3666,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     {
                         goto exit_function;  /* no fixed-H found */
                     }
-                    if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+                    if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
@@ -3662,18 +3676,17 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     }
                     break;
                 }/* else
-                 if ( bOnly_N_V ) {
-                 bOnly_N_V = 0;
-                 }
-                 */
-                break;
+                    if ( bOnly_N_V ) {
+                    bOnly_N_V = 0;
+                    }
+                    */
             }
         }
     }
 
-    if (( pc2i->nNumTgInChI <= 1 &&
-          pc2i->nNumRemHInChI > pc2i->nNumRemHRevrs || pc2i->len_c2at ) &&
-         bHas_N_V( at2, pStruct->num_atoms ))
+    if (( (pc2i->nNumTgInChI <= 1 &&
+          pc2i->nNumRemHInChI > pc2i->nNumRemHRevrs) || pc2i->len_c2at ) &&
+         bHas_N_V( at2, pStruct->num_atoms )) /* djb-rwth: addressing LLVM warnings */
     {
         /*-----------------------------------------------------------------*/
         /*                         |                         |             */
@@ -3701,30 +3714,30 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         int num_N_V = 0, iat, i1, i2, i3, e1Flower, e1Plus, e2Plus, e2Minus, e3Plus;
         int max_success = pc2i->nNumRemHInChI - pc2i->nNumRemHRevrs;
-        short iat_N_V_Array[MAX_DIFF_FIXH];
         EDGE_LIST iat_X_List, iat_N_III_List;
         AllocEdgeList( &iat_X_List, EDGE_LIST_CLEAR );
         AllocEdgeList( &iat_N_III_List, EDGE_LIST_CLEAR );
         cur_success = 0;
         ret = 0;
+
         for (i = 0; i < pStruct->num_atoms; i++)
         {
             iat = nCanon2AtnoRevrs[i];
             /* search for N(V), 3 bonds */
             if ( /* restored structure */
-                 num_N_V < MAX_DIFF_FIXH &&
-                 at2[iat].chem_bonds_valence == 5 && at2[iat].valence == 3 &&
-                 !at2[iat].charge && !at2[iat].radical &&
-                 pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
-                 !( at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint ) &&
-                 !at2[iat].num_H &&
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pBNS->edge[e].flow /* no charge */ &&
-                 NO_VERTEX != ( j = GetChargeFlowerUpperEdge( pBNS, pVA, e ) ) && !pBNS->edge[j].forbidden &&
-                 !pBNS->edge[j].flow /* neutral, valence=5 */ &&
-                 /* orig. InChI */
-                 !pStruct->endpoint[i] &&
-                 !( nMobHInChI && nMobHInChI[i] ) && !pStruct->fixed_H[i])
+                num_N_V < MAX_DIFF_FIXH &&
+                at2[iat].chem_bonds_valence == 5 && at2[iat].valence == 3 &&
+                !at2[iat].charge && !at2[iat].radical &&
+                pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
+                !(at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint) &&
+                !at2[iat].num_H &&
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pBNS->edge[e].flow /* no charge */ &&
+                NO_VERTEX != (j = GetChargeFlowerUpperEdge(pBNS, pVA, e)) && !pBNS->edge[j].forbidden &&
+                !pBNS->edge[j].flow /* neutral, valence=5 */ &&
+                /* orig. InChI */
+                !pStruct->endpoint[i] &&
+                !(nMobHInChI && nMobHInChI[i]) && pStruct->fixed_H && !pStruct->fixed_H[i]) /* djb-rwth: fixing a NULL pointer dereference */
             {
                 iat_N_V_Array[num_N_V++] = iat;
             }
@@ -3732,19 +3745,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 /* search for -N= */
                 if ( /* restored structure */
-                     at2[iat].chem_bonds_valence == 3 && at2[iat].valence == 2 &&
-                     !at2[iat].charge && !at2[iat].radical &&
-                     pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
-                     !( at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint ) &&
-                     !at2[iat].num_H &&
-                     ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                     !pBNS->edge[e].flow /* no charge */ &&
-                     /* orig. InChI */
-                     /*!pStruct->endpoint[i] &&*/
-                     !( nMobHInChI && nMobHInChI[i] ) && !pStruct->fixed_H[i])
+                    at2[iat].chem_bonds_valence == 3 && at2[iat].valence == 2 &&
+                    !at2[iat].charge && !at2[iat].radical &&
+                    pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
+                    !(at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint) &&
+                    !at2[iat].num_H &&
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                    !pBNS->edge[e].flow /* no charge */ &&
+                    /* orig. InChI */
+                    /*!pStruct->endpoint[i] &&*/
+                    !(nMobHInChI && nMobHInChI[i]) && pStruct->fixed_H && !pStruct->fixed_H[i]) /* djb-rwth: fixing a NULL pointer dereference */
                 {
 
-                    if (ret = AddToEdgeList( &iat_N_III_List, iat, 32 ))
+                    if ((ret = AddToEdgeList(&iat_N_III_List, iat, 32))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_case_14;
                     }
@@ -3753,18 +3766,18 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     /* search for -OH -NH-, -NH2 */
                     if ( /* restored structure */
-                         at2[iat].chem_bonds_valence == at2[iat].valence &&
-                         !at2[iat].charge && !at2[iat].radical &&
-                         ( pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 ||
-                           pVA[iat].cNumValenceElectrons == 6 ) &&
-                         at2[iat].num_H &&
-                         ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                         pBNS->edge[e].flow /* no charge */ &&
-                         /* orig. InChI */
-                         !( nMobHInChI && nMobHInChI[i] ) && pStruct->fixed_H[i])
+                        at2[iat].chem_bonds_valence == at2[iat].valence &&
+                        !at2[iat].charge && !at2[iat].radical &&
+                        ((pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1) ||
+                            pVA[iat].cNumValenceElectrons == 6) &&
+                        at2[iat].num_H &&
+                        (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                        pBNS->edge[e].flow /* no charge */ &&
+                        /* orig. InChI */
+                        !(nMobHInChI && nMobHInChI[i]) && pStruct->fixed_H && pStruct->fixed_H[i]) /* djb-rwth: addressing LLVM warning; fixing a NULL pointer dereference */
                     {
 
-                        if (ret = AddToEdgeList( &iat_X_List, iat, 32 ))
+                        if ((ret = AddToEdgeList(&iat_X_List, iat, 32))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_case_14;
                         }
@@ -3774,8 +3787,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         }
         if (!max_success)
         {
-            max_success = inchi_min( num_N_V, iat_N_III_List.num_edges );
-            max_success = inchi_min( max_success, iat_X_List.num_edges );
+            max_success = inchi_min(num_N_V, iat_N_III_List.num_edges);
+            max_success = inchi_min(max_success, iat_X_List.num_edges);
         }
         if (num_N_V && iat_N_III_List.num_edges && iat_X_List.num_edges)
         {
@@ -3783,10 +3796,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 int iat_N_V = iat_N_V_Array[i1];
                 if (NO_VERTEX == iat_N_V ||
-                     0 >= ( e1Plus = pVA[iat_N_V].nCPlusGroupEdge - 1 ) ||
-                     NO_VERTEX == ( e1Flower = GetChargeFlowerUpperEdge( pBNS, pVA, e1Plus ) ) ||
-                     1 != pBNS->edge[e1Plus].flow ||
-                     0 != pBNS->edge[e1Flower].flow)
+                    0 >= (e1Plus = pVA[iat_N_V].nCPlusGroupEdge - 1) ||
+                    NO_VERTEX == (e1Flower = GetChargeFlowerUpperEdge(pBNS, pVA, e1Plus)) ||
+                    1 != pBNS->edge[e1Plus].flow ||
+                    0 != pBNS->edge[e1Flower].flow)
                 {
                     continue;
                 }
@@ -3794,10 +3807,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     int iat_N_III = iat_N_III_List.pnEdges[i2];
                     if (NO_VERTEX == iat_N_III ||
-                         0 >= ( e2Minus = pVA[iat_N_III].nCMinusGroupEdge - 1 ) ||
-                         0 >= ( e2Plus = pVA[iat_N_III].nCPlusGroupEdge - 1 ) ||
-                         0 != pBNS->edge[e2Minus].flow ||
-                         1 != pBNS->edge[e2Plus].flow)
+                        0 >= (e2Minus = pVA[iat_N_III].nCMinusGroupEdge - 1) ||
+                        0 >= (e2Plus = pVA[iat_N_III].nCPlusGroupEdge - 1) ||
+                        0 != pBNS->edge[e2Minus].flow ||
+                        1 != pBNS->edge[e2Plus].flow)
                     {
                         /* do not consider this atom anymore */
                         iat_N_III_List.pnEdges[i2] = NO_VERTEX;
@@ -3806,13 +3819,13 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     for (i3 = iat_X_List.num_edges - 1; 0 <= i3 && cur_success < max_success; i3--)
                     {
                         int iat_X = iat_X_List.pnEdges[i3];
-                        BNS_VERTEX *pv1n, *pv2n;
-                        BNS_EDGE   *pe1n, *pe2n, *pe1Plus, *pe2Minus, *pe3Plus;
+                        BNS_VERTEX* pv1n, * pv2n;
+                        BNS_EDGE* pe1n, * pe2n, * pe1Plus, * pe2Minus, * pe3Plus;
                         Vertex      v1n, v2n;
                         ret = 0;
                         if (NO_VERTEX == iat_X ||
-                             0 >= ( e3Plus = pVA[iat_X].nCPlusGroupEdge - 1 ) ||
-                             1 != pBNS->edge[e3Plus].flow)
+                            0 >= (e3Plus = pVA[iat_X].nCPlusGroupEdge - 1) ||
+                            1 != pBNS->edge[e3Plus].flow)
                         {
                             /* do not consider this atom anymore */
                             iat_X_List.pnEdges[i3] = NO_VERTEX;
@@ -3828,14 +3841,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         pe2Minus = pBNS->edge + e2Minus; /* =N- negative charge edge */
                         pe3Plus = pBNS->edge + e3Plus;  /* -XH positive charge edge */
                         pe = pBNS->edge + e1Flower; /* N(V) flower edge */
-                        pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                        pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                        pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                        pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
                         for (j = pv1->num_adj_edges - 1; 0 <= j; j--)
                         {
                             pe1n = pBNS->edge + pv1->iedge[j];
                             if (pe1n->flow && !pe1n->forbidden && pe1n != pe1Plus)
                             {
-                                pv1n = pBNS->vert + ( v1n = pe1n->neighbor12 ^ v1 );
+                                pv1n = pBNS->vert + (v1n = pe1n->neighbor12 ^ v1);
                                 break;
                             }
                         }
@@ -3848,7 +3861,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             pe2n = pBNS->edge + pv2->iedge[j];
                             if (pe2n->flow && !pe2n->forbidden && pe2n != pe1Plus)
                             {
-                                pv2n = pBNS->vert + ( v2n = pe2n->neighbor12 ^ v2 );
+                                pv2n = pBNS->vert + (v2n = pe2n->neighbor12 ^ v2);
                                 break;
                             }
                         }
@@ -3864,15 +3877,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         pv2n->st_edge.flow -= delta;
                         pBNS->tot_st_flow -= 2 * delta;
 
-                        SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-                        SetForbiddenEdgeMask( pBNS, &OtherNFlowerEdges, forbidden_edge_mask );
+                        SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+                        SetForbiddenEdgeMask(pBNS, &OtherNFlowerEdges, forbidden_edge_mask);
 
                         /* allow two charges to change */
                         pe2Minus->forbidden &= forbidden_edge_mask_inv;
                         pe3Plus->forbidden &= forbidden_edge_mask_inv;
                         /* test #1 */
-                        ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                              &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                        ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                            &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
                         INCHI_HEAPCHK
                             if (ret < 0)
                             {
@@ -3880,9 +3893,9 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             }
                             else
                             {
-                                if (ret == 1 && ( vPathEnd == v1n && vPathStart == v2n ||
-                                                  vPathEnd == v2n && vPathStart == v1n ) &&
-                                     nDeltaCharge == 2)
+                                if (ret == 1 && ((vPathEnd == v1n && vPathStart == v2n) ||
+                                    (vPathEnd == v2n && vPathStart == v1n)) &&
+                                    nDeltaCharge == 2) /* djb-rwth: addressing LLVM warning */
                                 {
                                     ; /* success */
                                 }
@@ -3914,14 +3927,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             pe2Minus->forbidden &= forbidden_edge_mask_inv;
                             pe1Plus->forbidden &= forbidden_edge_mask_inv;
                             /* test #2 */
-                            ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                                  &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
-                            if (ret == 1 && ( vPathEnd == v1n && vPathStart == v2n ||
-                                              vPathEnd == v2n && vPathStart == v1n ) &&
-                                 nDeltaCharge == 2)
+                            ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                                &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
+                            if (ret == 1 && ((vPathEnd == v1n && vPathStart == v2n) ||
+                                (vPathEnd == v2n && vPathStart == v1n)) &&
+                                nDeltaCharge == 2) /* djb-rwth: addressing LLVM warnings */
                             {
                                 /* success; actually change charges */
-                                ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                                ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                                 if (ret > 0)
                                 {
                                     nNumRunBNS++;
@@ -3940,8 +3953,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             }
                             INCHI_HEAPCHK
                         }
-                        RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-                        RemoveForbiddenEdgeMask( pBNS, &OtherNFlowerEdges, forbidden_edge_mask );
+                        RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+                        RemoveForbiddenEdgeMask(pBNS, &OtherNFlowerEdges, forbidden_edge_mask);
                         if (ret > 0)
                         {
                             /* do not repeat for the same atoms */
@@ -3966,10 +3979,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     exit_case_14:
-        AllocEdgeList( &iat_X_List, EDGE_LIST_FREE );
-        AllocEdgeList( &iat_N_III_List, EDGE_LIST_FREE );
-        RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-        RemoveForbiddenEdgeMask( pBNS, &OtherNFlowerEdges, forbidden_edge_mask );
+        AllocEdgeList(&iat_X_List, EDGE_LIST_FREE);
+        AllocEdgeList(&iat_N_III_List, EDGE_LIST_FREE);
+        RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+        RemoveForbiddenEdgeMask(pBNS, &OtherNFlowerEdges, forbidden_edge_mask);
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (ret < 0)
         {
@@ -3979,12 +3992,12 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 >( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                           ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -3992,7 +4005,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4006,7 +4019,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
     if (pc2i->nNumTgMRevrs > pc2i->nNumTgMInChI ||
          pc2i->nNumRemHRevrs < pc2i->nNumRemHInChI ||
          pc2i->nNumEndpRevrs < pc2i->nNumEndpInChI ||
-         pc2i->nNumTgInChI <= 1 && pc2i->nNumTgRevrs > pc2i->nNumTgInChI)
+         (pc2i->nNumTgInChI <= 1 && pc2i->nNumTgRevrs > pc2i->nNumTgInChI)) /* djb-rwth: addressing LLVM warning */
     {
         /*--------------------------------------------------------------*/
         /* case 15: restored: -(+)O=AB-N<  orig: -O-AB=N(+)<            */
@@ -4018,27 +4031,27 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (+) from -O(+)= to -N<                        */
         /*--------------------------------------------------------------*/
         int num_SB_Neutr = 0, num_DB_Charged = 0, iat;
-        short iat_SB_Neutr[MAX_DIFF_FIXH], iat_DB_Charged[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         cur_success = 0;
+
         /* search for -O(+)= */
         /* search for -N< */
         for (i = 0; i < pStruct->num_atoms; i++)
         { /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* -O(+)= in restored atom: charge=1, has no H, a double bond */
-                 num_DB_Charged < MAX_DIFF_FIXH &&
-                 at2[iat].charge == 1 && !at2[iat].num_H &&
-                 at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 ( pVA[iat].cNumValenceElectrons == 6 ) &&
-                 /* in orig.InChI: an endpoint, has fixed-H */
-                 /*pStruct->endpoint[i] &&*/
-                 !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                 !( nMobHInChI && nMobHInChI[i] ) &&
-                 /* has (+) edge */
-                 ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && 0 == pBNS->edge[e].forbidden)
+                num_DB_Charged < MAX_DIFF_FIXH &&
+                at2[iat].charge == 1 && !at2[iat].num_H &&
+                at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                (pVA[iat].cNumValenceElectrons == 6) &&
+                /* in orig.InChI: an endpoint, has fixed-H */
+                /*pStruct->endpoint[i] &&*/
+                !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                !(nMobHInChI && nMobHInChI[i]) &&
+                /* has (+) edge */
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && 0 == pBNS->edge[e].forbidden)
             {
 
                 iat_DB_Charged[num_DB_Charged++] = iat;
@@ -4051,35 +4064,35 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             else
             {
                 if ( /* -N< in restored atom: charge=0, has no H, has no double bond, N only */
-                     num_SB_Neutr < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H &&
-                     at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     ( pVA[iat].cNumValenceElectrons == 5 &&
-                       pVA[iat].cPeriodicRowNumber == 1 ) &&
-                     /* in orig.InChI: an endpoint, has fixed-H */
-                     /*pStruct->endpoint[i] &&*/
-                     !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                     !( nMobHInChI && nMobHInChI[i] ) &&
-                     /* has (+) edge */
-                     ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && 0 == pBNS->edge[e].forbidden)
+                    num_SB_Neutr < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H &&
+                    at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    (pVA[iat].cNumValenceElectrons == 5 &&
+                        pVA[iat].cPeriodicRowNumber == 1) &&
+                    /* in orig.InChI: an endpoint, has fixed-H */
+                    /*pStruct->endpoint[i] &&*/
+                    !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                    !(nMobHInChI && nMobHInChI[i]) &&
+                    /* has (+) edge */
+                    (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && 0 == pBNS->edge[e].forbidden)
                 {
 
                     iat_SB_Neutr[num_SB_Neutr++] = iat;
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_Neutr, num_DB_Charged ))
+        if ((num_try = inchi_min(num_SB_Neutr, num_DB_Charged))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            BNS_VERTEX *pv1n, *pv2n;
-            BNS_EDGE   *pe1n, *pe2n;
+            BNS_VERTEX* pv1n, * pv2n;
+            BNS_EDGE* pe1n, * pe2n;
             Vertex      v1n, v2n;
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_DB_Charged && cur_success < num_try; i++)
             {
@@ -4087,15 +4100,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCPlusGroupEdge - 1;
                 if (pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 for (j = pv1->num_adj_edges - 1; 0 <= j; j--)
                 {
                     pe1n = pBNS->edge + pv1->iedge[j];
                     if (pe1n->flow && !pe1n->forbidden)
                     {
-                        pv1n = pBNS->vert + ( v1n = pe1n->neighbor12 ^ v1 );
+                        pv1n = pBNS->vert + (v1n = pe1n->neighbor12 ^ v1);
                         break;
                     }
                 }
@@ -4109,7 +4122,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pe2n = pBNS->edge + pv2->iedge[j];
                     if (pe2n->flow && !pe2n->forbidden)
                     {
-                        pv2n = pBNS->vert + ( v2n = pe2n->neighbor12 ^ v2 );
+                        pv2n = pBNS->vert + (v2n = pe2n->neighbor12 ^ v2);
                         break;
                     }
                 }
@@ -4125,16 +4138,16 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2n->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1n && vPathStart == v2n ||
-                                  vPathEnd == v2n && vPathStart == v1n ) &&
-                                  ( nDeltaCharge == 0 || nDeltaCharge == 1 ))
+                if (ret == 1 && ((vPathEnd == v1n && vPathStart == v2n) ||
+                    (vPathEnd == v2n && vPathStart == v1n)) &&
+                    (nDeltaCharge == 0 || nDeltaCharge == 1)) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Moved charge from O(+) to -N< => nDeltaCharge == 1 or 0 if pe2n = -N< charge edge */
                     /* Flow change on pe (+)charge edge (atom NH2) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -4152,19 +4165,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4172,7 +4185,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4192,41 +4205,41 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (-) from O(-) to -NH(-)                         */
         /*----------------------------------------------------------------*/
         int num_SB_N_Minus = 0, num_DB_O_Neutr = 0, iat, itg;
-        short iat_SB_N_Minus[MAX_DIFF_FIXH], iat_DB_O_Neutr[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
-        cur_success = 0;
+        cur_success = 0; /* djb-rwth: ignoring LLVM warning: variable used */
+
         for (itg = 0; itg < pStruct->ti.num_t_groups && itg < pStruct->One_ti.num_t_groups; itg++)
         {
             if (pStruct->ti.t_group[itg].nNumEndpoints != pStruct->One_ti.t_group[itg].nNumEndpoints ||
-                 pStruct->ti.t_group[itg].num[1] >= pStruct->One_ti.t_group[itg].num[1])
+                pStruct->ti.t_group[itg].num[1] >= pStruct->One_ti.t_group[itg].num[1])
             {
                 continue;
             }
             CurrEdges.num_edges = num_SB_N_Minus = num_DB_O_Neutr = 0;
             cur_success = 0;
             for (j = 0, k = pStruct->One_ti.t_group[itg].nFirstEndpointAtNoPos;
-                  j < pStruct->One_ti.t_group[itg].nNumEndpoints; j++)
+                j < pStruct->One_ti.t_group[itg].nNumEndpoints; j++)
             {
                 i = pStruct->One_ti.nEndpointAtomNumber[k + j]; /* canonical number in restored struct. */
                 iat = nCanon2AtnoRevrs[i];
                 if ( /* in restored atom: charge=0, has no H, has double bond, O, S, Se, Te */
-                     num_DB_O_Neutr < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H &&
-                     at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     pVA[iat].cNumValenceElectrons == 6 &&
-                     /* in orig.InChI: an endpoint, may have fixed-H */
-                     pStruct->endpoint[i] &&
-                     /*!(pStruct->fixed_H && pStruct->fixed_H[i]) &&*/
-                     !( nMobHInChI && nMobHInChI[i] ) &&
-                     /* has (-) edge */
-                     ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                    num_DB_O_Neutr < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H &&
+                    at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    pVA[iat].cNumValenceElectrons == 6 &&
+                    /* in orig.InChI: an endpoint, may have fixed-H */
+                    pStruct->endpoint[i] &&
+                    /*!(pStruct->fixed_H && pStruct->fixed_H[i]) &&*/
+                    !(nMobHInChI && nMobHInChI[i]) &&
+                    /* has (-) edge */
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden)
                 {
 
                     iat_DB_O_Neutr[num_DB_O_Neutr++] = iat;
 
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
@@ -4234,17 +4247,17 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 else
                 {
                     if ( /* in restored atom: charge=-1, has H, has double bond, N */
-                         num_SB_N_Minus < MAX_DIFF_FIXH &&
-                         at2[iat].charge == -1 && at2[iat].num_H &&
-                         at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                         pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
-                         /* in orig.InChI: an endpoint, has no fixed-H */
-                         pStruct->endpoint[i] &&
-                         ( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                         !( nMobHInChI && nMobHInChI[i] ) &&
-                         /* has (-) edge */
-                         ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 &&
-                         0 == pBNS->edge[e].forbidden)
+                        num_SB_N_Minus < MAX_DIFF_FIXH &&
+                        at2[iat].charge == -1 && at2[iat].num_H &&
+                        at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                        pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 &&
+                        /* in orig.InChI: an endpoint, has no fixed-H */
+                        pStruct->endpoint[i] &&
+                        (pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                        !(nMobHInChI && nMobHInChI[i]) &&
+                        /* has (-) edge */
+                        (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 &&
+                        0 == pBNS->edge[e].forbidden)
                     {
 
                         iat_SB_N_Minus[num_SB_N_Minus++] = iat;
@@ -4256,11 +4269,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     }
                 }
             }
-            if (num_try = inchi_min( num_SB_N_Minus, num_DB_O_Neutr ))
+            if ((num_try = inchi_min(num_SB_N_Minus, num_DB_O_Neutr))) /* djb-rwth: addressing LLVM warning */
             {
                 /* detected; attempt to fix */
-                SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-                RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+                SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+                RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
                 /* allow stereobonds in rings change */
                 /*
                 if ( forbidden_stereo_edge_mask )
@@ -4273,8 +4286,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                     if (!pe->flow)
                         continue;
-                    pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                    pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                    pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                    pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                     /*pe->forbidden |= forbidden_edge_mask;*/
                     pe->flow -= delta;
@@ -4282,15 +4295,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pv2->st_edge.flow -= delta;
                     pBNS->tot_st_flow -= 2 * delta;
 
-                    ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                          &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                    ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                        &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                    if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                      vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                    if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                        (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warning */
                     {
                         /* Moved (-) charge to =O => nDeltaCharge == 1 */
                         /* Flow change on pe (-)charge edge (atom -NH(-)) is not known to RunBnsTestOnce()) */
-                        ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                        ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                         if (ret > 0)
                         {
                             nNumRunBNS++;
@@ -4307,7 +4320,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     }
                     INCHI_HEAPCHK
                 }
-                RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+                RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
                 /*
                 if ( forbidden_stereo_edge_mask )
                 SetForbiddenEdgeMask( pBNS, &FixedLargeRingStereoEdges, forbidden_stereo_edge_mask );
@@ -4318,12 +4331,12 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 tot_succes += cur_success;
                 /* recalculate InChI from the structure */
-                if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                                ppt_group_info, ppat_norm, ppat_prep ) ))
+                if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                    ppt_group_info, ppat_norm, ppat_prep)))
                 {
                     goto exit_function;
                 }
-                if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+                if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -4331,7 +4344,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     goto exit_function;  /* no fixed-H found */
                 }
-                if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+                if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -4352,22 +4365,22 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (+) from OH(+) to -O-                         */
         /*--------------------------------------------------------------*/
         int num_SB_Neutr = 0, num_DB_Charged = 0, iat;
-        short iat_SB_Neutr[MAX_DIFF_FIXH], iat_DB_Charged[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H ? pInChI[1]->nNum_H :
             pInChI[0] && pInChI[0]->nNum_H ? pInChI[0]->nNum_H : 0;
         cur_success = 0;
+
         for (i = 0; i < pStruct->num_atoms; i++)
         { /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom: charge=+1, has H, has double bond, N, O, S, Se, Te */
-                 num_DB_Charged < MAX_DIFF_FIXH &&
-                 at2[iat].charge == 1 && at2[iat].num_H &&
-                 at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 ( pVA[iat].cNumValenceElectrons == 6 ||
-                   pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1 ) &&
-                 /* has (+) edge */
-                   ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden)
+                num_DB_Charged < MAX_DIFF_FIXH &&
+                at2[iat].charge == 1 && at2[iat].num_H &&
+                at2[iat].valence < at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                (pVA[iat].cNumValenceElectrons == 6 ||
+                    (pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber == 1)) &&
+                /* has (+) edge */
+                (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warnings */
             {
 
                 iat_DB_Charged[num_DB_Charged++] = iat;
@@ -4380,39 +4393,39 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             else
             {
                 if ( /* in restored atom: charge=0, has no H, has no double bond, N, P, O, S, Se, Te */
-                     num_SB_Neutr < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H &&
-                     at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     ( pVA[iat].cNumValenceElectrons == 6 || pVA[iat].cNumValenceElectrons == 7 ||
-                       pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber > 1 ) &&
-                     /* in orig.InChI: not an endpoint */
-                     !pStruct->endpoint[i] &&
-                     !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                     !( nMobHInChI && nMobHInChI[i] ) &&
-                     /* has (+) edge */
-                     ( e = pVA[iat].nCPlusGroupEdge - 1 ) >= 0 &&
-                     0 == pBNS->edge[e].forbidden)
+                    num_SB_Neutr < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H &&
+                    at2[iat].valence == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    (pVA[iat].cNumValenceElectrons == 6 || pVA[iat].cNumValenceElectrons == 7 ||
+                        (pVA[iat].cNumValenceElectrons == 5 && pVA[iat].cPeriodicRowNumber > 1)) &&
+                    /* in orig.InChI: not an endpoint */
+                    !pStruct->endpoint[i] &&
+                    !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                    !(nMobHInChI && nMobHInChI[i]) &&
+                    /* has (+) edge */
+                    (e = pVA[iat].nCPlusGroupEdge - 1) >= 0 &&
+                    0 == pBNS->edge[e].forbidden) /* djb-rwth: addressing LLVM warning */
                 {
 
                     iat_SB_Neutr[num_SB_Neutr++] = iat;
 
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_Neutr, num_DB_Charged ))
+        if ((num_try = inchi_min(num_SB_Neutr, num_DB_Charged))) /* djb-rwth: addressing LLVM warning */
         {
-            BNS_VERTEX *pv1n, *pv2n;
-            BNS_EDGE   *pe1n, *pe2n;
+            BNS_VERTEX* pv1n, * pv2n;
+            BNS_EDGE* pe1n, * pe2n;
             Vertex      v1n, v2n;
 
-            num_try = inchi_min( num_try, pc2i->nNumRemHRevrs - pc2i->nNumRemHInChI );
+            num_try = inchi_min(num_try, pc2i->nNumRemHRevrs - pc2i->nNumRemHInChI);
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_DB_Charged && cur_success < num_try; i++)
             {
@@ -4422,15 +4435,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     continue;
                 }
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 for (j = pv1->num_adj_edges - 1; 0 <= j; j--)
                 {
                     pe1n = pBNS->edge + pv1->iedge[j];
                     if (pe1n->flow && !pe1n->forbidden)
                     {
-                        pv1n = pBNS->vert + ( v1n = pe1n->neighbor12 ^ v1 );
+                        pv1n = pBNS->vert + (v1n = pe1n->neighbor12 ^ v1);
                         break;
                     }
                 }
@@ -4444,7 +4457,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pe2n = pBNS->edge + pv2->iedge[j];
                     if (pe2n->flow && !pe2n->forbidden)
                     {
-                        pv2n = pBNS->vert + ( v2n = pe2n->neighbor12 ^ v2 );
+                        pv2n = pBNS->vert + (v2n = pe2n->neighbor12 ^ v2);
                         break;
                     }
                 }
@@ -4458,16 +4471,16 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2n->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1n && vPathStart == v2n ||
-                                  vPathEnd == v2n && vPathStart == v1n ) &&
-                                  ( nDeltaCharge == 0 || nDeltaCharge == 1 ))
+                if (ret == 1 && ((vPathEnd == v1n && vPathStart == v2n) ||
+                    (vPathEnd == v2n && vPathStart == v1n)) &&
+                    (nDeltaCharge == 0 || nDeltaCharge == 1)) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Moved charge from OH(+) to -O- => nDeltaCharge == 1 or 0 if pe2n = -O- charge edge */
                     /* Flow change on pe (+)charge edge (atom OH(+)) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -4485,19 +4498,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4505,7 +4518,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4557,13 +4570,13 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 if (!pStruct->endpoint[i] || !at_Mobile_H_Revrs || at_Mobile_H_Revrs[iat].endpoint ||
                      pVA[i].cNumValenceElectrons != 5 || pVA[i].cPeriodicRowNumber != 1 ||
                      2 != at2[iat].valence || at2[iat].num_H || at2[iat].radical ||
-                     0 <= ( e1 = pVA[iat].nCPlusGroupEdge - 1 ) && !pBNS->edge[e1].flow ||
-                     0 >( e = pVA[iat].nCMinusGroupEdge - 1 ) || pBNS->edge[e].forbidden || pBNS->edge[e].flow)
+                     (0 <= ( e1 = pVA[iat].nCPlusGroupEdge - 1 ) && !pBNS->edge[e1].flow) ||
+                     0 >( e = pVA[iat].nCMinusGroupEdge - 1 ) || pBNS->edge[e].forbidden || pBNS->edge[e].flow) /* djb-rwth: addressing LLVM warning */
                 {
                     continue;
                 }
                 /* found -N= */
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -4579,8 +4592,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             iat = nCanon2AtnoRevrs[i];
             if (pStruct->endpoint[i] || !pVA[i].cNumValenceElectrons || pVA[i].cNumValenceElectrons == 4 ||
                  at2[iat].num_H || at2[iat].radical ||
-                 0 <= ( e1 = pVA[iat].nCMinusGroupEdge - 1 ) && !pBNS->edge[e1].flow ||
-                 0 >( e = pVA[iat].nCPlusGroupEdge - 1 ) || pBNS->edge[e].forbidden || pBNS->edge[e].flow != 1)
+                 (0 <= ( e1 = pVA[iat].nCMinusGroupEdge - 1 ) && !pBNS->edge[e1].flow) ||
+                 0 >( e = pVA[iat].nCPlusGroupEdge - 1 ) || pBNS->edge[e].forbidden || pBNS->edge[e].flow != 1) /* djb-rwth: addressing LLVM warnings */
             {
                 continue;
             }
@@ -4604,8 +4617,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                   &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-            if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                              vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+            if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                              (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warnings */
             {
                 /* Created (-) charge on -N= => nDeltaCharge == 1 */
                 /* Flow change on pe (+)charge edge (atom X) is not known to RunBnsTestOnce()) */
@@ -4642,7 +4655,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4650,7 +4663,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4660,6 +4673,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     }
+
     if (pc2i->len_c2at >= 1)
     {
         /*--------------------------------------------------------------*/
@@ -4671,11 +4685,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (+) from -OH to M; charhe on M may vary       */
         /*--------------------------------------------------------------*/
         int iat;
-        EdgeIndex eOHPlus, eMPlus, eMMinus, eOMBond;
+        EdgeIndex eMPlus, eMMinus; /* djb-rwth: removing redundant variables/code */
         BNS_EDGE  *peOHPlus, *peMPlus, *peMMinus, *peOMBond;
         int       iatMetal, ChargeOnMetal, DeltaChargeExpected;
         cur_success = 0;
-        num_zero_ret = 0;
+        /* djb-rwth: removing redundant code */
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
@@ -4693,11 +4707,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                  pVA[iatMetal = at2[iat].neighbor[0]].cMetal &&
                  ( eMPlus = pVA[iatMetal].nCPlusGroupEdge - 1 ) >= 0 && !pBNS->edge[eMPlus].forbidden &&
                  ( eMMinus = pVA[iatMetal].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[eMMinus].forbidden &&
-                 !pBNS->edge[eOMBond = pBNS->vert[iat].iedge[0]].forbidden
-                 )
+                 !pBNS->edge[pBNS->vert[iat].iedge[0]].forbidden
+                 ) /* djb-rwth: removing redundant code */
             {
                 /* -OH charge edges */
-                if (ret = AddToEdgeList( &CurrEdges, iat, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList( &CurrEdges, iat, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -4714,10 +4728,10 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 /* v1 is -OH, v2 is adjacent to it Metal */
                 iat = CurrEdges.pnEdges[i];
                 iatMetal = at2[iat].neighbor[0];
-                peOHPlus = pBNS->edge + ( eOHPlus = pVA[iat].nCPlusGroupEdge - 1 );
-                peMPlus = pBNS->edge + ( eMPlus = pVA[iatMetal].nCPlusGroupEdge - 1 );
-                peMMinus = pBNS->edge + ( eMMinus = pVA[iatMetal].nCMinusGroupEdge - 1 );
-                peOMBond = pBNS->edge + ( eOMBond = pBNS->vert[iat].iedge[0] );
+                peOHPlus = pBNS->edge + ( (long long)pVA[iat].nCPlusGroupEdge - 1 ); /* djb-rwth: removing redundant variables/code */
+                peMPlus = pBNS->edge + ( (long long)pVA[iatMetal].nCPlusGroupEdge - 1 ); /* djb-rwth: removing redundant variables/code */
+                peMMinus = pBNS->edge + ( (long long)pVA[iatMetal].nCMinusGroupEdge - 1 ); /* djb-rwth: removing redundant variables/code */
+                peOMBond = pBNS->edge + ( pBNS->vert[iat].iedge[0] ); /* djb-rwth: removing redundant variables/code */
                 /* remove forbidden edge masks */
                 peMPlus->forbidden &= forbidden_edge_mask_inv;
                 peMMinus->forbidden &= forbidden_edge_mask_inv;
@@ -4757,8 +4771,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                       &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == DeltaChargeExpected)
+                if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                  (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == DeltaChargeExpected) /* djb-rwth: addressing LLVM warnings */
                 {
                     ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
                     if (ret > 0)
@@ -4794,7 +4808,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     goto exit_function;
                 }
-                if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+                if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -4802,7 +4816,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     goto exit_function;  /* no fixed-H found */
                 }
-                if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+                if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -4813,6 +4827,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     }
+
     if (pc2i->len_c2at > 1 && pc2i->nNumTgRevrs && pc2i->nNumTgInChI)
     {
         /*--------------------------------------------------------------*/
@@ -4827,7 +4842,6 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /* Solution: move (-) from O(-) to =N-                          */
         /*--------------------------------------------------------------*/
         int num_SB_O_Minus = 0, num_DB_N = 0, iat;
-        short iat_SB_O_Minus[MAX_DIFF_FIXH], iat_DB_N[MAX_DIFF_FIXH];
 
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         /*
@@ -4837,26 +4851,27 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         pInChI[0] && pInChI[0]->nNum_H? pInChI[0]->nNum_H : 0;
         */
         cur_success = 0;
+
         CurrEdges.num_edges = 0; /* clear current edge list */
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: =O or -N= */
-                 num_DB_N < MAX_DIFF_FIXH &&
-                 pc2i->c2at[i].endptInChI &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pBNS->edge[e].flow == 0 &&
-                 pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
-                 /* if  more than 1 t-group are in orig. InChI then do not move (-) to N */
-                 ( pc2i->nNumTgInChI == 1 || pc2i->c2at[i].nValElectr == 6 ) &&
-                 /* reversed structure info: */
-                 !pc2i->c2at[i].endptRevrs &&
-                 pc2i->c2at[i].nFixHRevrs == 0 && /*pc2i->c2at[i].nMobHRevrs == 0 &&*/
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                 at2[iat].valence + 1 == at2[iat].chem_bonds_valence)
+                num_DB_N < MAX_DIFF_FIXH &&
+                pc2i->c2at[i].endptInChI &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pBNS->edge[e].flow == 0 &&
+                pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
+                /* if  more than 1 t-group are in orig. InChI then do not move (-) to N */
+                (pc2i->nNumTgInChI == 1 || pc2i->c2at[i].nValElectr == 6) &&
+                /* reversed structure info: */
+                !pc2i->c2at[i].endptRevrs &&
+                pc2i->c2at[i].nFixHRevrs == 0 && /*pc2i->c2at[i].nMobHRevrs == 0 &&*/
+                pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                at2[iat].valence + 1 == at2[iat].chem_bonds_valence)
             {
                 iat_DB_N[num_DB_N++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -4864,17 +4879,17 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             else
             {
                 if ( /* orig. InChI info: -O(-) */
-                     num_SB_O_Minus < MAX_DIFF_FIXH &&
-                     !pc2i->c2at[i].endptInChI &&
-                     ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                     pBNS->edge[e].flow == 1 &&
-                     pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
-                     pc2i->c2at[i].nValElectr == 6 &&
-                     /* reversed structure info: */
-                     pc2i->c2at[i].endptRevrs &&
-                     pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
-                     pc2i->c2at[i].nAtChargeRevrs == -1 && !at2[iat].num_H &&
-                     at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 1)
+                    num_SB_O_Minus < MAX_DIFF_FIXH &&
+                    !pc2i->c2at[i].endptInChI &&
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                    pBNS->edge[e].flow == 1 &&
+                    pc2i->c2at[i].nFixHInChI == 0 && pc2i->c2at[i].nMobHInChI == 0 &&
+                    pc2i->c2at[i].nValElectr == 6 &&
+                    /* reversed structure info: */
+                    pc2i->c2at[i].endptRevrs &&
+                    pc2i->c2at[i].nFixHRevrs == 0 && pc2i->c2at[i].nMobHRevrs == 0 &&
+                    pc2i->c2at[i].nAtChargeRevrs == -1 && !at2[iat].num_H &&
+                    at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 1)
                 {
                     iat_SB_O_Minus[num_SB_O_Minus++] = iat;
                 }
@@ -4891,30 +4906,30 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 iat = nCanon2AtnoRevrs[i];
                 if ( /* in restored atom O: charge=-1, no H, has no double bond, endpoint */
-                     num_DB_N < MAX_DIFF_FIXH &&
-                     at2[iat].charge == 0 && !at2[iat].num_H &&
-                     at2[iat].valence + 1 == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                     /* in orig.InChI: an endpoint, has no H */
-                     !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                     /*!(nMobHInChI && nMobHInChI[i] ) &&*/
-                     /* has (-) edge */
-                     ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                     !pBNS->edge[e].flow)
+                    num_DB_N < MAX_DIFF_FIXH &&
+                    at2[iat].charge == 0 && !at2[iat].num_H &&
+                    at2[iat].valence + 1 == at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                    /* in orig.InChI: an endpoint, has no H */
+                    !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                    /*!(nMobHInChI && nMobHInChI[i] ) &&*/
+                    /* has (-) edge */
+                    (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                    !pBNS->edge[e].flow)
                 {
 
                     iat_DB_N[num_DB_N++] = iat;
-                    if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_function;
                     }
                 }
             }
         }
-        if (num_try = inchi_min( num_SB_O_Minus, num_DB_N ))
+        if ((num_try = inchi_min(num_SB_O_Minus, num_DB_N))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_O_Minus && cur_success < num_try; i++)
             {
@@ -4922,23 +4937,23 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->flow -= delta;
                 pv1->st_edge.flow -= delta;
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warning */
                 {
                     /* Added (-) charge to =N- => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (atom -O(-)) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -4954,19 +4969,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4974,7 +4989,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -4984,6 +4999,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     }
+
     if (pc2i->len_c2at && pc2i->nNumTgRevrs && pc2i->nNumTgHInChI && pStruct->endpoint)
     {
         /*--------------------------------------------------------------*/
@@ -5001,7 +5017,6 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /*           these atoms are tautomeric in restored structure   */
         /*--------------------------------------------------------------*/
         int num_SB_O_Minus = 0, num_DB_O = 0, iat, iS;
-        short iat_SB_O_Minus[MAX_DIFF_FIXH], iat_Central[MAX_DIFF_FIXH], iat_DB_O[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         inp_ATOM *at_Mobile_H_Revrs = ( pStruct->pOne_norm_data[1] &&
                                         pStruct->pOne_norm_data[1]->at ) ? pStruct->pOne_norm_data[1]->at : NULL;
@@ -5011,23 +5026,24 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         */
         CurrEdges.num_edges = 0; /* clear current edge list */
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: =O    */
-                 num_DB_O < MAX_DIFF_FIXH &&
-                 pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
-                 ( pc2i->c2at[i].endptInChI || pc2i->c2at[i].nMobHInChI ) &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
-                                                  /* reversed structure info: */
-                 !( pc2i->c2at[i].endptRevrs || pc2i->c2at[i].nMobHRevrs ) &&
-                 pc2i->c2at[i].nFixHRevrs == 0 &&
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                 at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
+                num_DB_O < MAX_DIFF_FIXH &&
+                pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
+                (pc2i->c2at[i].endptInChI || pc2i->c2at[i].nMobHInChI) &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
+                /* reversed structure info: */
+                !(pc2i->c2at[i].endptRevrs || pc2i->c2at[i].nMobHRevrs) &&
+                pc2i->c2at[i].nFixHRevrs == 0 &&
+                pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
             {
                 iat_DB_O[num_DB_O++] = iat;
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
@@ -5042,19 +5058,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom O: charge=-1, no H, has no double bond, endpoint */
-                 num_SB_O_Minus < MAX_DIFF_FIXH &&
-                 at2[iat].charge == -1 && !at2[iat].num_H &&
-                 at2[iat].valence == 1 && at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
-                 pVA[iat].cNumValenceElectrons == 6 &&
-                 ( at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint ) &&
-                 /* in orig.InChI: an endpoint, has no H */
-                 !( pStruct->fixed_H && pStruct->fixed_H[i] ) &&
-                 /*!(nMobHInChI && nMobHInChI[i] ) &&*/
-                 /* has (-) edge */
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pBNS->edge[e].flow)
+                num_SB_O_Minus < MAX_DIFF_FIXH &&
+                at2[iat].charge == -1 && !at2[iat].num_H &&
+                at2[iat].valence == 1 && at2[iat].chem_bonds_valence && !pVA[iat].cMetal &&
+                pVA[iat].cNumValenceElectrons == 6 &&
+                (at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint) &&
+                /* in orig.InChI: an endpoint, has no H */
+                !(pStruct->fixed_H && pStruct->fixed_H[i]) &&
+                /*!(nMobHInChI && nMobHInChI[i] ) &&*/
+                /* has (-) edge */
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pBNS->edge[e].flow)
             {
-                int nNumTautSB = 0, nNumTautDB = 0, nNumOtherDB = 0, nNumOtherSB = 0, nNumOthers = 0, nNumNegEndp = 0;
+                int nNumTautSB = 0, nNumTautDB = 0, nNumOtherDB = 0, nNumOtherSB = 0, nNumOthers = 0, nNumNegEndp = 0; /* djb-rwth: ignoring LLVM warning: variables used */
                 /* traverse neighbors of the centerpoint iS */
                 iS = at2[i].neighbor[0];
                 for (j = 0; j < num_SB_O_Minus; j++)
@@ -5076,8 +5092,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     }
                     if (pStruct->endpoint[k] == pStruct->endpoint[i])
                     {
-                        nNumTautSB += ( bond_type == BOND_TYPE_SINGLE );
-                        nNumTautDB += ( bond_type == BOND_TYPE_DOUBLE );
+                        nNumTautSB += (bond_type == BOND_TYPE_SINGLE);
+                        nNumTautDB += (bond_type == BOND_TYPE_DOUBLE);
                     }
                     else
                     {
@@ -5098,7 +5114,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         }
                     }
                     if (at2[k].endpoint == at2[i].endpoint && at2[k].valence == 1 &&
-                         at2[k].charge == -1 && pVA[k].cNumValenceElectrons == 6)
+                        at2[k].charge == -1 && pVA[k].cNumValenceElectrons == 6)
                     {
                         nNumNegEndp++;
                     }
@@ -5107,7 +5123,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     continue;
                 }
-                if (!( nNumOtherDB && nNumTautDB ))
+                if (!(nNumOtherDB && nNumTautDB))
                 {
                     continue; /* ignore */
                 }
@@ -5116,11 +5132,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 iat_Central[num_SB_O_Minus++] = iS;
             }
         }
-        if (num_try = inchi_min( num_SB_O_Minus, num_DB_O ))
+        if ((num_try = inchi_min(num_SB_O_Minus, num_DB_O))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_SB_O_Minus && cur_success < num_try; i++)
             {
@@ -5128,8 +5144,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pe = pBNS->edge + pVA[iat].nCMinusGroupEdge - 1;
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 pe->flow -= delta;
@@ -5137,15 +5153,15 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warning */
                 {
                     /* Added (-) charge to =O => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (atom -N(-)-) is not known to RunBnsTestOnce()) */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -5161,19 +5177,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 INCHI_HEAPCHK
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5181,7 +5197,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5249,7 +5265,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                      at2[iS].valence >= 4)
                 {
                     /* a candidate for S in -SO2- */
-                    int nNumTautSB = 0, nNumTautDB = 0, nNumOtherDB = 0, nNumOtherSB = 0;
+                    int nNumTautSB = 0, nNumTautDB = 0, nNumOtherDB = 0, nNumOtherSB = 0; /* djb-rwth: ignoring LLVM warning: variables used */
                     int nNumOthers = 0, nNumNegEndp = 0, nNumEndpO = 0;
                     /* check whether we have already found it */
                     if (0 <= FindInEdgeList( &CentralS, iS ))
@@ -5314,7 +5330,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             if (bond_type == BOND_TYPE_DOUBLE && !at2[k].charge && !pBNS->edge[e].flow)
                             {
                                 /* charges to be unchanged */
-                                if (ret = AddToEdgeList( &OtherSO, e, INC_ADD_EDGE ))
+                                if ((ret = AddToEdgeList( &OtherSO, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                                 {
                                     goto exit_case_21a;
                                 }
@@ -5324,7 +5340,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                                 if (bond_type == BOND_TYPE_SINGLE && at2[k].charge == -1 && pBNS->edge[e].flow)
                                 {
                                     /* charges to be removed */
-                                    if (ret = AddToEdgeList( &SOMinus, e, INC_ADD_EDGE ))
+                                    if ((ret = AddToEdgeList( &SOMinus, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                                     {
                                         goto exit_case_21a;
                                     }
@@ -5332,7 +5348,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                             }
                         }
                     }
-                    if (ret = AddToEdgeList( &CentralS, iS, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList( &CentralS, iS, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_case_21a;
                     }
@@ -5342,7 +5358,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                          at2[iat].valence + 1 == at2[iat].chem_bonds_valence)
                     {
                         /* changeable charges */
-                        if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                        if ((ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                         {
                             goto exit_function;
                         }
@@ -5355,7 +5371,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             RemoveFromEdgeListByValue( &CurrEdges, OtherSO.pnEdges[i] );
         }
 
-        if (num_try = inchi_min( SOMinus.num_edges, CurrEdges.num_edges ))
+        if ((num_try = inchi_min( SOMinus.num_edges, CurrEdges.num_edges ))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
             SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
@@ -5378,8 +5394,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                       &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 1)
+                if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                  (vPathEnd == v2 && vPathStart == v1) ) && nDeltaCharge == 1) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Added (-) charge to =O => nDeltaCharge == 1 */
                     /* Flow change on pe (-)charge edge (atom -N(-)-) is not known to RunBnsTestOnce()) */
@@ -5416,7 +5432,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5424,7 +5440,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5445,7 +5461,6 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /*                                                                  */
         /*------------------------------------------------------------------*/
         int num_DB_O = 0, iat;
-        short iat_DB_O[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         inp_ATOM *at_Mobile_H_Revrs = ( pStruct->pOne_norm_data[1] &&
                                         pStruct->pOne_norm_data[1]->at ) ? pStruct->pOne_norm_data[1]->at : NULL;
@@ -5457,20 +5472,21 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         */
         CurrEdges.num_edges = 0; /* clear current edge list */
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: =O    */
-                 num_DB_O < MAX_DIFF_FIXH &&
-                 pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
-                 ( pc2i->c2at[i].endptInChI || pc2i->c2at[i].nMobHInChI ) &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
-                                                  /* reversed structure info: */
-                 !( pc2i->c2at[i].endptRevrs || pc2i->c2at[i].nMobHRevrs ) &&
-                 pc2i->c2at[i].nFixHRevrs == 0 &&
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                 at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
+                num_DB_O < MAX_DIFF_FIXH &&
+                pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
+                (pc2i->c2at[i].endptInChI || pc2i->c2at[i].nMobHInChI) &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
+                /* reversed structure info: */
+                !(pc2i->c2at[i].endptRevrs || pc2i->c2at[i].nMobHRevrs) &&
+                pc2i->c2at[i].nFixHRevrs == 0 &&
+                pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2)
             {
                 iat_DB_O[num_DB_O++] = iat;
             }
@@ -5480,40 +5496,40 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             /* i = canonical number - 1 */
             iat = nCanon2AtnoRevrs[i];
             if ( /* in restored atom O: charge=-1, no H, has no double bond, endpoint */
-                 at2[iat].charge == -1 && !at2[iat].num_H &&
-                 at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2 && !pVA[iat].cMetal &&
-                 pVA[iat].cNumValenceElectrons == 5 &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pBNS->edge[e].flow &&
-                 !( at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint ) &&
-                 pVA[iN2 = at2[iat].neighbor[0]].cNumValenceElectrons == 5 &&
-                 at2[iat].bond_type[0] == BOND_TYPE_DOUBLE &&
-                 at2[iN2].charge == 1 && at2[iN2].valence == 2 && at2[iN2].chem_bonds_valence == 4 &&
-                 pVA[iC = at2[iN2].neighbor[at2[iN2].neighbor[0] == iN2]].cNumValenceElectrons == 4)
+                at2[iat].charge == -1 && !at2[iat].num_H &&
+                at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2 && !pVA[iat].cMetal &&
+                pVA[iat].cNumValenceElectrons == 5 &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pBNS->edge[e].flow &&
+                !(at_Mobile_H_Revrs && at_Mobile_H_Revrs[iat].endpoint) &&
+                pVA[iN2 = at2[iat].neighbor[0]].cNumValenceElectrons == 5 &&
+                at2[iat].bond_type[0] == BOND_TYPE_DOUBLE &&
+                at2[iN2].charge == 1 && at2[iN2].valence == 2 && at2[iN2].chem_bonds_valence == 4 &&
+                pVA[iC = at2[iN2].neighbor[at2[iN2].neighbor[0] == iN2]].cNumValenceElectrons == 4) /* djb-rwth: ignoring LLVM warning: variable used */
             {
 
-                if (ret = AddToEdgeList( &CurrEdges, e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&CurrEdges, e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_function;
                 }
             }
         }
-        if (num_try = inchi_min( CurrEdges.num_edges, num_DB_O ))
+        if ((num_try = inchi_min(CurrEdges.num_edges, num_DB_O))) /* djb-rwth: addressing LLVM warning */
         {
             /* detected; attempt to fix */
-            SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-            RemoveForbiddenEdgeMask( pBNS, &CurrEdges, forbidden_edge_mask );
+            SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+            RemoveForbiddenEdgeMask(pBNS, &CurrEdges, forbidden_edge_mask);
             delta = 1;
             for (i = 0; i < num_DB_O && cur_success < num_try; i++)
             {
                 iat = iat_DB_O[i];
 
-                peDB_O_Minus = pBNS->edge + ( pVA[iat].nCMinusGroupEdge - 1 );
+                peDB_O_Minus = pBNS->edge + ((long long)pVA[iat].nCMinusGroupEdge - 1); /* djb-rwth: cast operator added */
                 pe = pBNS->edge + pBNS->vert[iat].iedge[0];
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
                 peDB_O_Minus->forbidden &= forbidden_edge_mask_inv;
@@ -5523,14 +5539,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 pv2->st_edge.flow -= delta;
                 pBNS->tot_st_flow -= 2 * delta;
 
-                ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                      &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                    &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) && nDeltaCharge == 0)
+                if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                    (vPathEnd == v2 && vPathStart == v1)) && nDeltaCharge == 0) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Added (-) charge to =O and removed from =N(-) => nDeltaCharge == 0 */
-                    ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                    ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                     if (ret > 0)
                     {
                         nNumRunBNS++;
@@ -5548,19 +5564,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     pe->forbidden &= forbidden_edge_mask_inv;
                 peDB_O_Minus->forbidden |= forbidden_edge_mask;
             }
-            RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+            RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
         }
         CurrEdges.num_edges = 0; /* clear current edge list */
         if (cur_success)
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 > ( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                            ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5568,7 +5584,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5578,6 +5594,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             }
         }
     }
+
     if (pc2i->len_c2at && pc2i->nNumTgInChI == 1)
     {
         /*------------------------------------------------------------------*/
@@ -5610,7 +5627,6 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         /*                                                                  */
         /*------------------------------------------------------------------*/
         int num_DB_O = 0, iat;
-        short iat_DB_O[MAX_DIFF_FIXH], iat_NO2[MAX_DIFF_FIXH];
         AT_NUMB  *nCanon2AtnoRevrs = pStruct->nCanon2Atno[0];
         inp_ATOM *at_Mobile_H_Revrs = ( pStruct->pOne_norm_data[1] &&
                                         pStruct->pOne_norm_data[1]->at ) ? pStruct->pOne_norm_data[1]->at : NULL;
@@ -5634,7 +5650,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
 #define CHG_SET_O_FIXED      3
 #define CHG_SET_NUM          4
         EDGE_LIST ChangeableEdges[CHG_SET_NUM];
-        memset( ChangeableEdges, 0, sizeof( ChangeableEdges ) );
+        memset( ChangeableEdges, 0, sizeof( ChangeableEdges ) ); /* djb-rwth: memset_s C11/Annex K variant? */
         /* equivalent to AllocEdgeList( &EdgeList, EDGE_LIST_CLEAR ); */
         /*
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H? pInChI[1]->nNum_H :
@@ -5642,24 +5658,25 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         */
         CurrEdges.num_edges = 0; /* clear current edge list */
         cur_success = 0;
+
         for (i = 0; i < pc2i->len_c2at; i++)
         {
             iat = pc2i->c2at[i].atomNumber;
             if ( /* orig. InChI info: taut in orig. InChI =O located in -NO2 that is not taut in Reconstructed InChI */
-                 num_DB_O < MAX_DIFF_FIXH &&
-                 pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
-                 ( pc2i->c2at[i].endptInChI /*|| pc2i->c2at[i].nMobHInChI*/ ) &&
-                 ( e = pVA[iat].nCMinusGroupEdge - 1 ) >= 0 && !pBNS->edge[e].forbidden &&
-                 pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
-                                                  /* reversed structure info: */
-                 !( pc2i->c2at[i].endptRevrs /*|| pc2i->c2at[i].nMobHRevrs*/ ) &&
-                 pc2i->c2at[i].nFixHRevrs == 0 &&
-                 pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
-                 at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2 &&
-                 /* find whether it belongs to NO2 */
-                 pVA[iN = at2[iat].neighbor[0]].cNumValenceElectrons == 5 &&
-                 at2[iN].valence == 3 && ( at2[iN].charge == 0 || at2[iN].charge == 1 ) &&
-                 at2[iN].chem_bonds_valence == 5 - at2[iN].charge)
+                num_DB_O < MAX_DIFF_FIXH &&
+                pc2i->c2at[i].nValElectr == 6 /* O, S, Se, Te */ &&
+                (pc2i->c2at[i].endptInChI /*|| pc2i->c2at[i].nMobHInChI*/) &&
+                (e = pVA[iat].nCMinusGroupEdge - 1) >= 0 && !pBNS->edge[e].forbidden &&
+                pc2i->c2at[i].nFixHInChI == 0 && /*pc2i->c2at[i].nMobHInChI ==  1 &&*/
+                /* reversed structure info: */
+                !(pc2i->c2at[i].endptRevrs /*|| pc2i->c2at[i].nMobHRevrs*/) &&
+                pc2i->c2at[i].nFixHRevrs == 0 &&
+                pc2i->c2at[i].nAtChargeRevrs == 0 && !at2[iat].num_H &&
+                at2[iat].valence == 1 && at2[iat].chem_bonds_valence == 2 &&
+                /* find whether it belongs to NO2 */
+                pVA[iN = at2[iat].neighbor[0]].cNumValenceElectrons == 5 &&
+                at2[iN].valence == 3 && (at2[iN].charge == 0 || at2[iN].charge == 1) &&
+                at2[iN].chem_bonds_valence == 5 - at2[iN].charge)
             {
                 /* find the second O */
                 nNumO = nNumOthers = 0;
@@ -5671,19 +5688,19 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         continue;
                     }
                     if (pVA[neigh].cNumValenceElectrons == 6 &&
-                         pStruct->endpoint[neigh] &&
-                         !( at_Mobile_H_Revrs && at_Mobile_H_Revrs[neigh].endpoint ) &&
-                         at2[neigh].valence == 1 && at2[neigh].num_H == 0 &&
-                         at2[neigh].radical == 0 && ( at2[neigh].charge == 0 || at2[neigh].charge == -1 ) &&
-                         at2[neigh].chem_bonds_valence - at2[neigh].charge == 2)
+                        pStruct->endpoint[neigh] &&
+                        !(at_Mobile_H_Revrs && at_Mobile_H_Revrs[neigh].endpoint) &&
+                        at2[neigh].valence == 1 && at2[neigh].num_H == 0 &&
+                        at2[neigh].radical == 0 && (at2[neigh].charge == 0 || at2[neigh].charge == -1) &&
+                        at2[neigh].chem_bonds_valence - at2[neigh].charge == 2)
                     {
                         nNumO++;
                     }
                     else
                     {
                         if (at2[iN].bond_type[k] == BOND_TYPE_SINGLE &&
-                             at2[neigh].valence > 1 &&
-                             at2[neigh].valence < at2[neigh].chem_bonds_valence)
+                            at2[neigh].valence > 1 &&
+                            at2[neigh].valence < at2[neigh].chem_bonds_valence)
                         {
                             nNumOthers++;
                         }
@@ -5706,7 +5723,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     iat_DB_O[num_DB_O++] = iat;
                 }
                 /* save the edge to avoid interference */
-                if (ret = AddToEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_case_23;
                 }
@@ -5721,13 +5738,13 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 /* find O=N(V) */
                 iat = nCanon2AtnoRevrs[i];
                 if (!pStruct->endpoint[i] || pVA[i].cNumValenceElectrons != 6 ||
-                     at2[iat].valence != 1 || at2[iat].charge ||
-                     0 >( e = pVA[iat].nCMinusGroupEdge - 1 ) ||
-                     at2[iat].num_H + at2[iat].chem_bonds_valence != 2 ||
-                     pVA[iN = at2[iat].neighbor[0]].cNumValenceElectrons != 5 ||
-                     0 > ( e = pVA[iN].nCPlusGroupEdge - 1 ) ||
-                     pBNS->edge[e].forbidden || !pBNS->edge[e].flow ||
-                     at2[iN].charge || at2[iN].valence != 3 || at2[iN].chem_bonds_valence != 5)
+                    at2[iat].valence != 1 || at2[iat].charge ||
+                    0 > (e = pVA[iat].nCMinusGroupEdge - 1) ||
+                    at2[iat].num_H + at2[iat].chem_bonds_valence != 2 ||
+                    pVA[iN = at2[iat].neighbor[0]].cNumValenceElectrons != 5 ||
+                    0 > (e = pVA[iN].nCPlusGroupEdge - 1) ||
+                    pBNS->edge[e].forbidden || !pBNS->edge[e].flow ||
+                    at2[iN].charge || at2[iN].valence != 3 || at2[iN].chem_bonds_valence != 5) /* djb-rwth: ignoring LLVM warning: variable used */
                 {
                     continue;
                 }
@@ -5741,16 +5758,16 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                         continue;
                     }
                     if (pVA[neigh].cNumValenceElectrons == 6 &&
-                         pStruct->endpoint[neigh] &&
-                         at2[neigh].valence == 1 && at2[neigh].num_H == 1 &&
-                         at2[neigh].radical == 0 && ( at2[neigh].charge == 0 ))
+                        pStruct->endpoint[neigh] &&
+                        at2[neigh].valence == 1 && at2[neigh].num_H == 1 &&
+                        at2[neigh].radical == 0 && (at2[neigh].charge == 0))
                     {
                         nNumO++;
                     }
                     else
                         if (at2[iN].bond_type[k] == BOND_TYPE_DOUBLE &&
-                             at2[neigh].valence >= 2 &&
-                             at2[neigh].valence < at2[neigh].chem_bonds_valence)
+                            at2[neigh].valence >= 2 &&
+                            at2[neigh].valence < at2[neigh].chem_bonds_valence)
                         {
                             nNumOthers++;
                         }
@@ -5760,14 +5777,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     continue;
                 }
                 /* save edges to be changed */
-                if (( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_NOOH], e, INC_ADD_EDGE ) ) ||
-                    ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE ) ))
+                if ((ret = AddToEdgeList(&ChangeableEdges[CHG_SET_NOOH], e, INC_ADD_EDGE)) ||
+                    (ret = AddToEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE)))
                 {
                     goto exit_case_23;
                 }
-                if (NO_VERTEX != ( j = GetChargeFlowerUpperEdge( pBNS, pVA, e ) ) &&
-                    ( ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_NOOH], j, INC_ADD_EDGE ) ) ||
-                     ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE ) ) ))
+                if (NO_VERTEX != (j = GetChargeFlowerUpperEdge(pBNS, pVA, e)) &&
+                    ((ret = AddToEdgeList(&ChangeableEdges[CHG_SET_NOOH], j, INC_ADD_EDGE)) ||
+                        (ret = AddToEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE))))
                 {
                     goto exit_case_23;
                 }
@@ -5778,18 +5795,18 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             { /* i = canonical number - 1 */
                 iat = nCanon2AtnoRevrs[i];
                 if (at2[iat].charge == -1 &&
-                     !pStruct->endpoint[i] &&
-                     ( at_Mobile_H_Revrs &&
-                     ( at_Mobile_H_Revrs[i].endpoint || at2[iat].num_H < at_Mobile_H_Revrs[i].num_H ) ))
+                    !pStruct->endpoint[i] &&
+                    (at_Mobile_H_Revrs &&
+                        (at_Mobile_H_Revrs[i].endpoint || at2[iat].num_H < at_Mobile_H_Revrs[i].num_H)))
                 {
 
-                    if (0 <= ( e = pVA[iat].nCMinusGroupEdge - 1 ) &&
-                         0 > FindInEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e ) &&
-                         !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
-                         (
-                         ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_WRONG_TAUT], e, INC_ADD_EDGE ) ) ||
-                             ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE ) )
-                             ))
+                    if (0 <= (e = pVA[iat].nCMinusGroupEdge - 1) &&
+                        0 > FindInEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e) &&
+                        !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
+                        (
+                            (ret = AddToEdgeList(&ChangeableEdges[CHG_SET_WRONG_TAUT], e, INC_ADD_EDGE)) ||
+                            (ret = AddToEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE))
+                            ))
                     {
                         goto exit_case_23;
                     }
@@ -5799,20 +5816,20 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     /* negatively charged atom in Reconstructed structure got H(+) from Normalization */
                     /* and is not tautomeric; in the original structure it is tautomeric */
                     if (at2[iat].charge == -1 &&
-                         pStruct->endpoint[i] &&
-                         !( at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint ) &&
-                         ( num_Fixed_H_Revrs && num_Fixed_H_Revrs[i] == -1 ) &&
-                         ( pnMobHRevrs       && pnMobHRevrs[i] == 1 ) &&
-                         pStruct->fixed_H[i] == 0)
+                        pStruct->endpoint[i] &&
+                        !(at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint) &&
+                        (num_Fixed_H_Revrs && num_Fixed_H_Revrs[i] == -1) &&
+                        (pnMobHRevrs && pnMobHRevrs[i] == 1) &&
+                        pStruct->fixed_H[i] == 0)
                     {
 
-                        if (0 <= ( e = pVA[iat].nCMinusGroupEdge - 1 ) &&
-                             0 > FindInEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e ) &&
-                             !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
-                             (
-                             ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_WRONG_TAUT], e, INC_ADD_EDGE ) ) ||
-                                 ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE ) )
-                                 ))
+                        if (0 <= (e = pVA[iat].nCMinusGroupEdge - 1) &&
+                            0 > FindInEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e) &&
+                            !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
+                            (
+                                (ret = AddToEdgeList(&ChangeableEdges[CHG_SET_WRONG_TAUT], e, INC_ADD_EDGE)) ||
+                                (ret = AddToEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e, INC_ADD_EDGE))
+                                ))
                         {
                             goto exit_case_23;
                         }
@@ -5825,14 +5842,14 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 /* i = canonical number - 1 */
                 iat = nCanon2AtnoRevrs[i];
                 if (pStruct->endpoint[i] &&
-                    ( at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint ) &&
-                     at2[iat].charge == -1
-                     /*&& pVA[i].cNumValenceElectrons == 6*/)
+                    (at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint) &&
+                    at2[iat].charge == -1
+                    /*&& pVA[i].cNumValenceElectrons == 6*/)
                 {
-                    if (0 <= ( e = pVA[iat].nCMinusGroupEdge - 1 ) &&
-                         !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
-                         0 > FindInEdgeList( &ChangeableEdges[CHG_SET_O_FIXED], e ) &&
-                         ( ret = AddToEdgeList( &ChangeableEdges[CHG_SET_TAUT], e, INC_ADD_EDGE ) ))
+                    if (0 <= (e = pVA[iat].nCMinusGroupEdge - 1) &&
+                        !pBNS->edge[e].forbidden && pBNS->edge[e].flow &&
+                        0 > FindInEdgeList(&ChangeableEdges[CHG_SET_O_FIXED], e) &&
+                        (ret = AddToEdgeList(&ChangeableEdges[CHG_SET_TAUT], e, INC_ADD_EDGE)))
                     {
                         goto exit_case_23;
                     }
@@ -5846,13 +5863,13 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 one_success = 0;
                 delta = 1;
                 iat = iat_DB_O[i];
-                peDB_O_Minus = pBNS->edge + ( pVA[iat].nCMinusGroupEdge - 1 );
+                peDB_O_Minus = pBNS->edge + ((long long)pVA[iat].nCMinusGroupEdge - 1);/* djb-rwth: cast operator added */
                 pe = pBNS->edge + pBNS->vert[iat].iedge[0];
 
                 if (!pe->flow)
                     continue;
-                pv1 = pBNS->vert + ( v1 = pe->neighbor1 );
-                pv2 = pBNS->vert + ( v2 = pe->neighbor12 ^ v1 );
+                pv1 = pBNS->vert + (v1 = pe->neighbor1);
+                pv2 = pBNS->vert + (v2 = pe->neighbor12 ^ v1);
 
                 pe->forbidden |= forbidden_edge_mask;
 
@@ -5867,22 +5884,22 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     {
                         continue;
                     }
-                    nDeltaChargeExpected = ( k == CHG_SET_NOOH ) ? 2 : 0;
+                    nDeltaChargeExpected = (k == CHG_SET_NOOH) ? 2 : 0;
 
-                    SetForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
-                    RemoveForbiddenEdgeMask( pBNS, &ChangeableEdges[k], forbidden_edge_mask );
+                    SetForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
+                    RemoveForbiddenEdgeMask(pBNS, &ChangeableEdges[k], forbidden_edge_mask);
                     /* allow (-) charge to move to N=O */
                     peDB_O_Minus->forbidden &= forbidden_edge_mask_inv;
 
-                    ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
-                                          &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
+                    ret = RunBnsTestOnce(pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
+                        &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms);
 
-                    if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                      vPathEnd == v2 && vPathStart == v1 ) &&
-                         nDeltaCharge == nDeltaChargeExpected)
+                    if (ret == 1 && ((vPathEnd == v1 && vPathStart == v2) ||
+                        (vPathEnd == v2 && vPathStart == v1)) &&
+                        nDeltaCharge == nDeltaChargeExpected) /* djb-rwth: addressing LLVM warnings */
                     {
                         /* Move (-) charge to =O and remove it an endpoint => nDeltaCharge == 0 */
-                        ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
+                        ret = RunBnsRestoreOnce(pBNS, pBD, pVA, pTCGroups);
                         if (ret > 0)
                         {
                             nNumRunBNS++;
@@ -5893,7 +5910,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 }
                 cur_success += one_success;
 
-                RemoveForbiddenEdgeMask( pBNS, &AllChargeEdges, forbidden_edge_mask );
+                RemoveForbiddenEdgeMask(pBNS, &AllChargeEdges, forbidden_edge_mask);
                 pe->forbidden &= forbidden_edge_mask_inv;
 
                 if (!one_success)
@@ -5908,7 +5925,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
     exit_case_23:
         for (i = 0; i < CHG_SET_NUM; i++)
         {
-            AllocEdgeList( &ChangeableEdges[i], EDGE_LIST_FREE );
+            AllocEdgeList(&ChangeableEdges[i], EDGE_LIST_FREE);
         }
 
         CurrEdges.num_edges = 0; /* clear current edge list */
@@ -5916,12 +5933,12 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
         {
             tot_succes += cur_success;
             /* recalculate InChI from the structure */
-            if (0 >( ret = MakeOneInChIOutOfStrFromINChI2( pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
-                                                           ppt_group_info, ppat_norm, ppat_prep ) ))
+            if (0 > (ret = MakeOneInChIOutOfStrFromINChI2(pCG, ic, ip, sd, pBNS, pStruct, at, at2, at3, pVA, pTCGroups,
+                ppt_group_info, ppat_norm, ppat_prep)))
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr(pStruct)))/* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5929,7 +5946,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI(pStruct, at2, pVA, pInChI, pc2i))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -5938,6 +5955,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 goto exit_function; /* nothing to do */
             }
         }
+
 #undef CHG_SET_NOOH
 #undef CHG_SET_WRONG_TAUT
 #undef CHG_SET_TAUT
@@ -5983,7 +6001,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
 #define CHG_SET_AVOID         4
 #define CHG_SET_NUM           5
         EDGE_LIST ChangeableEdges[CHG_SET_NUM];
-        memset( ChangeableEdges, 0, sizeof( ChangeableEdges ) );
+        memset( ChangeableEdges, 0, sizeof( ChangeableEdges ) ); /* djb-rwth: memset_s C11/Annex K variant? */
         /* equivalent to AllocEdgeList( &EdgeList, EDGE_LIST_CLEAR ); */
         /*
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H? pInChI[1]->nNum_H :
@@ -6167,9 +6185,9 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                       &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) &&
-                     nDeltaCharge == nDeltaChargeExpected)
+                if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                  (vPathEnd == v2 && vPathStart == v1) ) &&
+                     nDeltaCharge == nDeltaChargeExpected) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Move (-) charge to =O and remove it an endpoint => nDeltaCharge == 0 */
                     ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
@@ -6209,7 +6227,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -6217,7 +6235,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -6274,7 +6292,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
 #define CHG_SET_AVOID           5
 #define CHG_SET_NUM             6
         EDGE_LIST ChangeableEdges[CHG_SET_NUM];
-        memset( ChangeableEdges, 0, sizeof( ChangeableEdges ) );
+        memset( ChangeableEdges, 0, sizeof( ChangeableEdges ) ); /* djb-rwth: memset_s C11/Annex K variant? */
         /* equivalent to AllocEdgeList( &EdgeList, EDGE_LIST_CLEAR ); */
         /*
         S_CHAR   *nMobHInChI = pInChI[1] && pInChI[1]->nNum_H? pInChI[1]->nNum_H :
@@ -6293,8 +6311,8 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     continue;
                 }
-                bFirst = ( pVA[iat].cNumValenceElectrons == 5 && pc2i->nNumTgInChI == 1 ||
-                           pVA[iat].cNumValenceElectrons == 6 && pc2i->nNumTgInChI != 1 );
+                bFirst = ( (pVA[iat].cNumValenceElectrons == 5 && pc2i->nNumTgInChI == 1) ||
+                           (pVA[iat].cNumValenceElectrons == 6 && pc2i->nNumTgInChI != 1) ); /* djb-rwth: addressing LLVM warnings */
                 /* many or no t-groups -> try O only first */
                 /* single t-group -> try only N first */
                 if (!( at_Mobile_H_Revrs && at_Mobile_H_Revrs[i].endpoint ))
@@ -6305,7 +6323,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                     {
                         goto exit_case_25;
                     }
-                    if (ret = AddToEdgeList( &ChangeableEdges[CHG_SET_MISSED_TAUT_ALL], e, INC_ADD_EDGE ))
+                    if ((ret = AddToEdgeList( &ChangeableEdges[CHG_SET_MISSED_TAUT_ALL], e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                     {
                         goto exit_case_25;
                     }
@@ -6315,11 +6333,11 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 {
                     goto exit_case_25;
                 }
-                if (ret = AddToEdgeList( &ChangeableEdges[CHG_SET_OTHER_TAUT_ALL], e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList( &ChangeableEdges[CHG_SET_OTHER_TAUT_ALL], e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_case_25;
                 }
-                if (ret = AddToEdgeList( &ChangeableEdges[CHG_SET_AVOID], e, INC_ADD_EDGE ))
+                if ((ret = AddToEdgeList( &ChangeableEdges[CHG_SET_AVOID], e, INC_ADD_EDGE ))) /* djb-rwth: addressing LLVM warning */
                 {
                     goto exit_case_25;
                 }
@@ -6425,9 +6443,9 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
                 ret = RunBnsTestOnce( pBNS, pBD, pVA, &vPathStart, &vPathEnd, &nPathLen,
                                       &nDeltaH, &nDeltaCharge, &nNumVisitedAtoms );
 
-                if (ret == 1 && ( vPathEnd == v1 && vPathStart == v2 ||
-                                  vPathEnd == v2 && vPathStart == v1 ) &&
-                     nDeltaCharge == nDeltaChargeExpected)
+                if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
+                                  (vPathEnd == v2 && vPathStart == v1) ) &&
+                     nDeltaCharge == nDeltaChargeExpected) /* djb-rwth: addressing LLVM warnings */
                 {
                     /* Move (-) charge to =O and remove it an endpoint => nDeltaCharge == 0 */
                     ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
@@ -6467,7 +6485,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;
             }
-            if (ret = FillOutExtraFixedHDataRestr( pStruct ))
+            if ((ret = FillOutExtraFixedHDataRestr( pStruct ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -6475,7 +6493,7 @@ int FixFixedHRestoredStructure( CANON_GLOBALS *pCG,
             {
                 goto exit_function;  /* no fixed-H found */
             }
-            if (ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))
+            if ((ret = FillOutCMP2FHINCHI( pStruct, at2, pVA, pInChI, pc2i ))) /* djb-rwth: addressing LLVM warning */
             {
                 goto exit_function;
             }
@@ -6504,7 +6522,7 @@ exit_function:
     AllocEdgeList( &FixedLargeRingStereoEdges, EDGE_LIST_FREE );
     AllocEdgeList( &AllBondEdges, EDGE_LIST_FREE );
 
-    return ret < 0 ? ret : ( pc2i->bHasDifference && tot_succes );
+    return ret < 0 ? ret : ( pc2i->bHasDifference && tot_succes ); /* djb-rwth: return value can be garbage (jump from Ln 368); discussion required */
 }
 
 #endif

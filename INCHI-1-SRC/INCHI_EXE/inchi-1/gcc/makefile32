@@ -1,21 +1,80 @@
 # This will create 32-bit executable under 64-bit Linux
 #
 #
+# djb-rwth: detecting the OS in Makefile -- no need to specify ISLINUX externally; OS can also be defined in command line: e.g. make OS_ID=1
+ifeq ($(OS),Windows_NT)
+	OS_ID := 0
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		OS_ID := 1
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OS_ID := 2
+	endif
+	ifeq ($(UNAME_S),FreeBSD)
+		OS_ID := 3
+	endif
+# djb-rwth: other OSs should be numbered accordingly
+endif
+# djb-rwth: checking the presence on GCC and Clang/LLVM
+GCC_CHECK := $(shell gcc --version)
+CLANG_CHECK := $(shell clang --version)
+ifneq ($(GCC_CHECK),)
+	GCC_DETECTED := 1
+	CCN = 1
+endif
+ifneq ($(CLANG_CHECK),)
+	CLANG_DETECTED := 1
+	CCN = 2
+endif
+ifeq ($(CCN),$(filter $(CCN),1 2))
+# djb-rwth: Choosing the compiler if both GCC and Clang/LLVM are detected
+ifeq ($(GCC_DETECTED),1)
+ifeq ($(CLANG_DETECTED),1)
+# djb-rwth: Choose C compiler if both GCC and Clang are detected -- CCN = 1 for GCC, CCN = 2 for Clang/LLVM
+CCN = 1
+endif
+endif
+# === C/C++ Compilers ===============
+ifeq ($(CCN),2)
 ifndef C_COMPILER
-	C_COMPILER   = gcc
+C_COMPILER = clang
+$(info Both GCC/G++ and Clang(++)/LLVM detected. Compiling with Clang(++) -- please edit makefile to compile with GCC/G++.)
+$(info )
 endif
 ifndef CPP_COMPILER
-	CPP_COMPILER = g++
+CPP_COMPILER = clang++
 endif
 ifndef LINKER
-	LINKER = g++ -s
+LINKER = clang++ -s
 endif
+else
+ifndef C_COMPILER
+C_COMPILER = gcc
+$(info Both GCC/G++ and Clang(++)/LLVM detected. Compiling with GCC/G++ (default) -- please edit makefile to compile with Clang(++)/LLVM.)
+$(info )
+endif
+ifndef CPP_COMPILER
+CPP_COMPILER = g++
+endif
+ifndef LINKER
+LINKER = g++ -s
+endif
+endif
+# djb-rwth: adding executable extension where needed
 ifndef INCHI_EXECUTABLE_NAME
-	INCHI_EXECUTABLE_NAME = inchi-1
+	ifeq ($(OS_ID),0)
+		EXE = .exe
+	else
+		EXE =
+	endif
+# this executable name will be changed to inchi from some next release version
+	INCHI_EXECUTABLE_NAME = inchi-1$(EXE)
 endif
  # === executable directory ===
 ifndef BIN_DIR
-  BIN_DIR = ../../bin/Linux/32bit
+	BIN_DIR = ../../bin/Linux/32bit
 endif
 INCHI_EXECUTABLE_PATHNAME = $(BIN_DIR)/$(INCHI_EXECUTABLE_NAME)
 ifndef P_MAIN
@@ -29,53 +88,54 @@ P_INCL = -I$(P_MAIN) -I$(P_BASE)
 C_COMPILER_OPTIONS = $(P_INCL) -m32 -ansi -DCOMPILE_ANSI_ONLY -DTARGET_EXE_STANDALONE -O3 -c
 CPP_COMPILER_OPTIONS = $(P_INCL) -m32 -D_LIB -DTARGET_EXE_STANDALONE -ansi -O3 -frtti -c
 LINKER_OPTIONS = -m32
-INCHI_SRCS = $(P_LIBR)/ichi_bns.c	\
-$(P_LIBR)/ichi_io.c	\
-$(P_LIBR)/ichican2.c	\
-$(P_LIBR)/ichicano.c	\
-$(P_LIBR)/ichicans.c	\
-$(P_LIBR)/ichierr.c	\
-$(P_LIBR)/ichiprt3.c	\
-$(P_LIBR)/ichiisot.c	\
-$(P_LIBR)/ichimake.c	\
-$(P_LIBR)/ichiqueu.c	\
-$(P_LIBR)/ichiring.c	\
-$(P_LIBR)/ichierr.c	\
-$(P_LIBR)/ichimap1.c	\
-$(P_LIBR)/ichimap2.c	\
-$(P_LIBR)/ichimap4.c	\
-$(P_LIBR)/ichimak2.c	\
-$(P_LIBR)/ichinorm.c	\
-$(P_LIBR)/ichiparm.c	\
-$(P_LIBR)/ichiprt1.c	\
-$(P_LIBR)/ichiprt2.c	\
-$(P_LIBR)/ichirvr1.c	\
-$(P_LIBR)/ichirvr2.c	\
-$(P_LIBR)/ichirvr3.c	\
-$(P_LIBR)/ichirvr4.c	\
-$(P_LIBR)/ichirvr5.c	\
-$(P_LIBR)/ichirvr6.c	\
-$(P_LIBR)/ichirvr7.c	\
-$(P_LIBR)/ichisort.c	\
-$(P_LIBR)/ichister.c	\
-$(P_LIBR)/ichitaut.c	\
-$(P_LIBR)/ikey_base26.c	\
-$(P_LIBR)/ikey_dll.c	\
-$(P_LIBR)/mol_fmt1.c	\
-$(P_LIBR)/mol_fmt2.c	\
-$(P_LIBR)/mol_fmt3.c	\
-$(P_LIBR)/mol_fmt4.c	\
-$(P_MAIN)/readinch.c	\
-$(P_LIBR)/runichi.c	\
-$(P_LIBR)/runichi2.c	\
-$(P_LIBR)/runichi3.c	\
-$(P_LIBR)/runichi4.c	\
-$(P_LIBR)/sha2.c	\
-$(P_LIBR)/strutil.c	\
-$(P_LIBR)/util.c	\
+INCHI_SRCS = $(P_BASE)/ichi_bns.c	\
+$(P_BASE)/ichi_io.c	\
+$(P_BASE)/ichican2.c	\
+$(P_BASE)/ichicano.c	\
+$(P_BASE)/ichicans.c	\
+$(P_BASE)/ichierr.c	\
+$(P_BASE)/ichiprt3.c	\
+$(P_BASE)/ichiisot.c	\
+$(P_BASE)/ichimake.c	\
+$(P_BASE)/ichiqueu.c	\
+$(P_BASE)/ichiring.c	\
+$(P_BASE)/ichierr.c	\
+$(P_BASE)/ichimap1.c	\
+$(P_BASE)/ichimap2.c	\
+$(P_BASE)/ichimap4.c	\
+$(P_BASE)/ichimak2.c	\
+$(P_BASE)/ichinorm.c	\
+$(P_BASE)/ichiparm.c	\
+$(P_BASE)/ichiprt1.c	\
+$(P_BASE)/ichiprt2.c	\
+$(P_BASE)/ichirvr1.c	\
+$(P_BASE)/ichirvr2.c	\
+$(P_BASE)/ichirvr3.c	\
+$(P_BASE)/ichirvr4.c	\
+$(P_BASE)/ichirvr5.c	\
+$(P_BASE)/ichirvr6.c	\
+$(P_BASE)/ichirvr7.c	\
+$(P_BASE)/ichisort.c	\
+$(P_BASE)/ichister.c	\
+$(P_BASE)/ichitaut.c	\
+$(P_BASE)/ikey_base26.c	\
+$(P_BASE)/ikey_dll.c	\
+$(P_BASE)/mol_fmt1.c	\
+$(P_BASE)/mol_fmt2.c	\
+$(P_BASE)/mol_fmt3.c	\
+$(P_BASE)/mol_fmt4.c	\
+$(P_BASE)/readinch.c	\
+$(P_BASE)/runichi.c	\
+$(P_BASE)/runichi2.c	\
+$(P_BASE)/runichi3.c	\
+$(P_BASE)/runichi4.c	\
+$(P_BASE)/sha2.c	\
+$(P_BASE)/strutil.c	\
+$(P_BASE)/util.c	\
 $(P_MAIN)/dispstru.c	\
-$(P_MAIN)/mol2atom.c	\
-$(P_MAIN)/ichimain.c
+$(P_BASE)/mol2atom.c	\
+$(P_MAIN)/ichimain.c	\
+$(P_BASE)/bcf_s.c
 #
 INCHI_OBJS = ichi_bns.o	\
 ichi_io.o	\
@@ -123,7 +183,8 @@ sha2.o	\
 strutil.o	\
 util.o	\
 dispstru.o	\
-ichimain.o  
+ichimain.o  \
+bcf_s.o
 $(INCHI_EXECUTABLE_PATHNAME) : $(INCHI_OBJS)
 	$(LINKER) $(LINKER_OPTIONS) -o $(INCHI_EXECUTABLE_PATHNAME) $(INCHI_OBJS) -lm
 %.o: $(P_BASE)/%.c
@@ -132,3 +193,7 @@ $(INCHI_EXECUTABLE_PATHNAME) : $(INCHI_OBJS)
 	$(C_COMPILER) $(C_COMPILER_OPTIONS) $<
 %.o: $(P_MAIN)/%.cpp
 	$(CPP_COMPILER) $(CPP_COMPILER_OPTIONS) $<
+else
+$(info GCC or Clang not detected. Please edit makefile to include available C compiler. Terminating.)
+$(info )
+endif

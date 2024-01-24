@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -44,6 +44,7 @@
 #include "e_mode.h"
 
 #include "../../../../INCHI_BASE/src/inchi_api.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 
 #include "e_ctl_data.h"
 #include "e_comdef.h"
@@ -108,7 +109,7 @@ int inchi_vfprintf( FILE* f, const char* lpszFormat, va_list argList );
 /****************************************************************************/
 void inchi_ios_init( INCHI_IOSTREAM* ios, int io_type, FILE *f )
 {
-    memset( ios, 0, sizeof( *ios ) );
+    memset( ios, 0, sizeof( *ios ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     switch (io_type)
     {
         case INCHI_IOSTREAM_TYPE_FILE:  ios->type = INCHI_IOSTREAM_TYPE_FILE;
@@ -232,7 +233,7 @@ void inchi_ios_close( INCHI_IOSTREAM* ios )
 /****************************************************************************
     Reset INCHI_IOSTREAM: set string buffer ptr to NULL
     (but do _not_ free memory)and close the file.
-    /****************************************************************************/
+    ****************************************************************************/
 void inchi_ios_reset( INCHI_IOSTREAM* ios )
 {
     ios->s.pStr = NULL;
@@ -442,7 +443,7 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
                 /* enlarge output string */
                 int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
                 char *new_str =
-                    (char *) inchi_calloc( ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) );
+                    (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operator added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
@@ -528,7 +529,7 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios, const char* lpszFormat, ...
             {
                 /* enlarge output string */
                 int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
-                char *new_str = (char *) inchi_calloc( ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) );
+                char *new_str = (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operator added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
@@ -615,7 +616,7 @@ int inchi_ios_eprint( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
             {
                 /* enlarge output string */
                 nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
-                new_str = (char *) inchi_calloc( ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) );
+                new_str = (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operator added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
@@ -743,7 +744,8 @@ int inchi_vfprintf( FILE* f, const char* lpszFormat, va_list argList )
     }
     else
     {
-        ret = vfprintf( f, lpszFormat, argList );
+        if (lpszFormat) /* djb-rwth: fixing a NULL pointer dereference */
+            ret = vfprintf( f, lpszFormat, argList );
     }
 
     return ret;
@@ -773,7 +775,7 @@ int inchi_fgetsLfTab( char *szLine, int len, FILE *f )
     while (!length);
     if (bTooLongLine)
     {
-        while (p = inchi_fgetsTab( szSkip, sizeof( szSkip ) - 1, f ))
+        while ((p = inchi_fgetsTab( szSkip, sizeof( szSkip ) - 1, f ))) /* djb-rwth: addressing LLVM warning; ignoring LLVM warning -- variable used to store function return value */
         {
             if (strchr( szSkip, '\n' ))
             {
@@ -859,7 +861,7 @@ char *inchi_fgetsTab( char *szLine, int len, FILE *f )
 char* inchi_fgetsLf( char* line, int line_len, FILE* inp )
 {
     char *p, *q;
-    memset( line, 0, line_len );
+    memset( line, 0, line_len ); /* djb-rwth: memset_s C11/Annex K variant? */
     if (NULL != ( p = fgets( line, line_len, inp ) ) && NULL == strchr( p, '\n' ))
     {
         char temp[64]; /* bypass up to '\n' or up to end of file whichever comes first*/
@@ -897,7 +899,10 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
 {
      /*ASSERT(AfxIsValidString(lpszFormat, FALSE));*/
     const char * lpsz;
-    int nMaxLen, nWidth, nPrecision, nModifier, nItemLen;
+    int nMaxLen, nWidth, nPrecision, nModifier, nItemLen, iretval; /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
+    double dretval; /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
+    void* vretval; /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
+    int* ipretval; /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
 
     nMaxLen = 0;
     /* make a guess at the maximum length of the resulting string */
@@ -1038,12 +1043,12 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
             case 'c':
             case 'C':
                 nItemLen = 2;
-                va_arg( argList, int );
+                iretval = va_arg( argList, int ); /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
                 break;
             case 'c' | FORCE_ANSI:
             case 'C' | FORCE_ANSI:
                 nItemLen = 2;
-                va_arg( argList, int );
+                iretval = va_arg( argList, int ); /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
                 break;
             case 'c' | FORCE_UNICODE:
             case 'C' | FORCE_UNICODE:
@@ -1096,7 +1101,7 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
                 case 'x':
                 case 'X':
                 case 'o':
-                    va_arg( argList, int );
+                    iretval = va_arg( argList, int ); /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
                     nItemLen = 32;
                     nItemLen = inchi_max( nItemLen, nWidth + nPrecision );
                     break;
@@ -1105,20 +1110,20 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
                 case 'f':
                 case 'g':
                 case 'G':
-                    va_arg( argList, double );
+                    dretval = va_arg( argList, double ); /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
                     nItemLen = 32;
                     nItemLen = inchi_max( nItemLen, nWidth + nPrecision );
                     break;
 
                 case 'p':
-                    va_arg( argList, void* );
+                    vretval = va_arg( argList, void* ); /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
                     nItemLen = 32;
                     nItemLen = inchi_max( nItemLen, nWidth + nPrecision );
                     break;
 
                /* no output */
                 case 'n':
-                    va_arg( argList, int* );
+                    ipretval =  va_arg(argList, int*); /* djb-rwth: adding variable for return value to avoid incorrect order of operations warning */
                     break;
 
                 default:

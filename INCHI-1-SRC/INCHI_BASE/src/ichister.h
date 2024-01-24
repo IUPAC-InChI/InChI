@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -50,7 +50,7 @@ extern "C" {
     int bAtomHasValence3( char *elname, S_CHAR charge, S_CHAR radical );
 
     double dot_prod3(const double a[], const double b[]); 
-    double* cross_prod3(const double a[], const double b[], double result[]);
+    void* cross_prod3(const double a[], const double b[], double result[]);
 
     struct tagCANON_GLOBALS;
     int set_stereo_parity( struct tagCANON_GLOBALS *pCG,

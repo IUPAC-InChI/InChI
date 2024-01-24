@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -136,7 +136,7 @@ typedef struct tagINChI_Stereo
 
     int         bTrivialInv;  /* 1=> nCompInv2Abs!= 0 && Inverted = Abs stereo with inverted parities 1<-->2 */
 
-    /* ---- possibly stereogenic bonds and tetrahedral cumuleles */
+    /* ---- possibly stereogenic bonds and tetrahedral cumulenes */
     int         nNumberOfStereoBonds;
     AT_NUMB    *nBondAtom1; /* Canonical number of a first atom
                              * [number of bonds]                                    */
@@ -186,7 +186,12 @@ typedef struct tagINChI_Stereo
 #define SAVE_OPT_RECMET 0x0008
 #define SAVE_OPT_KET    0x0010
 #define SAVE_OPT_15T    0x0020
-
+#define SAVE_OPT_PT_22_00 0x0040
+#define SAVE_OPT_PT_16_00 0x0080
+#define SAVE_OPT_PT_06_00 0x0100
+#define SAVE_OPT_PT_39_00 0x0200
+#define SAVE_OPT_PT_13_00 0x0400
+#define SAVE_OPT_PT_18_00 0x0800
 
 #define INCHI_OUT_PRINT_OPTIONS       (INCHI_OUT_EMBED_REC |           \
                                        INCHI_OUT_PLAIN_TEXT |          \

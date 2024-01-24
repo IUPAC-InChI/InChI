@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -31,9 +31,10 @@
  *
  */
 
-
 #include "mode.h"
 #include "ichiring.h"
+
+#include "bcf_s.h"
 
 /* Local prototypes */
 int GetMinRingSize( inp_ATOM* atom, QUEUE *q, AT_RANK *nAtomLevel, S_CHAR *cSource, AT_RANK nMaxRingSize );
@@ -262,7 +263,7 @@ int GetMinRingSize( inp_ATOM* atom,
     qInt at_no, next;
     int  iat_no, inext;
 
-    while (qLen = QueueLength( q ))
+    while ((qLen = QueueLength( q ))) /* djb-rwth: addressing LLVM warning */
     {
         /*  traverse the next level (next outer ring) */
         for (i = 0; i < qLen; i++)

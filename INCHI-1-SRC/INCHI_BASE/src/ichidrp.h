@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -119,11 +119,11 @@ typedef struct tagInputParms {
 
 
 #if ( defined( TARGET_LIB_FOR_WINCHI ) || defined(TARGET_EXE_STANDALONE) )
-#ifndef COMPILE_ANSI_ONLY
+/* #ifndef COMPILE_ANSI_ONLY -- this has been removed so it can work on Windows 10/11 with MinGW */
     DRAW_PARMS      dp;
     PER_DRAW_PARMS  pdp;
     TBL_DRAW_PARMS  tdp;
-#endif
+/* #endif -- COMPILE_ANSI_ONLY removed */
 #endif
 
 
@@ -190,6 +190,9 @@ typedef struct tagInputParms {
 #endif
 
 /* post v.1 features */
+#if ( RENUMBER_ATOMS_AND_RECALC_V106 == 1 )
+    int             bRenumber;
+#endif
 #if ( UNDERIVATIZE == 1 )
     int             bUnderivatize;
 #endif

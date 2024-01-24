@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -38,6 +38,7 @@
 #include <stdio.h>
 
 #include "ichisize.h"
+#include "mode.h" /* djb-rwth: necessary header file */
 
 /*
     Data structures and constants
@@ -48,9 +49,9 @@
 /* ref: A.Dalby et al, "Description of Several Chemical Structure
  * File Formats Used by Computer Programs Developed at Molecular
  * Design Limited", J. Chem. Inf. Comput. Sci., 1992, 32, 244-255.
-/*
+*/
 
-/*************************** read MOL file V3000.*************************/
+/* ************************** read MOL file V3000.************************ */
 /* http://download.accelrys.com/freeware/ctfile-formats/CTFile-formats.zip
  * Last accessed 2013-06-11
 */

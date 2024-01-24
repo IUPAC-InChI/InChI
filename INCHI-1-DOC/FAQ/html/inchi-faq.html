@@ -1,0 +1,2096 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>InChI FAQ</title>
+<style type="text/css">
+body {
+    font-family: "georgia", "times", "times new roman", serif;
+}
+
+.center {
+    text-align: center;
+}
+
+.highlight {
+    background-color: #e3e3e3;
+}
+.tbl {
+    width: 100%;
+    border: 1px solid #000000;
+    text-align: center;
+}
+
+.tbl th,td {
+    border: 1px solid #000000;
+}
+
+.toc li {
+    font-size: smaller;
+}
+ol ol li {
+	list-style-type: none;
+}
+.parent a {
+        font-weight: bold;
+}
+pre {
+    border: 1px dashed #808080;
+}
+dt {
+    font-weight: bold;
+}
+
+h1 {
+    border-bottom: 2px solid #000000;
+    text-align: center;
+}
+h2 {
+    border-bottom: 1px solid #808080;
+    text-align: center;
+    margin-top: 2em;
+}
+
+h3 {
+    border-bottom: 1px dotted #808080;
+    padding-top: 1em;
+}
+</style>
+</head>
+
+<body>
+<h1><acronym title="IUPAC International Chemical Identifier">InChI</acronym> FAQ</h1>
+<!-- ToC Start -->
+<ol>
+        <!-- 1 -->
+    <li><a class="parent" href="#1">FAQ Overview</a>
+    	<ol class="toc">
+            <li>1.1. <a href="#1.1">What is this FAQ?</a></li>
+            <li>1.2. <a href="#1.2">Who is responsible for InChI?</a></li>
+            <li>1.3. <a href="#1.3">Where can I find out more?</a></li>
+            <li>1.4. <a href="#1.4">Is there an InChI mailing list?</a></li>
+	        <li>1.5. <a href="#1.5">Are there other InChI FAQs?</a></li>
+	        <li>1.6. <a href="#1.6">Who maintains this FAQ?</a></li>
+	</ol>
+    </li>
+    <!-- 2 -->
+    <li><a class="parent" href="#2">Quick Facts</a>
+        <ol class="toc">
+            <li>2.1. <a href="#2.1">What is an InChI?</a></li>
+            <li>2.2. <a href="#2.2">So....how is InChI pronounced?</a></li>
+            <li>2.3. <a href="#2.3">What is the purpose of the InChI?</a></li>
+            <li>2.4. <a href="#2.4">What is the scope of the InChI?</a></li>
+            <li>2.5. <a href="#2.5">Does InChI support the whole Periodic System?</a></li>
+            <li>2.6. <a href="#2.6">What Is InChI not designed for?</a></li>
+            <li>2.7. <a href="#2.7">What is an InChIKey?</a></li>
+            <li>2.8. <a href="#2.8">What do an InChI &amp; an InChIKey look like?</a></li>
+            <li>2.9. <a href="#2.9">What are the Standard InChI and InChIKey and what is their purpose?</a></li>
+            <li>2.10. <a href="#2.10">How does InChI differ from SMILES?</a></li>
+            <li>2.11. <a href="#2.11">Where can I find examples of InChIs and InChIKeys?</a></li>
+            <li>2.12. <a href="#2.12">How to produce the InChI/Key for a chemical compound?</a></li>
+            <li>2.13. <a href="#2.13">Who is using InChI?</a></li>
+            <li>2.14. <a href="#2.14">Can search engines use InChIs?</a></li>
+        </ol>
+    </li>
+    <!-- 3 -->
+    <li><a class="parent" href="#3">Availability and Current Status</a>
+    	<ol class="toc">
+            <li>3.2. <a href="#3.1">Is InChI free?</a></li>
+            <li>3.3. <a href="#3.2">Is InChI open?</a></li>
+            <li>3.4. <a href="#3.3">What is the InChI Licence?</a></li>
+            <li>3.5. <a href="#3.4">What is the current version of InChI?</a></li>
+            <li>3.6. <a href="#3.5">What is the current version of the InChI Software?</a></li>
+            <li>3.7. <a href="#3.6">Where can I get the current InChI Software release?</a></li>
+            <li>3.8. <a href="#3.7">Where can I find InChI Documentation?</a></li>
+            <li>3.9. <a href="#3.8">Are new versions expected?</a></li>
+        </ol>
+    </li>
+    <!-- 4 -->
+    <li><a class="parent" href="#4">InChI Basics</a>
+    	<ol class="toc">
+            <li>4.1. <a href="#4.1">Why are layers used in an InChI?</a></li>
+            <li>4.2. <a href="#4.2">How is a layer represented in the identifier?</a></li>
+            <li>4.3. <a href="#4.3">Specifically, what are InChI layers?</a></li>
+            <li>4.4. <a href="#4.4">Isn't InChI too complicated?</a></li>
+            <li>4.5. <a href="#4.5">Is information for each layer required in the input information?</a></li>
+            <li>4.6. <a href="#4.6">Are layers reusable?</a></li>
+            <li>4.7. <a href="#4.7">Standard InChI specifics</a></li>
+            <li>4.8. <a href="#4.8">How is an InChI created from the input information?</a></li>
+            <li>4.9. <a href="#4.9">How does InChI deal with the many equivalent ways of arranging bonds and charges in delocalized structures?</a></li>
+            <li>4.10. <a href="#4.10">Is InChI extensible?</a></li>
+            <li>4.11. <a href="#4.11">Can an InChI be invalid?</a></li>
+            <li>4.12. <a href="#4.12">Is the version number considered to be part of the InChI string?</a></li>
+            <li>4.13. <a href="#4.13">How do I check that the InChI represents my compound?</a></li>
+            <li>4.14. <a href="#4.14">May I edit an InChI manually?</a></li>
+            <li>4.15. <a href="#4.15">What can the current version of  InChI not represent?</a></li>
+        </ol>
+    </li>
+    <!-- 5 -->
+    <li><a class="parent" href="#5">Composition and Connectivity</a>
+        <ol class="toc">
+            <li>5.1. <a href="#5.1">Does the formula always represent the complete composition of the substance?</a></li>
+            <li>5.2. <a href="#5.2">Is there always a connection table layer (/c)?</a></li>
+            <li>5.3. <a href="#5.3">Is there always an H layer (/h)?</a></li>
+            <li>5.4. <a href="#5.4">Does the total number of hydrogens in the /h layer represent the number of hydrogens in the input compound?</a></li>
+            <li>5.5. <a href="#5.5">How does InChI deal with structures that are composed of multiple interconnected (covalently bonded) components?</a></li>
+            <li>5.6. <a href="#5.6">In InChIs of structures containing more than one component, is the ; separator necessary between contributions from components if one contribution is empty?</a></li>
+            <li>5.7. <a href="#5.7">Can InChI represent mixtures?</a></li>
+        </ol>
+    </li>
+    <!-- 6 -->
+    <li><a class="parent" href="#6">Treating Mobile Hydrogens</a>
+        <ol class="toc">
+            <li>6.1. <a href="#6.1">How does InChI represent compounds with mobile H atoms (tautomerism, for example)?</a></li>
+            <li>6.2. <a href="#6.2">Why is there a Fixed-H layer if tautomeric groups are shown in the main  layer?</a></li>
+            <li>6.3. <a href="#6.3">Can InChI contain multiple mobile H groups in the hydrogen layer?</a></li>
+            <li>6.4. <a href="#6.4">If it seems that InChI does not recognize tatomerism in my molecule, what is the reason and how may this be corrected (if at all)?</a></li>            
+        </ol>
+    </li>
+    <!-- 7 -->
+    <li><a class="parent" href="#7">Salts and Organometallics</a>
+        <ol class="toc">
+            <li>7.1. <a href="#7.1">How does InChI represent salts?</a></li>
+            <li>7.2. <a href="#7.2">What is the InChI definition of a salt?</a></li>
+            <li>7.3. <a href="#7.3">How does InChI represent organometallic compounds?</a></li>
+            <li>7.4. <a href="#7.4">What is the difference between the salt and metal disconnection?</a></li>
+            <li>7.5. <a href="#7.5">Can a metal-reconnected layer (/r) consist of more than one entity?</a></li>            
+        </ol>        
+    </li>
+    <!-- 8 -->
+    <li><a class="parent" href="#8">Stereochemistry</a>
+        <ol class="toc">
+            <li>8.1. <a href="#8.1">How is stereochemistry represented?</a></li>
+            <li>8.2. <a href="#8.2">How does InChI distinguish isomers where the stereochemical centre is a nitrogen atom?</a></li>
+            <li>8.3. <a href="#8.3">How does InChI express overall stereoconfiguration (absolute, relative, or racemic)?</a></li>
+            <li>8.4. <a href="#8.4">What does "/s" modify - is it tetrahedral stereo, double bond stereo or both?</a></li>
+            <li>8.5. <a href="#8.5">It is not evident how the mark m0 or m1 is assigned in the stereochemistry /t sub-layer&hellip; so are these marks of any interest?</a></li>
+            <li>8.6. <a href="#8.6">Can InChI show "unknown" and "undefined" chiral centers differently?</a></li>
+            <li>8.7. <a href="#8.7">Why does InChI show no stereo marks for tetrahedral centers which are actually present in the molecule (though none of the precise configurations is known)?</a></li>
+            <li>8.8. <a href="#8.8">Why may a stereo layer appear several times in a single InChI?</a></li>
+            <li>8.9. <a href="#8.9">If the /s sub-layer of the stereochemical layer can appear in more than one layer, why it is omitted sometimes?</a></li>
+        </ol>
+    </li>
+    <!-- 9 -->
+    <li><a class="parent" href="#9">Isotopes</a>
+        <ol class="toc">
+            <li>9.1. <a href="#9.1">How does InChI manage isotopes?</a></li>
+            <li>9.2. <a href="#9.2">How is isotopic shift counted?</a></li>
+            <li>9.3. <a href="#9.3">Why may isotopic shift +0 appear in InChI?</a></li>
+            <li>9.4. <a href="#9.4">Does InChI recognize the one-letter symbols of deuterium and tritium?</a></li>
+            <li>9.5. <a href="#9.5">What is the ordering of D and T in the isotopic layer?</a></li>
+            <li>9.6. <a href="#9.6">Can InChI represent nuclear isomers?</a></li>            
+        </ol>        
+    </li>
+    <!-- 10 -->
+    <li><a class="parent" href="#10">Charge, Protons and Radicals</a>
+        <ol class="toc">
+            <li>10.1. <a href="#10.1">How does InChI manage charge?</a></li>
+            <li>10.2. <a href="#10.2">What does the /p layer mean?</a></li>
+            <li>10.3. <a href="#10.3">Can InChI represent radicals?</a></li>
+            <li>10.4. <a href="#10.4">Can InChI represent different spin states?</a></li>            
+        </ol>
+    </li>
+    <!-- 11 -->
+    <li><a class="parent" href="#11">Other</a>
+        <ol class="toc">
+            <li>11.1. <a href="#11.1">What is the 'Auxiliary Information' (AuxInfo) in the InChI output?</a></li>
+            <li>11.2. <a href="#11.2">How may I see which original atom numbers correspond to InChI numbers?</a></li>            
+        </ol>
+    </li>
+    <!-- 12 -->
+    <li><a class="parent" href="#12">Comparing InChIs</a>
+        <ol class="toc">
+            <li>12.1. <a href="#12.1">Can I compare structures by looking at their InChIs?</a></li>
+            <li>12.2. <a href="#12.2">Can I compare structures by looking at specific layers from their InChIs?</a></li>
+            <li>12.3. <a href="#12.3">If two InChIs are the same, do they refer to the same compound?</a></li>
+            <li>12.4. <a href="#12.4">If two InChIs are different, do they refer to different compounds?</a></li>
+            <li>12.5. <a href="#12.5">How can I compare similar compounds?</a></li>            
+        </ol>
+    </li>
+    <!-- 13 -->
+    <li><a class="parent" href="#13">InChIKey</a>
+        <ol class="toc">
+            <li>13.1. <a href="#13.1">What is the exact format of InChIKey?</a></li>
+            <li>13.2. <a href="#13.2">What is the protonation indicator in InChIKey?</a></li>
+            <li>13.3. <a href="#13.3">InChIKey is based on hashed InChI&hellip; but what is a hash?</a></li>
+            <li>13.4. <a href="#13.4">Can InChI be restored/decrypted from its InChIKey?</a></li>
+            <li>13.5. <a href="#13.5">Can two different molecules have the same InChIKey?</a></li>
+            <li>13.6. <a href="#13.6">What is the collision resistance of InChIKey?</a></li>
+            <li>13.7. <a href="#13.7">Are there known InChIKey collision(s)?</a></li>
+            <li>13.8. <a href="#13.8">Why does InChIKey use only 26 capital letters?</a></li>
+            <li>13.9. <a href="#13.9">What is the hash function used internally for InChIKey?</a></li>
+            <li>13.10. <a href="#13.10">What if I need a longer InChI hash?</a></li>            
+        </ol>
+    </li>
+    <!-- 14 -->
+    <li><a class="parent" href="#14">InChI by Examples</a>
+        <ol class="toc">
+            <li>14.1. <a href="#14.1">What is an empty InChI?</a></li>
+            <li>14.2. <a href="#14.2">What  is the InChI for a proton?</a></li>
+            <li>14.3. <a href="#14.3">Can InChI represent an alpha particle?</a></li>
+            <li>14.4. <a href="#14.4">Can InChI represent electrons or neutrons?</a></li>
+            <li>14.5. <a href="#14.5">What is the InChI for molecular hydrogen?</a></li>
+            <li>14.6. <a href="#14.6">What  is the InChI for protonated molecular hydrogen?</a></li>
+            <li>14.7. <a href="#14.7">What is the InChI for lithium Li?</a></li>
+            <li>14.8. <a href="#14.8">What is the InChI for lithium hydride LiH?</a></li>
+            <li>14.9. <a href="#14.9">Why does the inchi-1 executable of the InChI Software generate InChI for lithium hydride if the input MOL file contains just a lithium atom?</a></li>
+            <li>14.10. <a href="#14.10">Why then do many drawing programs generate InChI for lithium if the input drawing is just a lithium atom?</a></li>
+            <li>14.11. <a href="#14.11">Why then does the inchi-1 executable of the InChI Software generate InChI for atomic silver if the input MOL file contains just a silver atom?</a></li>
+            <li>14.12. <a href="#14.12">Why does the InChI for lithium hydride lack an Li-H connection?</a></li>
+            <li>14.13. <a href="#14.13">I generated Non-standard InChI for lithium hydride with RecMet option; why does it still lack Li-H connection?</a></li>
+            <li>14.14. <a href="#14.14">Why is "/s" absent in the isotopic-stereo sub-layer in the example below?</a></li>            
+        </ol>
+    </li>
+    <!-- 15 -->
+    <li><a class="parent" href="#15">InChI Software</a>
+        <ol class="toc">
+            <li>15.1. <a href="#15.1">What is included in the InChI Software?</a></li>
+            <li>15.2. <a href="#15.2">What is the benefit of using winchi-1 (the GUI application) over inchi-1 (the command line executable)?</a></li>
+            <li>15.3. <a href="#15.3">Why do the example programs using the InChI Library included in the InChI Software distribution sometimes produce InChI strings different from those generated by the inchi-1 executable?</a></li>
+            <li>15.4. <a href="#15.4">Standard vs. Non-standard InChI generation</a></li>
+            <li>15.5. <a href="#15.5">How do I install the InChI Software?</a></li>
+            <li>15.6. <a href="#15.6">How do I create an InChI?</a></li>
+            <li>15.7. <a href="#15.7">Can I link/call InChI from my program?</a></li>
+            <li>15.8. <a href="#15.8">Which formats does InChI Software accept?</a></li>
+            <li>15.9. <a href="#15.9">Does InChI Software support CML input?</a></li>
+            <li>15.10. <a href="#15.10">Can I use InChI if I don't know the connection table?</a></li>
+            <li>15.11. <a href="#15.11">How do I generate an InChI if I have a molecule presented in a file format other than MOL or SDF?</a></li>
+            <li>15.12. <a href="#15.12">Other than a connection table, what is needed to generate an InChI?</a></li>
+            <li>15.13. <a href="#15.13">What happens if the input structure has no mobile hydrogen atoms but generation requires exact tautomeric H positions (through FixedH option)?</a></li>
+            <li>15.14. <a href="#15.14">The InChI Software has many switches; what they are for?</a></li>
+            <li>15.15. <a href="#15.15">What are the 'structure perception' options?</a></li>
+            <li>15.16. <a href="#15.16">What are the 'stereo interpretation' options?</a></li>
+            <li>15.17. <a href="#15.17">What are the 'InChI creation' options?</a></li>
+            <li>15.18. <a href="#15.18">What does the DoNotAddH option do?</a></li>
+            <li>15.19. <a href="#15.19">What does the SNon option do?</a></li>
+            <li>15.20. <a href="#15.20">What does the NEWPSOFF option do?</a></li>
+            <li>15.21. <a href="#15.21">What do the 'stereo interpretation' options do?</a></li>
+            <li>15.22. <a href="#15.22">What does the SUU option do?</a></li>
+            <li>15.23. <a href="#15.23">What does the RecMet option do?</a></li>
+            <li>15.24. <a href="#15.24">What does the FixedH option do?</a></li>
+            <li>15.25. <a href="#15.25">What does the SaveOpt option do?</a></li>            
+        </ol>
+    </li>
+    <!-- 16 -->
+    <li><a class="parent" href="#16">Creating InChIs</a>
+        <ol class="toc">
+            <li>16.1. <a href="#16.1">If different software packages produce different InChIs, which is the trusted one?</a></li>
+            <li>16.2. <a href="#16.2">Do I need to know how my molecular information was created?</a></li>
+            <li>16.3. <a href="#16.3">Are there any technical limitations for InChI input?</a></li>
+            <li>16.4. <a href="#16.4">Does the InChI Software recognize 'atomic stereo' descriptors in MOL/SDF input files?</a></li>
+            <li>16.5. <a href="#16.5">Does the InChI Software ignore stereochemistry if a coordinate-less ("<font size=+1>0</font>D") input file in MOL/SDF format is used?</a></li>
+            <li>16.6. <a href="#16.6">Does InChI require all atoms including hydrogens in the input?</a></li>
+            <li>16.7. <a href="#16.7">What are the problems if I can't find out about this?</a></li>
+            <li>16.8. <a href="#16.8">Can the InChI Software fix these problems automatically?</a></li>
+            <li>16.9. <a href="#16.9">Can I regenerate the structure from InChI?</a></li>            
+        </ol>
+    </li>
+</ol>
+<!-- ToC End -->
+<p><em>Last modified: 2012-05-12</em></p>
+<!-- 1 Start -->
+<h2><a name="1">1. FAQ Overview</a></h2>
+<!-- 1 block Start -->
+<blockquote>
+    <!-- 1.1 Block Start -->
+    <blockquote>
+        <h3><a name="1.1">1.1. What is this FAQ?</a></h3>
+        <p>This FAQ is an attempt to answer common questions on InChI-related concepts and the structure and meaning of InChIs. Where possible we quote directly from the official IUPAC/InChI Trust sites and the distribution.</p>
+        <p>The original 'Unofficial InChI FAQ' was created by Nick Day at the Unilever Centre, Department of Chemistry, Cambridge University.  In 2011, the document has been revised and updated, with the permission of Nick Day, by the InChI Trust to take into account recent developments of InChI itself and the InChI software. It has the status of an official FAQ.</p>
+        <p>The description of InChI in this FAQ corresponds now to the latest software release of Fall 2011 and to the latest official documentation. Most of the examples below use Standard InChI &amp; InChIKey.</p>
+    </blockquote>
+    <!-- 1.1 Block End -->
+    <!-- 1.2 Block Start -->
+    <blockquote>
+        <h3><a name="1.2">1.2. Who is responsible for InChI?</a></h3>
+        <p>InChI is a project of the International Union of Pure and Applied Chemistry (IUPAC) described at: <a href="http://www.iupac.org/inchi/">http://www.iupac.org/inchi/</a></p>
+        <p>The IUPAC body which takes care of the current and future shape of InChI is  the "IUPAC InChI Subcommittee" (IUPAC Division VIII InChI Subcommittee).  </p>
+        <p>Current members of the IUPAC InChI Subcommittee are:</p>
+        <ul>
+            <li><em>Chair</em>: S. R. Heller</li>
+            <li><em>Secretary</em>: A. D. McNaught</li>
+            <li><em>Members</em>: S. M. Bachrach, C. Batchelor, E. Bolton, N. Goncharoff, J. M. Goodman, M. Nicklaus, I. Pletnev, H. Rey, S. E. Stein, C. Steinbeck, K. T. Taylor, D. Tchekhovskoi, E. S. Wilks, A. Williams, A. Yerin.</li>
+        </ul>
+        <p>There exist also InChI Subcommittee working groups made up of additional chemists who are developing rules for extending the capabilities of InChI. See: <a href="http://iupac.org/web/ins/802">http://iupac.org/web/ins/802</a></p>
+        <p>Historically, the primary development of the InChI algorithm and software took place at NIST (US National Institute of Standards and Technology, USA) under the auspices of IUPAC.</p>
+        <p>Since 2009, the responsibility for InChI technical development and promotion has been in the hands of the InChI Trust - a not-for-profit organization which works in close contact with IUPAC (and of which IUPAC is a member).</p>
+        <p>The lists of InChI Trust members, associates, and supporters are updated frequently, the current lists can be found at:</p>
+        <p><a href="http://inchi-trust.org/index.php?q=node/1">http://inchi-trust.org/index.php?q=node/1</a>
+        <p>and</p>
+        <p><a href="http://inchi-trust.org/index.php?q=node/16">http://inchi-trust.org/index.php?q=node/16</a></p>
+        <p>InChI Trust site:</p>
+        <p><a href="http://www.inchi-trust.org">http://www.inchi-trust.org</a></p>
+        <p>IUPAC/InChI Trust Agreement:</p>
+        <p><a href="http://www.iupac.org/publications/ci/2010/3204/iw2_inchi.html">http://www.iupac.org/publications/ci/2010/3204/iw2_inchi.html</a></p>
+    </blockquote>
+    <!-- 1.2 Block End -->
+    <!-- 1.3 Block Start -->
+    <blockquote>
+        <h3><a name="1.3">1.3. Where can I find out more?</a></h3>
+        <p>Please refer to the page <a href="http://www.inchi-trust.org/index.php?q=node/4">http://www.inchi-trust.org/index.php?q=node/4</a> which contains lists of both Internet resources and scientific articles related to InChI.</p>
+    </blockquote>
+    <!-- 1.3 Block End -->
+    <!-- 1.4 Block Start -->
+    <blockquote>
+        <h3><a name="1.4">1.4. Is there an InChI mailing list?</a></h3>
+        <p>Yes. There is the inchi-discuss mailing list at SourceForge where "comments, questions and offers of help are welcomed".</p>
+        <p>To sign up for the discussion list, visit <a href="http://lists.sourceforge.net/lists/listinfo/inchi-discuss">this page</a>.</p>
+        <p>To view past discussions, visit <a href="http://sourceforge.net/mailarchive/forum.php?forum_name=inchi-discuss">the list archive</a>.</p>
+    </blockquote>
+    <!-- 1.4 Block End -->
+    <!-- 1.5 Block Start -->
+    <blockquote>
+        <h3><a name="1.5">1.5. Are there other InChI FAQs?</a></h3>
+        <p>As far as we are aware, there are currently no other InChI FAQs available on the web - except for the original "Unofficial InChI FAQ" document by Nick Day which is still available at <a href="http://wwmm.ch.cam.ac.uk/inchifaq/">http://wwmm.ch.cam.ac.uk/inchifaq/</a> as of the end of 2011.</p>
+    </blockquote>
+    <!-- 1.5 Block End -->
+    <!-- 1.6 Block Start -->
+    <blockquote>
+        <h3><a name="1.6">1.6. Who maintains this FAQ?</a></h3>
+        <p>This FAQ is maintained by the <a href="http://www.inchi-trust.org/">InChI Trust</a>.</p>
+    </blockquote>
+    <!-- 1.6 Block End -->
+</blockquote>
+<!-- 1 Block End -->
+<!-- 1 End -->
+
+<!-- 2 Start -->
+<h2><a name="2">2. Quick Facts</a></h2>
+<!-- 2 Block Start -->
+<blockquote>
+    <!-- 2.1 Block Start -->
+    <blockquote>
+        <h3><a name="2.1">2.1. What is an InChI?</a></h3>
+        <p>InChI is an acronym for IUPAC International Chemical Identifier. It is a string of characters capable of uniquely representing a chemical substance and serving as its unique digital 'signature'. It is derived solely from a structural representation of that substance in a way designed to be independent of the way that the structure was drawn. A single compound will always produce the same identifier.</p>
+        <p>In one sentence: InChI provides a precise, robust, IUPAC approved structure-derived tag for a chemical substance.</p>
+        <div class="center">
+            <img src="images/02_1-1.png" width="826" height="289" alt="">
+        </div>
+    </blockquote>
+    <!-- 2.1 Block End -->
+    <!-- 2.2 Block Start -->
+    <blockquote>
+        <h3><a name="2.2">2.2. So....how is InChI pronounced?</a></h3>
+        <p>The correct pronunciation is Inchee.</p>
+    </blockquote>
+    <!-- 2.2 Block End -->
+    <!-- 2.3 Block Start -->
+    <blockquote>
+        <h3><a name="2.3">2.3. What is the purpose of the InChI?</a></h3>
+        <p>The InChI project aims to create a method for generating a freely available, non-proprietary identifier for chemical substances that can be used in printed and electronic data sources, thus enabling easier linking of diverse data compilations and unambiguous identification of chemical substances.</p>
+        <p>InChI is not a registry system. It does not depend on the existence of a database of unique substance records to establish the next available registry number for any new chemical substance being assigned an InChI.  There are no InChI databases at or maintained by IUPAC or the InChI Trust. The only InChI databases are those that have been created by publishers, database vendors, and users around the world who have used the InChI algorithm.</p>
+        <p>The chemical structure of a compound is its true identifier, but structures are not unique or convenient for computers. So the InChI project seeks to convert the structure (in the form of its connection table) to a unique string of characters by fixed algorithms, generating the InChI. Two critical requirements are:</p>
+        <ul>
+            <li>Different compounds must have different identifiers, with all the information needed to distinguish the structures.</li>
+            <li>Any one compound has only one identifier, including only the necessary information to identify that compound.</li>
+        </ul>
+    </blockquote>
+    <!-- 2.3 Block End -->
+    <!-- 2.4 Block Start -->
+    <blockquote>
+        <h3><a name="2.4">2.4. What is the scope of the InChI?</a></h3>
+        <p>The current version of the InChI (v. 1) covers well-defined, covalently-bonded organic molecules and, with some limitations, organometallic compounds.</p>
+        <p>This includes substances with mobile hydrogen atoms (tautomers, for instance); methods were found to also include variable protonation.</p>
+        <p>The present version only considers traditional organic stereochemistry (double bond - sp<sup>2</sup> and tetrahedral - sp<sup>3</sup>) and the most common forms of H-migration (tautomerism). However, the layered structure of the InChI allows future refinements with little or no change to the layers described here. Not included are polymers, variable substituents/attachment positions (Markush structures), electronic states and conformations.</p>
+        <p>By design, the InChI represents only a single type of connectivity. In particular, it ignores bond orders except for analyzing stereochemistry and H-migration and does not explicitly represent positions of electrons. While this is not the conventional method for representing chemical compounds, it provides an effective means of representing their identity.</p>
+        <p>Extensions to the InChI algorithm are currently under development. See Section <a href="#4.15">4.15 "What can InChI currently not represent?"</a> for areas of chemistry currently not covered by InChI.</p>
+        <p>While chemists will always have differing opinions on structure representation, the goal of the InChI algorithm is to create a unique, but arbitrary representation.  However, the flexibility of InChI options (see Sections 4-11 &amp; 15 of this FAQ) allows for a diverse set of opinions to be used within the InChI algorithm.</p>
+    </blockquote>
+    <!-- 2.4 Block End -->
+    <!-- 2.5 Block Start -->
+    <blockquote>
+        <h3><a name="2.5">2.5. Does InChI support the whole Periodic System?</a></h3>
+        <p>Yes. The current release of InChI Software supports chemical elements from 1 (hydrogen) to 112 (copernicium, which is the last element currently recognised by IUPAC).</p>
+    </blockquote>
+    <!-- 2.5 Block End -->
+    <!-- 2.6 Block Start -->
+    <blockquote>
+        <h3><a name="2.6">2.6. What Is InChI not designed for?</a></h3>
+        <ul>
+            <li><strong>Manual generation:</strong><br>
+                InChI is for computers, not humans. For all but the simplest structures, the algorithms are too complex to be implemented manually.
+            </li>
+            <li><strong>Human parsing:</strong><br>
+                While with an understanding of the syntax of the Identifier, it may be 'reverse-engineered' to show its various layers, its compact form is not well suited for this. It may, however, be easily parsed and the contents of each layer examined and traced to the original structure, but end users would never be expected to do this.
+            </li>
+            <li><strong>Substructure searching:</strong><br>
+                The Identifier has no advantages over the more commonly used connection table formats for substructure and structure similarity searching. The InChI layers are designed solely to deal with the different ways of representing the same compound. Those who want to do substructure searching are advised to look to the various chemistry software suppliers. This is beyond the mission of the InChI project.
+            </li>
+            <li><strong>Structure display:</strong><br>
+                Coordinates are not a part of the Identifier. While these may optionally be stored along with the identifier as auxiliary information, more flexible and widely used connection table formats exist for this purpose. Those who want to do structure display are advised to look to the various chemistry software suppliers.  This is beyond the mission of the InChI project.
+            </li>
+            <li><strong>A connection table:</strong><br>
+                The Identifier may be thought of as a very restricted sort of connection table since it contains the 'connectivity' of a compound. However, it holds only the information needed to uniquely identify a substance, so does not include information often held in 'connection tables' such as coordinates, bond types, positions of charges or moveable bonds, etc. The ordering of atoms is important in InChI - this order is not important in most connection tables.
+            </li>
+        </ul>
+    </blockquote>
+    <!-- 2.6 Block End -->
+    <!-- 2.7 Block Start -->
+    <blockquote>
+        <h3><a name="2.7">2.7. What is an InChIKey?</a></h3>
+        <p>The InChIKey is a short, fixed-length character signature based on a hash code of the InChI string.</p>
+        <p>By definition, the InChIKey length is always 27 characters, which are uppercase English letters and dashes ("minus" characters) as separators. It is much shorter than a typical InChI (for example, the average length of InChI string calculated for a real collection of ca. 10M records is 146 characters).</p>
+        <p>Still, InChIKey inherits from InChI, to a limited degree, a layered representation of chemical structure.</p>
+        <p>InChIKey provides a nearly unique short representation of the parent InChI and hence of the parent chemical compound (the chances of InChIKey non-uniqueness are not zero but rather small, see <a href="#13">Section 13 'InChIKey'</a> of this FAQ).</p>
+        <p>The idea for the InChIKey came from an InChI lecture at Google at which time it was made clear that internet search engines would not be able to find InChI strings due to their length and use of characters ignored by all search engines.</p>
+    </blockquote>
+    <!-- 2.7 Block End -->
+    <!-- 2.8 Block Start -->
+    <blockquote>
+        <h3><a name="2.8">2.8. What do an InChI &amp; an InChIKey look like?</a></h3>
+        <p>An InChI is a text string composed of segments (layers) separated by delimiters (/). If multiple disconnected parts of a structure are present, semicolons within each layer separate them. No white space is allowed inside any InChI string.</p>
+        <p>Each layer in an InChI string contains a specific class of structural information. This format is designed for compactness, not readability, but can be interpreted manually. The length of an identifier is roughly proportional to the number of atoms in the substance. Numbers inside a layer usually represent the canonical numbering of the atoms from the first layer (chemical formula) except H.</p>
+        <p>InChI always starts with a prefix, either 'InChI=1/' (any InChI) or 'InChI=1S/' (Standard InChI, see below).</p>
+        <p>The InChI string for guanine (specific for the tautomer drawn below), for instance, is:</p>
+        <pre>InChI=1/C5H5N5O/c6-5-9-3-2(4(11)10-5)7-1-8-3/h1H,(H4,6,7,8,9,10,11)/f/h8,10H,6H2</pre>
+        <div class="center">
+            <img src="images/02_8-1.png" width="156" height="117" alt="">
+        </div>
+        <p>InChIKey is a text string composed entirely of uppercase English letters separated by "minus" characters (dashes). The InChIKey string for the above shown structure, for instance, is:</p>
+        <pre>InChIKey=UYTPUPDQBNUYGX-GSQBSFCVNA-N</pre>
+        <p>You may find more samples in <a href="#14">Section 14 'InChI by examples'</a> of this FAQ.</p>
+    </blockquote>
+    <!-- 2.8 Block End -->
+    <!-- 2.9 Block Start -->
+    <blockquote>
+        <h3><a name="2.9">2.9. What are the Standard InChI and InChIKey and what is their purpose?</a></h3>
+        <p>InChI has a layered structure which allows one to represent molecular structure with a desired level of detail. Accordingly, the InChI Software is able to generate different InChI strings for the same molecule, dependent on a multitude of options controlling the level of attention to structural details  (e.g., accounting for tautomerism or not), as well as the rules of drawing perception.</p>
+        <p>This flexibility, however, may sometimes appear to be a drawback, with respect to standardization and interoperability. So the Standard InChI was launched in 2008, in response to these concerns.</p>
+        <p>The Standard InChI is a fully standardized InChI flavor which always maintains the same level of attention to structure details and the same conventions for drawing perception. Its hashed counterpart is the Standard InChIKey.</p>
+        <p>The Standard InChI is designated by the prefix:</p>
+        <pre>InChI=1S/</pre>
+        <p>that is, letter 'S' immediately follows the version number; Standard InChI version numbers are always whole numbers.</p>
+        <p>The Standard InChI string for guanine (note that the drawing is the same as that in the previous paragraph) is:</p>
+        <pre>InChI=1S/C5H5N5O/c6-5-9-3-2(4(11)10-5)7-1-8-3/h1H,(H4,6,7,8,9,10,11)</pre>
+        <p>The Standard InChIKey is an InChIKey computed from (and only from) a Standard InChI.</p>
+        <pre>InChIKey=UYTPUPDQBNUYGX-UHFFFAOYSA-N</pre>
+        <p>For more details, please refer to the <a href="#4.7">Section 4.7 'Standard InChI specifics'</a> of this FAQ.</p>
+        <p>Please note that many organizations have their own structure representation rules (often called business rules).  The InChI algorithm allows an organization to create an InChI based on such local rules by using the basic InChI options.  This flexibility of InChI allows for an organization to "do their own thing internally", and - by ALSO using the standard InChI - be able to link to and be interoperable with structures found by searching the Internet.</p>
+    </blockquote>
+    <!-- 2.9 Block End -->
+    <!-- 2.10 Block Start -->
+    <blockquote>
+        <h3><a name="2.10">2.10. How does InChI differ from SMILES?</a></h3>
+        <p>Like InChI, the SMILES language allows a canonical serialization of molecular structure. However, SMILES is proprietary and unlike InChI is not an open project. This has led to the use of different generation algorithms, and thus, different SMILES versions of the same compound have been found.</p>
+        <p>In fact, one may find at least six different unique SMILES for caffeine on Web sites:</p>
+        <ol>
+            <li><code>[c]1([n+]([CH3])[c]([c]2([c]([n+]1[CH3])[n][cH][n+]2[CH3]))[O-])[O-]</code></li>
+            <li><code>CN1C(=O)N(C)C(=O)C(N(C)C=N2)=C12</code></li>
+            <li><code>Cn1cnc2n(C)c(=O)n(C)c(=O)c12</code></li>
+            <li><code>Cn1cnc2c1c(=O)n(C)c(=O)n2C</code></li>
+            <li><code>O=C1C2=C(N=CN2C)N(C(=O)N1C)C</code></li>
+            <li><code>CN1C=NC2=C1C(=O)N(C)C(=O)N2C</code></li>
+        </ol>
+        <div class="center">
+            <img src="images/02_10-1.png" width="622" height="250" alt="">
+        </div>
+    </blockquote>
+    <!-- 2.10 Block End -->
+    <!-- 2.11 Block Start -->
+    <blockquote>
+        <h3><a name="2.11">2.11. Where can I find examples of InChIs and InChIKeys?</a></h3>
+        <p>Nowadays InChIs and InChIKeys have become widespread and may be easily found on the Web using any Internet search engine.</p>
+        <p>As for the large annotated collections of InChI/Keys associated with structural and chemical information look at the following, to name but a few:</p>
+        <dl>
+            <dt>NCI/CADD Chemical Identifier Resolver</dt>
+                <dd><a href="http://cactus.nci.nih.gov/chemical/structure">http://cactus.nci.nih.gov/chemical/structure</a></dd>
+                <dd>Programmatic web interface to 120 million original structure records in more than 100 small molecule databases, as of January 2012</dd>
+            <dt>Pubchem</dt>
+                <dd><a href="http://pubchem.ncbi.nlm.nih.gov/">http://pubchem.ncbi.nlm.nih.gov/</a></dd>
+                <dd>85 million records representing over 30 million chemically unique compounds, as of August, 2011</dd>
+            <dt>ChemSpider</dt>
+                <dd><a href="http://www.chemspider.com/">http://www.chemspider.com/</a></dd>
+                <dd>Over 26 million structures as of December, 2011</dd>
+            <dt>NIST Chemistry WebBook</dt>
+                <dd><a href="http://webbook.nist.gov/">http://webbook.nist.gov/</a></dd>
+            <dt>ChEBI</dt>
+                <dd><a href="http://www.ebi.ac.uk/chebi/">http://www.ebi.ac.uk/chebi/</a></dd>
+                <dd>More than 26 thousand biologically important small molecules</dd>
+        </dl>
+        <!-- TODO -->
+        <p>For some important/difficult/interesting cases, see throughout this FAQ, especially in the <a href="#14">Section 14 "InChI by Examples"</a>.</p>
+    </blockquote>
+    <!-- 2.11 Block End -->
+    <!-- 2.12 Block Start -->
+    <blockquote>
+        <h3><a name="2.12">2.12. How to produce the InChI/Key for a chemical compound?</a></h3>
+        <p>IUPAC and the InChI Trust regularly publish the releases of open-source InChI Software which allows anybody anywhere to produce an InChI/Key from a chemical structure. There are executables for both Microsoft Windows and Linux and the software library (which many vendors of chemical software have built into their drawing programs). More information follows, in this FAQ.</p>
+    </blockquote>
+    <!-- 2.12 Block End -->
+    <!-- 2.13 Block Start -->
+    <blockquote>
+        <h3><a name="2.13">2.13. Who is using InChI?</a></h3>
+        <p>Chemical database providers, publishers, chemistry software vendors, librarians, information specialists, bench chemists&hellip;</p>
+    </blockquote>
+    <!-- 2.13 Block End -->
+    <!-- 2.14 Block Start -->
+    <blockquote>
+        <h3><a name="2.14">2.14. Can search engines use InChIs?</a></h3>
+        <p>Yes.</p>
+        <p>However a Standard InChI/InChIKey is best for searching since search engines do not like the full length InChI strings.</p>
+        <p>Both InChI and InChIKey strings can be used in a web-based query that has high recall and precision.</p>
+        <p>InChIKey may be more suited for Web searching as it includes no "special symbols" (like slash, plus, etc., which break the query into separate search items), just capital English letters and hyphens ("minus" characters).</p>
+    </blockquote>
+    <!-- 2.14 Block End -->  
+</blockquote>
+<!-- 2 Block End -->
+<!-- 2 End -->
+
+<!-- 3 Start -->
+<h2><a name="3">3. Availability and Current Status</a></h2>
+<!-- 3 Block Start -->
+<blockquote>
+    <!-- 3.1 Block Start -->
+    <blockquote>
+        <h3><a name="3.1">3.1. Is InChI free?</a></h3>
+        <p>Yes it is.</p>
+    </blockquote>
+    <!-- 3.1 Block End -->
+    <!-- 3.2 Block Start -->
+    <blockquote>
+        <h3><a name="3.2">3.2. Is InChI open?</a></h3>
+        <p>It is intended that the source code is freely re-usable and a license has been developed to reflect that.  Since the InChI source code has a normative role (i.e. it acts as the final arbiter of the correctness) it is not freely modifiable, although it is open to anybody to view and build an InChI binary.</p>
+    </blockquote>
+    <!-- 3.2 Block End -->
+    <!-- 3.3 Block Start -->
+    <blockquote>
+        <h3><a name="3.3">3.3. What is the InChI Licence?</a></h3>
+        <p>Up to Fall 2011, InChI software was published under the GNU Lesser General Public Licence, LGPL version 2.1.</p>
+        <p>Since the release 1.04 of the InChI software of Fall 2011, it has been replaced with the more permissive IUPAC/InChI-Trust Licence for the International Chemical Identifier (InChI) Software version 1.04, September 2011 ("IUPAC/InChITrust InChI Licence No. 1.0").</p>
+        <p>The text of the IUPAC/InChI-Trust Licence may be found here<br><a href="http://www.inchi-trust.org/sites/default/files/inchi-1.04/IUPAC_InChI_Trust_Licence_11_Oct_2011.pdf">PDF format</a> / <a href="http://www.inchi-trust.org/sites/default/files/inchi-1.04/IUPAC_InChI_Trust_Licence_11_Oct_2011.doc">DOC format</a><br>(it is also included in the distribution package as the file LICENCE).</p>
+    </blockquote>
+    <!-- 3.3 Block End -->
+    <!-- 3.4 Block Start -->
+    <blockquote>
+        <h3><a name="3.4">3.4. What is the current version of InChI?</a></h3>
+        <p>The current version of InChI is 1.</p>
+    </blockquote>
+    <!-- 3.4 Block End -->
+    <!-- 3.5 Block Start -->
+    <blockquote>
+        <h3><a name="3.5">3.5. What is the current version of the InChI Software?</a></h3>
+        <p>The current version of the InChI software is 1.04 (September 2011).</p>
+        <p>Note that the major version of the software is always the number of the version of the identifier (it is 1 currently).</p>
+        <p>The previously released software versions 1.03 (June 2010), 1.02-standard (2009), 1.02-beta (2007), 1.01 (2006), as well as all earlier versions, are considered obsolete due to the release of a newer software version&hellip;</p>
+    </blockquote>
+    <!-- 3.5 Block End -->
+    <!-- 3.6 Block Start -->
+    <blockquote>
+        <h3><a name="3.6">3.6. Where can I get the current InChI Software release?</a></h3>
+        <p>Please go to <a href="http://www.inchi-trust.org/index.php?q=node/14">http://www.inchi-trust.org/index.php?q=node/14</a></p>
+    </blockquote>
+    <!-- 3.6 Block End -->
+    <!-- 3.7 Block Start -->
+    <blockquote>
+        <h3><a name="3.7">3.7. Where can I find InChI Documentation?</a></h3>
+        <p>Please go to <a href="http://www.inchi-trust.org/index.php?q=node/14">http://www.inchi-trust.org/index.php?q=node/14</a></p>
+    </blockquote>
+    <!-- 3.7 Block End -->
+    <!-- 3.8 Block Start -->
+    <blockquote>
+        <h3><a name="3.8">3.8. Are new versions expected?</a></h3>
+        <p>Yes. The design and development of version 2 of InChI Identifier with corresponding software releases are at their initial stages, as of the end of 2011.</p>
+        <p>Tentatively, the new version is expected to cover (simple) polymers and to provide a better support for metal-containing compounds, to name the most important points.</p>
+    </blockquote>
+    <!-- 3.8 Block End -->
+</blockquote>
+<!-- 3 Block End -->
+<!-- 3 End -->
+
+<!-- 4 Start -->
+<h2><a name="4">4. InChI Basics</a></h2>
+<!-- 4 Block Start -->
+<blockquote>
+    <!-- 4.1 Block Start -->
+    <blockquote>
+        <h3><a name="4.1">4.1. Why are layers used in an InChI?</a></h3>
+        <p>To quote the InChI Technical Manual:</p>
+        <p><cite><q>Since a given compound may be represented at different levels of detail, in order to create a robust expression of chemical identity it was decided to create a hierarchical 'layered' form of the Identifier, where each layer holds a distinct and separable class of structural information, with the layers ordered to provide successive structural refinement. In addition to basic 'connectivity' and overall charge, the principal varieties of layers are mobile/fixed H-atoms (expresses tautomerism), isotopic composition and stereochemistry.</q></cite></p>
+        <p>Layers are used because they are logical (they separate the variables) and understandable. They are flexible for chemists as they represent known levels of information and extra layers could easily be added to future releases of the identifier.</p>
+    </blockquote>
+    <!-- 4.1 Block End -->
+    <!-- 4.2 Block Start -->
+    <blockquote>
+        <h3><a name="4.2">4.2. How is a layer represented in the identifier?</a></h3>
+        <p>Layers and sub-layers are both separated by the "/" delimiter.</p>
+        <p>All layers and sub-layers (except for the chemical formula sub-layer of the Main layer) start with "/?" where ? is a lower-case letter to indicate the type of information held in that layer.</p>
+        <p>For example, look at the InChI for caffeine:</p>
+        <div class="center">
+            <img src="images/04_2-1.png" width="862" height="386" alt="">
+        </div>
+        <p>If you would like to view a full list of all the possible layers in an InChI string it is worth consulting Section IIId "The Five InChI 'Layer' Types" of the InChI Technical Manual.</p>
+    </blockquote>
+    <!-- 4.2 Block End -->
+    <!-- 4.3 Block Start -->
+    <blockquote>
+        <h3><a name="4.3">4.3. Specifically, what are InChI layers?</a></h3>
+        <p>There are 6 InChI layer types, each representing a different class of structural information:</p>
+        <ol>
+            <li>Main layer</li>
+            <li>Charge layer</li>
+            <li>Stereochemical layer</li>
+            <li>Isotopic layer</li>
+            <li>Fixed-H layer</li>
+            <li>Reconnected layer</li>
+        </ol>
+        <p><em>Note:</em> The Fixed-H layer is optional (absent in Standard InChI) and can be selected by using the <a href="#15.24">FixedH</a> option of the InChI Software. The Reconnected layer is also optional (absent in Standard InChI) and can be selected by using the <a href="#15.23">RecMet</a> option.</p>
+        <div class="center">
+            <img src="images/04_3-1.png" width="785" height="566" alt="">            
+        </div>
+        <p>While the InChI is divided up into different layers to describe different types of structural information, each of these layers is also split into sub-layers to allow full description of each part of the structure (note: there is no sub-sub-layering).</p>
+        <p>For instance, the Main layer can be split up into three sub-layers:</p>
+        <ol>
+            <li>Chemical formula</li>
+            <li>Atom connections</li>
+            <li>Hydrogen atoms</li>
+        </ol>
+        <p>You can see that the top of the above five structures has an InChI with all three sub-layers of the Main layer.</p>
+        <div class="center">
+            <img src="images/04_3-2.png" width="371" height="175" alt="">
+        </div>
+        <p>The Main layer is also the only layer that will appear in every possible InChI that can be generated and the only sub-layer of the Main layer that will always appear is Chemical Formula. The only exceptions are InChIs of a proton, deuteron, and triton (H<sup>+</sup>, <sup>2</sup>H<sup>+</sup>, <sup>3</sup>H<sup>+</sup>), which do not have the Main layer. For example, H<sup>+</sup> has InChI=1S/p+1/i/hD.</p>
+        <p>If you would like to view a full list of all the possible sub-layers in an InChI it is worth consulting Section IIId "The Five InChI 'Layer' Types" of the InChI Technical Manual. Please see also <a href="#3.8">Section 3.8 "Are new versions expected?"</a> of this FAQ for current activities on extending the capabilities of InChI and potentially adding additional layers.</p>
+    </blockquote>
+    <!-- 4.3 Block End -->
+    <!-- 4.4 Block Start -->
+    <blockquote>
+        <h3><a name="4.4">4.4. Isn't InChI too complicated?</a></h3>
+        <p>The InChI for the structure below shows the challenge in representing our different views of chemistry. For example, to a bioscientist "glutamic acid" and "glutamate" are the same thing, but to a computational chemist the loss of a proton, or its variable site of attachment is critical. InChI is the only approach that allows us to describe this flexibility.</p>
+        <div class="center">
+            <img src="images/04_4-1.png" width="633" height="349" alt="">
+        </div>
+        <p>Most often you can probably use a common subset of the layers, the one of Standard InChI, e.g.:</p>
+        <pre>InChI=1S/C2H4ClNO2/c3-1(4)2(5)6/h1H,4H2,(H,5,6)/p+1/t1-/m1/s1</pre>
+        <p>where there is no complication. If various levels of fuzziness in the compound description or searching are required, one needs to become more familiar with the InChI layers and sublayers. </p>
+        <p>Quite often, chemical compound structures are represented imprecisely, with missing features; stereochemistry being an obvious example.</p>
+    </blockquote>
+    <!-- 4.4 Block End -->
+    <!-- 4.5 Block Start -->
+    <blockquote>
+        <h3><a name="4.5">4.5. Is information for each layer required in the input information?</a></h3>
+        <p>No, the 'layered' model allows chemists to represent chemical substances at a level of detail of their choosing. Except for the Main layer (atoms and their bonds if any), the presence of a layer is not required and the layer appears only when corresponding input information has been provided.</p>
+        <div class="center">
+            <img src="images/04_5-1.png" width="606" height="272" alt="">
+        </div>
+    </blockquote>
+    <!-- 4.5 Block End -->
+    <!-- 4.6 Block Start -->
+    <blockquote>
+        <h3><a name="4.6">4.6. Are layers reusable?</a></h3>
+        <p>Detailed information contained in a layer depends on preceding layers, so layers may not be manually or programmatically 'excised' and reused. However, bottom layers may be 'pruned', leaving a valid, though less constraining InChI.</p>
+        <p>For instance, if all layers following the formula are eliminated, the InChI will apply to all substances with that formula.</p>
+        <div class="center">
+            <img src="images/04_6-1.png" width="621" height="453" alt="">
+        </div>
+    </blockquote>
+    <!-- 4.6 Block End -->
+    <!-- 4.7 Block Start -->
+    <blockquote>
+        <h3><a name="4.7">4.7. Standard InChI specifics</a></h3>
+        <p>The Standard InChI is designated by the prefix:</p>
+        <pre>"InChI=1S/&hellip;&hellip;&hellip;&hellip;"</pre>
+        <p>(that is, letter 'S' immediately follows the version number; Standard InChI version numbers are always whole numbers).</p>
+        <p>With respect to its internal (layered) structure, the Standard InChI is a subset of the IUPAC International Chemical Identifier v.1.</p>
+        <p>The Standard InChI was defined to reach the following goals.</p>
+        <ul>
+            <li>Standard InChI is for the purposes of interoperability/compatibility between large databases/web searching and information exchange.</li>
+            <li>Standard InChI and non-standard InChI are always distinguishable.</li>
+            <li>Standard InChI is a stable identifier; however, periodic updates may be necessary; they are reflected in the identifier version designation, which is included in the InChI string. </li>
+            <li>Any shortcomings in Standard InChI may be addressed using non-standard InChI.</li>
+        </ul>
+        <p>The layered structure of the Standard InChI conforms to the following requirements.</p>
+        <ul>
+            <li>Standard InChI organometallic representation should not include bonds to metal for the time being.</li>
+            <li>Standard InChI distinguishes between chemical substances at the level of 'connectivity', 'stereochemistry', and 'isotopic composition', where:
+                <ul>
+                    <li>connectivity means tautomer-invariant valence-bond connectivity (different tautomers have the same connectivity/hydrogen layer);</li>
+                    <li>stereochemistry means configuration of stereogenic atoms and bonds; undefined and unknown stereo designations treated as the same;</li>
+                    <li>isotopic composition is based on mass number of isotopic atoms (when specified)</li>
+                </ul>
+            </li>
+        </ul>
+        <p>In the light of the above requirements, the following options are selected for generation of Standard InChI:</p>
+        <ul>
+            <li>include tautomerism (i.e., turn mobile H perception on, exclude "fixed hydrogen" atoms layer);</li>
+            <li>omit reconnection of bonds to metal atoms;</li>
+            <li>assume that only the narrow end of a wedge points to a stereocenter;</li>
+            <li>exclude unknown/undefined stereo if no other stereo is present;</li>
+            <li>treat stereochemistry as absolute (not relative or racemic).</li>
+        </ul>
+        <p>For more technical details about Standard/Non-standard InChI generation (and, specifically, for explanation of 'structure perception', 'stereo interpretation' and 'InChI creation' options) see the <a href="#15">Section 15 'InChI Software'</a> of this FAQ.</p>
+    </blockquote>
+    <!-- 4.7 Block End -->
+    <!-- 4.8 Block Start -->
+    <blockquote>
+        <h3><a name="4.8">4.8. How is an InChI created from the input information?</a></h3>
+        <p>An InChI is created from the input information in three steps:</p>
+        <p><strong>Normalization</strong> - chemical structure drawing artefacts are removed while maintaining a complete description of the compound. Steps involved are:</p>
+        <ul>
+            <li>Ignore electron density and use simple atom connectivity only.</li>
+            <li>Disconnect salts and metal atoms in organometallic compounds.</li>
+            <li>Normalise mobile hydrogen atoms, variable protonation and charge.</li>
+        </ul>
+        <p><strong>Canonicalization</strong> - a set of atom labels are algorithmically generated; they do not depend on how the structure was initially drawn.</p>
+        <p><strong>Serialization</strong> - the set of labels derived during canonicalization is converted into a string of characters, the InChI.</p>
+        <p>Note that the InChI API does allow one to perform these steps via separate procedures, see InChI API Reference.</p>
+        <p>For more details, check with the InChI Technical Manual.</p>
+    </blockquote>
+    <!-- 4.8 Block End -->
+    <!-- 4.9 Block Start -->
+    <blockquote>
+        <h3><a name="4.9">4.9. How does InChI deal with the many equivalent ways of arranging bonds and charges in delocalized structures?</a></h3>
+        <p>When computing atom numbers (labels) during the canonicalization, bond orders and charge positions are ignored. Electron density and pi-electrons are important for describing much interesting chemistry but they can be ignored here as they are not important for naming purposes.</p>
+        <p>This does not introduce ambiguity as long as all H atoms and net charges are accounted for. InChI only uses bond orders for perceiving stereochemistry [(Z)- vs (E)- in but-2-ene, for example] and mobile H-atoms. It only stores the net charge, without regard to its position.</p>
+        <div class="center">
+            <img src="images/04_9-1.png" width="517" height="195" alt="">
+        </div>
+        <p>Note that the above InChI does not contain any information on the double bond positions or charge positions.</p>
+    </blockquote>
+    <!-- 4.9 Block End -->
+    <!-- 4.10 Block Start -->
+    <blockquote>
+        <h3><a name="4.10">4.10. Is InChI extensible?</a></h3>
+        <p>Yes, as InChI is composed of hierarchical layers; new layers could be added to the specification to refine the information represented by current layers. Future versions of InChI, for example, may include polymers, mixtures, additional classes of stereochemistry, electronic states, etc. Consideration is currently being given to further extension to chemical reactions.</p>
+    </blockquote>
+    <!-- 4.10 Block End -->
+    <!-- 4.11 Block Start -->
+    <blockquote>
+        <h3><a name="4.11">4.11. Can an InChI be invalid?</a></h3>
+        <p>If an Identifier is produced, it will be a unique representation of whatever was submitted and is not 'invalid'. While some checking is done, and warnings are issued if the input structure is ambiguous, errors and ambiguities in the input will remain in the output.</p>
+        <p>If, for example, a molecule with hypervalent C is submitted [e.g. C(CH<sub>3</sub>)<sub>6</sub>], a valid InChI will be produced, though with a warning that the carbon valence has been exceeded.</p>
+        <div class="center">
+            <img src="images/04_11-1.png" width="670" height="133" alt="">
+        </div>
+    </blockquote>
+    <!-- 4.11 Block End -->
+    <!-- 4.12 Block Start -->
+    <blockquote>
+        <h3><a name="4.12">4.12. Is the version number considered to be part of the InChI string?</a></h3>
+        <p>Yes, the version number is an inalienable part of the Identifier.</p>
+    </blockquote>
+    <!-- 4.12 Block End -->
+    <!-- 4.13 Block Start -->
+    <blockquote>
+        <h3><a name="4.13">4.13. How do I check that the InChI represents my compound?</a></h3>
+        <p>To better understand what InChI does it is strongly suggested to run the Win32 GUI application wInChI-1.exe against your test structures because it displays:</p>
+        <ul>
+            <li>input structures as InChI understands them, with all H and charges;</li>
+            <li>their initial numberings;</li>
+            <li>canonical numberings, equivalence, tautomeric groups;</li>
+            <li>stereo parities;</li>
+            <li>bond changes (these cannot be observed in any other way but in wInChI or under a debugger).</li>
+        </ul>
+    </blockquote>
+    <!-- 4.13 Block End -->
+    <!-- 4.14 Block Start -->
+    <blockquote>
+        <h3><a name="4.14">4.14. May I edit an InChI manually?</a></h3>
+        <p>You should not do so (though you of course can). This may give apparently reasonable answers but it is error-prone and may break relations in the InChI.</p>
+    </blockquote>
+    <!-- 4.14 Block End -->
+    <!-- 4.15 Block Start -->
+    <blockquote>
+        <h3><a name="4.15">4.15. What can the current version of InChI not represent?</a></h3>
+        <p>InChI currently does not support the representation of:</p>
+        <ul>
+            <li>Polymers</li>
+            <li>Complex organometallics</li>
+            <li>Markush structures</li>
+            <li>Mixtures</li>
+            <li>Conformers</li>
+            <li>Excited state and spin isomers</li>
+            <li>Non-local stereochemistry/chirality</li>
+            <li>Topological isomers</li>
+            <li>Cluster molecules</li>
+            <li>Polymorphs</li>
+            <li>Unspecific isotopic enrichment</li>
+            <li>Reactions</li>
+        </ul>
+        <p>Also, InChI is not suitable for very large compounds; technically, InChI input may not contain more than 1023 atoms.</p>
+        <p>Please note that there are IUPAC InChI subcommittee working groups currently addressing some of these matters. Details of these efforts can be found at: <a href="http://iupac.org/web/ins/802">http://iupac.org/web/ins/802</a></p>
+    </blockquote>
+    <!-- 4.15 Block End -->
+</blockquote>
+<!-- 4 Block End -->
+<!-- 4 End -->
+
+<!-- 5 Start -->
+<h2><a name="5">5. Composition and Connectivity</a></h2>
+<!-- 5 Block Start -->
+<blockquote>
+    <!-- 5.1 Block Start -->
+    <blockquote>
+        <h3><a name="5.1">5.1. Does the formula always represent the complete composition of the substance?</a></h3>
+        <p>Normally yes, but if a charged species can be described by (de)protonation from a neutral compound, then it will not. For example:</p>
+        <p>
+            <img src="images/05_1-1.png" width="218" height="104" alt="">
+        </p>
+    </blockquote>
+    <!-- 5.1 Block End -->
+    <!-- 5.2 Block Start -->
+    <blockquote>
+        <h3><a name="5.2">5.2. Is there always a connection table layer (/c)?</a></h3>
+        <p>No.</p>
+        <p>There is no connection layer for just an elemental (atomic) argon Ar, silver Ag, etc.</p>
+        <pre>InChI=1S/Ar</pre>
+        <pre>InChI=1S/Ag</pre>
+        <p>Another example is provided by the mononuclear hydrides such as OH<sub>2</sub> which have no connection table. The Standard InChI for water is</p>
+        <pre>InChI=1S/H2O/h1H2</pre>
+        <p>InChIs of a proton, deuteron, or triton (H<sup>+</sup>, <sup>2</sup>H<sup>+</sup>, <sup>3</sup>H<sup>+</sup>) do not have even a chemical formula. For example, InChI of <sup>2</sup>H<sup>+</sup> is </p>
+        <pre>InChI=1S/p+1/i/hD</pre>
+        <p>Also, if the precise connectivity is unknown, connection-less InChI may be used. For example, ethylene oxide and ethanal both have the formula C<sub>2</sub>H<sub>4</sub>O and the string</p>
+        <pre>InChI=1S/C2H4O</pre>
+        <p>is compatible with either. However, the semantics of such an InChI are not precisely defined.</p>
+    </blockquote>
+    <!-- 5.2 Block End -->
+    <!-- 5.3 Block Start -->
+    <blockquote>
+        <h3><a name="5.3">5.3. Is there always an H layer (/h)?</a></h3>
+        <p>No, it is absent if the compound does not contain hydrogen, e.g., for CO<sub>2</sub></p>
+        <pre>InChI=1S/CO2/c2-1-3</pre>
+    </blockquote>
+    <!-- 5.3 Block End -->
+    <!-- 5.4 Block Start -->
+    <blockquote>
+        <h3><a name="5.4">5.4. Does the total number of hydrogens in the /h layer represent the number of hydrogens in the input compound?</a></h3>
+        <p>Normally yes, but if the /p flag is present it must be adjusted for this.</p>
+        <div class="center">
+            <img src="images/05_4-1.png" width="485" height="339" alt="">
+        </div>
+    </blockquote>
+    <!-- 5.4 Block End -->
+    <!-- 5.5 Block Start -->
+    <blockquote>
+        <h3><a name="5.5">5.5. How does InChI deal with structures that are composed of multiple interconnected (covalently bonded) components?</a></h3>
+        <p>Many substances are best represented as multiple, independent structures. InChI will represent such substances by simply appending the individual layers for each component in each layer and sorting these components using a set of fixed rules (these are represented as conventional 'dot-disconnected' units in the formula layer, or with semicolons in other layers).</p>
+        <p>InChI creation assumes that if multiple structures are present in a single input connection table, they are components of a single compound. In most cases, it is possible to extract the InChI of each component from a composite InChI by excising the corresponding part of each layer. The order of the components in the layers is strictly defined. Note that the orders in different layers may differ (and this may cause an appearance of an additional indicator sub-layer "/o"; for the details, see Appendix 3 "Extracting Layers from InChI" of the InChI Technical Manual).</p>
+    </blockquote>
+    <!-- 5.5 Block End -->
+    <!-- 5.6 Block Start -->
+    <blockquote>
+        <h3><a name="5.6">5.6. In InChIs of structures containing more than one component, is the ; separator necessary between contributions from components if one contribution is empty?</a></h3>
+        <p>Yes. Delimiters between components are kept if at least one connection table is not empty. Consider the InChI for Zn(CH<sub>2</sub>CH<sub>3</sub>)<sub>2</sub></p>
+        <div class="center">
+            <img src="images/05_6-1.png" width="285" height="82" alt="">
+        </div>
+        <p>The chemical formula layer "2C2H5.Zn" shows that the two ethyl groups are considered first in all subsequent layers. The atom connection layer is <var>"c2*1-2;"</var>; it may be broken up into the following parts, each bearing its own meaning:</p>
+        <ul>
+            <li><var>c</var> - means that this is the start of the atom connection layer.</li>
+            <li><var>2*</var> - means that there are two identical components with the following atom connections.</li>
+            <li><var>1-2</var> - atom with canonical number 1 is bonded to the atom with number 2.</li>
+            <li><var>;</var> - separator between the atom connection information for 2C<sub>2</sub>H<sub>5</sub> and Zn.</li>
+            <li><var>empty string following the semicolon</var> - means that the component Zn has no atom connection information.</li>
+        </ul>
+        <p>In the case of a structure where no component contains any information for a particular layer (for instance the atom connection layer in CH<sub>3</sub>-Zn-CH<sub>2</sub>-Zn-CH<sub>3</sub>) the connection layer is omitted.</p>
+        <div class="center">
+            <img src="images/05_6-2.png" width="290" height="89" alt="">
+        </div>
+        <p>(If you are confused by the absence of Zn-C connections in these examples, look at the topic <a href="#7.3">7.3 "How does InChI represent organometallic compounds"</a> below).</p>
+    </blockquote>
+    <!-- 5.6 Block End -->
+    <!-- 5.7 Block Start -->
+    <blockquote>
+        <h3><a name="5.7">5.7. Can InChI represent mixtures?</a></h3>
+        <p>In general, it can not. There are minor exceptions though.</p>
+        <ol>
+            <li>Racemic mixtures ? that is, 1:1 mixtures of enantiomers - may be represented if Non-standard InChI is generated with SRac option.
+                <br>See the topics <a href="#8.1">8.1 "How is stereochemistry represented?"</a> and <a href="#15.21">15.21 "What do the  'stereo interpretation' switches do?"</a> of this FAQ.</li>
+            <li>Multi-component InChIs (see above) may be considered as representing equimolar mixtures of compounds that are not interconnected.</li>
+        </ol>
+    </blockquote>
+    <!-- 5.7 Block End -->
+</blockquote>
+<!-- 5 Block End -->
+<!-- 5 End -->
+
+<!-- 6 Start -->
+<h2><a name="6">6. Treating Mobile Hydrogens</a></h2>
+<!-- 6 Block Start -->
+<blockquote>
+    <!-- 6.1 Block Start -->
+    <blockquote>
+        <h3><a name="6.1">6.1. How does InChI represent compounds with mobile H atoms (tautomerism, for example)?</a></h3>
+        <p>The Main layer of InChI (and the whole of a Standard InChI)  must be the same for any arrangement of mobile hydrogen atoms. This is achieved by the logical removal of mobile-H atoms and the tagging of H-donor and H-receptor atoms.</p>
+        <p>As an example, look again at guanine some of whose tautomeric structures are shown below:</p>
+        <div class="center">
+            <img src="images/06_1-1.png" width="449" height="101" alt="">
+        </div>
+        <p>If we create a non-standard InChI for one of those tautomeric forms (with the option <a href="#15.24">FixedH</a>) we get:</p>
+        <div class="center">
+            <img src="images/06_1-2.png" width="583" height="399" alt="">
+        </div>
+        <p><em>Note</em>: Donors and receptors of H and changeable bonds are highlighted.</p>
+        <p>If we take a closer look at the hydrogen sub-layer of the Main Layer we see that atom number 1 has one H and 4 atoms H are shared by atoms 6, 7, 8, 9, 10 and 11.</p>
+    </blockquote>
+    <!-- 6.1 Block End -->
+    <!-- 6.2 Block Start -->
+    <blockquote>
+        <h3><a name="6.2">6.2. Why is there a Fixed-H layer if tautomeric groups are shown in the main layer?</a></h3>
+        <p>The Fixed-H layer is useful if you wish to represent a particular tautomer of a given structure. To represent different tautomers, one should use a non-standard InChI created with <a href="#15.24">FixedH</a> option.  If InChIs for the tautomers were created without <a href="#15.24">FixedH</a> option, then the normalization performed by the InChI generation program would make these InChIs identical:</p>
+        <div class="center">
+            <img src="images/06_2-1.png" width="363" height="252" alt="">
+        </div>
+        <p>However, if one provides <a href="#15.24">FixedH</a> option, then the extra Fixed-H layer is appended. This layer is essentially an InChI for the whole structure without the normalization of the mobile hydrogen atom locations. This produces an InChI that specifies a single tautomeric form of the structure:</p>
+        <div class="center">
+            <img src="images/06_2-2.png" width="664" height="284" alt="">
+        </div>
+    </blockquote>
+    <!-- 6.2 Block End -->
+    <!-- 6.3 Block Start -->
+    <blockquote>
+        <h3><a name="6.3">6.3. Can InChI contain multiple mobile H groups in the hydrogen layer?</a></h3>
+        <p>Yes.</p>
+        <p>For example, oxalamide:</p>
+        <p>
+            <img src="images/06_3-1.png" width="359" height="182" alt="">
+        </p>
+        <p>The mobile hydrogen groups are:</p>
+        <p><var>(H2,3,5)</var> - showing that there are two hydrogen atoms that are mobile between atoms with canonical numbers 3 and 5.</p>
+        <p><var>(H2,4,6)</var> - showing that there are two hydrogen atoms that are mobile between atoms with canonical numbers 4 and 6.</p>
+    </blockquote>
+    <!-- 6.3 Block End -->
+    <!-- 6.4 Block Start -->
+    <blockquote>
+        <h3><a name="6.4">6.4. If it seems that InChI does not recognize tatomerism in my molecule, what is the reason and how may this be corrected (if at all)?</a></h3>
+        <p>In its current state, InChI recognizes the most common form of H migration (for the full list, see Table 6, Section IVb of the InChI Technical Manual). However, several ways of tautomeric migration that are not supported by default may appear important for some chemists. In particular, these are keto-enol and long-range tautomerisms.</p>
+        <p>The current InChI Software release provides, as an experiment, an access to extended tautomerism detection related to keto-enol and 1,5-tautomerism. This is achieved through the use of the options KET and 15T, respectively.</p>
+        <p>Note that these two kinds of advanced tautomerism detection are, actually, an extension to InChI v. 1. Their activation may affect very significant numbers of InChI strings. Also, these features are not yet tested completely. Therefore, the both options are provided only for experimentation purposes and are strongly discouraged for routine usage.</p>
+    </blockquote>
+    <!-- 6.4 Block End -->
+</blockquote>
+<!-- 6 Block End -->
+<!-- 6 End -->
+
+<!-- 7 Start -->
+<h2><a name="7">7. Salts and Organometallics</a></h2>
+<!-- 7 Block Start -->
+<blockquote>
+    <!-- 7.1 Block Start -->
+    <blockquote>
+        <h3><a name="7.1">7.1. How does InChI represent salts?</a></h3>
+        <p>Each separate, covalently bonded entity in a salt is treated independently. The information for each component is separated by ';' in each layer. Note, however, that in keeping with common convention, in the chemical formula sub-layer of the Main layer the components are separated by a dot. InChI uses simple rules to separate these components if they are entered as a single entity.</p>
+        <div class="center">
+            <img src="images/07_1-1.png" width="466" height="334" alt="">
+        </div>
+    </blockquote>
+    <!-- 7.1 Block End -->
+    <!-- 7.2 Block Start -->
+    <blockquote>
+        <h3><a name="7.2">7.2. What is the InChI definition of a salt?</a></h3>
+        <p>The basic definition for recognition of a salt is:</p>
+        <p><var>M-X</var> or <var>Y-M-X</var></p>
+        <p>where <var>M</var> is a metal atom and <var>HX</var>, <var>HY</var> are "acids".</p>
+        <p>In connected "salts", metals are connected by single bonds only and do not have H-atoms connected to them. Metal valences should be the lowest known to InChI or, for some metals, the valence may also be the 2nd lowest valence. Positively charged metals should have the lowest known to InChI valence (see Appendix 1 "InChI Standard Valences" of the InChI Technical Manual).</p>
+        <p>Metals are all elements except these:</p>
+        <div class="center">
+            <img src="images/07_2-1.png" width="338" height="196" alt="">
+        </div>
+        <p>"Acid" is one of the following three:</p>
+        <div class="center">
+            <img src="images/07_2-2.png" width="531" height="106" alt="">
+        </div>
+        <p>Upon disconnection atom X or O of the acid receives a single negative charge; the charge of the metal atom is incremented. Substances drawn as H<sub>4</sub>N-X are disconnected to NH<sub>3</sub> and HX.</p>
+        <p>Several examples are shown in the table below:</p>
+        <div class="center">
+            <img src="images/07_2-3.png" width="645" height="292" alt="">
+        </div>
+        <p>Note that inorganic acid anions do not fit the salt definition. For example, sodium nitrate is treated as a coordination compound, so may be reconnected on user request.</p>
+    </blockquote>
+    <!-- 7.2 Block End -->
+    <!-- 7.3 Block Start -->
+    <blockquote>
+        <h3><a name="7.3">7.3. How does InChI represent organometallic compounds?</a></h3>
+        <p>No widely accepted means of representing organometallic substances exists. Ferrocene, for instance, may be drawn with the central iron atom connected to each of the two rings, to each of the atoms in the rings, to each of the bonds in the rings or not connected at all.</p>
+        <p>The default approach taken by InChI is to represent the structure as the individual, interconnected components along with the separated, unconnected metal atoms. For a large majority of organometallic compounds, this provides a unique InChI.</p>
+        <p>This is the only choice for generating Standard InChI.</p>
+        <p>If a bonded organometallic structure representation is desired, however, it may be specified by selecting option <a href="#15.23">RecMet</a> of InChI Software, which adds an extra 'Reconnected' layer to the end of the current InChI (which of course becomes a non-standard InChI).</p>
+        <p>This reconnected layer does depend on drawing conventions.</p>
+        <div class="center">
+            <img src="images/07_3-1.png" width="756" height="449" alt="">
+        </div>
+        <p>Note that in the InChI, the layers are sectioned by semicolons, ";", to separate the information for each of the components. To minimize the length of the InChI, as the two cyclopentadienyl rings are identical, both are represented in the same section of each layer (indicated by 2*). In the Reconnected Layer, the structure is treated as one large component.</p>
+        <p>Note that the "reconnected" structure could contain a full-fledged InChI consisting of all InChI layers (Main Layer, Charge Layer, Isotopic Layer, Fixed H Layer, and Fixed/Isotopic Combination Layer). Examples showing repetitions may easily be constructed by adding components (entities) that have no bonds to metal. These components will be repeated after /r.</p>
+        <p>From the technical viewpoint, the full InChI normalization and canonicalization algorithm in case of metallated compound and <a href="#15.23">RecMet</a> option is called two times: (a) for the structure after disconnection of the bonds to metal, and (b) for the original structure.</p>
+    </blockquote>
+    <!-- 7.3 Block End -->
+    <!-- 7.4 Block Start -->
+    <blockquote>
+        <h3><a name="7.4">7.4. What is the difference between the salt and metal disconnection?</a></h3>
+        <p>In case of the metal disconnection, the user may request to append the Reconnected layer (which represents the structure as given in the input) to the normalized InChI. This is done by selecting "Include bonds to metal" in the winchi-1.exe and option <a href="#15.23">RecMet</a> in the InChI generation program.</p>
+        <p>A disconnected salt cannot be reconnected in this way. For instance, if you were to enter sodium ethanoate with a bond between O and Na (as below) into the InChI generation program, this bond would be disconnected with no possibility to reconnect it.</p>
+        <div class="center">
+            <img src="images/07_4-1.png" width="128" height="97" alt="">
+        </div>
+    </blockquote>
+    <!-- 7.4 Block End -->
+    <!-- 7.5 Block Start -->
+    <blockquote>
+        <h3><a name="7.5">7.5. Can a metal-reconnected layer (/r) consist of more than one entity?</a></h3>
+        <p>Yes. In fact, it is the case if you calculate an InChI of a compound drawn as two or more coordination compounds (entities) that are not connected to each other by chemical bonds.</p>
+        <p>For example:</p>
+        <div class="center">
+            <img src="images/07_5-1.png" width="552" height="224" alt="">
+        </div>
+    </blockquote>
+    <!-- 7.5 Block End -->
+</blockquote>
+<!-- 7 Block End -->
+<!-- 7 End -->
+
+<!-- 8 Start -->
+<h2><a name="8">8. Stereochemistry</a></h2>
+<!-- 8 Block Start -->
+<blockquote>
+    <!-- 8.1 Block Start -->
+    <blockquote>
+        <h3><a name="8.1">8.1. How is stereochemistry represented?</a></h3>
+        <p>The two types of represented stereochemistry, double bond and tetrahedral, are expressed as separate sub-layers. At present, double bond stereochemistry is extracted from input x,y coordinates (and is not calculated for stereogenic bonds inside rings of 7 or fewer members), while tetrahedral stereochemistry is derived from 'in-out' wedge bond types or <var>x</var>,<var>y</var>,<var>z</var> coordinates. InChI library calls also allow parities instead of coordinates.</p>
+        <p>Double bond stereochemistry is encoded in the /b sub-layer. Tetrahedral stereochemistry is encoded in the /t sublayer.  Relative, absolute and racemic stereoisomers are distinguished.</p>
+        <p>Stereo descriptors may also be explicitly entered as unknown, which is distinct from cases where an expected stereo descriptor is missing, in which case an 'unspecified' (or undefined) tag is used.</p>
+        <p>Therefore, depending on the completeness of the stereo description entered, a variety of sets of stereo descriptors are possible for a structure with multiple stereocenters. This is a common source of ambiguity and error in chemical structure representation. An advantage of the layered representation is that all of these variations are contained in a single layer, which does not affect other layers (a rare exception may occur in the order of the components if /o layer is present).</p>
+        <div class="center">
+            <img src="images/08_1-1.png" width="467" height="290" alt="">
+        </div>
+        <p>The stereochemistry of allenes is represented in the /t segment and cumulenes - in /b segment of the Stereochemical layer.</p>
+    </blockquote>
+    <!-- 8.1 Block End -->
+    <!-- 8.2 Block Start -->
+    <blockquote>
+        <h3><a name="8.2">8.2. How does InChI distinguish isomers where the stereochemical centre is a nitrogen atom?</a></h3>
+        <p>InChI considers tetrahedral centers as possibly stereogenic if they meet some formal requirements which reflect a common chemical knowledge. Tetrahedral carbon atom is the most obvious case.</p>
+        <p>For aliphatic nitrogen, InChI generally does not consider it as a possible stereogenic center due to a likely inversion of the sp3-nitrogen configuration.</p>
+        <p> However, there are two exceptions. The first case is N in a 3-membered ring (aziridines). The second case is quaternized nitrogen, N(RR'R''R'''R'''')<sup>+</sup>.</p>
+        <p>Even in these cases an additional requirements should be met in order for N to qualify for a possibly stereo center (e.g., there should be no H among the substituents). The list of formal requirements which InChI considers while deciding if tetrahedral centers (N or other) are possibly stereogenic is given in Table 8 (Section IVd) of the InChI Technical Manual.</p>
+        <p>In some situations, InChI logic may be imperfect. Thus for tetrahedral nitrogen, inversion may be blocked by conformational restrictions. One example is aziridines, which InChI "understands". However, inversion may be blocked in other situations, e.g. if N sits in a brigehead position in bi (or poly) cyclic systems. An example is Tr&ouml;ger's base which is optically active. InChI does not recognize this. Such confusions are probably unavoidable in general (unless InChI software is able to estimate inversion barriers) and may only be excluded on a per-class based approach, like that for aziridines.</p>
+    </blockquote>
+    <!-- 8.2 Block End -->
+    <!-- 8.3 Block Start -->
+    <blockquote>
+        <h3><a name="8.3">8.3. How does InChI express overall stereoconfiguration (absolute, relative, or racemic)?</a></h3>
+        <p>By default, InChI Software (and Standard InChI) assumes that the stereo configuration of tetrahedral centers indicated in an input structure is an absolute one (this behavior corresponds to Sabs option; the other two correspond to Srel and Srac options). That is, the default interpretation is that the compound is a single enantiomer and its absolute configuration is in the input structure. InChI stores the configuration as parities (+ or - for all of the known stereogenic centers) in the /t layer. There may also be unknown centers with unknown or undefined stereo but at least one must be absolutely known.</p>
+        <p>The flag /s1 indicating "absolute stereo" is set automatically if the mirror image is different from the input structure. The /m flag will always be present in the case of absolute stereo. Two enantiomeric InChIs have identical /t layers but differ by having /m0 or /m1. The /m1 configuration is a mirror reflection of the /m0 configuration. (not all parities are necessarily inverted by the mirror reflection; for example, parities of the stereogenic atoms involved in a cis or trans arrangement do not change.)</p>
+        <div class="center">
+            <img src="images/08_3-1.png" width="651" height="207" alt="">
+        </div>
+        <p>If a mirror image of a structure is identical to the structure then no /s1 or /m will be added (and the warning "Not chiral" will be issued by InChI Software). For example:</p>
+        <div class="center">
+            <img src="images/08_3-2.png" width="477" height="145" alt="">
+        </div>
+        <p>Alternatively, one may modify the default behavior of the software (through appropriate program switches; see the <a href="#15">Section 15 'InChI Software'</a> of this FAQ) and consider the whole stereo as 'relative' or 'racemic'.</p>
+        <p>'Relative' assumes that the compound is a single enantiomer but its absolute configuration is not known. There may be additional /t centers which do not have known stereochemistry but at least one must have known stereochemistry. The fact of using this option is signified by the /s2 segment in the resulting InChI. (Note that in this case the /m segment is never present.)</p>
+        <p>'Racemic' assumes that the compound is a 1:1 mixture of enantiomers. At least one /t center must have known stereochemistry. The fact of using this option is signified by the /s3 segment in the resulting InChI.</p>
+        <div class="center">
+            <img src="images/08_3-3.png" width="654" height="266" alt="">
+        </div>
+    </blockquote>
+    <!-- 8.3 Block End -->
+    <!-- 8.4 Block Start -->
+    <blockquote>
+        <h3><a name="8.4">8.4. What does "/s" modify - is it tetrahedral stereo, double bond stereo or both?</a></h3>
+        <p>The /s refers only to the stereochemistry that changes upon spatial inversion (or a reflection in a plane since the reflection is an inversion and a proper rotation). As the inversion cannot change the double bond stereo, /s modifies the /t (tetrahedral stereo) layer and has nothing to do with the double bond stereo /b layer.</p>
+    </blockquote>
+    <!-- 8.4 Block End -->
+    <!-- 8.5 Block Start -->
+    <blockquote>
+        <h3><a name="8.5">8.5. It is not evident how the mark m0 or m1 is assigned in the stereochemistry /t sub-layer&hellip; so are these marks of any interest?</a></h3>
+        <p>The only significant thing from a practical viewpoint is that the enantiomers of a chiral molecule do have the same '/t' layer but different /m indicators, either /m0 or /m1.</p>
+        <p>For example, the two enantiomers of bromochlorofluoromethane are represented as the following Standard InChIs:</p>
+        <pre>InChI=1S/CHBrClF/c2-1(3)4/h1H/t1-/m0/s1<br>InChI=1S/CHBrClF/c2-1(3)4/h1H/t1-/m1/s1</pre>
+        <p>Actually, the first string is generated for the (R)- and the second for the (S)-stereoisomer. However, there is no simple relation between InChI parities +/- and R/S configurations of stereocenters; InChI does not use CIP rules and deduces parities from its own canonical numbers of atoms.</p>
+        <p> For diastereomers, InChI strings will differ by {/t../m..} sub-strings. Among those diastereomers, stereoisomers in each enantiomeric pair will have the same {/t..} sub-string but different {/m..}. For example, the four stereoisomers of (F)(Cl)C-C(Br)(I) are represented as:</p>
+        <pre>(<var>R,R</var>) InChI=1S/C2H2BrClFI/c3-1(6)2(4)5/h1-2H/t1-,2+/m1/s1<br>(<var>S,S</var>) InChI=1S/C2H2BrClFI/c3-1(6)2(4)5/h1-2H/t1-,2+/m0/s1<br>(<var>R,S</var>) InChI=1S/C2H2BrClFI/c3-1(6)2(4)5/h1-2H/t1-,2-/m0/s1<br>(<var>S,R</var>) InChI=1S/C2H2BrClFI/c3-1(6)2(4)5/h1-2H/t1-,2-/m1/s1</pre>
+        <p>(again, the <var>RS</var>-convention is used just for convenience)</p>
+    </blockquote>
+    <!-- 8.5 Block End -->
+    <!-- 8.6 Block Start -->
+    <blockquote>
+        <h3><a name="8.6">8.6. Can InChI show "unknown" and "undefined" chiral centers differently?</a></h3>
+        <p>Yes, if you use a Non-standard InChI.</p>
+        <p>Standard InChI always marks both "unknown" and "undefined" chiral centers (briefly: "undefined" means not assigned while "unknown" means explicitly marked as unknown, e.g., with "wavy" bonds) with the same '?' sign.</p>
+        <p>In the Non-standard InChI flavour created with the option SLUUD (stands for 'stereo labels for "unknown" and "undefined" are different'), two different signs were used to mark "unknown" and "undefined" stereo: 'u' and '?', respectively.</p>
+        <div class="center">
+            <img src="images/08_6-1.png" width="609" height="582" alt="">
+        </div>
+    </blockquote>
+    <!-- 8.6 Block End -->
+    <!-- 8.7 Block Start -->
+    <blockquote>
+        <h3><a name="8.7">8.7. Why does InChI show no stereo marks for tetrahedral centers which are actually present in the molecule (though none of the precise configurations is known)?</a></h3>
+        <p>By default, InChI Software does not include in the Identifer an unknown/undefined stereo designation unless at least one defined stereocenter is present in the input structure. In particular, a single unknown/undefined stereocenter will not appear in the InChI string.</p>
+        <p>This is always true for Standard InChI.</p>
+        <p>The evident reason is that, in general, the explicit indication of completely unknown stereo would just add irrelevant information to the identifier.</p>
+        <p>However, one may specifically create Non-standard InChI with unconditionally shown unknown/undefined stereo; see topic <a href="#15.22">15.22 "What does SUU do?"</a> of this FAQ.</p>
+    </blockquote>
+    <!-- 8.7 Block End -->
+    <!-- 8.8 Block Start -->
+    <blockquote>
+        <h3><a name="8.8">8.8. Why may a stereo layer appear several times in a single InChI?</a></h3>
+        <p>As additional levels are added, stereo descriptors may change, and this may result in a new stereo layer.</p>
+        <p>An example is shown below. If no isotopes are taken into consideration, as it is in the Stereo Layer, only the chiral center at atom 3 is calculated because H and D are treated as equivalent. However, in the Isotopic Layer, the H and D are treated as different; therefore, the Isotopic Stereo sub-layer is included with stereo information for chiral centers 2 and 3:</p>
+        <div class="center">
+            <img src="images/08_8-1.png" width="467" height="290" alt="">
+        </div>
+    </blockquote>
+    <!-- 8.8 Block End -->
+    <!-- 8.9 Block Start -->
+    <blockquote>
+        <h3><a name="8.9">8.9. If the /s sub-layer of the stereochemical layer can appear in more than one layer, why it is omitted sometimes?</a></h3>
+        <p>In general, /s may appear in main (M), main-isotopic (MI), fixed-H (F), and fixed-H-isotopic (FI) layers (you may want to take a look at the "Appendix 2. Abbreviations and Layer Precedence" of the InChI Technical Manual)</p>
+        <p>However, the /s segment (as well as /t, /b, and /m) may be deliberately omitted if it is the same as in the preceding layer. For stereochemical layers the precedence is somewhat complicated because it depends on the existence (that is, non-emptiness) of the layers in M or F.</p>
+        <p>One more (not quite obvious) reason for omitting a contribution from a non-isotopic component of an isotopic stereo segment /t or /b (located MI or FI) is that this component, unlike isotopic components, <em>*always*</em> has isotopic stereo exactly same as its non-isotopic stereo in the preceding layer. The contribution from such a non-isotopic component to the isotopic layer /m is ".", as if the inversion does not change its /t stereo.</p>
+        <p>However /s may not be omitted in, for example, MI if some of the components do not have /t in M and have /t in MI even though another component has absolute or relative stereo in both M and MI and as a result both /s segments are same.</p>
+    </blockquote>
+    <!-- 8.9 Block End -->
+</blockquote>
+<!-- 8 Block End -->
+<!-- 8 End -->
+
+<!-- 9 Start -->
+<h2><a name="9">9. Isotopes</a></h2>
+<!-- 9 Block Start -->
+<blockquote>
+    <!-- 9.1 Block Start -->
+    <blockquote>
+        <h3><a name="9.1">9.1. How does InChI manage isotopes?</a></h3>
+        <p>InChI represents isotopes as a single layer in the identifier.</p>
+        <div class="center">
+            <img src="images/09_1-1.png" width="558" height="183" alt="">
+        </div>
+        <p>For each isotopically enriched atom in the structure, the InChI layer will hold that atom's canonical number followed by the isotopic shift [i.e. +0 for chlorine-35(35-35) or +1 for carbon-13 (13-12)], followed by isotopic hydrogen (D or T) if present e.g.</p>
+        <div class="center">
+            <img src="images/09_1-2.png" width="629" height="187" alt="">
+        </div>
+        <p>Some complexity arises when there are isotopically labelled hydrogen atoms that can undergo tautomerism. In the Hydrogen sub-layer of the Main layer these hydrogen atoms are treated as non-isotopic; the number of these mobile isotopic hydrogens atoms is appended to the "exchangeable isotopic hydrogen atoms" part of the isotopic layer. The same is done to isotopic hydrogen atoms that may be subject to heterolytic dissociation in aqueous solution (for example D in RS-D).</p>
+        <div class="center">
+            <img src="images/09_1-3.png" width="605" height="394" alt="">
+        </div>
+        <p>The Hydrogen sub-layer of the Main layer does not take isotopic labelling into account and thus treats the deuterium atoms as hydrogen. The layer states that the four H are shared between atoms with canonical numbers 2, 3 and 4 (the two N and O).</p>
+        <p>The Exchangeable Isotopic-H sub-layer of the Isotopic Layer contains two deuterium atoms that are shared between heteroatoms in the whole structure.</p>
+    </blockquote>
+    <!-- 9.1 Block End -->
+    <!-- 9.2 Block Start -->
+    <blockquote>
+        <h3><a name="9.2">9.2. How is isotopic shift counted?</a></h3>
+        <p>The isotopic shift indicated in the isotopic layer is an integer giving atomic mass relative to the rounded average atomic mass of the element. </p>
+        <p>For example, if atom number 6 is <sup>37</sup>Cl, it is represented as "6+2" (average atomic mass of Cl is 35.453; rounding to the nearest integer gives 35, 37 ? 35 = +2).</p>
+        <p>The reference averaged atomic masses used by the InChI algorithm are listed in Appendix 1 "InChI Standard Valences" of the InChI Technical Manual.</p>
+    </blockquote>
+    <!-- 9.2 Block End -->
+    <!-- 9.3 Block Start -->
+    <blockquote>
+        <h3><a name="9.3">9.3. Why may isotopic shift +0 appear in InChI?</a></h3>
+        <p>The value of isotopic shift "+0" means that the atom is of a specific isotope whose mass number is the same as the rounded average atomic mass.</p>
+        <p>For example, the string</p>
+        <pre>InChI=1S/H2O/h1H2</pre>
+        <p>corresponds to water containing a natural mixture of isotopes (99.757% of <sup>16</sup>O, 0.038% of <sup>17</sup>O, and 0.205% of <sup>18</sup>O; 99.9885% of <sup>1</sup>H and 0.0115% of <sup>2</sup>H; the uncertainties being omitted ), while</p>
+        <pre>InChI=1S/H2O/h1H2/i1+0</pre>
+        <p>represents water containing a specific isotope of oxygen, <sup>16</sup>O.</p>
+        <p>A seeming ambiguity arises for elements that have a single stable isotope, namely, Be, F, Na, Al, P, Sc, Co, As, Nb, Rh, I, Cs, Pr, Tb, Ho, Tm, Au, Bi, Pa, or a single known isotope.. For these elements, "+0" seems to be redundant and to create an ambiguity. However, "+0" reflects the intention of the user to distinguish the particular isotope from others, possibly artificial isotopes of the same element.</p>
+    </blockquote>
+    <!-- 9.3 Block End -->
+    <!-- 9.4 Block Start -->
+    <blockquote>
+        <h3><a name="9.4">9.4. Does InChI recognize the one-letter symbols of deuterium and tritium?</a></h3>
+        <p>Yes.</p>
+        <p>Element name "D" is equivalent to element="H", isotope 2.</p>
+        <p>Element name "T" is equivalent to element="H", isotope 3.</p>
+        <p>Any isotopic attributes of "D" or "T" provided in the structure are ignored.</p>
+    </blockquote>
+    <!-- 9.4 Block End -->
+    <!-- 9.5 Block Start -->
+    <blockquote>
+        <h3><a name="9.5">9.5. What is the ordering of D and T in the isotopic layer?</a></h3>
+        <p>The ordering of isotopes goes according to descending atomic mass. Thus the ordering for Tritium, Deuterium and Protium is T>D><sup>1</sup>H.</p>
+        <div class="center">
+            <img src="images/09_5-1.png" width="312" height="129" alt="">
+        </div>
+        <p>Note that if you specify the generic H (rather than the specific protium isotope <sup>1</sup>H) then it will not appear in the isotopic layer (which only deals with specific isotopic enrichment).</p>
+    </blockquote>
+    <!-- 9.5 Block End -->
+    <!-- 9.6 Block Start -->
+    <blockquote>
+        <h3><a name="9.6">9.6. Can InChI represent nuclear isomers?</a></h3>
+        <p>No, there is no support for nuclear isomers (metastable isotopes, like Technetium-99m). The main reason is that the main structure input format (MOL/SDF v2000) does not allow one to express metastable nuclei.</p>
+    </blockquote>
+    <!-- 9.6 Block End -->
+</blockquote>
+<!-- 9 Block End -->
+<!-- 9 End -->
+
+<!-- 10 Start -->
+<h2><a name="10">10. Charge, Protons and Radicals</a></h2>
+<!-- 10 Block Start -->
+<blockquote>
+    <!-- 10.1 Block Start -->
+    <blockquote>
+        <h3><a name="10.1">10.1. How does InChI manage charge?</a></h3>
+        <p>For most compounds the /q layer uses a positive or negative integer to represent the actual charge on the species; the formula represents the correct composition.</p>
+        <p>For certain hydrides, or compounds derivable from hydrides the charge is derived by removing or adding a proton(s) from a neutral hydride. The formula is then NOT the actual composition of the compound but a neutral hydride from which it is derived by (de)protonation. A table of corresponding rules is given in Appendix 1 of the InChI Technical Manual.</p>
+        <div class="center">
+            <img src="images/10_1-1.png" width="474" height="470" alt="">
+        </div>
+    </blockquote>
+    <!-- 10.1 Block End -->
+    <!-- 10.2 Block Start -->
+    <blockquote>
+        <h3><a name="10.2">10.2. What does the /p layer mean?</a></h3>
+        <p>This is the number of protons that must be added to or removed from the formula to give the input composition.</p>
+    </blockquote>
+    <!-- 10.2 Block End -->
+    <!-- 10.3 Block Start -->
+    <blockquote>
+        <h3><a name="10.3">10.3. Can InChI represent radicals?</a></h3>
+        <p>No. InChI can be used to calculate the total number of electrons from which the parity of the number of electrons can be obtained. However, there is no information in InChI to distinguish a triplet state from a singlet state, or a state with spin 1/2 from 3/2.</p>
+        <div class="center">
+            <img src="images/10_3-1.png" width="203" height="200" alt="">
+        </div>
+    </blockquote>
+    <!-- 10.3 Block End -->
+    <!-- 10.4 Block Start -->
+    <blockquote>
+        <h3><a name="10.4">10.4. Can InChI represent different spin states?</a></h3>
+        <p>No.</p>
+    </blockquote>
+    <!-- 10.4 Block End -->
+</blockquote>
+<!-- 10 Block End -->
+<!-- 10 End -->
+
+<!-- 11 Start -->
+<h2><a name="11">11. Other</a></h2>
+<!-- 11 Block Start -->
+<blockquote>
+    <!-- 11.1 Block Start -->
+    <blockquote>
+        <h3><a name="11.1">11.1. What is the 'Auxiliary Information' (AuxInfo) in the InChI output?</a></h3>
+        <p>The InChI Software output complements the Identifier itself with a range of additional information. This includes warnings and errors messages, as well as a specific 'Auxiliary Information' (AuxInfo) string.</p>
+        <p>AuxInfo contains, in particular, atom non-stereo equivalence information, mapping input atom positions to output positions, and 'reversibility' information for re-drawing the structure. To see how AuxInfo is decrypted, look at Section "Auxiliary Information Output" of the InChI Software User Guide, (it may also be necessary to consult the file InChI_UserGuide.pdf ).</p>
+        <p>AuxInfo is generated by the inchi-1 executable by default (this behavior may be turned off by using the switch AuxNone).</p>
+        <p>Note that the AuxInfo string itself is a valid input for the inchi-1 generator and may be used to regenerate the source structure.</p>
+    </blockquote>
+    <!-- 11.1 Block End -->
+    <!-- 11.2 Block Start -->
+    <blockquote>
+        <h3><a name="11.2">11.2. How may I see which original atom numbers correspond to InChI numbers?</a></h3>
+        <p>InChI creates its own canonical atom numbers as a result of normalization and canonicalization of the input structure.</p>
+        <p>The most visual way to check which original atom numbers correspond to canonical numbers is to use a GUI application winchi-1.exe. This provides the two views, "Input" and "Result" (switchable through radio buttons at the top of the structure window), which show the respective atomic numbering on the structure drawing.</p>
+        <p>Another way is to use the AuxInfo string generated by the inchi-1 executable which contains, after the "/N:" prefix, the original atom numbers in the order of canonical numbers related to the InChI Main layer. </p>
+        <p>For more detailed information, look at Section "Auxiliary Information Output" of the InChI Software User Guide and Appendix 2 "Abbreviations and Layer Precedence" of the InChI Technical Manual.</p>
+    </blockquote>
+    <!-- 11.2 Block End -->
+</blockquote>
+<!-- 11 Block End -->
+<!-- 11 End -->
+
+
+<!-- 12 Start -->
+<h2><a name="12">12. Comparing InChIs</a></h2>
+<!-- 12 Block Start -->
+<blockquote>
+    <!-- 12.1 Block Start -->
+    <blockquote>
+        <h3><a name="12.1">12.1. Can I compare structures by looking at their InChIs?</a></h3>
+        <p>To quote the InChI Technical Manual:</p>
+        <p><cite><q>If two InChIs are the same, then it is safe to assume that the compounds (structures) that they represent are the same. However, the layered structured of InChI permits the representation of some compounds at different levels of detail or completeness. If, for example, one InChI is completely contained in another, then the second may be viewed as a more detailed representation of the first [for example, (Z)-but-2-ene may be viewed as a more detailed representation than but-2-ene]. Or, for example, if one set of InChIs was derived from a collection with no stereo information and another contains complete stereo information, comparisons should be made with stereo information removed. Of course, manual confirmation may be necessary using chemical names if stereo distinctions are important.</q></cite></p>
+        <div class="center">
+            <img src="images/12_1-1.png" width="525" height="288" alt="">
+        </div>
+        <p>The above image shows two structures, one being a more specific description than the other. Both have identical Main Layers, so the chemical formula, atom connection and hydrogen information for the structures are identical. Additional stereochemical and isotopic information in the lower structure results into two extra layers in its InChI.</p>
+    </blockquote>
+    <!-- 12.1 Block End -->
+    <!-- 12.2 Block Start -->
+    <blockquote>
+        <h3><a name="12.2">12.2. Can I compare structures by looking at specific layers from their InChIs?</a></h3>
+        <p>To quote the InChI Technical Manual:</p>
+        <p><cite><q>Values computed for each layer depend on prior layers. As a consequence, for example, two stereochemical layers for different compounds cannot be directly compared ? comparisons must involve the complete set of preceding layers. On the other hand, layers do not depend on successive layers.</q></cite></p>
+        <div class="center">
+            <img src="images/12_2-1.png" width="539" height="233" alt="">
+        </div>
+        <p>The above image highlights why you cannot directly compare layers such as the stereochemical layer without taking earlier layers into account. The two compounds are clearly different (and thus have different Main layers), yet both have the same stereochemical layer. This is because the stereochemical layer only holds the canonical number for a stereocenter and its stereochemistry, with all the information from the earlier layers used in calculating the stereochemistry being absent. Therefore, directly comparing the stereochemical layers of the two compounds would be analogous to stating "these two compounds are identical, as each has a stereocenter at atom no. 2 with stereochemistry of '-' ".</p>
+    </blockquote>
+    <!-- 12.2 Block End -->
+    <!-- 12.3 Block Start -->
+    <blockquote>
+        <h3><a name="12.3">12.3. If two InChIs are the same, do they refer to the same compound?</a></h3>
+        <p>If the compounds have been properly represented, then they should be identical regardless of the original method of representation. See Appendix 4 of the Technical Manual.</p>
+    </blockquote>
+    <!-- 12.3 Block End -->
+    <!-- 12.4 Block Start -->
+    <blockquote>
+        <h3><a name="12.4">12.4. If two InChIs are different, do they refer to different compounds?</a></h3>
+        <p>It is not possible starting from the same structure and the same degree of certainty of all facets to generate different InChIs.</p>
+        <p>Formally you cannot assert that they are the same in all respects, although the differences may only represent different levels of knowledge. If they differ only in certain layer(s), or in the absence of layer(s) then they represent "the same compound" with different levels of knowledge.</p>
+    </blockquote>
+    <!-- 12.4 Block End -->
+    <!-- 12.5 Block Start -->
+    <blockquote>
+        <h3><a name="12.5">12.5. How can I compare similar compounds?</a></h3>
+        <p>It is not possible to use InChI syntax to compare molecules with different but similar connection tables.</p>
+        <p>It may be possible to compare different tautomers.</p>
+        <div class="center">
+            <img src="images/12_5-1.png" width="622" height="234" alt="">
+        </div>
+        <p>It may be possible to show that compounds differ in chirality.</p>
+        <div class="center">
+            <img src="images/12_5-2.png" width="504" height="234" alt="">
+        </div>
+        <p>If two compounds are declared enantiomers they will have the <em>SAME</em> /t string and differ in the /m layer (/m0 or /m1)</p>
+        <div class="center">
+            <img src="images/12_5-3.png" width="504" height="234" alt="">
+        </div>
+        <p>If two compounds have components on common (e.g. ions in salts, or ligands disconnected from metals) it will be possible to identify identical fields. For example A<sup>+</sup>B<sup>-</sup> and C<sub>2</sub><sup>+</sup>2B<sup>-</sup> will have fields which in principle can be syntactically separated.</p>
+        <div class="center">
+            <img src="images/12_5-4.png" width="715" height="290" alt="">
+        </div>
+    </blockquote>
+    <!-- 12.5 Block End -->
+</blockquote>
+<!-- 12 Block End -->
+<!-- 12 End -->
+
+<!-- 13 Start -->
+<h2><a name="13">13. InChIKey</a></h2>
+<!-- 13 Block Start -->
+<blockquote>
+    <!-- 13.1 Block Start -->
+    <blockquote>
+        <h3><a name="13.1">13.1. What is the exact format of InChIKey?</a></h3>
+        <p>The overall length of InChIKey is fixed at 27 characters, including separators (dashes):</p>
+        <pre>AAAAAAAAAAAAAA-BBBBBBBBFV-P</pre>
+        <p>All symbols of InChIKey except the separators (which are dashes, that is, 'minus' characters) are uppercase English letters.</p>
+        <p>Partially mirroring InChI's layout, InChIKey has several distinct parts:</p>
+        <ul>
+            <li>
+                <strong>AAAAAAAAAAAAAA</strong> is the first hash block.<br>
+                It is a 14-character hash encoding the basic (Mobile-H) InChI layer, that is, molecular skeleton (connectivity).
+            </li>
+            <li><strong>BBBBBBBB</strong> is the second hash block.<br>
+                It is an 8-character hash of the remaining layers (except for the "/p" segment, which accounts for added or removed protons and is not hashed at all; instead, the number of protons is indicated at the end of the InChIKey).  In all cases, this block encodes stereochemistry and isotopic substitution information, associated with molecular connectivity expressed by the first block. In case of Non-standard InChI, it also encodes information on the exact position of tautomeric hydrogens (if any), as well as on the related stereo/isotopic data.
+            </li>
+            <li><strong>F</strong> is a flag which indicates the kind of InChIKey.<br>
+                It is 'S' for Standard InChIKey (produced out of Standard InChI) and 'N' for Non-standard.
+            </li>
+            <li><strong>V</strong> is an InChI version character.<br>
+                It is 'A' for version 1 ( 'B' is reserved for version 2, etc. ).
+            </li>
+            <li><strong>P</strong> is a [de]protonation indicator.</li>
+        </ul>
+        <p>As an example, below is presented a Standard InChIKey for caffeine.</p>
+        <div class="center">
+            <img src="images/13_1-1.png" width="647" height="480" alt="">
+        </div>
+    </blockquote>
+    <!-- 13.1 Block End -->
+    <!-- 13.2 Block Start -->
+    <blockquote>
+        <h3><a name="13.2">13.2. What is the protonation indicator in InChIKey?</a></h3>
+        <p>This is a descendant of the /p layer of InChI. The /p layer is not hashed when producing InChIKey; instead, the number of protons is indicated as a separate 1-character block at the end preceded with a hyphen. Here N means neutral, M means -1 proton, O means +1 proton, etc. :</p>
+        <table class="tbl" border cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Char</th>
+                    <th>Protons</th>
+                    <th>Char</th>
+                    <th>Protons</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>N</td>
+                    <td>0</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>M</td>
+                    <td>-1</td>
+                    <td>O</td>
+                    <td>+1</td>
+                </tr>
+                <tr>
+                    <td>L</td>
+                    <td>-2</td>
+                    <td>P</td>
+                    <td>+2</td>
+                </tr>
+                <tr>
+                    <td>K</td>
+                    <td>-3</td>
+                    <td>Q</td>
+                    <td>+3</td>
+                </tr>
+                <tr>
+                    <td>J</td>
+                    <td>-4</td>
+                    <td>R</td>
+                    <td>+4</td>
+                </tr>
+                <tr>
+                    <td>I</td>
+                    <td>-5</td>
+                    <td>S</td>
+                    <td>+5</td>
+                </tr>
+                <tr>
+                    <td>H</td>
+                    <td>-6</td>
+                    <td>T</td>
+                    <td>+6</td>
+                </tr>
+                <tr>
+                    <td>G</td>
+                    <td>-7</td>
+                    <td>U</td>
+                    <td>+7</td>
+                </tr>
+                <tr>
+                    <td>F</td>
+                    <td>-8</td>
+                    <td>V</td>
+                    <td>+8</td>
+                </tr>
+                <tr>
+                    <td>E</td>
+                    <td>-9</td>
+                    <td>W</td>
+                    <td>+9</td>
+                </tr>
+                <tr>
+                    <td>D</td>
+                    <td>-10</td>
+                    <td>X</td>
+                    <td>+10</td>
+                </tr>
+                <tr>
+                    <td>C</td>
+                    <td>-11</td>
+                    <td>Y</td>
+                    <td>+11</td>
+                </tr>
+                <tr>
+                    <td>B</td>
+                    <td>-12</td>
+                    <td>Z</td>
+                    <td>+12</td>
+                </tr>
+                <tr>
+                    <td>A</td>
+                    <td><-12 or >+12</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>The different protonation states of the same compound will have InChIKeys differing only by the protonation indicator (unless both states have a number of inserted/removed protons greater than 12; in this case the protonation flag will also be the same, 'A').</p>
+        <p>This is exemplified below by standard InChIKeys as well as standard InChI strings for neutral, zwitterionic, anionic and cationic states of glycine (note that neutral and zwitterionic states do not differ in the total number of protons so they have the same standard InChI/InChIKey):</p>
+        <div class="center">
+            <img src="images/13_2-1.png" width="573" height="255" alt="">
+        </div>
+    </blockquote>
+    <!-- 13.2 Block End -->
+    <!-- 13.3 Block Start -->
+    <blockquote>
+        <h3><a name="13.3">13.3. InChIKey is based on hashed InChI&hellip; but what is a hash?</a></h3>
+        <p>A hash code is a fixed length condensed digital representation of a variable length character string.  Providing a signature derived from an InChI string is helpful for search applications, including Web searching and chemical structure database indexing; also, it may serve as a checksum for verifying InChI, for example, after transmission over a network.</p>
+        <p>Hash is a well-known general concept in computer science. Hash functions (that is, the procedures for computing a hash) are widely used in various applications, for example, to produce the digital signatures in cryptography.</p>
+        <p>The hash of an InChI string is a (binary) number. It is expressed, in InChIKey, by uppercase English letters (so-called <var>base-26</var> encoding).</p>
+    </blockquote>
+    <!-- 13.3 Block End -->
+    <!-- 13.4 Block Start -->
+    <blockquote>
+        <h3><a name="13.4">13.4. Can InChI be restored/decrypted from its InChIKey?</a></h3>
+        <p>No. By definition, hashing is a one-way conversion procedure.</p>
+        <p>To find the InChI that generated an InChIKey, you need a cross-reference or lookup table. The situation is similar to that with the Internet DNS lookup which resolves host name to the IP address.</p>
+        <p>On the Web, you typically search for the particular InChIKey using the common search engines (Google/Bing, etc.) or use the dedicated chemistry search/database engines like ChemSpider. Naturally, for stand-alone databases a lookup service may be added by developers/maintainers.</p>
+    </blockquote>
+    <!-- 13.4 Block End -->
+    <!-- 13.5 Block Start -->
+    <blockquote>
+        <h3><a name="13.5">13.5. Can two different molecules have the same InChIKey?</a></h3>
+        <p>Yes, though quite seldom.</p>
+        <p>Due to its very essence, a hash function does not provide a unique identifier in the true sense. In very large collections, e.g. virtual libraries, collisions (that is, the same InChIKey value for different structures) are unavoidable.</p>
+        <p>Some recent estimates of chemical space size for small molecules are in excess of 10<sup>60</sup>, and for proteins it is 10<sup>390</sup> [<em>Nature</em>, 2004, <strong>432</strong>(7019), Insight, pp. 823-865, <a href="http://www.nature.com/nature/insights/7019.html">http://www.nature.com/nature/insights/7019.html</a> and refs. therein]. T. Fink et al. in "Virtual Exploration of the Small-Molecule Chemical Universe below 160 Daltons", [<em>Angew. Chem. Int. Ed.</em> 2005, <strong>44</strong>(10), pp. 1504-1508] quote an estimate of 10<sup>18</sup>-10<sup>200</sup>. This is far beyond the capabilities of even much longer hashes than InChIKey uses.</p>
+        <p>Also, there is no doubt that collections of virtual, computer-generated molecules may have virtually unlimited size thus breaking collision resistance of a hash of any reasonable length.</p>
+        <p>In general, a key may not fully replace an InChI string but is a convenient synonym and index to it. The practical goal of InChIKey design was to provide an InChI-based signature, which is sufficiently strong (collision-free) for existing molecular collections of about 10<sup>7</sup> entries (e.g., PubChem Compound ~ 3&times;10<sup>7</sup> as of Fall 2011) plus something in reserve.</p>
+    </blockquote>
+    <!-- 13.5 Block End -->
+    <!-- 13.6 Block Start -->
+    <blockquote>
+        <h3><a name="13.6">13.6. What is the collision resistance of InChIKey?</a></h3>
+        <p>A theoretical ? optimistic ? estimate of the collision resistance (corresponds to 50% chance for a single collision) of the InChIKey 1st block is 6.1&times;10<sup>9</sup>. That is,   for a dataset of 6.1 billion molecular skeletons, an expected number of collisions is 1/2. An analogous estimate for the 2nd block of InChIKey is  3.7&times;10<sup>5</sup>.</p>
+        <p>In other words, the estimate of the whole InChIKey's collision resistance is equal to 6.1&times;10<sup>9</sup> molecular skeletons x 3.7&times;10<sup>5</sup> stereo/protonation/isotopic substitution isomers per skeleton &asymp; 2.2&times;10<sup>15</sup> total structures.</p>
+        <p>Alternatively speaking, for a collection of 1 billion different InChIKey entries, the estimated probability of an accidental collision of the first layers for a newly added structure is 2.7&times;10<sup>-9</sup> % and for both layers is 2.0&times;10<sup>-20</sup> %.</p>
+        <p>Note that those are ideal, i.e. upper, estimates, which may not be valid in practice because of as yet unknown properties of the SHA-2 hash function.</p>
+        <p>Before the launch of InChIKey in 2007, the collision resistance was tested on several databases of InChI strings created out of real and generated structures (the sizes of the datasets as of mid-2007):</p>
+        <ul>
+            <li>ZINC<br>
+                ~4&times;10<sup>6</sup> entries, real structures, <a href="http://zinc.docking.org/">http://zinc.docking.org/</a>
+            </li>
+            <li>PubChem<br>
+                ~10&times;10<sup>6</sup>, real, <a href="http://pubchem.ncbi.nlm.nih.gov/">http://pubchem.ncbi.nlm.nih.gov/</a>
+            </li>
+            <li>GDB<br>
+                ~26&times;10<sup>6</sup>, generated; courtesy of Prof. J.-L. Reymond, University of Berne, <a href="http://dcbwww.unibe.ch/groups/reymond/">http://dcbwww.unibe.ch/groups/reymond/</a>, private communication
+            </li>
+            <li>FP42<br>
+                ~42&times;10<sup>6</sup>, custom-generated
+            </li>
+            <li>Overall<br>
+                ~77&times;10<sup>6</sup>, all of the above merged, duplicates excluded; real+generated
+            </li>
+        </ul>
+        <p>No InChIKey duplication (hash collision) was observed in any of these databases.</p>
+        <p>It seems that that at the time of writing (early 2012) no hash collisions have been reported for real databases of real (that is, not computer generated) molecules.</p>
+    </blockquote>
+    <!-- 13.6 Block End -->
+    <!-- 13.7 Block Start -->
+    <blockquote>
+        <h3><a name="13.7">13.7. Are there known InChIKey collision(s)?</a></h3>
+        <p>Yes.</p>
+        <ol>
+        <li>In 2009, there was a report of collisions of the InChIKey 2nd block which were observed for stereo isomers of Spongistatin I by Dr. Jonathan Goodman:
+        <p><a href="http://www.google.com/search?hl=en&amp;source=hp&amp;q=ICXJVZHDZFXYQC">http://www.google.com/search?hl=en&amp;source=hp&amp;q=ICXJVZHDZFXYQC</a></p>
+        <p>Note, however, that collisions are absolutely expected for a molecule of such a complexity, having 24 tetrahedral stereocenters and 2 stereogenic double bonds. This complexity is far beyond the capacity of InChIKey 2nd block.</p>
+        <p>Interestingly, a closer examination of Spongistatin I stereo isomers and corresponding InChIKeys demonstrated that the number of collisions N observed in computational experiment does correspond to theoretical estimates perfectly. For example, the theoretically expected <em>N</em> for 1,000,000 second blocks of InChIKey representing stereoisomers of Spongistatin I is 3.64. The <em>N</em> actually obtained for such a size of dataset is 3.56 (averaged by 32 randomly generated datasets).</p></li>
+        <li>In September 2011, there appeared a report on a collision for the 1st block of InChIKey (by Dr. Anthony Williams quoting Dr. Jonathan Goodman, <a href="http://www.chemconnector.com/2011/09/01/an-inchikey-collision-is-discovered-and-not-based-on-stereochemistry/">http://www.chemconnector.com/2011/09/01/an-inchikey-collision-is-discovered-and-not-based-on-stereochemistry/</a>). Supposedly, the collision has been found in a computer-generated dataset. However, as of the time of this writing, no details are available except for those by link above, so no final conclusions may be drawn.</li>
+        </ol>
+    </blockquote>
+    <!-- 13.7 Block End -->
+    <!-- 13.8 Block Start -->
+    <blockquote>
+        <h3><a name="13.8">13.8. Why does InChIKey use only 26 capital letters?</a></h3>
+        <p>This is just a representation issue. In fact, the same hash may be represented by letters, digits, letters and digits and even with bare 0s and 1s (as it is actually represented internally, in computer memory).</p>
+        <p>However, representation issues may appear critical for applications like publishing or Web search. In particular, search engines may tend to break the text "on the border" between letters and non-letters, trying to detect "words" since the words of human languages do not contain digits or punctuation marks.</p>
+        <p>Though the exact behavior may vary from one Web search engine to another and from context to context (and even change with time for the same Web search engine), it is more robust to have nothing but letters in the InChIKey. Using only letters increases chances that a search engine would consider InChIKey as a single "word" (or phrase) and would index it as such.</p>
+        <p>Also, the robust approach includes use of only upper-case letters as most if not all search engines may not differentiate between upper- and lower-case letters. For example, [at the moment] Google reports the same number of 40,600,000 results for quoted strings "hash", "HASH" and "hAsh".</p>
+        <p>So we are trading a longer hash representation (the less symbols are in the "alphabet", the longer is the hash) in exchange for more robust Web searching.</p>
+    </blockquote>
+    <!-- 13.8 Block End -->
+    <!-- 13.9 Block Start -->
+    <blockquote>
+        <h3><a name="13.9">13.9. What is the hash function used internally for InChIKey?</a></h3>
+        <p>The hash function used for producing an InChIKey is the cryptographic SHA-2 256-bit hash function.</p>
+        <p>Computing the InChIKey is readily affordable in terms of CPU time. Hashing the entire InChI set generated from PubChem required less than 5 min on a machine with Pentium Dual Core 2.8 GHz CPU.</p>
+        <p>Using cryptographic (i.e., producing ? hopefully ? a strongly randomized output) hash function increases the chances that collision resistance will be as close to the theoretical limit as possible. Note that the truncation of the hash is directly allowed by the SHA-2 description (<a href="http://csrc.nist.gov/publications/fips/fips180-2/fips180-2withchangenotice.pdf">http://csrc.nist.gov/publications/fips/fips180-2/fips180-2withchangenotice.pdf</a>).</p>
+    </blockquote>
+    <!-- 13.9 Block End -->
+    <!-- 13.10 Block Start -->
+    <blockquote>
+        <h3><a name="13.10">13.10. What if I need a longer InChI hash?</a></h3>
+        <p>For those who are not satisfied with the capacity/collision resistance of the normal InChIKey, the InChI Software is able to output the rest of the 256-bit SHA-2 signature for 1st and 2nd blocks.</p>
+        <p>This is done with the command-line options "/XHash1" and "/XHash2" ("-XHash1" and "-XHash2"under Linux).</p>
+        <p>Combining InChIKey with the 'extra hash signature tails' drastically increases the collision resistance. Note that these tails of signatures appear in the program's output as hexadecimal numbers, to avoid confusion with InChIKey itself (which is always formed from capital Latin letters only).</p>
+        <p>Example:</p>
+        <pre>InChI=1S/C4H8/c1-3-4-2/h3-4H,1-2H3/b4-3+<br>InChIKey=IAQRGUVFOMOMEM-ONEGZZNKSA-N<br>XHash1=82ff0307735072b4ec27b9c093e9486dca09e8df1d0812c9<br>XHash2=403ee94266e1d8d96d47b99c4b17ff5f92e3a74e3f0f5ab8bc2775bb</pre>
+    </blockquote>
+    <!-- 13.10 Block End -->
+</blockquote>
+<!-- 13 Block End -->
+<!-- 13 End -->
+
+<!-- 14 Start -->
+<h2><a name="14">14. InChI by Examples</a></h2>
+<!-- 14 Block Start -->
+<blockquote>
+    <!-- 14.1 Block Start -->
+    <blockquote>
+        <h3><a name="14.1">14.1. What is an empty InChI?</a></h3>
+        <p>This represents an empty structure that, for example, may appear in a database when a structure of a substance is missed, for whatever reason.</p>
+        <p>Both InChI and InChIKey for empty structure are valid identifiers.</p>
+        <p>Note however that, in contrast with InChI, the InChIKey for empty structure is not empty itself (and the empty InChIKey is not valid).</p>
+        <p>To generate an empty structure the inchi-1 executable may be fed with a MOL file that has zero atoms and zero bonds with the command line switch "WarnOnEmptyStructure" supplied.</p>
+        <p>The Standard InChI and InChIKey for empty entity are:</p>
+        <pre>InChI=1S//<br>InChIKey=MOSFIJXAXDLOML-UHFFFAOYSA-N</pre>
+        <p>The Non-standard InChI and InChIKey are:</p>
+        <pre>InChI=1//<br>InChIKey=MOSFIJXAXDLOML-UHFFFAOYNA-N</pre>
+    </blockquote>
+    <!-- 14.1 Block End -->
+    <!-- 14.2 Block Start -->
+    <blockquote>
+        <h3><a name="14.2">14.2. What  is the InChI for a proton?</a></h3>
+        <p>The Standard InChI and InChIKey for a proton (H<sup>+</sup>) are:</p>
+        <pre>InChI=1S/p+1</pre>
+        <p>The version with 'fixed H' is:</p>
+        <pre>InChI=1/p+1/fH/q+1</pre>
+        <p>To be exact, the strings above refer to a common chemical meaning of "proton", that is, monocationic hydrogen atom. If the proton as a particle is actually meant, it should be more precisely described as a positively ionized atom of a specific hydrogen isotope, protium, <sup>1</sup>H<sup>+</sup>:</p>
+        <pre>InChI=1S/p+1/i/hH</pre>
+        <p>or a fixedH-version</p>
+        <pre>InChI=1/p+1/i/hH/fH/q+1/i1+0</pre>
+    </blockquote>
+    <!-- 14.2 Block End -->
+    <!-- 14.3 Block Start -->
+    <blockquote>
+        <h3><a name="14.3">14.3. Can InChI represent an alpha particle?</a></h3>
+        <p>This may be represented in InChI as a doubly ionized atom of a chemical element - helium - present in the Periodic Table. Again, to be precise one should denote the specific isotope:</p>
+        <pre>InChI=1S/He/q+2/i1+0</pre>
+    </blockquote>
+    <!-- 14.3 Block End -->
+    <!-- 14.4 Block Start -->
+    <blockquote>
+        <h3><a name="14.4">14.4. Can InChI represent electrons or neutrons?</a></h3>
+        <p>Currently these two cannot be represented in InChI because these are not [ionized] atoms of a chemical element present in the Periodic Table.</p>
+    </blockquote>
+    <!-- 14.4 Block End -->
+    <!-- 14.5 Block Start -->
+    <blockquote>
+        <h3><a name="14.5">14.5. What is the InChI for molecular hydrogen?</a></h3>
+        <p>The Standard InChI and InChIKey for H-H are</p>
+        <pre>InChI=1S/H2/h1H<br>InChIKey=UFHFLCQGNIYNRP-UHFFFAOYSA-N</pre>
+    </blockquote>
+    <!-- 14.5 Block End -->
+    <!-- 14.6 Block Start -->
+    <blockquote>
+        <h3><a name="14.6">14.6. What  is the InChI for protonated molecular hydrogen?</a></h3>
+        <p>The answer depends on the structure drawing (more precisely, on the connection table) ? linear or triangular connected, or disconnected.</p>
+        <ul>
+            <li>linear connected H-H-H(+) or H-H(+)-H<br>
+                <pre>InChI=1S/H3/h1H2/q+1<br>InChIKey=QWLPJNYQVKBMAN-UHFFFAOYSA-N</pre>
+            </li>
+            <li>triangular connected (each hydrogen is bound to two others)<br>
+                <pre>InChI=1S/H3/c1-2-3-1/q+1<br>InChIKey=RQZCXKHVAUFVMF-UHFFFAOYSA-N</pre>
+            </li>
+            <li>disconnected H2 + H(+)<br>
+                <pre>InChI=1S/H2/h1H/p+1<br>InChIKey=UFHFLCQGNIYNRP-UHFFFAOYSA-O</pre>
+            </li>
+        </ul>
+    </blockquote>
+    <!-- 14.6 Block End -->
+    <!-- 14.7 Block Start -->
+    <blockquote>
+        <h3><a name="14.7">14.7. What is the InChI for lithium Li?</a></h3>
+        <pre>InChI=1S/Li<br>InChIKey=WHXSMMKQMYFTQS-UHFFFAOYSA-N</pre>
+    </blockquote>
+    <!-- 14.7 Block End -->
+    <!-- 14.8 Block Start -->
+    <blockquote>
+        <h3><a name="14.8">14.8. What is the InChI for lithium hydride LiH?</a></h3>
+        <pre>InChI=1S/Li.H<br>InChIKey=SIAPCJWMELPYOE-UHFFFAOYSA-N</pre>
+    </blockquote>
+    <!-- 14.8 Block End -->
+    <!-- 14.9 Block Start -->
+    <blockquote>
+        <h3><a name="14.9">14.9. Why does the inchi-1 executable of the InChI Software generate InChI for lithium hydride if the input MOL file contains just a lithium atom?</a></h3>
+        <p>By default, InChI Software assumes that the input structure may contain implicit hydrogen atoms. Therefore, it adds hydrogen atoms to eligible atoms to satisfy standard valences of elements. For lithium, the standard valence is 1. This converts Li to LiH, which results in InChI/Key for lithium hydride.</p>
+        <p>To prevent this behavior, one should use <a href="#15.18">'DoNotAddH'</a> switch of InChI Software or, in the input molfile, set the explicit valence of Li to zero.</p>
+    </blockquote>
+    <!-- 14.9 Block End -->
+    <!-- 14.10 Block Start -->
+    <blockquote>
+        <h3><a name="14.10">14.10. Why then do many drawing programs generate InChI for lithium if the input drawing is just a lithium atom?</a></h3>
+        <p>They are wise enough to supply <a href="#15.18">'DoNotAddH'</a> switch (or use other ways to indicate absence of explicit hydrogen atoms) while calling the InChI Library procedure.</p>
+    </blockquote>
+    <!-- 14.10 Block End -->
+    <!-- 14.11 Block Start -->
+    <blockquote>
+        <h3><a name="14.11">14.11. Why then does the inchi-1 executable of the InChI Software generate InChI for atomic silver if the input MOL file contains just a silver atom?</a></h3>
+        <p>The InChI string for Ag is:</p>
+        <pre>InChI=1S/Ag</pre>
+        <p>so no hydrogen addition is performed.</p>
+        <p>The reason is that the rules of adding hydrogen atoms depend on the element's nature and atomic charge.</p>
+        <p>For the complete reference, consult Appendix 1 'InChI Standard Valences' of the InChI Technical Manual. As is seen from the table there, Li is considered eligible for hydrogen addition while Ag is not.</p>
+    </blockquote>
+    <!-- 14.11 Block End -->
+    <!-- 14.12 Block Start -->
+    <blockquote>
+        <h3><a name="14.12">14.12. Why does the InChI for lithium hydride lack an Li-H connection?</a></h3>
+        <p>The identifier for lithium hydride</p>
+        <pre>InChI=1S/Li.H</pre>
+        <p>describes the two independent components: since lithium is a metal, the InChI Software breaks its connection to H (makes the metal compound disconnected).</p>
+        <p>For the list of elements which InChI consider as metals, consult Appendix 1 'InChI Standard Valences' of the InChI Technical Manual.</p>
+    </blockquote>
+    <!-- 14.12 Block End -->
+    <!-- 14.13 Block Start -->
+    <blockquote>
+        <h3><a name="14.13">14.13. I generated Non-standard InChI for lithium hydride with RecMet option; why does it still lack Li-H connection?</a></h3>
+        <p>Because InChI for mononuclear hydrides does not contain the /c layer. This applies to the 'reconnected-metal' part as well. Therefore, the identifier for lithium hydride produced with <a href="#15.23">RecMet</a> option is:</p>
+        <pre>InChI=1/Li.H/rHLi/h1H</pre>
+    </blockquote>
+    <!-- 14.13 Block End -->
+    <!-- 14.14 Block Start -->
+    <blockquote>
+        <h3><a name="14.14">14.14. Why is "/s" absent in the isotopic-stereo sub-layer in the example below?</a></h3>
+        <p>It may seem unclear why "/s" does not follow "/m" in the stereoisotopic layer of the shown structure (structure 28 from the Samples.sdf file of the InChI distribution):</p>
+        <div class="center">
+            <img src="images/14_14-1.png" width="634" height="201" alt="">
+        </div>
+        <p>The reason is that the stereochemistry [sub-]layer is "repetitive" (you may want to take a look at the "Appendix 2. Abbreviations and Layer Precedence", section "Layer Precedence" in the InChI Technical Manual). In general, if an InChI's "repetitive" segment /e ('e' stands for any appropriate symbol, e.g., 's') in a given layer is exactly same as its namesake segment '/e' in the preceding layer, then /e is omitted.</p>
+        <p>Note that the /m layer is included in both stereochemical layers as its content is different in main-stereo and isotopic-stereo sub-layers (m0 and m1).</p>
+    </blockquote>
+    <!-- 14.14 Block End -->
+</blockquote>
+<!-- 14 Block End -->
+<!-- 14 End -->
+
+<!-- 15 Start -->
+<h2><a name="15">15. InChI Software</a></h2>
+<!-- 15 Block Start -->
+<blockquote>
+    <!-- 15.1 Block Start -->
+    <blockquote>
+        <h3><a name="15.1">15.1. What is included in the InChI Software?</a></h3>
+        <p>The InChI Software is a counterpart of InChI which provides all the necessary means to generate InChIs using stand-alone executables as well as API (Application Programming Interface) library calls.</p>
+        <p>The updates (new versions) of this software are periodically released by the InChI Trust with the approval of IUPAC.</p>
+        <p>Current InChI Software v. 1.04 (the major version of the software is always the version number of the identifier, e.g., 1 for now) includes:</p>
+        <ul>
+            <li><code>inchi-1</code> - a 'command line' InChI generator.
+                <br><em>Available in 32 and 64-bit versions for MS Windows and Linux.</em>
+            </li>
+            <li><code>libinchi</code> - InChI API library.
+                <br><em>Available in 32 and 64-bit versions for MS Windows (dll) and Linux (so library).</em>
+            </li>
+            <li><code>winchi-1.exe</code> - a graphical Windows application.
+                <br><em>A 32-bit version which will also run under 64-bit Windows.</em>
+            </li>
+        </ul>
+        <p>Note that the inchi-1 executable has a normative role i.e. it acts as the final arbiter: by definition, the reference InChI for any molecule is InChI generated with inchi-1.</p>
+        <p>A distribution package of InChI Software also includes source codes for all programs, examples of calling the InChI library, sample MOL/SDF input files, etc.</p>
+        <p>The source code of inchi-1 is the ultimate place documenting the InChI algorithm in maximum detail.</p>
+        <p>Usage of InChI Software is documented in the User Guide (InChI_UserGuide.pdf; intended for end users) and API Reference (InChI_API_Reference.pdf; intended for developers, who use the InChI library).</p>
+    </blockquote>
+    <!-- 15.1 Block End -->
+    <!-- 15.2 Block Start -->
+    <blockquote>
+        <h3><a name="15.2">15.2. What is the benefit of using winchi-1 (the GUI application) over inchi-1 (the command line executable)?</a></h3>
+        <p>To better understand what the InChI algorithm does it is strongly recommended that you run the MS Windows GUI application winchi-1.exe against your test structures because it displays:</p>
+        <ul>
+            <li>Input structures as InChI understands them, with all atoms H and charges.</li>
+            <li>The initial numbering of the atoms.</li>
+            <li>Canonical numberings, non-stereo equivalence and tautomeric groups.</li>
+            <li>Stereo parities.</li>
+            <li>Bond type changes made during the normalization (these cannot be observed in any other way than in winchi-1 or under a debugger).</li>
+        </ul>
+        <p>It is possible to run winchi-1 from within a virtual Windows environment under Linux.</p>
+    </blockquote>
+    <!-- 15.2 Block End -->
+    <!-- 15.3 Block Start -->
+    <blockquote>
+        <h3><a name="15.3">15.3. Why do the example programs using the InChI Library included in the InChI Software distribution sometimes produce InChI strings different from those generated by the inchi-1 executable?</a></h3>
+        <p>The example programs, inchi_main (written in C) and make_inchi.py (written in Python) are provided solely to exemplify, by source codes, how to use the InChI API.</p>
+        <p>They should not be used as a production InChI generator and may create InChI strings which are different from those obtained with reference application inchi-1 (or winchi-1.exe). The major reason is the somewhat simplified algorithm of parsing MOL/SDF input files used in the example programs.</p>
+    </blockquote>
+    <!-- 15.3 Block End -->
+    <!-- 15.4 Block Start -->
+    <blockquote>
+        <h3><a name="15.4">15.4. Standard vs. Non-standard InChI generation</a></h3>
+        <p>InChI Software allows one to produce both Standard and Nonstandard InChIs, as well as their hashed representations, InChIKeys.</p>
+        <p>By default, the InChI executable/library generates Standard InChI and InChKey. In particular, Standard identifiers are generated when the software is used without any options ('options' are command-line switches for an executable; they are mirrored by the input parameters used for the InChI API library calls).</p>
+        <p>If some options are specified and at least one of them is related to non-standard InChI (see below for <a href="#15.17">'InChI creation' options</a>), the non-standard identifiers are produced.</p>
+    </blockquote>
+    <!-- 15.4 Block End -->
+    <!-- 15.5 Block Start -->
+    <blockquote>
+        <h3><a name="15.5">15.5. How do I install the InChI Software?</a></h3>
+        <p>To use the software, first extract (preserving the folder structure) the contents of the zip files of distribution package to a directory of your choice. There are four archive files (INCHI-1-API.ZIP, INCHI-1-BIN.ZIP, INCHI-1-DOC.ZIP, INCHI-1-TEST.ZIP); each is unpacked into a separate subdirectory with the name corresponding to the archive name.</p>
+        <p>InChI executables and library are located in INCHI-1-BIN subdirectory (in lower-level subdirectories for different platforms, Windows/Linux and 32/64 bit).</p>
+        <p>The executables are ready to use (e.g., no special installation/accessing registry is necessary under Windows). Installing dynamic libraries may require appropriate placement and setting up necessary access paths; please consult your system manual.</p>
+        <p>For additional details, you may check with software release notes and user guide (files RelNotes.pfd and InChI_UserGuide.pdf, resp.), which are available in the distribution package).</p>
+    </blockquote>
+    <!-- 15.5 Block End -->
+    <!-- 15.6 Block Start -->
+    <blockquote>
+        <h3><a name="15.6">15.6. How do I create an InChI?</a></h3>
+        <p>The InChI Software distribution package contains a User Guide (InChI_UserGuide.pdf) that takes you through the creation of InChIs using the sample structure files and the generation program provided.</p>
+    </blockquote>
+    <!-- 15.6 Block End -->
+    <!-- 15.7 Block Start -->
+    <blockquote>
+        <h3><a name="15.7">15.7. Can I link/call InChI from my program?</a></h3>
+        <p>Yes, the InChI library (libinchi) serves exactly this purpose.</p>
+        <p>Please check InChI API Reference (file InChI_API_Reference.pdf of distribution package).</p>
+        <p>You may also look at the source code of examples of using the InChI library which are supplied in the distribution package (for C and Python calling programs).</p>
+    </blockquote>
+    <!-- 15.7 Block End -->
+    <!-- 15.8 Block Start -->
+    <blockquote>
+        <h3><a name="15.8">15.8. Which formats does InChI Software accept?</a></h3>
+        <p>The InChI Software executable accepts Mol files (*.mol), concatenated Mol files (*.sdf), or the program's own output produced with the "Full auxiliary information" (e.g. the output produced when you click on the 'Write Result' button in winchi-1).</p>
+        <p>The executable inchi-1 requires usage of input files of the above types. The GUI application winchi-1 under MS Windows allows one to simply cut-and-paste the input structure drawing from certain chemical structure editors (e.g. Accelrys Draw, ACD/ChemSketch, ChemDraw, etc.) into the winchi-1 main window, as an additional means of input.</p>
+    </blockquote>
+    <!-- 15.8 Block End -->
+    <!-- 15.9 Block Start -->
+    <blockquote>
+        <h3><a name="15.9">15.9. Does InChI Software support CML input?</a></h3>
+        <p>Currently, no.</p>
+    </blockquote>
+    <!-- 15.9 Block End -->
+    <!-- 15.10 Block Start -->
+    <blockquote>
+        <h3><a name="15.10">15.10. Can I use InChI if I don't know the connection table?</a></h3>
+        <p>Yes. If you do not know the connection table (i.e. you do not have access to the *.mol or *.sdf file representation of a chemical structure) then you can simply draw the structure in one of the 2D chemical drawing packages described above and then 'copy-and-paste' that structure into the main window of the Windows application winchi-1.exe.</p>
+        <p>Once this has been done, the InChI is created automatically for you and presented in the lower section of the application window.</p>
+    </blockquote>
+    <!-- 15.10 Block End -->
+    <!-- 15.11 Block Start -->
+    <blockquote>
+        <h3><a name="15.11">15.11. How do I generate an InChI if I have a molecule presented in a file format other than MOL or SDF?</a></h3>
+        <p>As a general solution, you may use OpenBabel, a powerful tool for molecular file format conversion:</p>
+        <p><a href="http://openbabel.org">http://openbabel.org</a></p>
+        <p>Note that OpenBabel even provides an ability to generate InChI with its own software (via under-the-hood use of the InChI Software library).</p>
+        <p><em>However be careful</em>: format conversion/interpretation may not be 100%-bullet-proof. </p>
+    </blockquote>
+    <!-- 15.11 Block End -->
+    <!-- 15.12 Block Start -->
+    <blockquote>
+        <h3><a name="15.12">15.12. Other than a connection table, what is needed to generate an InChI?</a></h3>
+        <p>Nothing, if you are generating a Standard InChI which uses the most common default options designed for inter-operability.</p>
+        <p>If you choose to generate non-standard InChI, you need to select additional options. The most important options are summarized below.</p>
+        <p>If the species has potentially mobile hydrogen atoms, the user needs to specify whether to represent the substance assuming H-mobility as associated with tautomerization (default) or as a substance with all H-atoms fixed (option <a href="#15.24">FixedH</a>).</p>
+        <p>Also, if the structure is organometallic, the user needs to specify whether the fully bonded structure will be appended to the disconnected metal atoms structure (<a href="#15.23">RecMet</a> options). Except for compounds composed entirely of covalent bonds, this representation is generally not preferable (as the InChI will contain a layer that may depend on drawing conventions).</p>
+        <p>Also, when appropriate, a stereodescription may be entered as a single enantiomer, a racemic mixture, or, with two or more stereocenters, as a relative stereochemical description.</p>
+    </blockquote>
+    <!-- 15.12 Block End -->
+    <!-- 15.13 Block Start -->
+    <blockquote>
+        <h3><a name="15.13">15.13. What happens if the input structure has no mobile hydrogen atoms but generation requires exact tautomeric H positions (through FixedH option)?</a></h3>
+        <p>If there are no mobile hydrogen atoms, no exact mobile hydrogen positions and no Fixed-H layer may appear. So this specification will have no effect -- except that the resulting InChI will be qualified as Non-standard. (Note that if <a href="#15.24">FixedH</a> is the only 'InChI creation' option actually used, this InChI will differ from Standard InChI only in the absence of letter 'S' in the prefix).</p>
+    </blockquote>
+    <!-- 15.13 Block End -->
+    <!-- 15.14 Block Start -->
+    <blockquote>
+        <h3><a name="15.14">15.14. The InChI Software has many switches; what they are for?</a></h3>
+        <p>The switches used in the InChI Software are broadly divided onto the two classes:</p>
+        <ul>
+            <li>those that affect the running, display, input, output, etc. but not the InChI.</li>
+            <li>those that affect the InChI.</li>
+        </ul>
+        <p>The switches affecting the InChI comprise those specific to</p>
+        <ul>
+            <li>structure perception</li>
+            <li>stereo interpretation</li>
+            <li>InChI creation</li>
+        </ul>
+        <p>Note that all switches that modify the InChI act by appending layers, not by altering the core InChI.</p>
+    </blockquote>
+    <!-- 15.14 Block End -->
+    <!-- 15.15 Block Start -->
+    <blockquote>
+        <h3><a name="15.15">15.15. What are the 'structure perception' options?</a></h3>
+        <p>The perception options are considered drawing style/edit flags which affect the input structure interpretation. It is assumed that the user may deliberately use these options to take into account specific features of structure collections. As the result, the perception options may be used for generating Standard InChI without the loss of its "standardness".</p>
+        <p>The full list of perception options is as follows:</p>
+        <ul>
+            <li><a href="#15.18">DoNotAddH</a></li>
+            <li><a href="#15.19">SNon</a></li>
+            <li><a href="#15.20">NEWPSOFF</a></li>
+        </ul>
+    </blockquote>
+    <!-- 15.15 Block End -->
+    <!-- 15.16 Block Start -->
+    <blockquote>
+        <h3><a name="15.16">15.16. What are the 'stereo interpretation' options?</a></h3>
+        <p>These are several options which modify the interpretation of input stereochemical data. In principle, they would be considered related to structure perception. However, as the Standard InChI, by definition, requires the use of absolute stereo (or no stereo at all), these 'stereo interpretation' options assume generation of Non-standard InChI.</p>
+        <p>The stereo interpretation options are:</p>
+        <ul>
+            <li><a href="#15.21">SRel</a></li>            
+            <li><a href="#15.21">SRac</a></li>            
+            <li><a href="#15.21">SUCF</a></li>            
+        </ul>
+    </blockquote>
+    <!-- 15.16 Block End -->
+    <!-- 15.17 Block Start -->
+    <blockquote>
+        <h3><a name="15.17">15.17. What are the 'InChI creation' options?</a></h3>
+        <p>The 'InChI creation' options affect what the InChI algorithm does, not just the structure perception. They modify the defaults specified for Standard InChI and significantly affect the result (e.g., additional InChI layers may appear). Using any of the creation options</p>
+        <ul>
+            <li><a href="#15.22">SUU</a></li>
+            <li><a href="#8.6">SLUUD</a></li>            
+            <li><a href="#15.23">RecMet</a></li>
+            <li><a href="#15.24">FixedH</a></li>
+            <li><a href="#6.4">KET</a></li>
+            <li><a href="#6.4">15T</a></li>
+        </ul>
+        <p>makes the resulting identifier Non-standard.</p>
+    </blockquote>
+    <!-- 15.17 Block End -->
+    <!-- 15.18 Block Start -->
+    <blockquote>
+        <h3><a name="15.18">15.18. What does the DoNotAddH option do?</a></h3>
+        <p>By default, InChI Software assumes that the input structure may contain "implied" hydrogen atoms and adds hydrogen atoms to eligible atoms to satisfy standard valences.</p>
+        <p>Sometimes, this may produce undesirable results (see <a href="#14">Section 14 'InChI by Examples'</a> of this FAQ on Li/LiH InChIs).</p>
+        <p>Option DoNotAddH instructs the software to skip the addition of hydrogen atoms.</p>
+        <p>Note that DoNotAddH is a "perception option"; therefore, it may be used in the generation of Standard InChI without the loss of its "standardness".</p>
+    </blockquote>
+    <!-- 15.18 Block End -->
+    <!-- 15.19 Block Start -->
+    <blockquote>
+        <h3><a name="15.19">15.19. What does the SNon option do?</a></h3>
+        <p>This option means that input stereo information (whatever it is and by whatever means it is represented) is completely ignored. That is, InChI generated with SNon option intentionally lacks stereo layer(s).</p>
+        <p>Note that SNon is a "perception option"; therefore, it may be used in the generation of Standard InChI without the loss of its "standardness".</p>
+    </blockquote>
+    <!-- 15.19 Block End -->
+    <!-- 15.20 Block Start -->
+    <blockquote>
+        <h3><a name="15.20">15.20. What does the NEWPSOFF option do?</a></h3>
+        <p>By default, when InChI Software analyzes the effect of a wedged bond on the stereo configuration of a tetrahedral stereogenic atom it assumes that the stereo configuration is affected by only those wedged bonds which have the narrow end  pointing to the stereogenic atom in question.  To use the alternative definition, where a wedged bond affects stereo configurations of both atoms it connects, one may use the option NEWPSOFF ("Narrow End of Wedge Points to Stereo is OFF").</p>
+        <p>Note that NEWPSOFF is a "perception option"; therefore, it may be used in the generation of Standard InChI without the loss of its "standardness".</p>
+    </blockquote>
+    <!-- 15.20 Block End -->
+    <!-- 15.21 Block Start -->
+    <blockquote>
+        <h3><a name="15.21">15.21. What do the 'stereo interpretation' options do?</a></h3>
+        <p>By default, InChI Software assumes that the overall stereoconfiguration of tetrahedral centers indicated in an input structure is an absolute one (for details, see also the topic <a href="#8.3">"How does InChI express overall stereoconfiguration (absolute, relative, or racemic)?"</a> of this FAQ).</p>
+        <p>As always, Standard InChI uses the default convention.</p>
+        <p>To modify the default behavior one may use the options SRel or SRac.</p>
+        <p>SRel assumes that the compound is a single enantiomer but its absolute configuration is not known.</p>
+        <p>SRac assumes that the compound is a 1:1 mixture of enantiomers.</p>
+        <p>One more stereo interpretation option SUCF only applies to MDL MOL files in which the CHIRAL flag is set. By default this is set to 0/off. The combinations are:</p>
+        <blockquote>
+            <p>SUCF on, CHIRAL 1 => absolute stereo (default for InChI Software)</p>
+            <p>SUCF on, CHIRAL 0 => relative stereo</p>
+            <p>SUCF off, CHIRAL ignored. This defaults to absolute stereo by InChI Software.</p>
+        </blockquote>
+        <p>Note that many drawing programs do not allow the user to specify the chiral flag so the information is very variable. It is more likely that the maintainer of a collection will know whether some or all of the compounds are of known chirality.</p>
+        <p>Note that any of the above options makes a non-standard InChI. Even if the compound is not chiral and, as the result, InChI does not have /m and /s segments, any of these options makes the InChI non-standard.</p>
+    </blockquote>
+    <!-- 15.21 Block End -->
+    <!-- 15.22 Block Start -->
+    <blockquote>
+        <h3><a name="15.22">15.22. What does the SUU option do?</a></h3>
+        <p>By default, InChI Software does not include in the Identifer an unknown/undefined stereocenter unless at least one defined stereo feature is present in the input structure.</p>
+        <p>The SUU ("always Show Unknown or Undefined stereo") option is intended to alter this behavior. Using SUU results in inclusion of unknown/undefined stereo in all cases.</p>
+        <div class="center">
+            <img src="images/15_22-1.png" width="713" height="385" alt="">
+        </div>
+        <p>Note that SUU is an 'InChI creation' option; therefore, it makes a non-standard InChI even if there are no unknown or undefined stereo elements in the structure.</p>
+    </blockquote>
+    <!-- 15.22 Block End -->
+    <!-- 15.23 Block Start -->
+    <blockquote>
+        <h3><a name="15.23">15.23. What does the RecMet option do?</a></h3>
+        <p>This appends the (metal) Reconnected layer (/r) to the InChI. See topic <a href="#7.3">"How does InChI represent organometallic compounds?"</a> in this FAQ for an example.</p>
+        <p>Note that RecMet is 'InChI creation' option; therefore, it makes a non-standard InChI.</p>
+    </blockquote>
+    <!-- 15.23 Block End -->
+    <!-- 15.24 Block Start -->
+    <blockquote>
+        <h3><a name="15.24">15.24. What does the FixedH option do?</a></h3>
+        <p>This appends an additional fixed hydrogen layer (/f). See topics <a href="#6.1">"How does InChI represent compounds with mobile H-atoms (tautomerism, for example)?"</a> and <a href="#6.2">"Why is there a Fixed-H layer if tautomeric groups are shown in the Main layer?"</a> of this FAQ for examples.</p>
+        <p>Note that FixedH is 'InChI creation' option; therefore, it makes a non-standard InChI.</p>
+    </blockquote>
+    <!-- 15.24 Block End -->
+    <!-- 15.25 Block Start -->
+    <blockquote>
+        <h3><a name="15.25">15.25. What does the SaveOpt option do?</a></h3>
+        <p>The option SaveOpt allows one to append a non-standard InChI string with saved InChI creation options.</p>
+        <p>The "SaveOpt appendage" currently consists of two capital English letters which are separated from the InChI string by a backslash, '\'. Note that this appendage is not considered an integral part (layer) of InChI itself; rather, it is an optional complement. It may or may not be present after the end of the InChI string (by default the "SaveOpt" option is turned off). To signify this, the appendage is separated from InChI by a character, which may not be inside InChI, a backslash. Note also that the InChI generation option "/SaveOpt" (and the saved-options appendage) is not available for the Standard InChI because it is always created with the same standard options.</p>
+        <p>The encoding of saved options: the first SaveOpt letter encodes whether <a href="#15.23">RecMet</a>/<a href="#15.24">FixedH</a><a href="#15.22">/SUU</a><a href="#8.6">/SLUUD</a> options were activated. Each of them is a binary value ON/OFF (1/0), so that there are 2*2*2*2=16 combinations, which are encoded by 16 capital letters 'A' through 'P'. The second letter encodes experimental (InChI 1 extension) options KET and 15T. Each of these options is a binary value ON/OFF (1/0), so that there are 2*2=4 combinations, encoded by 4 capital letters, 'A' through 'D'.<br>Note that anything but 'A' here would indicate "extended" InChI 1.<br>Note that here is some reservation for future needs: the 2nd character may accommodate two more ON/OFF binary options (using base-26 encoding).</p>
+        <p>For the exact encoding scheme, please take a look at the Section 'Saving InChI creation options' of the InChI User Guide.</p>
+        <p>Some examples follow:</p>
+        <pre>InChI=1/C9H11NO2.Na/c1-3-5(7(3)9(10)12)6-4(2)8(6)11;/h5-6,11H,1-2H3,(H2,10,12);/q;+1/p-1/t5?,6?;<br>/i/hD/fC9H10NO2.Na/h11h,10H2;/q-1;m/i10D;\OA</pre>
+        <p>(this identifier was created with options /RecMet /FixedH /SUU and /SaveOpt)</p>
+        <pre>InChI=1/C9H11NO2.Na/c1-3-5(7(3)9(10)12)6-4(2)8(6)11;/h5-6,11H,1-2H3,(H2,10,12);/q;+1/p-1/t5?,6?;<br>/i/hD\KA</pre>
+        <p>(this identifier was created for the same input structure with options /RecMet /SUU and /SaveOpt)</p>
+        <pre>InChI=1S/C9H11NO2.Na/c1-3-5(7(3)9(10)12)6-4(2)8(6)11;/h5-6,11H,1-2H3,(H2,10,12);/q;+1/p-1/i/hD</pre>
+        <p>(this identifier was created for the same input structure with no InChI creation options)</p>
+    </blockquote>
+    <!-- 15.25 Block End -->
+</blockquote>
+<!-- 15 Block End -->
+<!-- 15 End -->
+
+<!-- 16 Start -->
+<h2><a name="16">16. Creating InChIs</a></h2>
+<!-- 16 Block Start -->
+<blockquote>
+    <!-- 16.1 Block Start -->
+    <blockquote>
+        <h3><a name="16.1">16.1. If different software packages produce different InChIs, which is the trusted one?</a></h3>
+        <p>As many software vendors and open-source teams have built the InChI functionality into their own programs (typically through InChI API library calls), cases appear of producing different InChI strings for the same compound when using different software.</p>
+        <p>This may be related to application of different algorithms for input data pre-treatment, especially the interpretation of source drawing/file format or pre-normalization of structures before calling InChI procedures. (A quite illustrative example related to the perception of poorly drawn stereo may be found at <a href="http://sourceforge.net/mailarchive/message.php?msg_id=28013563">http://sourceforge.net/mailarchive/message.php?msg_id=28013563</a>).</p>
+        <p><strong>The ultimate reference is, in any case, the InChI string produced by the executable inchi-1 (either under MS Windows or Linux) of the current InChI Software released by IUPAC/InChI Trust.</strong></p>
+        <p>If your chemistry software of choice does provide some unexpected/undesirable InChI strings, please check if this behavior can be reproduced by the inchi-1 executable.</p>
+    </blockquote>
+    <!-- 16.1 Block End -->
+    <!-- 16.2 Block Start -->
+    <blockquote>
+        <h3><a name="16.2">16.2. Do I need to know how my molecular information was created?</a></h3>
+        <p>Conventional methods of representing molecular structure often produce some fuzziness; as a result, you may need to make assumptions about the defaults used by the creator. Examples are:</p>
+        <ul>
+            <li><em>Are all hydrogen atoms explicit?</em>
+                <br>If you know they are, then you should run InChI with the <a href="#15.18">DoNotAddH</a> option. This is by far the most powerful way of ensuring that your InChI is likely to be correct.
+            </li>
+            <li><em>Are all charges included in the files?</em>
+                <br>Sometimes the creation mechanism omits charges on atoms. This can make it very difficult to calculate the correct molecular constitution and the total electron count.
+            </li>
+            <li><em>Are all stereo centers marked?</em>
+                <br>Many historical data files have no stereochemistry. Many others have partial stereochemistry (e.g. "everyone knows what the stereochemistry of androstane steroids is so we needn't put it in.")
+            </li>
+            <li><em>Is the stereochemistry absolute or relative?</em>
+                <br>Even if the all the stereocenters are given, the absolute stereochemistry may be unknown or the sample may be racemic.
+            </li>
+        </ul>
+    </blockquote>
+    <!-- 16.2 Block End -->
+    <!-- 16.3 Block Start -->
+    <blockquote>
+        <h3><a name="16.3">16.3. Are there any technical limitations for InChI input?</a></h3>
+        <p>Yes, there are. Some of them follow.</p>
+        <ol>
+            <li>InChI input may not contain more than 1023 atoms.</li>
+            <li>Not more than 20 bonds per atom are allowed.</li>
+            <li>Allowed bond types are single, double, and triple. As an exception, "aromatic bonds" are also allowed only to be immediately converted into alternating single/double bonds by the InChI Software. Since this conversion is not bulletproof at all (partially because a formal definition of aromatic bonds accepted by everybody does not exist) the use of  aromatic bonds is strongly discouraged.</li>
+        </ol>
+    </blockquote>
+    <!-- 16.3 Block End -->
+    <!-- 16.4 Block Start -->
+    <blockquote>
+        <h3><a name="16.4">16.4. Does the InChI Software recognize 'atomic stereo' descriptors in MOL/SDF input files?</a></h3>
+        <p>No. The only descriptors related to tetrahedral stereochemistry which InChI Software recognizes are wedge bonds, "Up", "Down", and "Either".</p>
+    </blockquote>
+    <!-- 16.4 Block End -->
+    <!-- 16.5 Block Start -->
+    <blockquote>
+        <h3><a name="16.5">16.5. Does the InChI Software ignore stereochemistry if a coordinate-less ("<font size="+2">0</font>D") input file in MOL/SDF format is used?</a></h3>
+        <p>Yes.</p>
+        <p>In principle, it would try to recognize tetrahedral stereo expressed through wedge bonds. However, no way exists 
+        to recognize stereochemistry of double bonds in the absence of atomic coordinates, using MOL format. 
+        Therefore, all the stereochemistry is deliberately ignored, as a matter of decision. (Otherwise one would get different 
+        InChI stereo layers for <font size="+1">3</font>D and <font size="+1">0</font>D structures of the same compound.) However, the InChI API library accepts input atom and bond parities, which may be derived by the calling software from, for example, SMILES.</p>
+    </blockquote>
+    <!-- 16.5 Block End -->
+    <!-- 16.6 Block Start -->
+    <blockquote>
+        <h3><a name="16.6">16.6. Does InChI require all atoms including hydrogens in the input?</a></h3>
+        <p>Having explicit hydrogen atoms in the input is desirable.</p>
+        <p>Anyway, InChI Software assumes that the input structure may contain implicit hydrogen atoms and ? if they are detected ? will add hydrogen atoms to eligible atoms to satisfy an element's standard valences.</p>
+        <p>However, be warned that this may not be a 100%-reliable procedure, especially for organometallics.</p>
+    </blockquote>
+    <!-- 16.6 Block End -->
+    <!-- 16.7 Block Start -->
+    <blockquote>
+        <h3><a name="16.7">16.7. What are the problems if I can't find out about this?</a></h3>
+        <p>The worst are likely to be that:</p>
+        <ul>
+            <li>the hydrogen count is seriously wrong.</li>
+            <li>the total electron count is wrong and the bond orders are incorrect.</li>
+            <li>stereocentres are flagged as known when they are not.</li>
+        </ul>
+    </blockquote>
+    <!-- 16.7 Block End -->
+    <!-- 16.8 Block Start -->
+    <blockquote>
+        <h3><a name="16.8">16.8. Can the InChI Software fix these problems automatically?</a></h3>
+        <p>Not really for hydrogen atoms. Though InChI Software may add hydrogen atoms, this can go wrong in difficult cases so a safer way would be that you do "hydrogenation before InChIfication" (subjected to quality control) and then generate InChI with the <a href="#15.18">DoNotAddH</a> switch.</p>
+        <p>The InChI Software will flag unknown stereocentres. It may then be possible to search this InChI against other InChIs where the stereocentres are known and perhaps to add the missing information by hand.</p>
+    </blockquote>
+    <!-- 16.8 Block End -->
+    <!-- 16.9 Block Start -->
+    <blockquote>
+        <h3><a name="16.9">16.9. Can I regenerate the structure from InChI?</a></h3>
+        <ol>
+            <li>Yes - if you have the program output produced with "Full auxiliary information" option, AuxInfo.
+                <p>The AuxInfo string is a valid input for InChI Software which should be enough for regenerating the parent structure. In particular, it holds atomic coordinates which are not contained in InChI itself.</p>
+            </li>
+            <li>Yes, with rather significant limitations - if you have just an InChI.
+                <p>First, as the InChI contains no atomic coordinates, the best result will be only the coordinate-less "0D" structure. Among other things, this means problems with restoring stereochemistry.</p>
+                <p>Second, if the InChI has been created with some layers omitted, the corresponding structural details may not be restored, evidently. For example, as Standard InChI lacks reconnected metal and fixed-hydrogen layers, neither bonds to metals nor precise positions of mobile H atoms  may be regenerated from a Standard InChI.</p>
+            </li>
+        </ol>
+        <p>The InChI API library has a dedicated function GetStructFromINCHI() intended for restoring the structure from InChI (but not from InChIKey, as it is a hashed form of InChI which could not be directly decrypted). Software vendors have already complemented the InChI library with their own procedures for generating atomic coordinates and built the functionality 'Generate structure from InChI string' into their products. Examples (there are probably more) are Accelrys Draw, Perkin-Elmer (formerly CambridgeSoft) ChemDraw, and ACD/Labs ChemSketch.</p>
+    </blockquote>
+    <!-- 16.9 Block End -->
+</blockquote>
+<!-- 16 Block End -->
+<!-- 16 End -->
+
+</body>
+</html>

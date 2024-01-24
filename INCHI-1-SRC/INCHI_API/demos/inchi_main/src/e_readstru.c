@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -46,6 +46,7 @@
 #include "e_ichisize.h"
 #include "e_ichitime.h"
 #include "../../../../INCHI_BASE/src/inchi_api.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 #include "e_ctl_data.h"
 #include "e_readstru.h"
 #include "e_ichi_io.h"
@@ -92,7 +93,7 @@ int e_ReadStructure( STRUCT_DATA *sd,
         vABParityUnknown = AB_PARITY_UNKN;
     }
 
-    memset( sd, 0, sizeof( *sd ) );
+    memset( sd, 0, sizeof( *sd ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     switch (ip->nInputType)
     {
         case INPUT_MOLFILE:
@@ -121,7 +122,7 @@ int e_ReadStructure( STRUCT_DATA *sd,
                 nRet2 = e_MolfileToInchi_Input( inp_file->f, pInp, ip->bMergeAllInputStructures,
                                    ip->bDoNotAddH, ip->bAllowEmptyStructure,
                                    ip->pSdfLabel, ip->pSdfValue, &ip->lSdfId, &ip->lMolfileNumber,
-                                   &InpAtomFlags, &sd->nStructReadError, sd->pStrErrStruct );
+                                   &InpAtomFlags, &sd->nStructReadError, sd->pStrErrStruct ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 
                 sd->bChiralFlag |= InpAtomFlags;
                 if (!ip->bGetSdfileId || ip->lSdfId == 999999) ip->lSdfId = 0;
@@ -175,7 +176,7 @@ int e_ReadStructure( STRUCT_DATA *sd,
                                                 ip->bDoNotAddH, vABParityUnknown,
                                                 ip->nInputType, ip->pSdfLabel, ip->pSdfValue,
                                                 &ip->lMolfileNumber, &InpAtomFlags,
-                                                &sd->nStructReadError, sd->pStrErrStruct );
+                                                &sd->nStructReadError, sd->pStrErrStruct ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
                 /*if ( !ip->bGetSdfileId || ip->lSdfId == 999999) ip->lSdfId = 0;*/
                 sd->bChiralFlag |= InpAtomFlags;
                 sd->fPtrEnd = ( inp_file->f == stdin ) ? -1 : ftell( inp_file->f );

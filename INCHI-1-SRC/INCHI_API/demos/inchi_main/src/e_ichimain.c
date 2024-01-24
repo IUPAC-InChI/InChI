@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -72,6 +72,7 @@ Use old (classic) library interface (see main() below)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^*/
 
 #include "../../../../INCHI_BASE/src/inchi_api.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 
 #include "e_ichi_io.h"
 #include "e_inchi_atom.h"
@@ -84,6 +85,7 @@ Use old (classic) library interface (see main() below)
 #include "e_0dstereo.h"
 #endif
 
+/*#include "jhj.h"*/ /* djb-rwrh: rinchi testing */
 
 /* External (from former e_ichi_parms.h) */
 #ifndef COMPILE_ALL_CPP
@@ -105,7 +107,7 @@ void e_HelpCommandLineParms( INCHI_IOSTREAM *f );
 
 /* Local */
 void dump_inchi_Input( inchi_Input *pinp, INCHI_IOSTREAM *pout );
-int e_MakeOutputHeader( char *pSdfLabel, char *pSdfValue, long lSdfId, long num_inp, char *pStr1, char *pStr2 );
+int e_MakeOutputHeader( char *pSdfLabel, char *pSdfValue, long lSdfId, long num_inp, char *pStr1, char *pStr2, int pStr1_size, int pStr2_size );
 static int e_bEnableCmdlineOption( char *szCmdLine, const char *szOption, int bEnable );
 
 
@@ -190,7 +192,7 @@ static char *e_stristr( const char * string1, const char * string2 )
 static int e_bEnableCmdlineOption( char *szCmdLine, const char *szOption, int bEnable )
 {
     int   len = strlen( szOption ) + 1, num = 0;
-    char *pOpt = (char *) e_inchi_malloc( len + 1 );
+    char *pOpt = (char *) e_inchi_malloc( (long long)len + 1 ); /* djb-rwth: cast operator added */
     char *p = szCmdLine, *q, *r;
     if (!pOpt)
     {
@@ -198,7 +200,7 @@ static int e_bEnableCmdlineOption( char *szCmdLine, const char *szOption, int bE
     }
     strcpy( pOpt + 1, szOption );
     pOpt[0] = INCHI_OPTION_PREFX;
-    while (q = e_stristr( p, pOpt ))
+    while ((q = e_stristr( p, pOpt ))) /* djb-rwth: addressing LLVM warning */
     {
         r = q + len;
         if (bEnable > 0 && r[0] == '$')
@@ -208,8 +210,8 @@ static int e_bEnableCmdlineOption( char *szCmdLine, const char *szOption, int bE
         }
         else
         {
-            if (0 == bEnable && ( !r[0] || r[0] == ' ' || r[0] == '\t' ) ||
-                -1 == bEnable && ( !r[0] || r[0] == ' ' || r[0] == '\t' || r[0] == ':' ))
+            if ((0 == bEnable && ( !r[0] || r[0] == ' ' || r[0] == '\t' )) ||
+                ( - 1 == bEnable && (!r[0] || r[0] == ' ' || r[0] == '\t' || r[0] == ':'))) /* djb-rwth: addressing LLVM warnings */
             {
                 memmove( r + 1, r, strlen( r ) + 1 );
                 r[0] = '$';
@@ -227,16 +229,15 @@ static int e_bEnableCmdlineOption( char *szCmdLine, const char *szOption, int bE
 /****************************************************************************/
 int main( int argc, char *argv[] )
 {
-
     STRUCT_DATA struct_data;
     STRUCT_DATA *sd = &struct_data;
 
-    long num_inp, num_err, num_output;
+    long num_inp, num_err; /* djb-rwth: removing redundant variables */
     char        szSdfDataValue[MAX_SDF_VALUE + 1];
     const char *p1, *p2;
 
     unsigned long  ulDisplTime = 0;    /*  infinite, milliseconds */
-    unsigned long  ulTotalProcessingTime = 0;
+    /* djb-rwth: removing redundant variables */
     INPUT_PARMS inp_parms;
     INPUT_PARMS *ip = &inp_parms;
     char        szInchiCmdLine[512];
@@ -249,7 +250,7 @@ int main( int argc, char *argv[] )
     int             bReleaseVersion = bRELEASE_VERSION;
 #define nStrLen 256
     char  pStrInchiId[nStrLen], pStrLogId[nStrLen];
-    int   nRet = 0, nRet1, i, k, tot_len;
+    int   nRet = 0, nRet1, i, k; /* djb-rwth: removing redundant variables */
     int   inp_index, out_index;
     long  lSdfId;
     int   nStructNo;
@@ -334,19 +335,19 @@ int main( int argc, char *argv[] )
 
     num_inp = 0;
     num_err = 0;
-    num_output = 0;
+    /* djb-rwth: removing redundant code */
 
-    if (argc < 2 || argc == 2 && ( argv[1][0] == INCHI_OPTION_PREFX ) &&
-        ( !strcmp( argv[1] + 1, "?" ) || !e_inchi_stricmp( argv[1] + 1, "help" ) ))
+    if (argc < 2 || (argc == 2 && ( argv[1][0] == INCHI_OPTION_PREFX ) &&
+        ( !strcmp( argv[1] + 1, "?" ) || !e_inchi_stricmp( argv[1] + 1, "help" ) ))) /* djb-rwth: addressing LLVM warning */
     {
         e_HelpCommandLineParms( log_stream );
         return 0;
     }
     /*  original input structure */
-    memset( pInp, 0, sizeof( *pInp ) );
-    memset( pOut, 0, sizeof( *pOut ) );
+    memset( pInp, 0, sizeof( *pInp ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+    memset( pOut, 0, sizeof( *pOut ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
-    memset( szSdfDataValue, 0, sizeof( szSdfDataValue ) );
+    memset( szSdfDataValue, 0, sizeof( szSdfDataValue ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     /* explicitly cast to (const char **) to avoid a warning about "incompatible pointer type":*/
     if (0 > e_ReadCommandLineParms( argc, (const char **) argv, ip, szSdfDataValue, &ulDisplTime, bReleaseVersion, log_stream ))
@@ -384,7 +385,7 @@ int main( int argc, char *argv[] )
     /* Main loop */
 
     out_index = 0;
-    ulTotalProcessingTime = 0;
+    /* djb-rwth: removing redundant code */
 
     while (!e_bInterrupted)
     {
@@ -393,7 +394,7 @@ int main( int argc, char *argv[] )
         int bHasTimeout = 0;
         if (ip->last_struct_number && num_inp >= ip->last_struct_number)
         {
-            nRet = _IS_EOF; /*  simulate end of file */
+            nRet = _IS_EOF; /*  simulate end of file */ /* djb-rwth: ignoring LLVM warning: value used */
             goto exit_function;
         }
 
@@ -513,7 +514,7 @@ int main( int argc, char *argv[] )
             {
                 lSdfId = ( ip->bGetSdfileId ) ? ip->lSdfId : 0; /* if requested then CAS r.n. otherwise struct. number*/
                 nStructNo = ( ip->lMolfileNumber > 0 ) ? ip->lMolfileNumber : num_inp + 1;
-                e_MakeOutputHeader( ip->pSdfLabel, ip->pSdfValue, lSdfId, nStructNo, pStrInchiId, pStrLogId );
+                e_MakeOutputHeader( ip->pSdfLabel, ip->pSdfValue, lSdfId, nStructNo, pStrInchiId, pStrLogId, sizeof(pStrInchiId), sizeof(pStrLogId) );
                 /*
                 if ( sd->pStrErrStruct && sd->pStrErrStruct[0] ) {
                     p1 = "; ";
@@ -575,8 +576,8 @@ int main( int argc, char *argv[] )
         {
             p1 = e_GetChiralFlagString( 1 );  /* input file has chiral flag */
         }
-        else if (   ( ip->nMode & REQ_MODE_CHIR_FLG_STEREO ) && ( ip->nMode & REQ_MODE_STEREO ) ||
-                    ( sd->bChiralFlag & FLAG_INP_AT_NONCHIRAL ))
+        else if ( (( ip->nMode & REQ_MODE_CHIR_FLG_STEREO ) && ( ip->nMode & REQ_MODE_STEREO )) ||
+                    ( sd->bChiralFlag & FLAG_INP_AT_NONCHIRAL )) /* djb-rwth: addressing LLVM warning */
         {
             /* Fix 04/05/2005 D.T.*/
             /* Chiral flag requested (/SUCF) or input has non-chiral flag */
@@ -620,7 +621,7 @@ int main( int argc, char *argv[] )
 
         nRet1 = GetINCHIEx(pInp, pOut);
 
-        ulTotalProcessingTime += sd->ulStructTime;
+        /* djb-rwth: removing redundant code */
         nRet = nRet1;
 
 #ifdef INCHI_TO_INCHI
@@ -658,10 +659,10 @@ int main( int argc, char *argv[] )
             inchi_Output        inchi_out2;
             int nRet3, nRet4;
 
-            memset( &inpInchi, 0, sizeof( inpInchi ) );
-            memset( &outStructure, 0, sizeof( outStructure ) );
-            memset( &inchi_inp2, 0, sizeof( inchi_inp2 ) );
-            memset( &inchi_out2, 0, sizeof( inchi_out2 ) );
+            memset( &inpInchi, 0, sizeof( inpInchi ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+            memset( &outStructure, 0, sizeof( outStructure ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+            memset( &inchi_inp2, 0, sizeof( inchi_inp2 ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+            memset( &inchi_out2, 0, sizeof( inchi_out2 ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
             /* Use the original InChI as input */
             inpInchi.szInChI = pOut->szInChI;
@@ -712,18 +713,18 @@ int main( int argc, char *argv[] )
                     /* Copy to pOut to use same output source code  */
                     /* as for Structure->InChI conversion output */
                     *pOut = inchi_out2;
-                    nRet1 = nRet4; /* InChI->Struct->InChI return value */
+                    nRet1 = nRet4; /* InChI->Struct->InChI return value */ /* djb-rwth: ignoring LLVM warning: value used */
                     nRet = nRet3; /* InChI->Struct return value */
-                    memset( &inchi_out2, 0, sizeof( inchi_out2 ) ); /* do not keep duplicated pointers */
+                    memset( &inchi_out2, 0, sizeof( inchi_out2 ) ); /* do not keep duplicated pointers */ /* djb-rwth: memset_s C11/Annex K variant? */
                 }
                 else
                 {
                     /* The last step in Structure->InChI->Structure->InChI failed */
                     *pOut = inchi_out2; /* save the error output */
                     nRet = nRet4;       /* Reconstructed Struct->InChI error code */
-                    memset( &inchi_out2, 0, sizeof( inchi_out2 ) ); /* do not keep duplicated pointers */
+                    memset( &inchi_out2, 0, sizeof( inchi_out2 ) ); /* do not keep duplicated pointers */ /* djb-rwth: memset_s C11/Annex K variant? */
                 }
-                memset( &inchi_inp2, 0, sizeof( inchi_inp2 ) ); /* do not keep invalid pointers */
+                memset( &inchi_inp2, 0, sizeof( inchi_inp2 ) ); /* do not keep invalid pointers */ /* djb-rwth: memset_s C11/Annex K variant? */
             }
             else
             {
@@ -878,7 +879,7 @@ int main( int argc, char *argv[] )
         }
 
         num_inp++;
-        tot_len = 0;
+        /* djb-rwth: removing redundant code */
 
         /*^^^ Post-1.02b - moved from below */
         bTabbed = 0 != ( ip->bINChIOutputOptions & INCHI_OUT_TABBED_OUTPUT );
@@ -896,7 +897,7 @@ int main( int argc, char *argv[] )
                 int bAddLabel = 0;
 
                 /* 1. Remove the 1st line (later replace it with the actual structure number) */
-                if (start = strchr( pOut->szInChI, '\n' ))
+                if ((start = strchr( pOut->szInChI, '\n' ))) /* djb-rwth: addressing LLVM warning */
                 {
                     inchi_ios_print( out_stream, "Structure #%ld", nStructNo );
                 }
@@ -1050,33 +1051,30 @@ exit_function:
 
 
 /****************************************************************************/
-int e_MakeOutputHeader( char *pSdfLabel,
-                        char *pSdfValue,
-                        long lSdfId,
-                        long num_inp,
-                        char *pStr1,
-                        char *pStr2 )
+int e_MakeOutputHeader(char* pSdfLabel,
+    char* pSdfValue,
+    long lSdfId,
+    long num_inp,
+    char* pStr1,
+    char* pStr2,
+    int pStr1_size,
+    int pStr2_size)
 {
     int tot_len1 = 0, tot_len2 = 0;
     pStr1[0] = '\0';
-    if (!( pSdfLabel && pSdfLabel[0] ) && !( pSdfValue && pSdfValue[0] ))
+    if (!(pSdfLabel && pSdfLabel[0]) && !(pSdfValue && pSdfValue[0]))
     {
-        tot_len1 = sprintf( pStr1, "Structure: %ld", num_inp );
-        tot_len2 = sprintf( pStr2, "structure #%ld", num_inp );
+        tot_len1 = sprintf(pStr1, "Structure: %ld", num_inp);
+        tot_len2 = sprintf(pStr2, "structure #%ld", num_inp);
     }
     else
     {
-        tot_len1 = sprintf( pStr1, "Structure: %ld.%s%s%s%s",
-            num_inp,
-            SDF_LBL_VAL( pSdfLabel, pSdfValue ) );
-
-        tot_len2 = sprintf( pStr2, "structure #%ld.%s%s%s%s",
-            num_inp,
-            SDF_LBL_VAL( pSdfLabel, pSdfValue ) );
+        tot_len1 = sprintf(pStr1, "Structure: %ld.%s%s%s%s", num_inp, SDF_LBL_VAL(pSdfLabel, pSdfValue));
+        tot_len2 = sprintf(pStr2, "structure #%ld.%s%s%s%s", num_inp, SDF_LBL_VAL(pSdfLabel, pSdfValue));
         if (lSdfId)
         {
-            tot_len1 += sprintf( pStr1 + tot_len1, ":%ld", lSdfId );
-            tot_len2 += sprintf( pStr2 + tot_len2, ":%ld", lSdfId );
+            tot_len1 += sprintf(pStr1 + tot_len1, ":%ld", lSdfId);
+            tot_len2 += sprintf(pStr2 + tot_len2, ":%ld", lSdfId);
         }
     }
 

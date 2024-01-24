@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -35,6 +35,7 @@
 #include "../../../../INCHI_BASE/src/mode.h"
 #include "../../../../INCHI_BASE/src/inchi_api.h"
 #include "../../../../INCHI_BASE/src/inpdef.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 #include "ixa_status.h"
 #include "ixa_mol.h"
 #include <ctype.h>
@@ -78,6 +79,24 @@ typedef struct
     IXA_BOOL                      option_RecMet;
     IXA_BOOL                      option_KET;
     IXA_BOOL                      option_15T;
+#if ( TAUT_PT_22_00 == 1 )
+    IXA_BOOL                      option_PT_22_00;
+#endif
+#if ( TAUT_PT_16_00 == 1 )
+    IXA_BOOL                      option_PT_16_00;
+#endif
+#if ( TAUT_PT_06_00 == 1 )
+    IXA_BOOL                      option_PT_06_00;
+#endif
+#if ( TAUT_PT_39_00 == 1 )
+    IXA_BOOL                      option_PT_39_00;
+#endif
+#if ( TAUT_PT_13_00 == 1 )
+    IXA_BOOL                      option_PT_13_00;
+#endif
+#if ( TAUT_PT_18_00 == 1 )
+    IXA_BOOL                      option_PT_18_00;
+#endif
     IXA_BOOL                      option_AuxNone;
     IXA_BOOL                      option_WarnOnEmptyStructure;
     IXA_BOOL                      option_LargeMolecules;
@@ -417,9 +436,9 @@ static void AppendOption( char *pString,
 {
     if (pString[0] != '\0')
     {
-        strcat( pString, " " );
+        strcat(pString, " "); strcat(pString, " ");
     }
-    strcat( pString, pOption );
+    strcat(pString, pOption);
 }
 
 
@@ -435,6 +454,24 @@ static void BUILDER_ClearOptions( INCHIBUILDER* pBuilder )
     pBuilder->option_RecMet = IXA_FALSE;
     pBuilder->option_KET = IXA_FALSE;
     pBuilder->option_15T = IXA_FALSE;
+#if ( TAUT_PT_22_00 == 1 )
+    pBuilder->option_PT_22_00 = IXA_FALSE;
+#endif
+#if ( TAUT_PT_16_00 == 1 )
+    pBuilder->option_PT_16_00 = IXA_FALSE;
+#endif
+#if ( TAUT_PT_06_00 == 1 )
+    pBuilder->option_PT_06_00 = IXA_FALSE;
+#endif
+#if ( TAUT_PT_39_00 == 1 )
+    pBuilder->option_PT_39_00 = IXA_FALSE;
+#endif
+#if ( TAUT_PT_13_00 == 1 )
+    pBuilder->option_PT_13_00 = IXA_FALSE;
+#endif
+#if ( TAUT_PT_18_00 == 1 )
+    pBuilder->option_PT_18_00 = IXA_FALSE;
+#endif
     pBuilder->option_AuxNone = IXA_FALSE;
     pBuilder->option_WMnumber = 0; /* i.e. unlimited time */
     pBuilder->option_WarnOnEmptyStructure = IXA_FALSE;
@@ -538,6 +575,42 @@ static void BUILDER_Update( IXA_STATUS_HANDLE hStatus,
     {
         AppendOption( options, OPTION_PREFIX "15T" );
     }
+#if ( TAUT_PT_22_00 == 1 )
+    if (pBuilder->option_PT_22_00)
+    {
+        AppendOption(options, OPTION_PREFIX "PT_22_00");
+    }
+#endif
+#if ( TAUT_PT_16_00 == 1 )
+    if (pBuilder->option_PT_16_00)
+    {
+        AppendOption(options, OPTION_PREFIX "PT_16_00");
+    }
+#endif
+#if ( TAUT_PT_06_00 == 1 )
+    if (pBuilder->option_PT_06_00)
+    {
+        AppendOption(options, OPTION_PREFIX "PT_06_00");
+    }
+#endif
+#if ( TAUT_PT_39_00 == 1 )
+    if (pBuilder->option_PT_39_00)
+    {
+        AppendOption(options, OPTION_PREFIX "PT_39_00");
+    }
+#endif
+#if ( TAUT_PT_13_00 == 1 )
+    if (pBuilder->option_PT_13_00)
+    {
+        AppendOption(options, OPTION_PREFIX "PT_13_00");
+    }
+#endif
+#if ( TAUT_PT_18_00 == 1 )
+    if (pBuilder->option_PT_18_00)
+    {
+        AppendOption(options, OPTION_PREFIX "PT_18_00");
+    }
+#endif
     if (pBuilder->option_AuxNone)
     {
         AppendOption( options, OPTION_PREFIX "AuxNone" );
@@ -689,7 +762,8 @@ static void BUILDER_Update( IXA_STATUS_HANDLE hStatus,
         if (output.szInChI)
         {
             pBuilder->inchi = (char *) inchi_malloc( strlen( output.szInChI ) + 1 );
-            strcpy( pBuilder->inchi, output.szInChI );
+            if (pBuilder->inchi)
+                strcpy( pBuilder->inchi, output.szInChI );
         }
 
         inchi_free( pBuilder->auxinfo );
@@ -697,7 +771,8 @@ static void BUILDER_Update( IXA_STATUS_HANDLE hStatus,
         if (output.szAuxInfo)
         {
             pBuilder->auxinfo = (char *) inchi_malloc( strlen( output.szAuxInfo ) + 1 );
-            strcpy( pBuilder->auxinfo, output.szAuxInfo );
+            if (pBuilder->auxinfo)
+                strcpy( pBuilder->auxinfo, output.szAuxInfo );
         }
 
         inchi_free( pBuilder->log );
@@ -705,7 +780,8 @@ static void BUILDER_Update( IXA_STATUS_HANDLE hStatus,
         if (output.szLog)
         {
             pBuilder->log = (char *) inchi_malloc( strlen( output.szLog ) + 1 );
-            strcpy( pBuilder->log, output.szLog );
+            if (pBuilder->log)
+                strcpy( pBuilder->log, output.szLog );
         }
     }
 
@@ -725,7 +801,7 @@ IXA_INCHIBUILDER_HANDLE INCHI_DECL IXA_INCHIBUILDER_Create( IXA_STATUS_HANDLE hS
         return NULL;
     }
 
-    memset( &builder->molecule, 0, sizeof( builder->molecule ) );
+    memset( &builder->molecule, 0, sizeof( builder->molecule ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     BUILDER_ClearOptions( builder );
     builder->dirty = IXA_FALSE;
     builder->inchi = NULL;
@@ -1189,10 +1265,10 @@ void INCHI_DECL IXA_INCHIBUILDER_SetMolecule( IXA_STATUS_HANDLE hStatus,
                 case IXA_STEREO_TOPOLOGY_ANTIRECTANGLE:
                 {
                     IXA_ATOMID central_atom;
-                    IXA_ATOMID internal1;
+                    IXA_ATOMID internal1 = NULL; /* djb-rwth: fixing uninitialised value in 5th call of IsRectOrAntiRectCentre */
                     IXA_ATOMID vertex1a;
                     IXA_ATOMID vertex1b;
-                    IXA_ATOMID internal2;
+                    IXA_ATOMID internal2 = NULL; /* djb-rwth: fixing uninitialised value in 8th call of IsRectOrAntiRectCentre */
                     IXA_ATOMID vertex2a;
                     IXA_ATOMID vertex2b;
                     IXA_BOOL   flag;
@@ -1330,7 +1406,7 @@ void INCHI_DECL IXA_INCHIBUILDER_SetMolecule( IXA_STATUS_HANDLE hStatus,
                         STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Out of memory" );
                         return;
                     }
-                    memset( builder->molecule.polymer->units, 0, sizeof( *( builder->molecule.polymer->units ) ) );
+                    memset( builder->molecule.polymer->units, 0, sizeof( *( builder->molecule.polymer->units ) ) ); /* djb-rwth: memset_s C11/Annex K variant? */
                 }
                 for (k = 0; k < builder->molecule.polymer->n; k++)
                 {
@@ -1342,7 +1418,7 @@ void INCHI_DECL IXA_INCHIBUILDER_SetMolecule( IXA_STATUS_HANDLE hStatus,
                         STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Out of memory" );
                         return;
                     }
-                    memset( unitk, 0, sizeof( *unitk ) );
+                    memset( unitk, 0, sizeof( *unitk ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
                     unitk->id = groupk->id;
                     unitk->type = groupk->type;
@@ -1370,7 +1446,7 @@ void INCHI_DECL IXA_INCHIBUILDER_SetMolecule( IXA_STATUS_HANDLE hStatus,
                     unitk->nb = groupk->nb;
                     if (unitk->nb > 0)
                     {
-                        unitk->blist = (int *) inchi_calloc( 2 * unitk->nb, sizeof( int ) );
+                        unitk->blist = (int *) inchi_calloc( 2 * (long long)unitk->nb, sizeof( int ) ); /* djb-rwth: cast operator added */
                         if (!unitk->blist)
                         {
                             STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Out of memory" );
@@ -1399,7 +1475,7 @@ void INCHI_DECL IXA_INCHIBUILDER_SetMolecule( IXA_STATUS_HANDLE hStatus,
                     STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Out of memory" );
                     return;
                 }
-                memset( builder->molecule.v3000, 0, sizeof( inchi_Input_V3000 ) );
+                memset( builder->molecule.v3000, 0, sizeof( inchi_Input_V3000 ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
                 builder->molecule.v3000->n_collections = molecule->v3000->n_collections;
                 builder->molecule.v3000->n_haptic_bonds = molecule->v3000->n_haptic_bonds;
@@ -1576,6 +1652,36 @@ void INCHI_DECL IXA_INCHIBUILDER_SetOption( IXA_STATUS_HANDLE hStatus,
         case IXA_INCHIBUILDER_OPTION_15T:
             builder->option_15T = vValue;
             return;
+#if ( TAUT_PT_22_00 == 1 )
+        case IXA_INCHIBUILDER_OPTION_PT_22_00:
+            builder->option_PT_22_00 = vValue;
+            return;
+#endif
+#if ( TAUT_PT_16_00 == 1 )
+        case IXA_INCHIBUILDER_OPTION_PT_16_00:
+            builder->option_PT_16_00 = vValue;
+            return;
+#endif
+#if ( TAUT_PT_06_00 == 1 )
+        case IXA_INCHIBUILDER_OPTION_PT_06_00:
+            builder->option_PT_06_00 = vValue;
+            return;
+#endif
+#if ( TAUT_PT_39_00 == 1 )
+        case IXA_INCHIBUILDER_OPTION_PT_39_00:
+            builder->option_PT_39_00 = vValue;
+            return;
+#endif
+#if ( TAUT_PT_13_00 == 1 )
+        case IXA_INCHIBUILDER_OPTION_PT_13_00:
+            builder->option_PT_13_00 = vValue;
+            return;
+#endif
+#if ( TAUT_PT_18_00 == 1 )
+        case IXA_INCHIBUILDER_OPTION_PT_18_00:
+            builder->option_PT_18_00 = vValue;
+            return;
+#endif
         case IXA_INCHIBUILDER_OPTION_SaveOpt:
             builder->option_SaveOpt = vValue;
             return;
@@ -1706,6 +1812,42 @@ IXA_BOOL INCHI_DECL IXA_INCHIBUILDER_CheckOption( IXA_STATUS_HANDLE hStatus,
     {
         val = builder->option_15T;
     }
+#if ( TAUT_PT_22_00 == 1 )
+    else if (vOption == IXA_INCHIBUILDER_OPTION_PT_22_00)
+    {
+        val = builder->option_PT_22_00;
+    }
+#endif
+#if ( TAUT_PT_16_00 == 1 )
+    else if (vOption == IXA_INCHIBUILDER_OPTION_PT_16_00)
+    {
+        val = builder->option_PT_16_00;
+    }
+#endif
+#if ( TAUT_PT_06_00 == 1 )
+    else if (vOption == IXA_INCHIBUILDER_OPTION_PT_06_00)
+    {
+        val = builder->option_PT_06_00;
+    }
+#endif
+#if ( TAUT_PT_39_00 == 1 )
+    else if (vOption == IXA_INCHIBUILDER_OPTION_PT_39_00)
+    {
+        val = builder->option_PT_39_00;
+    }
+#endif
+#if ( TAUT_PT_13_00 == 1 )
+    else if (vOption == IXA_INCHIBUILDER_OPTION_PT_13_00)
+    {
+        val = builder->option_PT_13_00;
+    }
+#endif
+#if ( TAUT_PT_18_00 == 1 )
+    else if (vOption == IXA_INCHIBUILDER_OPTION_PT_18_00)
+    {
+        val = builder->option_PT_18_00;
+    }
+#endif
     else if (vOption == IXA_INCHIBUILDER_OPTION_SaveOpt)
     {
         val = builder->option_SaveOpt;
@@ -1724,7 +1866,7 @@ IXA_BOOL INCHI_DECL IXA_INCHIBUILDER_CheckOption( IXA_STATUS_HANDLE hStatus,
     }
     else if (vOption == IXA_INCHIBUILDER_OPTION_Polymers)
     {
-        builder->option_Polymers;
+        val = builder->option_Polymers; /* djb-rwth: lvalue added */
     }
     else if (vOption == IXA_INCHIBUILDER_OPTION_Polymers105)
     {
@@ -1790,7 +1932,7 @@ IXA_BOOL INCHI_DECL IXA_INCHIBUILDER_CheckOption( IXA_STATUS_HANDLE hStatus,
     }
     else if (vOption == IXA_INCHIBUILDER_OPTION_OnlyRecMet)
     {
-        val = (int)builder->option_OnlyRecMet;
+        val = builder->option_OnlyRecMet; /* djb-rwth: cast operator deleted for compatibility */
     }
     else if (vOption == IXA_INCHIBUILDER_OPTION_Polymers105)
     {

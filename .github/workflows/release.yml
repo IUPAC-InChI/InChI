@@ -38,5 +38,5 @@ jobs:
           gh release create ${{ github.ref_name }} \
           --verify-tag \
           --title "${{ github.ref_name }}" \
-          --notes "For details about this release have a look at the [CHANGELOG](CHANGELOG.md)." \
+          --notes "For details about this release have a look at the [CHANGELOG](INCHI-1-DOC/CHANGELOG.md)." \
           INCHI-1-BIN.zip INCHI-1-DOC.zip INCHI-1-SRC.zip INCHI-1-TEST.zip

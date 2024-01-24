@@ -1,8 +1,8 @@
 /*
  * International Chemical Identifier (InChI)
  * Version 1
- * Software version 1.06
- * December 15, 2020
+ * Software version 1.07
+ * 20/11/2023
  *
  * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
@@ -41,11 +41,13 @@
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 
 #include "e_mode.h"
 
 #include "../../../../INCHI_BASE/src/inchi_api.h"
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 
 #include "e_ctl_data.h"
 #include "e_inchi_atom.h"
@@ -186,12 +188,12 @@ int e_bCanAtomBeTerminalAllene( int cur_at, S_CHAR *cAtType );
 int ee_extract_ChargeRadical( char *elname, int *pnRadical, int *pnCharge )
 {
     char *q, *r, *p;
-    int  nCharge = 0, nRad = 0, charge_len = 0, k, nVal, nSign, nLastSign = 1, len;
+    int  nCharge = 0, nRad = 0, charge_len = 0, k, nVal, nSign, nLastSign = 1; /* djb-rwth: removing redundant variables */
 
     p = elname;
 
     /*  extract radicals & charges */
-    while (q = strpbrk( p, "+-^" ))
+    while ((q = strpbrk( p, "+-^" ))) /* djb-rwth: addressing LLVM warning */
     {
         switch (*q)
         {
@@ -202,7 +204,7 @@ int ee_extract_ChargeRadical( char *elname, int *pnRadical, int *pnCharge )
                     nVal += ( nLastSign = nSign );
                     charge_len++;
                 }
-                if (nSign = (int) strtol( q + k, &r, 10 ))
+                if ((nSign = (int) strtol( q + k, &r, 10 ))) /* djb-rwth: addressing LLVM warning */
                 {
                     /*  fixed 12-5-2001 */
                     nVal += nLastSign * ( nSign - 1 );
@@ -223,13 +225,13 @@ int ee_extract_ChargeRadical( char *elname, int *pnRadical, int *pnCharge )
         }
         memmove( q, q + charge_len, strlen( q + charge_len ) + 1 );
     }
-    len = strlen( p );
+    /* djb-rwth: removing redundant code */
     /*  radical */
     if (( q = strrchr( p, ':' ) ) && !q[1])
     {
         nRad = RADICAL_SINGLET;
         q[0] = '\0';
-        len--;
+        /* djb-rwth: removing redundant code */
     }
     else
     {
@@ -237,7 +239,7 @@ int ee_extract_ChargeRadical( char *elname, int *pnRadical, int *pnCharge )
         {
             nRad++;
             q[0] = '\0';
-            len--;
+            /* djb-rwth: removing redundant code */
         }
 
         nRad = nRad == 1 ? RADICAL_DOUBLET :
@@ -293,7 +295,7 @@ int ee_extract_H_atoms( char *elname, S_CHAR num_iso_H[] )
             num_iso_H[k] += val;
             /*  remove the hydrogen atom from the string */
             len -= ( q - elname ) - i;
-            memmove( elname + i, q, len + 1 );
+            memmove( elname + i, q, (long long)len + 1 ); /* djb-rwth: cast operator added */
             /*  c =  UCINT elname[i]; */
         }
         else
@@ -320,16 +322,20 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
     S_CHAR num_bonds[MAX_BOND_TYPE];
     int  i;
     int  nRadicalValence = 0;
+    bool cndt1, cndt2;
 
-    if (sizeof( at->num_iso_H ) != sizeof( num_iso_H ) ||
-         sizeof( at->num_iso_H[0] ) != sizeof( num_iso_H[0] ))
+    /* djb-rwth: avoiding non-zero constant warning */
+    cndt1 = sizeof(at->num_iso_H) != sizeof(num_iso_H);
+    cndt2 = sizeof(at->num_iso_H[0]) != sizeof(num_iso_H[0]);
+
+    if ( cndt1 || cndt2 )
     {
         /* program error */
         return -1;
     }
 
     strcpy( szEl, at[cur_atom].elname );
-    memset( num_iso_H, 0, sizeof( num_iso_H ) );
+    memset( num_iso_H, 0, sizeof( num_iso_H ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     bChargeOrRad = ee_extract_ChargeRadical( szEl, &nRadical, &nCharge );
     bH = ee_extract_H_atoms( szEl, num_iso_H );
 
@@ -342,7 +348,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
     if (!bH)
     {
         memcpy( num_iso_H, at[cur_atom].num_iso_H, sizeof( num_iso_H ) );
-        if (bAddH = ( num_iso_H[0] < 0 ))
+        if ((bAddH = ( num_iso_H[0] < 0 ))) /* djb-rwth: addressing LLVM warning */
         {
             num_iso_H[0] = 0;
         }
@@ -437,8 +443,8 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
     }
 
     /* atom type */
-    memset( num_bonds, 0, sizeof( num_bonds ) );
-    bond_valence = 0;
+    memset( num_bonds, 0, sizeof( num_bonds ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+    /* djb-rwth: removing redundant code */
     valence = at[cur_atom].num_bonds;
 
     for (i = 0; i < valence; i++)
@@ -480,7 +486,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
             {
                 bAddH = 0; /* no H will be added */
             }
-            if (bond_valence == valence && ( valence == 4 || valence == 3 && ( bAddH || num_H == 1 ) ) && !nRadical)
+            if (bond_valence == valence && ( valence == 4 || (valence == 3 && ( bAddH || num_H == 1 )) ) && !nRadical) /* djb-rwth: addressing LLVM warning */
             {
                 switch (nElType)
                 {
@@ -495,7 +501,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
                 }
             }
             else
-                if (bond_valence == valence && ( valence == 3 || valence == 2 && ( bAddH || num_H == 1 ) ) && nRadical == INCHI_RADICAL_DOUBLET)
+                if (bond_valence == valence && ( valence == 3 || (valence == 2 && ( bAddH || num_H == 1 )) ) && nRadical == INCHI_RADICAL_DOUBLET) /* djb-rwth: addressing LLVM warning */
                 {
                     switch (nElType)
                     {
@@ -542,7 +548,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
                             }
                         }
                         else
-                            if (bond_valence > valence && ( valence == 3 || valence == 2 && ( bAddH || num_H == 1 ) ) && !nRadical)
+                            if (bond_valence > valence && ( valence == 3 || (valence == 2 && ( bAddH || num_H == 1 )) ) && !nRadical) /* djb-rwth: addressing LLVM warning */
                             {
                                 /* "bond_valence > valence" instead of "bond_valence == valence+1" to accommodate
                                     erroneouse acceptance by 1.12Beta of stereo bond case when C has valence > 5 */
@@ -598,7 +604,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
             return ( nElType == ElType_Sn ) ? AtType_Metal : -1;
 
         case ElType_B:
-            if (bond_valence == valence && ( valence == 4 || valence == 3 && ( bAddH || num_H == 1 ) ) && nCharge == -1 && !nRadical)
+            if (bond_valence == valence && ( valence == 4 || (valence == 3 && ( bAddH || num_H == 1 )) ) && nCharge == -1 && !nRadical) /* djb-rwth: addressing LLVM warning */
             {
                 return AtType_B4m;
             }
@@ -672,7 +678,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
                 bAddH = 0; /* no H will be added */
             }
 
-            if (bond_valence == valence && ( valence == 4 || valence == 3 && ( bAddH || num_H == 1 ) ) && nCharge == 1 && !nRadical)
+            if (bond_valence == valence && ( valence == 4 || (valence == 3 && ( bAddH || num_H == 1 )) ) && nCharge == 1 && !nRadical) /* djb-rwth: addressing LLVM warning */
             {
                 switch (nElType)
                 {
@@ -758,7 +764,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
                         return -1;
                 }
             }
-            else  if (bond_valence == valence + 1 && ( valence == 3 || valence == 2 && ( bAddH || num_H == 1 ) ) && nCharge == 1)
+            else  if (bond_valence == valence + 1 && ( valence == 3 || (valence == 2 && ( bAddH || num_H == 1 )) ) && nCharge == 1) /* djb-rwth: addressing LLVM warning */
             {
                 switch (nElType)
                 {
@@ -769,7 +775,7 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
                         return -1;
                 }
             }
-            else if (bond_valence == valence && ( valence == 3 || valence == 2 && ( bAddH || num_H == 1 ) ) && nCharge == 1 && nRadical == INCHI_RADICAL_DOUBLET)
+            else if (bond_valence == valence && ( valence == 3 || (valence == 2 && ( bAddH || num_H == 1 )) ) && nCharge == 1 && nRadical == INCHI_RADICAL_DOUBLET) /* djb-rwth: addressing LLVM warning */
             {
                 switch (nElType)
                 {
@@ -782,8 +788,8 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
             }
             else
             {
-                if (bond_valence == valence && valence == 2 && ( bAddH || num_H == 1 ) && nCharge == 0 ||
-                                                    bond_valence == valence && valence == 2 && nCharge == -1)
+                if ((bond_valence == valence && valence == 2 && ( bAddH || num_H == 1 ) && nCharge == 0) ||
+                                                    (bond_valence == valence && valence == 2 && nCharge == -1)) /* djb-rwth: addressing LLVM warnings */
                 {
                     switch (nElType)
                     {
@@ -858,17 +864,26 @@ void e_inchi_swap( char *a, char *b, size_t width )
 int e_insertions_sort( void *base,
                        size_t num,
                        size_t width,
-                       int( *compare )( const void *e1, const void *e2 ) )
+                       int( *compare )( const void*, const void* ) ) /* djb-rwth: types of variables are sufficient */
 {
-    char *i, *j, *pk;
-    int  num_trans = 0;
+    int* i;
+    int* j;
+    int* pk = (int*)base;
+    int  num_trans = 0, tmp;
+    size_t w_tmp = width;
     size_t k;
 
-    for (k = 1, pk = (char*) base; k < num; k++, pk += width)
+    for (k = 1; k < num; k++, pk += width)
     {
-        for (i = pk, j = pk + width; j > ( char* )base && ( *compare )( i, j ) > 0; j = i, i -= width)
+        for (i = j = pk + width; j > (int*)base && (i -= width, (*compare)(i, j) > 0); j = i)
         {
-            e_inchi_swap( i, j, width );
+            if (i != j)
+                while (w_tmp--)
+                {
+                    tmp = *i;
+                    *i++ = *j;
+                    *j++ = tmp;
+                }
             num_trans++;
         }
     }
@@ -903,15 +918,18 @@ int e_insertions_sort( void *base,
 #define MPY_SINE              3.00
 #define MAX_EDGE_RATIO        6.00   /*  max max/min edge ratio for a tetrahedra close to a parallelogram  */
 #endif
+
+#define ARR_DIM 3 /* djb-rwth: default dimension of arrays */
+
 /*  local prototypes */
 static double e_get_z_coord( inchi_Atom* at, int cur_atom, int neigh_no, int *nType, int bPointedEdgeStereo );
 static double e_len3( const double c[] );
 static double e_len2( const double c[] );
-static double* e_diff3( const double a[], const double b[], double result[] );
-static double* e_add3( const double a[], const double b[], double result[] );
-static double* e_mult3( const double a[], double b, double result[] );
-static double* e_copy3( const double a[], double result[] );
-static double* e_change_sign3( const double a[], double result[] );
+static void* e_diff3( const double a[], const double b[], double result[] );
+static void e_add3( const double a[], const double b[], double result[] );
+static void e_mult3( const double a[], double b, double result[] );
+/* static double* e_copy3(const double a[], double result[]); */
+static void e_change_sign3( const double a[], double result[] );
 static double e_dot_prod3( const double a[], const double b[] );
 static int e_dot_prodchar3( const S_CHAR a[], const S_CHAR b[] );
 static double* e_cross_prod3( const double a[], const double b[], double result[] );
@@ -935,7 +953,7 @@ static int e_FixSb0DParities( inchi_Atom *at, Stereo0D *pStereo, int chain_lengt
 
 /******************************************************************/
 
-static double         *pDoubleForSort;
+/* static double* pDoubleForSort; */ /* djb-rwth: removing redundant variables */
 
 
 /****************************************************************************/
@@ -947,7 +965,7 @@ double e_get_z_coord( inchi_Atom* at, int cur_atom, int neigh_no, int *nType, in
     double z = at[neigh].z - at[cur_atom].z;
     int    bFlat;
 
-    if (bFlat = ( fabs( z ) < ZERO_LENGTH ))
+    if ((bFlat = ( fabs( z ) < ZERO_LENGTH ))) /* djb-rwth: addressing LLVM warning */
     {
         int i;
         for (i = 0; i < at[cur_atom].num_bonds; i++)
@@ -1008,23 +1026,35 @@ double e_get_z_coord( inchi_Atom* at, int cur_atom, int neigh_no, int *nType, in
     return z;
 }
 
-
+/* djb-rwth: all mathematical functions have to be rewritten as the function arguments are arrays of various dimensions */
 /****************************************************************************/
-double e_len3( const double c[] )
+double e_len3( const double c[] ) /* djb-rwth: avoiding uninitialised values */
 {
-    return sqrt( c[0] * c[0] + c[1] * c[1] + c[2] * c[2] );
+    double tmpar[ARR_DIM] = { 0.0 };
+#if USE_BCF
+    memcpy_s(tmpar, ARR_DIM * sizeof(c[0]), c, ARR_DIM * sizeof(c[0]));
+#else
+    memcpy(tmpar, c, ARR_DIM * sizeof(c[0]));
+#endif
+    return sqrt(pow(tmpar[0], 2.0) + pow(tmpar[1], 2.0) + pow(tmpar[2], 2.0));
 }
 
 
 /****************************************************************************/
-double e_len2( const double c[] )
+double e_len2( const double c[] ) /* djb-rwth: avoiding uninitialised values */
 {
-    return sqrt( c[0] * c[0] + c[1] * c[1] );
+    double tmpar[ARR_DIM - 1] = { 0,0 };
+#if USE_BCF
+    memcpy_s(tmpar, (ARR_DIM - 1) * sizeof(c[0]), c, (ARR_DIM - 1) * sizeof(c[0]));
+#else
+    memcpy(tmpar, c, (ARR_DIM - 1) * sizeof(c[0]));
+#endif
+    return sqrt(pow(tmpar[0], 2.0) + pow(tmpar[1], 2.0));
 }
 
 
 /****************************************************************************/
-double* e_diff3( const double a[], const double b[], double result[] )
+void* e_diff3( const double a[], const double b[], double result[] ) /* djb-rwth: changed function type */
 {
 
     result[0] = a[0] - b[0];
@@ -1036,29 +1066,29 @@ double* e_diff3( const double a[], const double b[], double result[] )
 
 
 /****************************************************************************/
-double* e_add3( const double a[], const double b[], double result[] )
+void e_add3( const double a[], const double b[], double result[] ) /* djb-rwth: changed function type */
 {
     result[0] = a[0] + b[0];
     result[1] = a[1] + b[1];
     result[2] = a[2] + b[2];
 
-    return result;
+    /* return result; */
 }
 
 
 /****************************************************************************/
-double* e_mult3( const double a[], double b, double result[] )
+void e_mult3( const double a[], double b, double result[] ) /* djb-rwth: changed function type */
 {
     result[0] = a[0] * b;
     result[1] = a[1] * b;
     result[2] = a[2] * b;
 
-    return result;
+    /* return result; */
 }
 
 
 /****************************************************************************/
-double* e_copy3( const double a[], double result[] )
+/* double* e_copy3(const double a[], double result[]) -- djb-rwth: removing the function completely
 {
     result[0] = a[0];
     result[1] = a[1];
@@ -1066,30 +1096,30 @@ double* e_copy3( const double a[], double result[] )
 
     return result;
 }
-
+*/
 
 /****************************************************************************/
-double* e_change_sign3( const double a[], double result[] )
+void e_change_sign3( const double a[], double result[] ) /* djb-rwth: changed function type */
 {
     result[0] = -a[0];
     result[1] = -a[1];
     result[2] = -a[2];
 
-    return result;
+    /* return result; */
 }
 
 
 /****************************************************************************/
 double e_dot_prod3( const double a[], const double b[] )
 {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
 
 /****************************************************************************/
 int e_dot_prodchar3( const S_CHAR a[], const S_CHAR b[] )
 {
-    int prod = ( (int) a[0] * (int) b[0] + (int) a[1] * (int) b[1] + (int) a[2] * (int) b[2] ) / 100;
+    int prod = ( (int)a[0]*(int)b[0] + (int)a[1]*(int)b[1] + (int)a[2]*(int)b[2] ) / 100;
     if (prod > 100)
     {
         prod = 100;
@@ -1159,7 +1189,8 @@ double e_triple_prod( double a[], double b[], double c[], double *sine_value )
 /****************************************************************************/
 int e_CompDble( const void *a1, const void *a2 )
 {
-    double diff = pDoubleForSort[*(const int*) a1] - pDoubleForSort[*(const int*) a2];
+    /* djb-rwth: clearing up all the mess caused by wrong memory handling */
+    /* double diff = pDoubleForSort[*(const int*)a1] - pDoubleForSort[*(const int*)a2];
     if (diff > 0.0)
     {
         return 1;
@@ -1170,6 +1201,8 @@ int e_CompDble( const void *a1, const void *a2 )
     }
 
     return 0;
+    */
+    return (const int*)a1 - (const int*)a2;
 }
 
 
@@ -1187,10 +1220,10 @@ int e_Get2DTetrahedralAmbiguity( double at_coord[][3], int bAddExplicitNeighbor 
     double dBondDirection[MAX_NUM_STEREO_ATOM_NEIGH], dAngle, dAlpha, dLimit, dBisector;
     int  nNumNeigh = MAX_NUM_STEREO_ATOM_NEIGH - ( bAddExplicitNeighbor != 0 );
     int  i, num_Up, num_Dn, bPrev_Up, cur_len_Up, cur_first_Up, len_Up, first_Up;
-    int  ret;
+    int  ret = 0;
     int  bFixSp3Bug = 1; /* 1=> FixSp3Bug option for overlapping 2D stereo bonds */
 
-    ret = 0;
+    /* djb-rwth: removing redundant code */
     for (i = 0, num_Up = num_Dn = 0; i < nNumNeigh; i++)
     {
         dAngle = atan2( at_coord[i][1], at_coord[i][0] ); /*  range from -pi to +pi */
@@ -1227,7 +1260,7 @@ int e_Get2DTetrahedralAmbiguity( double at_coord[][3], int bAddExplicitNeighbor 
     }
 
     /*  sort according to the bond orientations */
-    pDoubleForSort = dBondDirection;
+    /* pDoubleForSort = dBondDirection; */ /* djb-rwth: removing redundant variables/code */
     e_insertions_sort( nBondOrder, nNumNeigh, sizeof( nBondOrder[0] ), e_CompDble );
 
     /*  find the longest contiguous sequence of Up bonds */
@@ -1535,8 +1568,8 @@ int e_Get2DTetrahedralAmbiguity( double at_coord[][3], int bAddExplicitNeighbor 
                             dAlpha = dBondDirection[nBondOrder[( first_Up + 2 ) % nNumNeigh]] -
                                 dBondDirection[nBondOrder[( first_Up + 1 ) % nNumNeigh]];
                             dAlpha = fabs( dAlpha );
-                            if (dAngle < 2.0 * ZERO_ANGLE && dAlpha > MIN_ANGLE ||
-                                 dAlpha < 2.0 * ZERO_ANGLE && dAngle > MIN_ANGLE)
+                            if ((dAngle < 2.0 * ZERO_ANGLE && dAlpha > MIN_ANGLE) ||
+                                 (dAlpha < 2.0 * ZERO_ANGLE && dAngle > MIN_ANGLE)) /* djb-rwth: addressing LLVM warnings */
                             {
                                 ret = ( T2D_OKAY | T2D_WARN );
                             }
@@ -1846,15 +1879,15 @@ double e_triple_prod_and_min_abs_sine( double at_coord[][3], double *min_sine )
         return e_triple_prod( at_coord[0], at_coord[1], at_coord[2], NULL );
     }
 
-    prod = e_triple_prod( at_coord[0], at_coord[1], at_coord[2], &sine_value );
+    prod = e_triple_prod( at_coord[0], at_coord[1], at_coord[2], &sine_value ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     sine_value = fabs( sine_value );
     min_sine_value = inchi_min( min_sine_value, sine_value );
 
-    prod = e_triple_prod( at_coord[1], at_coord[2], at_coord[0], &sine_value );
+    prod = e_triple_prod( at_coord[1], at_coord[2], at_coord[0], &sine_value ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     sine_value = fabs( sine_value );
     min_sine_value = inchi_min( min_sine_value, sine_value );
 
-    prod = e_triple_prod( at_coord[2], at_coord[0], at_coord[1], &sine_value );
+    prod = e_triple_prod( at_coord[2], at_coord[0], at_coord[1], &sine_value ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     sine_value = fabs( sine_value );
     min_sine_value = inchi_min( min_sine_value, sine_value );
 
@@ -1869,8 +1902,8 @@ double e_triple_prod_and_min_abs_sine( double at_coord[][3], double *min_sine )
 int are_3_vect_in_one_plane( double at_coord[][3], double min_sine )
 {
     double actual_min_sine;
-    double prod;
-    prod = e_triple_prod_and_min_abs_sine( at_coord, &actual_min_sine );
+    double prod; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
+    prod = e_triple_prod_and_min_abs_sine( at_coord, &actual_min_sine ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 
     return actual_min_sine <= min_sine;
 }
@@ -1881,7 +1914,7 @@ int are_3_vect_in_one_plane( double at_coord[][3], double min_sine )
 int e_are_4at_in_one_plane( double at_coord[][3], double min_sine )
 {
     double actual_min_sine, min_actual_min_sine;
-    double coord[3][3], prod;
+    double coord[3][3], prod; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     int i, k, j;
     for (k = 0; k < 4; k++)
     {
@@ -1894,7 +1927,7 @@ int e_are_4at_in_one_plane( double at_coord[][3], double min_sine )
                 j++;
             }
         }
-        prod = e_triple_prod_and_min_abs_sine( coord, &actual_min_sine );
+        prod = e_triple_prod_and_min_abs_sine( coord, &actual_min_sine ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
         if (!k || actual_min_sine < min_actual_min_sine)
         {
             min_actual_min_sine = actual_min_sine;
@@ -2330,7 +2363,7 @@ int e_FixSb0DParities( inchi_Atom *at, Stereo0D *pStereo, int chain_length, AT_N
      /* no metal case */
         j_neigh_at_1 = i_neigh_at_1 = ( i_next_at_1 == 0 );
         j_next_at_1 = i_next_at_1;
-        j1 = at[at_1].num_bonds;
+        /* djb-rwth: removing redundant code */
     }
 
     if (bOnlyNM2 || ATOM_PARITY_WELL_DEF( parity2NM ))
@@ -2360,7 +2393,7 @@ int e_FixSb0DParities( inchi_Atom *at, Stereo0D *pStereo, int chain_length, AT_N
     {
         j_neigh_at_2 = i_neigh_at_2 = ( i_next_at_2 == 0 );
         j_next_at_2 = i_next_at_2;
-        j2 = at[at_2].num_bonds;
+        /* djb-rwth: removing redundant code */
     }
 
     if (i_neigh_at_1 < 0 || i_neigh_at_2 < 0 ||
@@ -2547,14 +2580,14 @@ int e_half_stereo_bond_parity( inchi_Atom *at,
 {
     double at_coord[MAX_NUM_STEREO_BOND_NEIGH][3], c, s, tmp[3], tmp1, tmp2, min_tmp, max_tmp, z;
     double temp[3], pnt[3][3];
-    int j, k, p0, p1, p2, next, num_z, nType, num_either_single, num_either_double;
+    int j, k, p0, p1, p2, next, nType, num_either_single; /* djb-rwth: removing redundant variables */
     int nNumExplictAttachments;
     int bond_parity = INCHI_PARITY_UNDEFINED;
     int    num_H = 0, num_eH = 0, num_nH = 0 /* = num_iso_H[0] */;
     const double one_pi = 2.0*atan2( 1.0 /* y */, 0.0 /* x */ );
     const double two_pi = 2.0*one_pi;
     AT_NUM       nSbNeighOrigAtNumb[MAX_NUM_STEREO_BOND_NEIGH];
-    int          bAmbiguousStereo = 0;
+    /* djb-rwth: removing redundant variables */
     S_CHAR       num_iso_eH[NUM_H_ISOTOPES + 1]; /* count explicit H */
 
     if (z_dir && !z_dir[0] && !z_dir[1] && !z_dir[2])
@@ -2585,7 +2618,7 @@ int e_half_stereo_bond_parity( inchi_Atom *at,
         }
     }
 
-    memset( num_iso_eH, 0, sizeof( num_iso_eH ) );
+    memset( num_iso_eH, 0, sizeof( num_iso_eH ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     for (j = 0; j < at[cur_at].num_bonds; j++)
     {
         next = at[cur_at].neighbor[j];
@@ -2645,7 +2678,7 @@ int e_half_stereo_bond_parity( inchi_Atom *at,
      ********************************************************************/
 
     /*  store neighbors coordinates */
-    num_z = num_either_single = num_either_double = 0;
+    num_either_single = 0; /* djb-rwth: removing redundant code */
     nNumExplictAttachments = 0;
     for (j = 0; j < at[cur_at].num_bonds; j++)
     {
@@ -2673,7 +2706,7 @@ int e_half_stereo_bond_parity( inchi_Atom *at,
                     z = -z;
                 /*  no break; here */
             case ZTYPE_3D:
-                num_z++;
+                ; /* djb-rwth: removing redundant code */
         }
         at_coord[nNumExplictAttachments][2] = z;
         nNumExplictAttachments++;
@@ -2762,7 +2795,8 @@ int e_half_stereo_bond_parity( inchi_Atom *at,
     /*  find at_coord in the new basis of {pnt[p0], pnt[p1], pnt[p2]} */
     for (j = 0; j < 3; j++)
     {
-        e_copy3( at_coord[j], temp );
+        /* e_copy3(at_coord[j], temp); -- djb-rwth: removing copy3 function */
+        memcpy(temp, at_coord[j], sizeof(at_coord[j]));
         for (k = 0; k < 3; k++)
         {
             at_coord[j][k] = e_dot_prod3( temp, pnt[( k + p0 ) % 3] );
@@ -2818,41 +2852,14 @@ int e_half_stereo_bond_parity( inchi_Atom *at,
                                               -floor( 0.5 - 100.0 * pnt[p2][j] ) ); /*  abs(z_dir) = 100 */
     }
     /*  check for ambiguity */
-    if (nNumExplictAttachments > 2)
+    /* djb-rwth: removing redundant code */
+    if (nNumExplictAttachments == 2)
     {
-        min_tmp = inchi_min( tmp1, tmp2 );
-        max_tmp = inchi_max( tmp1, tmp2 );
-        if (min_tmp > one_pi - MIN_SINE || max_tmp < one_pi + MIN_SINE || max_tmp - min_tmp > one_pi - MIN_SINE)
+        /* 10-6-2003: added */
+        min_tmp = fabs( tmp1 - one_pi );
+        if (min_tmp < MIN_SINE)
         {
-            bAmbiguousStereo |= AMBIGUOUS_STEREO;
-        }
-        else /* 3D ambiguity 8-28-2002 */
-        {
-            if (fabs( at_coord[0][2] ) > MAX_SINE)
-            { /*  all fabs(at_coord[j][2] (j=0..2) must be equal */
-                bAmbiguousStereo |= AMBIGUOUS_STEREO;
-            }
-        }
-    }
-    else
-    {
-        {
-            if (nNumExplictAttachments == 2)
-            {
-                /* 10-6-2003: added */
-                min_tmp = fabs( tmp1 - one_pi );
-                if (min_tmp < MIN_SINE)
-                {
-                    bond_parity = INCHI_PARITY_UNDEFINED; /* consider as undefined 10-6-2003 */
-                }
-                else
-                {
-                    if (min_tmp < MIN_ANGLE_DBOND)
-                    {
-                        bAmbiguousStereo |= AMBIGUOUS_STEREO;
-                    }
-                }
-            }
+            bond_parity = INCHI_PARITY_UNDEFINED; /* consider as undefined 10-6-2003 */
         }
     }
 
@@ -2874,10 +2881,10 @@ int e_set_stereo_bonds_parity( Stereo0D *pStereo,
                                int at_1,
                                int bPointedEdgeStereo )
 {
-    int j, k, next_at_1, i_next_at_1, i_next_at_2, at_2, next_at_2, num_stereo_bonds, bFound, bAllene;
-    int bond_type, num_2s_1, num_alt_1, bNxtStereobond, bCurStereobond, bNxtCumulene;
-    int num_stored_stereo_bonds, num_stored_isotopic_stereo_bonds;
-    int chain_length, num_chains, cur_chain_length;
+    int j, k, i_next_at_1, i_next_at_2, at_2, next_at_2, num_stereo_bonds, bFound, bAllene; /* djb-rwth: removing redundant variables */
+    int bond_type, bNxtStereobond, bCurStereobond, bNxtCumulene; /* djb-rwth: removing redundant variables */
+    int num_stored_stereo_bonds; /* djb-rwth: removing redundant variables */
+    int cur_chain_length; /* djb-rwth: removing redundant variables */
     int all_at_2[MAX_NUM_STEREO_BONDS];
     int all_pos_1[MAX_NUM_STEREO_BONDS], all_pos_2[MAX_NUM_STEREO_BONDS];
     S_CHAR all_unkn[MAX_NUM_STEREO_BONDS], all_chain_len[MAX_NUM_STEREO_BONDS];
@@ -2891,19 +2898,17 @@ int e_set_stereo_bonds_parity( Stereo0D *pStereo,
         return 0;
 
     /*  count bonds and find the second atom on the stereo bond */
-    num_2s_1 = num_alt_1 = 0;
-    chain_length = 0;
-    num_chains = 0;
+    /* djb-rwth: removing redundant code */
     for (i_next_at_1 = 0, num_stereo_bonds = 0; i_next_at_1 < at[at_1].num_bonds; i_next_at_1++)
     {
 
-        at_2 = next_at_1 = at[at_1].neighbor[i_next_at_1];
+        at_2 = at[at_1].neighbor[i_next_at_1]; /* djb-rwth: removing redundant code */
         bond_type = at[at_1].bond_type[i_next_at_1];
         nUnknown = ( at[at_1].bond_stereo[i_next_at_1] == INCHI_PARITY_UNKNOWN );
         next_at_2 = at_1;
 
         bNxtStereobond = e_bCanAtomHaveAStereoBond( at, at_2, pStereo->cAtType );
-        bNxtCumulene = 0;
+        /* djb-rwth: removing redundant code */
         cur_chain_length = 0;
 
         if (bNxtStereobond + bCurStereobond > 3)
@@ -2958,7 +2963,7 @@ int e_set_stereo_bonds_parity( Stereo0D *pStereo,
                 if (bAllene /* at the end of the chain atom Y is =Y=, not =Y< or =Y- */ ||
                      !e_bCanAtomBeTerminalAllene( at_2, pStereo->cAtType ))
                 {
-                    cur_chain_length = 0;
+                    cur_chain_length = 0; /* djb-rwth: ignoring LLVM warning: value used */
                     continue; /*  ignore: does not fit cumulene description; go to check next at_1 neighbor */
                 }
             }
@@ -3006,7 +3011,7 @@ int e_set_stereo_bonds_parity( Stereo0D *pStereo,
 
     /* ================== calculate parities ====================== */
     /*  find possibly stereo bonds and save them */
-    num_stored_isotopic_stereo_bonds = 0;
+    /* djb-rwth: removing redundant code */
     num_stored_stereo_bonds = 0;
     for (k = 0; k < num_stereo_bonds; k++)
     {
@@ -3021,10 +3026,10 @@ int e_set_stereo_bonds_parity( Stereo0D *pStereo,
         nUnknown = all_unkn[k];
         at_middle = all_middle_at[k];
         cur_chain_length = all_chain_len[k];
-        memset( z_dir1, 0, sizeof( z_dir1 ) );
-        memset( z_dir2, 0, sizeof( z_dir2 ) );
-        memset( z_dir1NM, 0, sizeof( z_dir1NM ) );
-        memset( z_dir2NM, 0, sizeof( z_dir2NM ) );
+        memset( z_dir1, 0, sizeof( z_dir1 ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset( z_dir2, 0, sizeof( z_dir2 ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset( z_dir1NM, 0, sizeof( z_dir1NM ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset( z_dir2NM, 0, sizeof( z_dir2NM ) ); /* djb-rwth: memset_s C11/Annex K variant? */
         bOnlyNM1 = bOnlyNM2 = 0;
         bAnomaly1NM = bAnomaly2NM = 0;
         i_ord_LastMetal1 = i_ord_LastMetal2 = -1;
@@ -3088,8 +3093,8 @@ int e_set_stereo_bonds_parity( Stereo0D *pStereo,
                     if (ATOM_PARITY_WELL_DEF( parity_at_1NM ) && ATOM_PARITY_WELL_DEF( parity_at_1 ) &&
                          0 <= i_ord_LastMetal1)
                     {
-                        if (1 == i_ord_LastMetal1 % 2 && parity_at_1NM == parity_at_1 ||
-                             0 == i_ord_LastMetal1 % 2 && parity_at_1NM != parity_at_1)
+                        if ((1 == i_ord_LastMetal1 % 2 && parity_at_1NM == parity_at_1) ||
+                             (0 == i_ord_LastMetal1 % 2 && parity_at_1NM != parity_at_1)) /* djb-rwth: addressing LLVM warnings */
                         {
                             /* abnormal geometry: all bonds in a sector < 180 degrees */
                             /*parity_at_1NM = 3 - parity_at_1;*/
@@ -3136,8 +3141,8 @@ int e_set_stereo_bonds_parity( Stereo0D *pStereo,
                     if (ATOM_PARITY_WELL_DEF( parity_at_2NM ) && ATOM_PARITY_WELL_DEF( parity_at_2 ) &&
                          0 <= i_ord_LastMetal2)
                     {
-                        if (1 == i_ord_LastMetal2 % 2 && parity_at_2NM == parity_at_2 ||
-                             0 == i_ord_LastMetal2 % 2 && parity_at_2NM != parity_at_2)
+                        if ((1 == i_ord_LastMetal2 % 2 && parity_at_2NM == parity_at_2) ||
+                             (0 == i_ord_LastMetal2 % 2 && parity_at_2NM != parity_at_2)) /* djb-rwth: addressing LLVM warning */
                         {
                             /* abnormal geometry: all bonds in a sector < 180 degrees */
                             /*parity_at_2NM = 3 - parity_at_2;*/
@@ -3266,21 +3271,21 @@ int e_set_stereo_atom_parity( Stereo0D *pStereo,
                               int cur_at,
                               int bPointedEdgeStereo )
 {
-    int    j, k, next_at, num_z, j1, nType, num_eH, num_iH, tot_num_iso_H, nMustHaveNumNeigh, bAmbiguousStereo;
+    int    j, k, next_at, num_z, j1, nType, num_eH, num_iH, tot_num_iso_H, nMustHaveNumNeigh; /* djb-rwth: removing redundant variables */
     double z, sum_xyz[3], min_sine, triple_product;
     double at_coord[MAX_NUM_STEREO_ATOM_NEIGH][3];
-    double bond_len_xy[4], rmax, rmin;
+    double bond_len_xy[4], rmax = 0.0, rmin = 0.0; /* djb-rwth: initialisation required to avoid garbage values */
     double at_coord_center[3];
-    int    parity, out_parity, out_stereo_atom_parity, bAmbiguous = 0, bAddExplicitNeighbor = 0;
+    int    parity, bAmbiguous = 0, bAddExplicitNeighbor = 0; /* djb-rwth: removing redundant variables */
     int    b2D = 0, n2DTetrahedralAmbiguity = 0;
     AT_NUM nSbNeighOrigAtNumb[MAX_NUM_STEREO_ATOM_NEIGH];
     S_CHAR num_iso_eH[NUM_H_ISOTOPES + 1]; /* count explicit H */
     int    bFixSp3Bug = 1; /* 1=> FixSp3Bug option for stereo bonds longer than 20 */
 
-    out_parity = out_stereo_atom_parity = INCHI_PARITY_NONE;
+    /* djb-rwth: removing redundant code */
     parity = INCHI_PARITY_NONE;
-    bAmbiguousStereo = 0;
-    memset( num_iso_eH, 0, sizeof( num_iso_eH ) );
+    /* djb-rwth: removing redundant code */
+    memset( num_iso_eH, 0, sizeof( num_iso_eH ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     num_eH = 0; /* number of explicit H -- will be found later */
     num_iH = inchi_NUMH2( at, cur_at ); /* implicit H */
 
@@ -3291,7 +3296,7 @@ int e_set_stereo_atom_parity( Stereo0D *pStereo,
         goto exit_function;
     }
     /* find explicit terminal H */
-    memset( num_iso_eH, 0, sizeof( num_iso_eH ) );
+    memset( num_iso_eH, 0, sizeof( num_iso_eH ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     for (j = 0; j < at[cur_at].num_bonds; j++)
     {
         next_at = at[cur_at].neighbor[j];
@@ -3472,7 +3477,8 @@ int e_set_stereo_atom_parity( Stereo0D *pStereo,
             else
             {
                 /*  we have enough information to find implicit hydrogen coordinates */
-                e_copy3( sum_xyz, at_coord[j] );
+                /* e_copy3(sum_xyz, at_coord[j]); -- djb-rwth: removing copy3 function */
+                memcpy(at_coord[j], sum_xyz, sizeof(sum_xyz));
                 e_change_sign3( at_coord[j], at_coord[j] );
                 z = e_len3( at_coord[j] );
                 /* Comparing the original bond lengths to lenghts derived from normalized to 1 */
@@ -3595,7 +3601,7 @@ int e_set_stereo_atom_parity( Stereo0D *pStereo,
      * (orientation of atoms #1-3 when looking from #0)
      ********************************************************/
     triple_product = e_triple_prod_and_min_abs_sine2( &at_coord[1], at_coord_center, bAddExplicitNeighbor, &min_sine, &bAmbiguous );
-    if (fabs( triple_product ) > ZERO_FLOAT && ( min_sine > MIN_SINE || fabs( min_sine ) > ZERO_FLOAT && ( n2DTetrahedralAmbiguity & T2D_OKAY ) ))
+    if (fabs( triple_product ) > ZERO_FLOAT && ( min_sine > MIN_SINE || (fabs( min_sine ) > ZERO_FLOAT && ( n2DTetrahedralAmbiguity & T2D_OKAY )) )) /* djb-rwth: addressing LLVM warning */
     {
         /* Even => sorted in correct order, Odd=>transposed */
         parity = triple_product > 0.0 ? INCHI_PARITY_EVEN : INCHI_PARITY_ODD;
@@ -3621,10 +3627,7 @@ int e_set_stereo_atom_parity( Stereo0D *pStereo,
     }
 exit_function:
 
-    if (parity)
-    {
-        bAmbiguousStereo |= bAmbiguous;
-    }
+    /* djb-rwth: removing redundant code */
     /*  isotopic parity => parity */
     if (parity < 0)
         parity = -parity;
@@ -3632,7 +3635,7 @@ exit_function:
     if (0 < parity && parity < INCHI_PARITY_UNDEFINED)
     {
         inchi_Stereo0D *stereo0D;
-        if (stereo0D = e_GetNewStereo( pStereo ))
+        if ((stereo0D = e_GetNewStereo( pStereo ))) /* djb-rwth: addressing LLVM warning */
         {
             stereo0D->central_atom = cur_at;
             stereo0D->parity = parity;
@@ -3685,7 +3688,7 @@ inchi_Stereo0D *e_GetNewStereo( Stereo0D *pStereo )
 /****************************************************************************/
 int set_0D_stereo_parities( inchi_Input *pInp, int bPointedEdgeStereo )
 {
-    int num_3D_stereo_atoms = 0, num_stereo_bonds = 0;
+    int num_3D_stereo_atoms = 0; /* djb-rwth: removing redundant variables */
 
     int i, is_stereo, num_stereo;
     inchi_Atom* at = pInp->atom;
@@ -3782,7 +3785,7 @@ int set_0D_stereo_parities( inchi_Input *pInp, int bPointedEdgeStereo )
     }
 
     /*  clear stereo descriptors */
-    memset( pStereo, 0, sizeof( *pStereo ) );
+    memset( pStereo, 0, sizeof( *pStereo ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     pStereo->delta_num_stereo0D = num_at;
     pStereo->cAtType = (S_CHAR *) e_inchi_calloc( num_at, sizeof( pStereo->cAtType[0] ) );
     if (!pStereo->cAtType)
@@ -3800,7 +3803,7 @@ int set_0D_stereo_parities( inchi_Input *pInp, int bPointedEdgeStereo )
     for (i = 0, num_stereo = 0; i < num_at; i++)
     {
 
-        if (is_stereo = e_set_stereo_atom_parity( pStereo, at, i, bPointedEdgeStereo ))
+        if ((is_stereo = e_set_stereo_atom_parity( pStereo, at, i, bPointedEdgeStereo ))) /* djb-rwth: addressing LLVM warning */
         {
             num_3D_stereo_atoms += ATOM_PARITY_WELL_DEF( is_stereo );
             num_stereo += ATOM_PARITY_WELL_DEF( is_stereo );
@@ -3811,12 +3814,12 @@ int set_0D_stereo_parities( inchi_Input *pInp, int bPointedEdgeStereo )
             if (RETURNED_ERROR( is_stereo ))
             {
                 num_3D_stereo_atoms = is_stereo;
-                is_stereo = 0;
+                /* djb-rwth: removing redundant code */
                 break;
             }
             else
             {
-                num_stereo_bonds += is_stereo;
+                /* djb-rwth: removing redundant code */
                 num_stereo += is_stereo;
             }
         }
@@ -3857,7 +3860,7 @@ int Clear3D2Dstereo( inchi_Input *pInp )
         pInp->atom[i].x =
             pInp->atom[i].y =
             pInp->atom[i].z = 0.0;
-        memset( pInp->atom[i].bond_stereo, 0, sizeof( pInp->atom[i].bond_stereo ) );
+        memset( pInp->atom[i].bond_stereo, 0, sizeof( pInp->atom[i].bond_stereo ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     }
 
     return 1;
