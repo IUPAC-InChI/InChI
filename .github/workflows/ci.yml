@@ -1,0 +1,35 @@
+name: InChI Continuous Integration
+
+on:
+  push:
+    branches: [ main, rwth ]
+  pull_request:
+    branches: [ main, rwth ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: gcc:latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install SDF-pipeline
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install git+https://github.com/TUCAN-nest/SDF-pipeline.git
+
+      - name: Run regression tests
+        run: python -m INCHI-1-TEST.run_regression_tests ci
+        shell: bash
+
+      - name: Upload regression test results
+        if: '!cancelled()'
+        uses: actions/upload-artifact@v3
+        with:
+          name: regression-test-results
+          path: ./INCHI-1-TEST/data/ci/*_regression_test.log
