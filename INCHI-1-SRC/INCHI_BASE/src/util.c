@@ -37,7 +37,7 @@
 
 #include "mode.h"
 
-#if defined(COMPILE_ANSI_ONLY) && (defined(__APPLE__) || defined(__EMSCRIPTEN__))
+#if defined(COMPILE_ANSI_ONLY) && defined(__APPLE__)
 /*    For build under OSX, advice from Burt Leland */
 #include "ichicomp.h"    /* Needed for __isascii define */
 #endif
