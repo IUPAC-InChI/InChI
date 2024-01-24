@@ -1,3 +1,7 @@
+# Trigger this workflow by pushing a release tag.
+# Make sure that `HEAD` is pointing to the commit you want to release.
+# Then run `git tag -a v<version_tag> -m "Release version <version_tag> (<yyyy>-<mm>-<dd>)" && git push && git push --tags`.
+# For example `git tag -a v1.06 -m "Release version 1.06 (2020-12-20)" && git push && git push --tags`.
 name: InChI Release
 
 on:
