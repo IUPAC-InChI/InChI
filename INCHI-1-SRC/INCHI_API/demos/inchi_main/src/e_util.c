@@ -49,7 +49,12 @@
 #include "e_util.h"
 #include "e_ichicomp.h"
 
- /* djb-rwth: defining __isascii */
+#if defined(COMPILE_ANSI_ONLY) && defined(__APPLE__)
+ /*    For build under OSX, advice from Burt Leland */
+#include "../../../../INCHI_BASE/src/ichicomp.h"    /* Needed for __isascii define */
+#endif
+
+/* djb-rwth: defining __isascii */
 #if defined(__isascii)
 #define is_ascii __isascii
 #elif defined(isascii)
