@@ -1,0 +1,38 @@
+// https://containers.dev/implementors/json_reference/
+// https://hub.docker.com/_/python
+{
+    "name": "InChI_Dev",
+    "image": "python:3.11",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.scrollback": 5000,
+                "editor.formatOnSave": true,
+                "python": {
+                    "editor.defaultFormatter": "ms-python.black-formatter",
+                    "testing.unittestEnabled": false,
+                    "testing.pytestEnabled": true
+                }
+            },
+            "extensions": [
+                "ms-vscode.cpptools",
+                "twxs.cmake",
+                "ms-vscode.cmake-tools",
+                "eamodio.gitlens",
+                "streetsidesoftware.code-spell-checker",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.black-formatter",
+                "ms-python.mypy-type-checker",
+                "ms-python.flake8",
+                "KevinRose.vsc-python-indent",
+                "ms-vscode.makefile-tools",
+                "GitHub.vscode-github-actions",
+                "ms-azuretools.vscode-docker",
+                "GitHub.copilot",
+                "qwtel.sqlite-viewer"
+            ]
+        }
+    },
+    "postCreateCommand": "pip install --upgrade pip && pip install git+https://github.com/TUCAN-nest/SDF-pipeline.git"
+}
