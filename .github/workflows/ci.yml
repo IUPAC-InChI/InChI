@@ -13,4 +13,5 @@ jobs:
     container: gcc:latest
 
     steps:
+      - uses: actions/checkout@v3
       - uses: ./.github/workflows/regression_tests.yml
