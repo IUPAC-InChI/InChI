@@ -11,7 +11,4 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container: gcc:latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/workflows/regression_tests.yml
+    uses: ./.github/workflows/regression_tests.yml
