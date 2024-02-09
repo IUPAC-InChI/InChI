@@ -1,5 +1,11 @@
 name: Regression tests
 
+inputs:
+  artifact-name:
+    description: 'Name of the uploaded artifact'
+    required: false
+    default: 'regression-test-results'
+
 runs:
   using: "composite"
   steps:
@@ -27,5 +33,5 @@ runs:
       if: '!cancelled()'
       uses: actions/upload-artifact@v3
       with:
-        name: regression-test-results_${{ vars.JOB_NAME }}
+        name: ${{ inputs.artifact-name }}
         path: ./INCHI-1-TEST/data/ci/*_regression_test.log
