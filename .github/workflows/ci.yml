@@ -27,9 +27,15 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install build and test environment
         run: |
-          apk add bash musl-dev gcc make python3 pipx
+          apk add bash musl-dev gcc make python3 py-pip
       - name: Show Python version
         run: |
           python --version
-        shell: bash
+      - name: Configure pip to break system packages
+        run: |
+          mkdir -p ~/.config/pip
+          cat <<EOT >> ~/.config/pip/pip.conf
+          [global]
+          break-system-packages = true
+          EOT
       - uses: ./.github/actions/regression_tests
