@@ -17,7 +17,7 @@ runs:
 
     - name: Show ldd version
       run: |
-        ldd --version
+        ldd --version || true
       shell: bash
 
     - name: Run regression tests
