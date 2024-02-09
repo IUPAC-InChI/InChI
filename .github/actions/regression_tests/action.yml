@@ -6,7 +6,6 @@ runs:
   steps:
     - name: Install SDF-pipeline
       run: |
-        python -m pipx install --upgrade pip
         python -m pipx install git+https://github.com/TUCAN-nest/SDF-pipeline.git
       shell: bash
 
