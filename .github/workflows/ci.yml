@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Install build environment
+      - name: Install build and test environment
         run: |
-          apk add bash musl-dev gcc make
+          apk add bash musl-dev gcc make python3 py-pip
       - uses: ./.github/actions/regression_tests
