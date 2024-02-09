@@ -18,6 +18,8 @@ jobs:
         with:
           python-version: '3.11'
       - uses: ./.github/actions/regression_tests
+        with:
+          artifact-name: regression-test-results_glibc_gcc
 
   test_musl_gcc:
     runs-on: ubuntu-latest
@@ -39,3 +41,5 @@ jobs:
           break-system-packages = true
           EOT
       - uses: ./.github/actions/regression_tests
+        with:
+          artifact-name: regression-test-results_musl_gcc
