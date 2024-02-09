@@ -8,10 +8,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  test_glibc_gcc:
     runs-on: ubuntu-latest
     container: gcc:latest
 
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/regression_tests
+
+  test_musl_gcc:
+    runs-on: ubuntu-latest
+    container: alpine:latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install build environment
+        run: |
+          apk add musl-dev gcc make
       - uses: ./.github/actions/regression_tests
