@@ -25,10 +25,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Install build and test environment
+      - name: Set up build and test environment
         run: |
           apk add bash musl-dev gcc make python3 py-pip
+          python3 -m venv .env
+          source .env/bin/activate
       - name: Show Python version
         run: |
-          python3 --version
+          python --version
       - uses: ./.github/actions/regression_tests
