@@ -14,6 +14,16 @@ runs:
         python -m pip install git+https://github.com/TUCAN-nest/SDF-pipeline.git
       shell: bash
 
+    - name: Show gcc version
+      run: |
+        gcc --version
+      shell: bash
+
+    - name: Show ldd version
+      run: |
+        ldd --version
+      shell: bash
+
     - name: Run regression tests
       run: python -m INCHI-1-TEST.run_regression_tests ci
       shell: bash
