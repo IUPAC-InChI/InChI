@@ -14,6 +14,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - uses: ./.github/actions/regression_tests
 
   test_musl_gcc:
@@ -25,4 +28,7 @@ jobs:
       - name: Install build and test environment
         run: |
           apk add bash musl-dev gcc make python3 py-pip
+      - name: Show Python version
+        run: |
+          python3 --version
       - uses: ./.github/actions/regression_tests
