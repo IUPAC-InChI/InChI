@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  test_glibc_gcc:
     runs-on: ubuntu-latest
     container: gcc:latest
 
@@ -17,19 +17,29 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
-      - name: Install SDF-pipeline
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install git+https://github.com/TUCAN-nest/SDF-pipeline.git
-
-      - name: Run regression tests
-        run: python -m INCHI-1-TEST.run_regression_tests ci
-        shell: bash
-
-      - name: Upload regression test results
-        if: '!cancelled()'
-        uses: actions/upload-artifact@v3
+      - uses: ./.github/actions/regression_tests
         with:
-          name: regression-test-results
-          path: ./INCHI-1-TEST/data/ci/*_regression_test.log
+          artifact-name: regression-test-results_glibc_gcc
+
+  test_musl_gcc:
+    runs-on: ubuntu-latest
+    container: alpine:latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install build and test environment
+        run: |
+          apk add bash git musl-dev gcc make python3 py-pip
+      - name: Show Python version
+        run: |
+          python --version
+      - name: Configure pip to break system packages
+        run: |
+          mkdir -p ~/.config/pip
+          cat <<EOT >> ~/.config/pip/pip.conf
+          [global]
+          break-system-packages = true
+          EOT
+      - uses: ./.github/actions/regression_tests
+        with:
+          artifact-name: regression-test-results_musl_gcc
