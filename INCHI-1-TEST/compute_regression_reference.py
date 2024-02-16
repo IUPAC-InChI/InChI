@@ -19,9 +19,7 @@ from .config import (
 if __name__ == "__main__":
     dataset = get_dataset_arg()
 
-    subprocess.run(
-        f"{TEST_PATH}/download_inchi_regression_reference_lib.sh", check=True
-    )
+    subprocess.run(f"{TEST_PATH}/compile_reference_inchi_lib.sh", check=True)
 
     exit_code = 0
     sdf_paths = DATASETS[dataset]["sdf_paths"]

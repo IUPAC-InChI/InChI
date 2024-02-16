@@ -59,7 +59,7 @@ def get_progress(current: int, total: int) -> str:
 INCHI_API_PARAMETERS: Final[str] = ""
 TEST_PATH: Final[Path] = Path(__file__).parent.absolute()
 INCHI_LIB_PATH: Final[Path] = TEST_PATH.joinpath("libinchi.so.dev")
-INCHI_REFERENCE_LIB_PATH: Final[Path] = TEST_PATH.joinpath("libinchi.so.1.06.00")
+INCHI_REFERENCE_LIB_PATH: Final[Path] = TEST_PATH.joinpath("libinchi.so.v1.06")
 N_PROCESSES: Final[int] = len(
     os.sched_getaffinity(0)
 )  # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count

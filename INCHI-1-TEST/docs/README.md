@@ -53,7 +53,7 @@ Note that validation isn't available for `pubchem_compound3d`.
 ```Shell
 python -m INCHI-1-TEST.compute_regression_reference <dataset>
 ```
-downloads `libinchi.so.1.06.00`, the shared library belonging to the current stable InChI release,
+compiles `libinchi.so.v1.06`, the shared library belonging to the current stable InChI release,
 and generates an `<SDF>.regression_reference.sqlite` file for each SDF under `INCHI-1-TEST/data/<dataset>`.
 The `sqlite` file contains a table with the results for each molfile.
 
