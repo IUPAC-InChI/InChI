@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 from difflib import SequenceMatcher
 from typing import Generator
@@ -103,9 +104,9 @@ if __name__ == "__main__":
 
     log_paths = sorted(DATASETS[dataset]["log_path"].glob("*_regression_test.log"))
     if not log_paths:
-        raise RuntimeError(
-            f"There aren't any log file in {DATASETS[dataset]['log_path']}"
-        )
+        print(f"There aren't any logs in {DATASETS[dataset]['log_path']}")
+        sys.exit()
+
     log_path: Path = log_paths[-1]  # process most recent log file; TODO: parametrize?
     previous_sdf: str = ""
     sdf_log: dict = {}
