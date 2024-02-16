@@ -1,8 +1,6 @@
-import ctypes
 import subprocess
 import logging
 from functools import partial
-from typing import Final
 from datetime import datetime
 from sdf_pipeline import drivers
 from .consumers import regression_consumer
@@ -25,7 +23,6 @@ if __name__ == "__main__":
         f"{TEST_PATH}/download_inchi_regression_reference_lib.sh", check=True
     )
 
-    INCHI_LIB: Final = ctypes.CDLL(str(INCHI_REFERENCE_LIB_PATH))
     exit_code = 0
     sdf_paths = DATASETS[dataset]["sdf_paths"]
     log_path = DATASETS[dataset]["log_path"]
@@ -56,7 +53,9 @@ if __name__ == "__main__":
             drivers.regression_reference(
                 sdf_path=sdf_path,
                 reference_path=reference_path,
-                consumer_function=partial(regression_consumer, inchi_lib=INCHI_LIB),
+                consumer_function=partial(
+                    regression_consumer, inchi_lib_path=INCHI_REFERENCE_LIB_PATH
+                ),
                 get_molfile_id=get_molfile_id(sdf_path),
                 number_of_consumer_processes=N_PROCESSES,
             ),
