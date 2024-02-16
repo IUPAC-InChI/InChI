@@ -146,8 +146,9 @@ if __name__ == "__main__":
 
             sdf_log[log_entry["molfile_id"]] = molfile_log
 
-        # take care of last or only SDF
-        write_html_log(
-            sdf_log,
-            DATASETS[dataset]["log_path"].joinpath(previous_sdf),
-        )
+        if previous_sdf:
+            # take care of last or only SDF
+            write_html_log(
+                sdf_log,
+                DATASETS[dataset]["log_path"].joinpath(previous_sdf),
+            )
