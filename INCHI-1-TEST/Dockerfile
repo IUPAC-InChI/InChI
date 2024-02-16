@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.12
 
 # Python image includes the dependencies we need for building InChI (gcc, make, etc.)
 
