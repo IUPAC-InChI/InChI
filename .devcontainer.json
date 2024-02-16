@@ -2,7 +2,9 @@
 // https://hub.docker.com/_/python
 {
     "name": "InChI_Dev",
-    "image": "python:3.11",
+    "build": {
+        "dockerfile": "INCHI-1-TEST/Dockerfile"
+    },
     "customizations": {
         "vscode": {
             "settings": {
@@ -33,6 +35,5 @@
                 "qwtel.sqlite-viewer"
             ]
         }
-    },
-    "postCreateCommand": "pip install --upgrade pip && pip install git+https://github.com/TUCAN-nest/SDF-pipeline.git"
+    }
 }
