@@ -32,7 +32,8 @@
                 "GitHub.vscode-github-actions",
                 "ms-azuretools.vscode-docker",
                 "GitHub.copilot",
-                "qwtel.sqlite-viewer"
+                "qwtel.sqlite-viewer",
+                "ms-vscode.live-server"
             ]
         }
     }
