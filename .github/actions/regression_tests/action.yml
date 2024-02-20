@@ -29,9 +29,16 @@ runs:
       run: python -m INCHI-1-TEST.run_regression_tests ci
       shell: bash
 
+    - name: Write regression summary
+      if: '!cancelled()'
+      run: python -m INCHI-1-TEST.parse_regression_log ci
+      shell: bash
+
     - name: Upload regression test results
       if: '!cancelled()'
       uses: actions/upload-artifact@v3
       with:
         name: ${{ inputs.artifact-name }}
-        path: ./INCHI-1-TEST/data/ci/*_regression_test.log
+        path: |
+          ./INCHI-1-TEST/data/ci/*_regression_test.log
+          ./INCHI-1-TEST/data/ci/*.html
