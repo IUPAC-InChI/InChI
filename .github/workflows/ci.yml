@@ -13,8 +13,8 @@ jobs:
     container: gcc:12
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - uses: ./.github/actions/regression_tests
@@ -26,7 +26,7 @@ jobs:
     container: alpine:latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install build and test environment
         run: |
           apk add bash git musl-dev gcc make python3 py-pip
