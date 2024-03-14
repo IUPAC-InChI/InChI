@@ -128,8 +128,8 @@ if __name__ == "__main__":
                     sdf_log = {}
             previous_sdf = log_entry["sdf"]
 
-            info = json.loads(log_entry["info"])
-            diff = json.loads(log_entry["diff"])
+            info = log_entry["info"]
+            diff = log_entry["diff"]
             current = json.loads(diff["current"])
             reference = json.loads(diff["reference"])
 

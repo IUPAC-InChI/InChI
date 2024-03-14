@@ -1,5 +1,4 @@
 import ctypes
-import json
 from typing import Callable
 from pathlib import Path
 from sdf_pipeline import drivers
@@ -18,16 +17,14 @@ def regression_consumer(
     _, inchi_key = get_inchi_key_from_inchi(inchi_lib, inchi_string)
 
     return drivers.ConsumerResult(
-        get_molfile_id(molfile),
-        json.dumps({"consumer": "regression", "parameters": INCHI_API_PARAMETERS}),
-        json.dumps(
-            {
-                "inchi": inchi_string,
-                "key": inchi_key,
-                "aux": aux_info,
-                "log": log,
-                "message": message,
-                "exit": exit_code,
-            }
-        ),
+        molfile_id=get_molfile_id(molfile),
+        info={"consumer": "regression", "parameters": INCHI_API_PARAMETERS},
+        result={
+            "inchi": inchi_string,
+            "key": inchi_key,
+            "aux": aux_info,
+            "log": log,
+            "message": message,
+            "exit": exit_code,
+        },
     )
