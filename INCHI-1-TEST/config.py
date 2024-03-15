@@ -1,9 +1,10 @@
 import re
 import os
 import argparse
-from typing import Final, Callable
+from typing import Final, Callable, Generator
 from pathlib import Path
 from datetime import datetime
+from sdf_pipeline.core import read_records_from_gzipped_sdf
 
 
 def get_molfile_id(sdf_path: Path) -> Callable:
@@ -56,10 +57,24 @@ def get_progress(current: int, total: int) -> str:
     return f"{get_current_time()}: Processed {current}/{total} ({current / total * 100:.2f}%) SDFs"
 
 
+def select_molfiles_from_sdf(
+    sdf_path: Path, molfile_ids: set[str]
+) -> Generator[tuple[str, str], None, None]:
+    _get_molfile_id = get_molfile_id(sdf_path)
+
+    for molfile in read_records_from_gzipped_sdf(sdf_path):
+        molfile_id = _get_molfile_id(molfile)
+        if molfile_id in molfile_ids:
+            yield molfile_id, molfile
+
+    return None
+
+
 INCHI_API_PARAMETERS: Final[str] = ""
 TEST_PATH: Final[Path] = Path(__file__).parent.absolute()
 INCHI_LIB_PATH: Final[Path] = TEST_PATH.joinpath("libinchi.so.dev")
 INCHI_REFERENCE_LIB_PATH: Final[Path] = TEST_PATH.joinpath("libinchi.so.v1.06")
+N_INVARIANCE_RUNS: Final[int] = 10
 N_PROCESSES: Final[int] = len(
     os.sched_getaffinity(0)
 )  # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count

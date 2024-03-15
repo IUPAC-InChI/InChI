@@ -2,7 +2,7 @@ FROM python:3.12-bookworm
 # Python image includes the dependencies we need for building InChI (gcc, make, etc.).
 
 RUN pip install --upgrade pip && \
-    pip install git+https://github.com/TUCAN-nest/SDF-pipeline.git
+    pip install rdkit git+https://github.com/TUCAN-nest/SDF-pipeline.git
 
 # On Debian bookworm (12) only GCC versions 11 and 12 are available.
 # For GCC versions 9 and 10, use Debian bullseye (11).

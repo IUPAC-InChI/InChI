@@ -1,10 +1,10 @@
-name: Regression tests
+name: Invariance tests
 
 inputs:
   artifact-name:
     description: 'Name of the uploaded artifact'
     required: false
-    default: 'regression-test-results'
+    default: 'invariance-test-results'
 
 runs:
   using: "composite"
@@ -19,20 +19,20 @@ runs:
         ldd --version || true
       shell: bash
 
-    - name: Run regression tests
-      run: python -m INCHI-1-TEST.run_regression_tests ci
+    - name: Run invariance tests
+      run: python -m INCHI-1-TEST.run_invariance_tests ci
       shell: bash
 
-    - name: Write regression summary
+    - name: Write invariance summary
       if: '!cancelled()'
-      run: python -m INCHI-1-TEST.parse_regression_log ci
+      run: python -m INCHI-1-TEST.parse_invariance_log ci
       shell: bash
 
-    - name: Upload regression test results
+    - name: Upload invariance test results
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
         path: |
-          ./INCHI-1-TEST/data/ci/*_regression_test.log
-          ./INCHI-1-TEST/data/ci/*_regression_test_*.html
+          ./INCHI-1-TEST/data/ci/*_invariance_test.log
+          ./INCHI-1-TEST/data/ci/*_invariance_test_*.html
