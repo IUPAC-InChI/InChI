@@ -87,7 +87,9 @@ def write_html_log(sdf_log: dict, summary_path: Path, sdf_path: Path) -> None:
 if __name__ == "__main__":
     dataset = get_dataset_arg()
 
-    log_paths = sorted(DATASETS[dataset]["log_path"].glob("*_regression_test.log"))
+    log_paths = sorted(
+        DATASETS[dataset]["log_path"].glob(f"*_regression_{dataset}.log")
+    )
     if not log_paths:
         print(f"There aren't any logs in {DATASETS[dataset]['log_path']}")
         sys.exit()

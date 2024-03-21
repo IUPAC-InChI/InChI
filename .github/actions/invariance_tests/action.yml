@@ -20,7 +20,7 @@ runs:
       shell: bash
 
     - name: Run invariance tests
-      run: python -m INCHI-1-TEST.run_invariance_tests ci
+      run: python -m INCHI-1-TEST.run_tests invariance ci
       shell: bash
 
     - name: Write invariance summary
@@ -34,5 +34,5 @@ runs:
       with:
         name: ${{ inputs.artifact-name }}
         path: |
-          ./INCHI-1-TEST/data/ci/*_invariance_test.log
-          ./INCHI-1-TEST/data/ci/*_invariance_test_*.html
+          ./INCHI-1-TEST/data/ci/*_invariance_ci.log
+          ./INCHI-1-TEST/data/ci/*_invariance_ci_*.html

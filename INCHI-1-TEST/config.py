@@ -1,7 +1,7 @@
 import re
 import os
 import argparse
-from typing import Final, Callable, Generator
+from typing import Final, Callable, Generator, Any
 from pathlib import Path
 from datetime import datetime
 from sdf_pipeline.core import read_records_from_gzipped_sdf
@@ -33,23 +33,43 @@ def _get_pubchem_id(molfile: str) -> str:
     return molfile.split()[0].strip()
 
 
-def get_dataset_arg() -> str:
+def get_args() -> tuple[str, str]:
     parser = argparse.ArgumentParser(
-        description="Choose a dataset from {ci, pubchem_compound, pubchem_compound3d, pubchem_substance}",
+        description="Choose a test and dataset.",
+    )
+    parser.add_argument(
+        "test",
+        choices=TEST_TYPES.keys(),
+        type=str,
+        help=f"Choose a test from {set(TEST_TYPES.keys())}",
     )
     parser.add_argument(
         "dataset",
-        choices=["ci", "pubchem_compound", "pubchem_compound3d", "pubchem_substance"],
+        choices=DATASETS.keys(),
         type=str,
-        nargs=1,
-        help="Choose a dataset from {ci, pubchem_compound, pubchem_compound3d, pubchem_substance}",
+        help=f"Choose a dataset from {set(DATASETS.keys())}",
     )
-    (dataset,) = parser.parse_args().dataset
+    args = parser.parse_args()
 
-    return dataset
+    return args.test, args.dataset
 
 
-def get_current_time():
+def get_dataset_arg() -> str:
+    parser = argparse.ArgumentParser(
+        description="Choose a dataset.",
+    )
+    parser.add_argument(
+        "dataset",
+        choices=DATASETS.keys(),
+        type=str,
+        help=f"Choose a dataset from {set(DATASETS.keys())}",
+    )
+    args = parser.parse_args()
+
+    return args.dataset
+
+
+def get_current_time() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
@@ -79,30 +99,42 @@ N_PROCESSES: Final[int] = len(
     os.sched_getaffinity(0)
 )  # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count
 
-DATASETS: Final[dict] = {
+DATASETS: Final[dict[str, dict[str, Any]]] = {
     "ci": {
         "sdf_paths": sorted(TEST_PATH.joinpath("data/ci").glob("*.sdf.gz")),
         "log_path": TEST_PATH.joinpath("data/ci/"),
     },
-    "pubchem_compound": {
+    "pubchem-compound": {
         "sdf_paths": sorted(
             TEST_PATH.joinpath("data/pubchem/compound").glob("*.sdf.gz")
         ),
         "log_path": TEST_PATH.joinpath("data/pubchem/compound"),
         "download_path": "Compound/CURRENT-Full",
     },
-    "pubchem_compound3d": {
+    "pubchem-compound3d": {
         "sdf_paths": sorted(
             TEST_PATH.joinpath("data/pubchem/compound3d").glob("*.sdf.gz")
         ),
         "log_path": TEST_PATH.joinpath("data/pubchem/compound3d"),
         "download_path": "Compound_3D/01_conf_per_cmpd",
     },
-    "pubchem_substance": {
+    "pubchem-substance": {
         "sdf_paths": sorted(
             TEST_PATH.joinpath("data/pubchem/substance").glob("*.sdf.gz")
         ),
         "log_path": TEST_PATH.joinpath("data/pubchem/substance"),
         "download_path": "Substance/CURRENT-Full",
+    },
+}
+
+TEST_TYPES: Final[dict[str, dict[str, str]]] = {
+    "regression": {
+        "script": f"{TEST_PATH}/compile_inchi_lib.sh",
+    },
+    "regression-reference": {
+        "script": f"{TEST_PATH}/compile_reference_inchi_lib.sh",
+    },
+    "invariance": {
+        "script": f"{TEST_PATH}/compile_inchi_lib.sh",
     },
 }

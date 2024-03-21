@@ -20,7 +20,7 @@ runs:
       shell: bash
 
     - name: Run regression tests
-      run: python -m INCHI-1-TEST.run_regression_tests ci
+      run: python -m INCHI-1-TEST.run_tests regression ci
       shell: bash
 
     - name: Write regression summary
@@ -34,5 +34,5 @@ runs:
       with:
         name: ${{ inputs.artifact-name }}
         path: |
-          ./INCHI-1-TEST/data/ci/*_regression_test.log
-          ./INCHI-1-TEST/data/ci/*_regression_test_*.html
+          ./INCHI-1-TEST/data/ci/*_regression_ci.log
+          ./INCHI-1-TEST/data/ci/*_regression_ci_*.html
