@@ -19,7 +19,33 @@ Validate the integrity of `pubchem-<subset>` (i.e., make sure the downloads aren
 python -m INCHI-1-TEST.data.pubchem.validate pubchem-<subset>
 ```
 
-Note that validation isn't available for `pubchem-compound3d`.
+Note that validation isn't available for `pubchem-compound3d` (PubChem doesn't provide file hashes).
+
+### Your own dataset
+
+You can run the tests against your own dataset(s).
+To add a `foo` dataset, extend the `DATASETS` configuration in [config.py](../config.py):
+
+```Python
+def get_molfile_id(molfile: str) -> str:
+    return molfile.split()[0].strip()
+
+DATASETS: Final[dict[str, dict[str, Any]]] = {
+    "foo": {
+        "sdf_paths": [Path("/my/data/directory/foo.sdf.gz")],
+        "log_path": Path("/my/log/directory"),
+        "molfile_id": get_molfile_id,
+    },
+}
+```
+
+A `DATASETS` entry requires three key-value pairs:
+
+1. `sdf_paths`: A list of one or more [Path objects](https://docs.python.org/3/library/pathlib.html#pathlib.Path) that contain the *absolute* path(s) to [gzipped](https://en.wikipedia.org/wiki/Gzip) [SDF files](https://en.wikipedia.org/wiki/Chemical_table_file#SDF). If your dataset contains multiple `SDF` files, you can collect them into a list with a bit of Python: `list(Path("/my/data/directory").glob("*.sdf.gz"))`. The tests automatically run against all `SDF` files that you list here.
+2. `log_path`: A `Path` object that contains the *absolute* path where you'd like to collect the test logs.
+3. `molfile_id`: A Python [function](https://docs.python.org/3/reference/datamodel.html#callable-types) that parses the molfile ID from a single SDF record. It must take one argument only, which is a [string](https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str) containing the molfile and return a string containing the molfile ID. See `get_molfile_id()` above for an example.
+
+Once you've added the `foo` entry, you can select `foo` as `<dataset>` in all commands in this README.
 
 ## Test environment
 
@@ -70,7 +96,7 @@ a test failure is logged under `<datetime>.invariance_<dataset>.log`
 ## Regression tests
 
 Regression tests investigate if the output of the current development version matches the reference output of a previous release.
-In other word, regression test are meant to detect problems with the stability of the InChI.
+In other word, regression test are meant to detect problems with the stability of the InChI across versions.
 In the image below, the 1st and 2nd run represent tests runs
 that are conducted after some alternations to the codebase.
 On the first run, the output matches the reference.
