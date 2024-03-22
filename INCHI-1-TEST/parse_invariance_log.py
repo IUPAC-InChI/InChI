@@ -1,10 +1,13 @@
 import json
 import sys
 from pathlib import Path
+from typing import Callable
 from .config import get_dataset_arg, select_molfiles_from_sdf, DATASETS
 
 
-def write_html_log(sdf_log: dict, summary_path: Path, sdf_path: Path) -> None:
+def write_html_log(
+    sdf_log: dict, summary_path: Path, sdf_path: Path, get_molfile_id: Callable
+) -> None:
     with summary_path.open("w") as html_file:
         html_file.write("<!DOCTYPE html>\n")
         html_file.write("<html>\n")
@@ -16,7 +19,9 @@ def write_html_log(sdf_log: dict, summary_path: Path, sdf_path: Path) -> None:
         html_file.write("<body>\n")
 
         molfile_ids = set(sdf_log.keys())
-        for molfile_id, molfile in select_molfiles_from_sdf(sdf_path, molfile_ids):
+        for molfile_id, molfile in select_molfiles_from_sdf(
+            sdf_path, molfile_ids, get_molfile_id
+        ):
             molfile_log: dict = sdf_log[molfile_id]
             html_file.write(f"<h1>{molfile_id}</h1>\n")
 
@@ -82,6 +87,7 @@ if __name__ == "__main__":
                             f"{log_path.stem}_{sdf_path.stem}.html"
                         ),
                         sdf_path,
+                        DATASETS[dataset]["molfile_id"],
                     )
                     sdf_log = {}
             previous_sdf = log_entry["sdf"]
@@ -102,4 +108,5 @@ if __name__ == "__main__":
                     f"{log_path.stem}_{sdf_path.stem}.html"
                 ),
                 sdf_path,
+                DATASETS[dataset]["molfile_id"],
             )

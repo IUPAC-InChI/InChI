@@ -8,7 +8,6 @@ from .config import (
     N_PROCESSES,
     INCHI_LIB_PATH,
     INCHI_REFERENCE_LIB_PATH,
-    get_molfile_id,
 )
 
 
@@ -19,7 +18,7 @@ def regression(sdf_path: Path, dataset: str) -> int:
             f"{sdf_path.stem}.regression_reference.sqlite"
         ),
         consumer_function=partial(regression_consumer, inchi_lib_path=INCHI_LIB_PATH),
-        get_molfile_id=get_molfile_id(sdf_path),
+        get_molfile_id=DATASETS[dataset]["molfile_id"],
         number_of_consumer_processes=N_PROCESSES,
     )
 
@@ -41,7 +40,7 @@ def regression_reference(sdf_path: Path, dataset: str) -> int:
         consumer_function=partial(
             regression_consumer, inchi_lib_path=INCHI_REFERENCE_LIB_PATH
         ),
-        get_molfile_id=get_molfile_id(sdf_path),
+        get_molfile_id=DATASETS[dataset]["molfile_id"],
         number_of_consumer_processes=N_PROCESSES,
     )
 
@@ -52,7 +51,7 @@ def invariance(sdf_path: Path, dataset: str) -> int:
     exit_code = drivers.invariance(
         sdf_path=sdf_path,
         consumer_function=partial(invariance_consumer, inchi_lib_path=INCHI_LIB_PATH),
-        get_molfile_id=get_molfile_id(sdf_path),
+        get_molfile_id=DATASETS[dataset]["molfile_id"],
         number_of_consumer_processes=N_PROCESSES,
     )
 

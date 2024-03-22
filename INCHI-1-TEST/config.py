@@ -1,35 +1,28 @@
 import re
 import os
 import argparse
-from typing import Final, Callable, Generator, Any
+from typing import Final, Generator, Any, Callable
 from pathlib import Path
 from datetime import datetime
 from sdf_pipeline.core import read_records_from_gzipped_sdf
 
 
-def get_molfile_id(sdf_path: Path) -> Callable:
-    if "mcule" in sdf_path.stem:
-        return _get_mcule_id
-    elif "inchi" in sdf_path.stem:
-        return _get_inchi_id
-    return _get_pubchem_id
+def get_molfile_id_ci(molfile: str) -> str:
+    molfile_id = ""
 
-
-def _get_inchi_id(molfile: str) -> str:
-    molfile_id = molfile.splitlines()[-3].strip()
-
-    return molfile_id
-
-
-def _get_mcule_id(molfile: str) -> str:
-    molfile_id_pattern = re.compile(r"<Mcule_ID>(.*?)>", re.DOTALL)
-    molfile_id_match = molfile_id_pattern.search(molfile)
-    molfile_id = molfile_id_match.group(1).strip() if molfile_id_match else ""
+    mcule_id_patterns = re.compile(r"<Mcule_ID>(.*?)>", re.DOTALL)
+    mcule_id_match = mcule_id_patterns.search(molfile)
+    if mcule_id_match:
+        # mcule test set.
+        molfile_id = mcule_id_match.group(1).strip()
+    else:
+        # InChI legacy test set.
+        molfile_id = molfile.splitlines()[-3].strip()
 
     return molfile_id
 
 
-def _get_pubchem_id(molfile: str) -> str:
+def get_molfile_id_pubchem(molfile: str) -> str:
     return molfile.split()[0].strip()
 
 
@@ -78,12 +71,11 @@ def get_progress(current: int, total: int) -> str:
 
 
 def select_molfiles_from_sdf(
-    sdf_path: Path, molfile_ids: set[str]
+    sdf_path: Path, molfile_ids: set[str], get_molfile_id: Callable
 ) -> Generator[tuple[str, str], None, None]:
-    _get_molfile_id = get_molfile_id(sdf_path)
 
     for molfile in read_records_from_gzipped_sdf(sdf_path):
-        molfile_id = _get_molfile_id(molfile)
+        molfile_id = get_molfile_id(molfile)
         if molfile_id in molfile_ids:
             yield molfile_id, molfile
 
@@ -100,15 +92,22 @@ N_PROCESSES: Final[int] = len(
 )  # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count
 
 DATASETS: Final[dict[str, dict[str, Any]]] = {
+    "foo": {
+        "sdf_paths": [Path("/workspaces/InChI/foo.sdf.gz")],
+        "log_path": Path("/workspaces/InChI/"),
+        "molfile_id": get_molfile_id_ci,
+    },
     "ci": {
         "sdf_paths": sorted(TEST_PATH.joinpath("data/ci").glob("*.sdf.gz")),
         "log_path": TEST_PATH.joinpath("data/ci/"),
+        "molfile_id": get_molfile_id_ci,
     },
     "pubchem-compound": {
         "sdf_paths": sorted(
             TEST_PATH.joinpath("data/pubchem/compound").glob("*.sdf.gz")
         ),
         "log_path": TEST_PATH.joinpath("data/pubchem/compound"),
+        "molfile_id": get_molfile_id_pubchem,
         "download_path": "Compound/CURRENT-Full",
     },
     "pubchem-compound3d": {
@@ -116,6 +115,7 @@ DATASETS: Final[dict[str, dict[str, Any]]] = {
             TEST_PATH.joinpath("data/pubchem/compound3d").glob("*.sdf.gz")
         ),
         "log_path": TEST_PATH.joinpath("data/pubchem/compound3d"),
+        "molfile_id": get_molfile_id_pubchem,
         "download_path": "Compound_3D/01_conf_per_cmpd",
     },
     "pubchem-substance": {
@@ -123,6 +123,7 @@ DATASETS: Final[dict[str, dict[str, Any]]] = {
             TEST_PATH.joinpath("data/pubchem/substance").glob("*.sdf.gz")
         ),
         "log_path": TEST_PATH.joinpath("data/pubchem/substance"),
+        "molfile_id": get_molfile_id_pubchem,
         "download_path": "Substance/CURRENT-Full",
     },
 }
