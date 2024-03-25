@@ -2,9 +2,31 @@
  * International Chemical Identifier (InChI)
  * Version 1
  * Software version 1.07
- * 20/11/2023
+ * April 30, 2024
  *
- * The InChI library and programs are free software developed under the
+ * MIT License
+ *
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+*
+* The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -12,24 +34,9 @@
  * (either contractor or volunteer) which are listed in the file
  * 'External-contributors' included in this distribution.
  *
- * IUPAC/InChI-Trust Licence No.1.0 for the
- * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust
- *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
- * or any later version.
- *
- * Please note that this library is distributed WITHOUT ANY WARRANTIES
- * whatsoever, whether expressed or implied.
- * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
- *
- * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please e-mail:
- *
  * info@inchi-trust.org
  *
- */
+*/
 
 #include <stdlib.h>
 #include <string.h>
@@ -193,10 +200,14 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
         for (i = 0; i < pInChI->nNumberOfIsotopicAtoms; i++)
         {
             n_vertex = pInChI->IsotopicAtom[i].nAtomNumber - 1;
-            at[n_vertex].iso_atw_diff = (char) pInChI->IsotopicAtom[i].nIsoDifference;
-            at[n_vertex].num_iso_H[0] = (char) pInChI->IsotopicAtom[i].nNum_H;
-            at[n_vertex].num_iso_H[1] = (char) pInChI->IsotopicAtom[i].nNum_D;
-            at[n_vertex].num_iso_H[2] = (char) pInChI->IsotopicAtom[i].nNum_T;
+            /* djb-rwth: fixing oss-fuzz issue #30956 */
+            if (n_vertex <= num_atoms)
+            {
+                at[n_vertex].iso_atw_diff = (char)pInChI->IsotopicAtom[i].nIsoDifference;
+                at[n_vertex].num_iso_H[0] = (char)pInChI->IsotopicAtom[i].nNum_H;
+                at[n_vertex].num_iso_H[1] = (char)pInChI->IsotopicAtom[i].nNum_D;
+                at[n_vertex].num_iso_H[2] = (char)pInChI->IsotopicAtom[i].nNum_T;
+            }
         }
         pStruct->bIsotopic |= 1;
     }
@@ -6533,7 +6544,7 @@ int RemoveRadFromMobileHEndpoint( BN_STRUCT *pBNS,
     BNS_VERTEX *ptg1, *pEndp0 = NULL, *pEndp1, *pEndp2, *pCentp, *pCentp_found, *pEndp2_found = NULL;
     BNS_EDGE   *etg0 = NULL, *etg1, *etg2, *ecp0, *ecp1, *ecp2;
     BNS_EDGE   *etg1_found = NULL, *ecp0_found = NULL, *ecp1_found = NULL, *ecp2_found = NULL;
-    int         num_endpoints; /* djb-rwth: removing redundant variables */
+    int         num_endpoints, max_vertices, nMaxAddAtoms = 2; /* djb-rwth: removing redundant variables; fixing oss-fuzz issue #25732 */
 
     /* djb-rwth: removing redundant code */
     memcpy(at2, at, len_at * sizeof(at2[0]));
@@ -6558,18 +6569,23 @@ int RemoveRadFromMobileHEndpoint( BN_STRUCT *pBNS,
             {
                 etg0 = pBNS->edge + ptg1->iedge[i];         /* edge from t-group to endpoint */
                 endpoint0 = etg0->neighbor12 ^ vtg1;        /* taut endpoint vertex index */
-                pEndp0 = pBNS->vert + endpoint0;            /* taut endpoint vertex (possible location of mobile H */
-                if (pEndp0->st_edge.cap > pEndp0->st_edge.flow)
+                /* djb-rwth: fixing oss-fuzz issue #25732 */
+                max_vertices = pTCGroups->nVertices + nMaxAddAtoms;
+                if (endpoint0 <= max_vertices)
                 {
-                /* radical endpoint1 has been detected */
-                /* find a 1-3 centerpoint that has two or more endpoints */
-                /* connected to the t-group vertex by edges with flow>0 and */
-                /* to the centerpoint by edges with flow = 0 */
-                /* after that: (1) increment etg1 flow to eliminate radical */
-                /* (2) increment flow on one of the two other edges to the t-group */
-                /* (3) increment st_cap on the found centerpoint */
-                /* (4) rerun the BNS and re-create the structure */
-                    break;
+                    pEndp0 = pBNS->vert + endpoint0;            /* taut endpoint vertex (possible location of mobile H */
+                    if (pEndp0->st_edge.cap > pEndp0->st_edge.flow)
+                    {
+                        /* radical endpoint1 has been detected */
+                        /* find a 1-3 centerpoint that has two or more endpoints */
+                        /* connected to the t-group vertex by edges with flow>0 and */
+                        /* to the centerpoint by edges with flow = 0 */
+                        /* after that: (1) increment etg1 flow to eliminate radical */
+                        /* (2) increment flow on one of the two other edges to the t-group */
+                        /* (3) increment st_cap on the found centerpoint */
+                        /* (4) rerun the BNS and re-create the structure */
+                        break;
+                    }
                 }
             }
             if (i == num_endpoints)

@@ -2,9 +2,31 @@
  * International Chemical Identifier (InChI)
  * Version 1
  * Software version 1.07
- * 20/11/2023
+ * April 30, 2024
  *
- * The InChI library and programs are free software developed under the
+ * MIT License
+ *
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+*
+* The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -12,24 +34,9 @@
  * (either contractor or volunteer) which are listed in the file
  * 'External-contributors' included in this distribution.
  *
- * IUPAC/InChI-Trust Licence No.1.0 for the
- * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust
- *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
- * or any later version.
- *
- * Please note that this library is distributed WITHOUT ANY WARRANTIES
- * whatsoever, whether expressed or implied.
- * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
- *
- * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please e-mail:
- *
  * info@inchi-trust.org
  *
- */
+*/
 
 
 #ifndef _MODE_H_
@@ -546,7 +553,7 @@ extern "C" {
                                       *     NIP=No Ion Pairs
                                       */
 /* salts treatment */
-#define DISCONNECT_SALTS            1  /* 1=>disconnect metal atoms from salts, 0=>dont */
+#define DISCONNECT_SALTS            1  /* 1=>disconnect metal atoms from salts, 0=>dont */ /* djb-rwth: default 1 */
 #define TEST_REMOVE_S_ATOMS         1  /* 1=>default: after merging into one group test &
                                         *    remove unreachable,
                                         * 0=> old version: test only before merging into one t-group */
@@ -573,9 +580,9 @@ extern "C" {
 #define ADD_MOVEABLE_O_PLUS          1  /* 1=> allow charges on O(+) to move */
 /* recently added -- end */
 
-#define DISCONNECT_METALS           1  /* make main layer disconnected */
+#define DISCONNECT_METALS           1  /* make main layer disconnected */ /* djb-rwth: default 1 */
 #define RECONNECT_METALS            0  /* 1=> by default add reconnected layer in case of coord.
-                                        *     compound disconnection */
+                                        *     compound disconnection */ /* djb-rwth: default 0 */
 #define CHECK_METAL_VALENCE         0  /* 1=> disconnect only metals that have abnormal valence */
 #define bREUSE_INCHI                1  /* 1=> do not recalulate INChI for components in reconnected
                                         *     structure that are same as in the connected one */

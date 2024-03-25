@@ -1,34 +1,41 @@
 /*
-* International Chemical Identifier (InChI)
-* Version 1
-* Software version 1.07
-* 20/11/2023
+ * International Chemical Identifier (InChI)
+ * Version 1
+ * Software version 1.07
+ * April 30, 2024
+ *
+ * MIT License
+ *
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
 *
 * The InChI library and programs are free software developed under the
-* auspices of the International Union of Pure and Applied Chemistry (IUPAC).
-* Originally developed at NIST.
-* Modifications and additions by IUPAC and the InChI Trust.
-* Some portions of code were developed/changed by external contributors
-* (either contractor or volunteer) which are listed in the file
-* 'External-contributors' included in this distribution.
-*
-* IUPAC/InChI-Trust Licence No.1.0 for the
-* International Chemical Identifier (InChI)
-* Copyright (C) IUPAC and InChI Trust
-*
-* This library is free software; you can redistribute it and/or modify it
-* under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
-* or any later version.
-*
-* Please note that this library is distributed WITHOUT ANY WARRANTIES
-* whatsoever, whether expressed or implied.
-* See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
-*
-* You should have received a copy of the IUPAC/InChI Trust InChI
-* Licence No. 1.0 with this library; if not, please e-mail:
-*
-* info@inchi-trust.org
-*
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST.
+ * Modifications and additions by IUPAC and the InChI Trust.
+ * Some portions of code were developed/changed by external contributors
+ * (either contractor or volunteer) which are listed in the file
+ * 'External-contributors' included in this distribution.
+ *
+ * info@inchi-trust.org
+ *
 */
 
 #include <string.h>
@@ -78,6 +85,7 @@
 #define SEGM_LINE_ADD 128
 
 bool if_cnd = true; /* djb-rwth: needed for some if condition restructuring */
+static int nnumcomp_limit; /* djb-rwth: required for fixing oss-fuzz issue #26540 */
 
 typedef struct tagOneLinkedBond
 {
@@ -5660,6 +5668,12 @@ int ParseSegmentPerm( const char *str,
         return 0;
     }
 
+    /* djb-rwth: fixing oss-fuzz issue #66746 */
+    if (!pInChI)
+    {
+        return RI_ERR_ALLOC;
+    }
+
     pStart = (char  *) str + 1;
     nNumComponents = ppnNumComponents[bMobileH];
 
@@ -7315,12 +7329,10 @@ int ParseSegmentSp2( const char *str,
                 }
                 p = q + 1;
                 bondParity = (int) ( r - parity_type ) + 1;
-                if (iBond < pStereo[0]->nNumberOfStereoBonds)
-                {
-                    pStereo[0]->b_parity[iBond] = bondParity;
-                    pStereo[0]->nBondAtom1[iBond] = nAtom1;
-                    pStereo[0]->nBondAtom2[iBond] = nAtom2;
-                }
+                /* djb-rwth: ui_rr? */
+                pStereo[0]->b_parity[iBond] = bondParity;
+                pStereo[0]->nBondAtom1[iBond] = nAtom1;
+                pStereo[0]->nBondAtom2[iBond] = nAtom2;
 
                 if (iBond &&
                      !( pStereo[0]->nBondAtom1[iBond - 1] < nAtom1 ||
@@ -8210,16 +8222,31 @@ int ParseSegmentMobileH( const char *str,
             }
         }
         len++;
-        if (!pInChI[i].nNum_H && /* allocate immobile H segment if it has not been allocated yet */
-             !( pInChI[i].nNum_H = (S_CHAR *) inchi_calloc( len, sizeof( pInChI[0].nNum_H[0] ) ) ))
+        /* djb-rwth: fixing oss-fuzz issues #66985, #66718, #43512, #43456, #43420, #42774, #34772, #30156 */
+        if (!pInChI[i].nNum_H) /* allocate immobile H segment if it has not been allocated yet */
         {
-            ret = RI_ERR_ALLOC; /* allocation error */
-            goto exit_function;
+            S_CHAR* pi_nnh = (S_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nNum_H[0]));
+            pInChI[i].nNum_H = pi_nnh;
+            if (!pi_nnh)
+            {
+                ret = RI_ERR_ALLOC; /* allocation error */
+                goto exit_function;
+            }
+            else
+            {
+                if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
+                {
+                    memcpy(pi_nnh, pAltInChI[i].nNum_H, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0])); /* djb-rwth: cast operator added */
+                }
+            }
         }
-        /* copy immobile H from Mobile-H layer to Fixed-H layer */
-        if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
+        else
         {
-            memcpy(pInChI[i].nNum_H, pAltInChI[i].nNum_H, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0])); /* djb-rwth: cast operator added */
+            /* copy immobile H from Mobile-H layer to Fixed-H layer */
+            if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
+            {
+                memcpy(pInChI[i].nNum_H, pAltInChI[i].nNum_H, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0])); /* djb-rwth: cast operator added */
+            }
         }
     }
 
@@ -8400,10 +8427,14 @@ int ParseSegmentMobileH( const char *str,
                 }
                 p = q;
                 /* set number of H */
-                for (i = curAtom; i <= nxtAtom; i++)
+                /* djb-rwth: fixing oss-fuzz issue #38399 */
+                if (((bMobileH == TAUT_YES) && pInChI[iComponent].nNum_H) || ((bMobileH != TAUT_YES) && pInChI[iComponent].nNum_H_fixed))
                 {
-                    nNum_H( iComponent )[i - 1] = num_H;
-                    num_H_component += num_H;
+                    for (i = curAtom; i <= nxtAtom; i++)
+                    {
+                        nNum_H(iComponent)[i - 1] = num_H;
+                        num_H_component += num_H;
+                    }
                 }
             }
             if (p != pTaut)
@@ -8503,10 +8534,14 @@ int ParseSegmentMobileH( const char *str,
                         goto exit_function;
                     }
                     /* set number of H */
-                    for (i = curAtom; i <= nxtAtom; i++)
+                    /* djb-rwth: fixing oss-fuzz issue #38399 */
+                    if (((bMobileH == TAUT_YES) && pInChI[iComponent].nNum_H) || ((bMobileH != TAUT_YES) && pInChI[iComponent].nNum_H_fixed))
                     {
-                        nNum_H( iComponent )[i - 1] = num_H;
-                        num_H_component += num_H;
+                        for (i = curAtom; i <= nxtAtom; i++)
+                        {
+                            nNum_H(iComponent)[i - 1] = num_H;
+                            num_H_component += num_H;
+                        }
                     }
                     /* move to the next atom number if any */
                     p = q;
@@ -9782,7 +9817,8 @@ int ParseSegmentFormula( const char *str,
                 if (bMobileH == TAUT_NON && 0 < ( nNumComponents = pnNumComponents[nAltMobileH] ))
                 {
                     /* allocate InChI */
-                    if (!( pInChI = (INChI *) inchi_calloc( nNumComponents, sizeof( INChI ) ) ))
+                    pInChI = (INChI*)inchi_calloc(nNumComponents, sizeof(INChI));
+                    if (!(pInChI))
                     {
                         return RI_ERR_ALLOC; /* alloc failure */
                     }
@@ -9798,10 +9834,13 @@ int ParseSegmentFormula( const char *str,
                         {
                             inchi_free( pInpInChI[bMobileH][i].nAtom );
                         }
-                        if ((pInpInChI[bMobileH][i].nAtom = (U_CHAR *) inchi_malloc( ( (long long)len + 1 ) * sizeof( pInpInChI[0][0].nAtom[0] ) ))) /* djb-rwth: cast operator added; addressing LLVM warning */
+                        /* djb-rwth: fixing oss-fuzz issue #66985, #66718 */
+                        pInChI[i].nAtom = (U_CHAR*)inchi_malloc(((long long)len + 1) * sizeof(pInpInChI[0][0].nAtom[0]));
+                        pInpInChI[bMobileH][i].nAtom = pInChI[i].nAtom;
+                        if ((pInChI[i].nAtom)) /* djb-rwth: cast operator added; addressing LLVM warning */
                         {
-                            memcpy(pInpInChI[bMobileH][i].nAtom, pInpInChI[nAltMobileH][i].nAtom, len);
-                            pInpInChI[bMobileH][i].nAtom[len] = 0;
+                            memcpy(pInChI[i].nAtom, pInpInChI[nAltMobileH][i].nAtom, len);
+                            pInChI[i].nAtom[len] = 0;
                         }
                         else
                         {
@@ -9813,9 +9852,12 @@ int ParseSegmentFormula( const char *str,
                         {
                             inchi_free( pInpInChI[bMobileH][i].szHillFormula );
                         }
-                        if ((pInpInChI[bMobileH][i].szHillFormula = (char *) inchi_malloc( inchi_max( len, 2 ) ))) /* djb-rwth: addressing LLVM warning */
+                        /* djb-rwth: fixing oss-fuzz issue #66985, #66718 */
+                        pInChI[i].szHillFormula = (char*)inchi_malloc(inchi_max(len, 2));
+                        pInpInChI[bMobileH][i].szHillFormula = pInChI[i].szHillFormula;
+                        if ((pInChI[i].szHillFormula)) /* djb-rwth: addressing LLVM warning */
                         {
-                            memcpy(pInpInChI[bMobileH][i].szHillFormula, pInpInChI[nAltMobileH][i].szHillFormula, len);
+                            memcpy(pInChI[i].szHillFormula, pInpInChI[nAltMobileH][i].szHillFormula, len);
                         }
                         else
                         {
@@ -9860,6 +9902,7 @@ int ParseSegmentFormula( const char *str,
         return RI_ERR_ALLOC; /* alloc failure */
     }
     pInChI = pInpInChI[bMobileH];
+    nnumcomp_limit = nNumComponents;
 
     /* Pass 2. Count elements, save formulas and elements */
     pStart = (char  *) str;
@@ -10041,20 +10084,22 @@ int ParseSegmentFormula( const char *str,
             }
             else
             {
+                /* djb-rwth: fixing oss-fuzz issue #34772 */
+                U_CHAR* pci1 = (U_CHAR *) inchi_malloc ((long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
+                pInChI[iComponent + i].nAtom = pci1;
                 /* Copy duplicated formula */
                 strcpy(pInChI[iComponent + i].szHillFormula, pInChI[iComponent].szHillFormula);
                 /* Copy atoms in the duplicated formula */
                 pInChI[iComponent + i].nNumberOfAtoms = nNumAtoms;
-                if (pInChI[iComponent + i].nAtom)
+                if (pci1)
                 {
-                    inchi_free( pInChI[iComponent + i].nAtom );
+                    inchi_free( pci1 );
                 }
-                pInChI[iComponent + i].nAtom = (U_CHAR *) inchi_malloc( (long long)nNumAtoms + 1 ); /* djb-rwth: cast operator added */
-                if (!pInChI[iComponent + i].nAtom)
+                if (!pci1)
                 {
                     return RI_ERR_ALLOC; /* failed allocation */
                 }
-                memcpy(pInChI[iComponent + i].nAtom, pInChI[iComponent].nAtom, (long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
+                memcpy(pci1, pInChI[iComponent].nAtom, (long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
             }
         }
         iComponent += i;
@@ -10148,40 +10193,49 @@ int CopySegment( INChI *pInChITo,
                     pstereoTo = bIsotopicTo ? &pInChITo->StereoIsotopic : &pInChITo->Stereo;
                     if (!pstereoTo[0])
                     {
-                        if (!( pstereoTo[0] = (INChI_Stereo *) inchi_calloc( 1, sizeof( **pstereoTo ) ) ))
+                        /* djb-rwth: fixing oss-fuzz issue #66985 */
+                        INChI_Stereo* pst0 = (INChI_Stereo*)inchi_calloc(1, sizeof(**pstereoTo));
+                        pstereoTo[0] = pst0;
+                        if (!pst0)
                         {
                             goto exit_function;
                         }
                     }
                     if (pstereoTo[0]->nNumberOfStereoBonds > 0 || pstereoTo[0]->b_parity ||
-                         pstereoTo[0]->nBondAtom1 || pstereoTo[0]->nBondAtom2)
+                        pstereoTo[0]->nBondAtom1 || pstereoTo[0]->nBondAtom2)
                     {
                         ret = RI_ERR_SYNTAX; /* stereo already exists */
                         goto exit_function;
                     }
                     /* allocate sp2 stereo */
-                    if (!( pstereoTo[0]->b_parity = (S_CHAR *) inchi_calloc( (long long)len + 1, sizeof( pstereoTo[0]->b_parity[0] ) ) ) ||
-                         !( pstereoTo[0]->nBondAtom1 = (AT_NUMB *) inchi_calloc( (long long)len + 1, sizeof( pstereoTo[0]->nBondAtom1[0] ) ) ) ||
-                         !( pstereoTo[0]->nBondAtom2 = (AT_NUMB *) inchi_calloc( (long long)len + 1, sizeof( pstereoTo[0]->nBondAtom2[0] ) ) )) /* djb-rwth: cast operators added */
+                    /* djb-rwth: fixing oss-fuzz issue #66985 */
+                    /* djb-rwth: cast operators added */
+                    S_CHAR* pst0_bp = (S_CHAR*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->b_parity[0]));
+                    AT_NUMB* pst0_nba1 = (AT_NUMB*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->nBondAtom1[0]));
+                    AT_NUMB* pst0_nba2 = (AT_NUMB*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->nBondAtom2[0]));
+                    pstereoTo[0]->b_parity = pst0_bp;
+                    pstereoTo[0]->nBondAtom1 = pst0_nba1;
+                    pstereoTo[0]->nBondAtom2 = pst0_nba2;
+                    if (!pst0_bp || !pst0_nba1 || !pst0_nba2)
                     {
                         /* cleanup */
-                        if (pstereoTo[0]->b_parity)
+                        if (pst0_bp)
                         {
                             INCHI_HEAPCHK
-                                inchi_free( pstereoTo[0]->b_parity );
-                            pstereoTo[0]->b_parity = NULL;
+                                inchi_free( pst0_bp );
+                            pst0_bp = NULL;
                         }
-                        if (pstereoTo[0]->nBondAtom1)
+                        if (pst0_nba1)
                         {
                             INCHI_HEAPCHK
-                                inchi_free( pstereoTo[0]->nBondAtom1 );
-                            pstereoTo[0]->nBondAtom1 = NULL;
+                                inchi_free( pst0_nba1 );
+                            pst0_nba1 = NULL;
                         }
                         if (pstereoTo[0]->nBondAtom2)
                         {
                             INCHI_HEAPCHK
-                                inchi_free( pstereoTo[0]->nBondAtom2 );
-                            pstereoTo[0]->nBondAtom2 = NULL;
+                                inchi_free( pst0_nba2 );
+                            pst0_nba2 = NULL;
                         }
                         INCHI_HEAPCHK
                             goto exit_function;
@@ -10196,9 +10250,9 @@ int CopySegment( INChI *pInChITo,
                             goto exit_function;
                         }
 #endif
-                        memcpy(pstereoTo[0]->b_parity, stereoFrom->b_parity, ((long long)len + 1) * sizeof(pstereoTo[0]->b_parity[0])); /* djb-rwth: cast operator added */
-                        memcpy(pstereoTo[0]->nBondAtom1, stereoFrom->nBondAtom1, ((long long)len + 1) * sizeof(pstereoTo[0]->nBondAtom1[0])); /* djb-rwth: cast operator added */
-                        memcpy(pstereoTo[0]->nBondAtom2, stereoFrom->nBondAtom2, ((long long)len + 1) * sizeof(pstereoTo[0]->nBondAtom2[0])); /* djb-rwth: cast operator added */
+                        memcpy(pst0_bp, stereoFrom->b_parity, ((long long)len + 1) * sizeof(pst0_bp[0])); /* djb-rwth: cast operator added */
+                        memcpy(pst0_nba1, stereoFrom->nBondAtom1, ((long long)len + 1) * sizeof(pst0_nba1[0])); /* djb-rwth: cast operator added */
+                        memcpy(pst0_nba2, stereoFrom->nBondAtom2, ((long long)len + 1) * sizeof(pst0_nba2[0])); /* djb-rwth: cast operator added */
                     }
                     pstereoTo[0]->nNumberOfStereoBonds = len;
 
@@ -12202,22 +12256,30 @@ static int SegmentSp3ProcessAbbreviation( int *mpy_component,
     /* copy */
     for (i = 0; i < val; i++)
     {
-        ret = CopySegment( pInChI + iComponent + i, pInChIFrom + iComponent + i, nCpyType, bIsoTo, bIsoFrom );
-        if (!ret)
+        /* djb-rwth: fixing oss-fuzz issue #26540 */
+        if (iComponent + i <= nnumcomp_limit)
         {
-            ret = RI_ERR_SYNTAX; /* syntax error */
-        }
-        if (ret < 0)
-        {
-            return ret;
-        }
-        if (bIsoFrom >= 0)
-        {
-            INChI_Stereo *pStereoTo = bIsoTo ? pInChI[iComponent + i].StereoIsotopic : pInChI[iComponent + i].Stereo;
-            if (pStereoTo)
+            ret = CopySegment(pInChI + iComponent + i, pInChIFrom + iComponent + i, nCpyType, bIsoTo, bIsoFrom);
+            if (!ret)
             {
-                pStereoTo->nCompInv2Abs = NO_VALUE_INT; /* in case there in no /m segment after this */
+                ret = RI_ERR_SYNTAX; /* syntax error */
             }
+            if (ret < 0)
+            {
+                return ret;
+            }
+            if (bIsoFrom >= 0)
+            {
+                INChI_Stereo* pStereoTo = bIsoTo ? pInChI[iComponent + i].StereoIsotopic : pInChI[iComponent + i].Stereo;
+                if (pStereoTo)
+                {
+                    pStereoTo->nCompInv2Abs = NO_VALUE_INT; /* in case there in no /m segment after this */
+                }
+            }
+        }
+        else
+        {
+            ret = RI_ERR_ALLOC;
         }
     }
 

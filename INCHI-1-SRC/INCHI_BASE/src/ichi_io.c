@@ -2,9 +2,31 @@
  * International Chemical Identifier (InChI)
  * Version 1
  * Software version 1.07
- * 20/11/2023
+ * April 30, 2024
  *
- * The InChI library and programs are free software developed under the
+ * MIT License
+ *
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+*
+* The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -12,24 +34,9 @@
  * (either contractor or volunteer) which are listed in the file
  * 'External-contributors' included in this distribution.
  *
- * IUPAC/InChI-Trust Licence No.1.0 for the
- * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust
- *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
- * or any later version.
- *
- * Please note that this library is distributed WITHOUT ANY WARRANTIES
- * whatsoever, whether expressed or implied.
- * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
- *
- * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please e-mail:
- *
  * info@inchi-trust.org
  *
- */
+*/
 
 #include <string.h>
 #include <stdlib.h>
@@ -487,12 +494,13 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
         va_end( argList );
         if (max_len >= 0)
         {
+            /* djb-rwth: fixing oss-fuzz issue #30163 */
+            int  nAddLength = inchi_max(INCHI_ADD_STR_LEN, max_len);
+            long long new_str_len = (long long)ios->s.nAllocatedLength + (long long)nAddLength;
             if (ios->s.nAllocatedLength - ios->s.nUsedLength <= max_len)
             {
                 /* enlarge output string */
-                int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
-                char *new_str =
-                    (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + (long long)nAddLength, sizeof( char ) ); /* djb-rwth: cast operators added */
+                char* new_str = (char*)inchi_calloc(new_str_len, sizeof(char)); /* djb-rwth: cast operators added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
@@ -512,9 +520,12 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
                 }
             }
             /* output */
-            my_va_start( argList, lpszFormat );
-            ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
-            va_end( argList );
+            if (ios->s.nUsedLength <= new_str_len)
+            {
+                my_va_start(argList, lpszFormat);
+                ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
+                va_end(argList);
+            }
             if (ret >= 0)
             {
                 ios->s.nUsedLength += ret;
@@ -614,11 +625,13 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
         va_end( argList );
         if (max_len >= 0)
         {
+            /* djb-rwth: fixing oss-fuzz issue #30163 */
+            int  nAddLength = inchi_max(INCHI_ADD_STR_LEN, max_len);
+            long long new_str_len = (long long)ios->s.nAllocatedLength + (long long)nAddLength;
             if (ios->s.nAllocatedLength - ios->s.nUsedLength <= max_len)
             {
                 /* enlarge output string */
-                int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
-                char *new_str = (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + (long long)nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operators added */
+                char *new_str = (char *) inchi_calloc( new_str_len, sizeof( new_str[0] ) ); /* djb-rwth: cast operators added */
                 if (new_str)
                 {
                     if (ios->s.pStr)
@@ -638,9 +651,12 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
                 }
             }
             /* output */
-            my_va_start( argList, lpszFormat );
-            ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
-            va_end( argList );
+            if (ios->s.nUsedLength <= new_str_len)
+            {
+                my_va_start(argList, lpszFormat);
+                ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
+                va_end(argList);
+            }
             if (ret >= 0)
             {
                 ios->s.nUsedLength += ret;

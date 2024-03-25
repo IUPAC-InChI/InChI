@@ -1,34 +1,41 @@
 /*
-* International Chemical Identifier (InChI)
-* Version 1
-* Software version 1.07
-* 20/11/2023
+ * International Chemical Identifier (InChI)
+ * Version 1
+ * Software version 1.07
+ * April 30, 2024
+ *
+ * MIT License
+ *
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
 *
 * The InChI library and programs are free software developed under the
-* auspices of the International Union of Pure and Applied Chemistry (IUPAC).
-* Originally developed at NIST.
-* Modifications and additions by IUPAC and the InChI Trust.
-* Some portions of code were developed/changed by external contributors
-* (either contractor or volunteer) which are listed in the file
-* 'External-contributors' included in this distribution.
-*
-* IUPAC/InChI-Trust Licence No.1.0 for the
-* International Chemical Identifier (InChI)
-* Copyright (C) IUPAC and InChI Trust
-*
-* This library is free software; you can redistribute it and/or modify it
-* under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
-* or any later version.
-*
-* Please note that this library is distributed WITHOUT ANY WARRANTIES
-* whatsoever, whether expressed or implied.
-* See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
-*
-* You should have received a copy of the IUPAC/InChI Trust InChI
-* Licence No. 1.0 with this library; if not, please e-mail:
-*
-* info@inchi-trust.org
-*
+ * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
+ * Originally developed at NIST.
+ * Modifications and additions by IUPAC and the InChI Trust.
+ * Some portions of code were developed/changed by external contributors
+ * (either contractor or volunteer) which are listed in the file
+ * 'External-contributors' included in this distribution.
+ *
+ * info@inchi-trust.org
+ *
 */
 
 #include <stdlib.h>
@@ -3099,26 +3106,34 @@ int MarkSaltChargeGroups2( CANON_GLOBALS *pCG,
         /************************************************************************************/
         /* Mark redundant candidates so that only one candidate from one t-group is left in */
         /************************************************************************************/
-        for (i = 0; i < nNumCandidates; i++)
+        /* djb-rwth: fixing oss-fuzz issue #45059 */
+        if (nNumCandidates <= num_atoms)
         {
-            if (2 == s_candidate[nNumCandidates].type)
+            for (i = 0; i < nNumCandidates; i++)
             {
-                s_candidate[i].type -= DISABLE_CANDIDATE; /* disable >C-SH candidates */
-                nNumLeftCandidates++; /* count rejected */
-                continue;
-            }
-            if (s_candidate[i].endpoint)
-            {
-                for (j = i - 1; 0 <= j; j--)
+                if (2 == s_candidate[nNumCandidates].type)
                 {
-                    if (s_candidate[i].endpoint == s_candidate[j].endpoint)
+                    s_candidate[i].type -= DISABLE_CANDIDATE; /* disable >C-SH candidates */
+                    nNumLeftCandidates++; /* count rejected */
+                    continue;
+                }
+                if (s_candidate[i].endpoint)
+                {
+                    for (j = i - 1; 0 <= j; j--)
                     {
-                        s_candidate[i].type -= DISABLE_CANDIDATE; /* disable subsequent redundant */
-                        nNumLeftCandidates++; /* count rejected */
-                        break;
+                        if (s_candidate[i].endpoint == s_candidate[j].endpoint)
+                        {
+                            s_candidate[i].type -= DISABLE_CANDIDATE; /* disable subsequent redundant */
+                            nNumLeftCandidates++; /* count rejected */
+                            break;
+                        }
                     }
                 }
             }
+        }
+        else
+        {
+            return BNS_VERT_EDGE_OVFL;
         }
 
         nNumLeftCandidates = nNumCandidates - nNumLeftCandidates; /* subtract num. rejected from the total */
@@ -6398,12 +6413,14 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
     {
         if (( len = t_group_info_orig->max_num_t_groups ) > 0)
         {
-            if ((t_group_info->t_group =
-                (T_GROUP*) inchi_malloc( len * sizeof( t_group_info->t_group[0] ) ))) /* djb-rwth: addressing LLVM warning */
+            /* djb-rwth: fixing oss-fuzz issue #52978 */
+            T_GROUP* tgi_tg = (T_GROUP*)inchi_malloc(len * sizeof(t_group_info->t_group[0]));
+            t_group_info->t_group = tgi_tg;
+            if (tgi_tg) /* djb-rwth: addressing LLVM warning */
             {
-                memcpy(t_group_info->t_group,
+                memcpy(tgi_tg,
                     t_group_info_orig->t_group,
-                    len * sizeof(t_group_info->t_group[0]));
+                    len * sizeof(tgi_tg[0]));
             }
             else
             {
@@ -6440,10 +6457,12 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
         }
         if (( len = t_group_info_orig->nNumIsotopicEndpoints ) > 0)
         {
-            if ((t_group_info->nIsotopicEndpointAtomNumber =
-                (AT_NUMB*) inchi_malloc( len * sizeof( t_group_info->nIsotopicEndpointAtomNumber[0] ) ))) /* djb-rwth: addressing LLVM warning */
+            /* djb-rwth: fixing oss-fuzz issue #53519 */
+            AT_NUMB* tgi_niean = (AT_NUMB*)inchi_malloc(len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]));
+            t_group_info->nIsotopicEndpointAtomNumber = tgi_niean;
+            if (tgi_niean) /* djb-rwth: addressing LLVM warning */
             {
-                memcpy(t_group_info->nIsotopicEndpointAtomNumber,
+                memcpy(tgi_niean,
                     t_group_info_orig->nIsotopicEndpointAtomNumber,
                     len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]));
             }
