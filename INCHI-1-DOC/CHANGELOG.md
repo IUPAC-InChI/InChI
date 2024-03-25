@@ -11,9 +11,9 @@
 - `__isascii/isascii` macro support provided for all compilers
 
 ### Fixed (security)
-- 5 buffer overflow issues due to use of large array dimensions
-- 129 security bugs related to improper `NULL` pointer dereferencing which might cause crashes or exits
-- 39 memory leaks
+- 15 buffer overflow issues due to use of large array dimensions
+- 137 security bugs related to improper `NULL` pointer dereferencing which might cause crashes or exits
+- 49 memory leaks
 - 530 potential applications of optional [bounds checking functions](/README.md#BCF)  
 
 Additionally, 29 potential security issues have been marked for further revision.
