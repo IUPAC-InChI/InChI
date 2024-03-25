@@ -1,5 +1,10 @@
 # Official home of the InChI
 
+- <em>Release 1.07-Beta4</em> (24/03/2024):
+  - ["/b-layer" issue / Issue #9](https://github.com/IUPAC-InChI/InChI/issues/9#issue-2151944482) has been fixed
+  - [Incorrect output message regarding CPU architecture on ARM64 CPUs / Issue #10](https://github.com/IUPAC-InChI/InChI/issues/10#issue-2169630260) has been fixed
+  - Further <code>Google<sup>&reg;</sup> oss-fuzz</code> issues have been addressed
+
 ## Using precompiled binaries
 
 64-bit and 32-bit precompiled binaries (executable, `.dll/.so` and ELF files) are located in the following folders:
