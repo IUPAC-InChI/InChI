@@ -42,7 +42,7 @@
 This directory contains InChI Software source codes.
 It also contains examples of InChI API usage, for C 
 ('inchi_main', 'mol2inchi', 'test_ixa'); see projects 
-for MS Visual Studio 2015 in 'vc14' and for gcc/Linux 
+for MS Visual Studio in 'vc14' and for gcc/Linux 
 in 'gcc' subdirs) and Python 3 ('python_sample'). 
 
 Also supplied are InChI API Library source codes and 
