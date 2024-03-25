@@ -2,9 +2,31 @@
  * International Chemical Identifier (InChI)
  * Version 1
  * Software version 1.07
- * 20/11/2023
+ * April 30, 2024
  *
- * The InChI library and programs are free software developed under the
+ * MIT License
+ *
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+*
+* The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -12,24 +34,9 @@
  * (either contractor or volunteer) which are listed in the file
  * 'External-contributors' included in this distribution.
  *
- * IUPAC/InChI-Trust Licence No.1.0 for the
- * International Chemical Identifier (InChI)
- * Copyright (C) IUPAC and InChI Trust
- *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the IUPAC/InChI Trust InChI Licence No.1.0,
- * or any later version.
- *
- * Please note that this library is distributed WITHOUT ANY WARRANTIES
- * whatsoever, whether expressed or implied.
- * See the IUPAC/InChI-Trust InChI Licence No.1.0 for more details.
- *
- * You should have received a copy of the IUPAC/InChI Trust InChI
- * Licence No. 1.0 with this library; if not, please e-mail:
- *
  * info@inchi-trust.org
  *
- */
+*/
 
 
 #include <stdio.h>
@@ -2323,13 +2330,17 @@ repeat:
     if (nRet >= 0 && out_file->s.pStr)
     {
         /* success */
-        char *p;
+        char* p = NULL;
+        /* djb-rwth: fixing oss-fuzz issue #40971 */
+        int p_len, out_szinchi_len;
+        out_szinchi_len = strlen(out_file->s.pStr);
         out->szInChI = out_file->s.pStr;
         out->szAuxInfo = NULL;
 
         for (p = strchr( out->szInChI, '\n' ); p; p = strchr( p + 1, '\n' ))
         {
-            if (!memcmp( p, "\nAuxInfo", 8 ))
+            p_len = strlen(p);
+            if ((p_len >= 8) && !memcmp( p, "\nAuxInfo", 8 ))
             {
                 *p = '\0';            /* remove LF after INChI */
                 out->szAuxInfo = p + 1; /* save pointer to AuxInfo */
@@ -3241,26 +3252,31 @@ int SetInChIExtInputByExtOrigAtData( OAD_Polymer     *orp,
         /* Polymers */
     if (orp && orp->n > 0)
     {
-        *iip = (inchi_Input_Polymer *) inchi_calloc( 1, sizeof( inchi_Input_Polymer ) );
-        if (!*iip)
+        /* djb-rwth: fixing oss-fuzz issue #66748 */
+        inchi_Input_Polymer* iip_tmp= (inchi_Input_Polymer *) inchi_calloc( 1, sizeof( inchi_Input_Polymer ) );
+        inchi_Input_PolymerUnit** units_tmp = (inchi_Input_PolymerUnit**) inchi_calloc( orp->n, sizeof( ( *iip )->units[0] ) );
+        int* uk_al_tmp;
+
+        *iip = iip_tmp;
+        if (!iip_tmp)
         {
             err = 9001;
             goto exitf;
         }
-        ( *iip )->n = orp->n;
-        ( *iip )->units = (inchi_Input_PolymerUnit**) inchi_calloc( orp->n, sizeof( ( *iip )->units[0] ) );
-        if (!( *iip )->units)
+        iip_tmp->n = orp->n;
+        ( *iip )->units = units_tmp;
+        if (!units_tmp)
         {
             err = 9001; goto exitf;
         }
-        memset( ( *iip )->units, 0, sizeof( *( *iip )->units ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset(units_tmp, 0, sizeof( *units_tmp) ); /* djb-rwth: memset_s C11/Annex K variant? */
         for (k = 0; k < orp->n; k++)
         {
             int q = 0;
-            inchi_Input_PolymerUnit *unitk;
+            inchi_Input_PolymerUnit *unitk = (inchi_Input_PolymerUnit*) inchi_calloc( 1, sizeof( inchi_Input_PolymerUnit ) );
             OAD_PolymerUnit    *groupk = orp->units[k];
-            ( *iip )->units[k] = (inchi_Input_PolymerUnit*) inchi_calloc( 1, sizeof( inchi_Input_PolymerUnit ) );
-            unitk = ( *iip )->units[k];
+            ( *iip )->units[k] = unitk;
+            /* unitk = ( *iip )->units[k]; */
             if (!unitk)
             {
                 err = 9001; goto exitf;
@@ -3278,14 +3294,15 @@ int SetInChIExtInputByExtOrigAtData( OAD_Polymer     *orp,
             }
             strcpy( unitk->smt, groupk->smt );
             unitk->na = groupk->na;
-            unitk->alist = (int *) inchi_calloc( unitk->na, sizeof( int ) );
-            if (!unitk->alist)
+            uk_al_tmp = (int *) inchi_calloc( unitk->na, sizeof( int ) );
+            unitk->alist = uk_al_tmp;
+            if (!uk_al_tmp)
             {
                 err = 9001; goto exitf;
             }
             for (m = 0; m < unitk->na; m++)
             {
-                unitk->alist[m] = groupk->alist[m];
+                uk_al_tmp[m] = groupk->alist[m];
             }
             unitk->nb = groupk->nb;
             if (unitk->nb > 0)
