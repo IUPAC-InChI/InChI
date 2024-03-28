@@ -1,7 +1,7 @@
 // https://containers.dev/implementors/json_reference/
 // https://hub.docker.com/_/python
 {
-    "name": "InChI_Dev",
+    "name": "InChI",
     "build": {
         "dockerfile": "INCHI-1-TEST/Dockerfile"
     },
@@ -11,9 +11,7 @@
                 "terminal.integrated.scrollback": 5000,
                 "editor.formatOnSave": true,
                 "python": {
-                    "editor.defaultFormatter": "ms-python.black-formatter",
-                    "testing.unittestEnabled": false,
-                    "testing.pytestEnabled": true
+                    "editor.defaultFormatter": "ms-python.black-formatter"
                 }
             },
             "extensions": [
