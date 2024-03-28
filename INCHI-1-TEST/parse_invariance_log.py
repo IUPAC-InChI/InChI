@@ -46,7 +46,15 @@ def write_html_log(
                 html_file.write("<table>\n")
                 for i, value in enumerate([variant[attribute] for variant in variants]):
                     html_file.write("<tr>\n")
-                    html_file.write(f"<td>{i + 1}.: {value}</td>\n")
+                    if attribute == "molfile":
+                        html_file.write("<details>\n")
+                        html_file.write(f"<summary>{i + 1}.</summary>\n")
+                        html_file.write(
+                            f"<pre style='display: inline-block; border: 1px solid black; border-radius: 10px; padding: 10px'>{value}</pre>\n"
+                        )
+                        html_file.write("</details>\n")
+                    else:
+                        html_file.write(f"<td>{i + 1}.: {value}</td>\n")
                     html_file.write("</tr>\n")
                 html_file.write("<table>\n")
 

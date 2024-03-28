@@ -70,7 +70,7 @@ def invariance_consumer(
 ) -> drivers.ConsumerResult:
 
     inchi_lib = ctypes.CDLL(str(inchi_lib_path))
-    variants: list[dict[str, int]] = []
+    variants: list[dict[str, str | int]] = []
     inchi_string_variants = set()
     inchi_key_variants = set()
     random.seed(42)
@@ -99,6 +99,7 @@ def invariance_consumer(
                 {
                     "inchi": inchi_string,
                     "key": inchi_key,
+                    "molfile": molfile_permuted,
                     "aux": aux_info,
                     "log": log,
                     "message": message,
