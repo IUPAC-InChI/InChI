@@ -25,7 +25,7 @@ runs:
 
     - name: Write regression summary
       if: '!cancelled()'
-      run: python -m INCHI-1-TEST.parse_regression_log ci
+      run: python -m INCHI-1-TEST.parse_log regression ci
       shell: bash
 
     - name: Upload regression test results

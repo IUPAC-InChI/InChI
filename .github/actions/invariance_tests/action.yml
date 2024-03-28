@@ -25,7 +25,7 @@ runs:
 
     - name: Write invariance summary
       if: '!cancelled()'
-      run: python -m INCHI-1-TEST.parse_invariance_log ci
+      run: python -m INCHI-1-TEST.parse_log invariance ci
       shell: bash
 
     - name: Upload invariance test results

@@ -134,15 +134,10 @@ The tests should now fail and indicate that the difference between the reference
 You can review the results by running
 
 ```Shell
-python -m INCHI-1-TEST.parse_regression_log <dataset>
+python -m INCHI-1-TEST.parse_log <test> <dataset>
 ```
 
-or
-
-```Shell
-python -m INCHI-1-TEST.parse_invariance_log <dataset>
-```
-
+where `<test>` can be `regression` or `invariance`.
 The command generates an HTML report for each SDF under `INCHI-1-TEST/data/<dataset>` that contains structures which failed the regression test.
 You can view the HTML report in your browser.
 
