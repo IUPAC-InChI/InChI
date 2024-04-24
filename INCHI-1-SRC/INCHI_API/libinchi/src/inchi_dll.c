@@ -3252,76 +3252,83 @@ int SetInChIExtInputByExtOrigAtData( OAD_Polymer     *orp,
         /* Polymers */
     if (orp && orp->n > 0)
     {
-        /* djb-rwth: fixing oss-fuzz issue #66748 */
-        inchi_Input_Polymer* iip_tmp= (inchi_Input_Polymer *) inchi_calloc( 1, sizeof( inchi_Input_Polymer ) );
+        /* djb-rwth: fixing oss-fuzz issue #67695, #66748 */
+        inchi_Input_Polymer* iip_tmp = (inchi_Input_Polymer*) inchi_calloc( 1, sizeof( inchi_Input_Polymer ) );
         inchi_Input_PolymerUnit** units_tmp = (inchi_Input_PolymerUnit**) inchi_calloc( orp->n, sizeof( ( *iip )->units[0] ) );
-        int* uk_al_tmp;
+        int** uk_al_tmp = (int**)inchi_malloc((orp->n) * sizeof(int*));
+        inchi_Input_PolymerUnit** unitk = (inchi_Input_PolymerUnit**)inchi_malloc((orp->n) * sizeof(inchi_Input_PolymerUnit*));
 
-        *iip = iip_tmp;
-        if (!iip_tmp)
+        if (!iip_tmp || !units_tmp || !uk_al_tmp || !unitk)
         {
             err = 9001;
             goto exitf;
         }
+        *iip = iip_tmp;
         iip_tmp->n = orp->n;
-        ( *iip )->units = units_tmp;
-        if (!units_tmp)
-        {
-            err = 9001; goto exitf;
-        }
+        iip_tmp->units = units_tmp;
         memset(units_tmp, 0, sizeof( *units_tmp) ); /* djb-rwth: memset_s C11/Annex K variant? */
         for (k = 0; k < orp->n; k++)
         {
             int q = 0;
-            inchi_Input_PolymerUnit *unitk = (inchi_Input_PolymerUnit*) inchi_calloc( 1, sizeof( inchi_Input_PolymerUnit ) );
+            unitk[k] = (inchi_Input_PolymerUnit*)inchi_calloc(1, sizeof(inchi_Input_PolymerUnit));
             OAD_PolymerUnit    *groupk = orp->units[k];
-            ( *iip )->units[k] = unitk;
             /* unitk = ( *iip )->units[k]; */
-            if (!unitk)
+            if (!unitk[k])
             {
-                err = 9001; goto exitf;
+                err = 9001; 
+                goto exitf;
             }
-            memset( unitk, 0, sizeof( *unitk ) ); /* djb-rwth: memset_s C11/Annex K variant? */
-            unitk->id = groupk->id;
-            unitk->type = groupk->type;
-            unitk->subtype = groupk->subtype;
-            unitk->conn = groupk->conn;
-            unitk->label = groupk->label;
+            iip_tmp->units[k] = unitk[k];
+            memset( unitk[k], 0, sizeof(*unitk[k])); /* djb-rwth: memset_s C11/Annex K variant? */
+            unitk[k]->id = groupk->id;
+            unitk[k]->type = groupk->type;
+            unitk[k]->subtype = groupk->subtype;
+            unitk[k]->conn = groupk->conn;
+            unitk[k]->label = groupk->label;
             for (q = 0; q < 4; q++)
             {
-                unitk->xbr1[q] = groupk->xbr1[q];
-                unitk->xbr2[q] = groupk->xbr2[q];
+                unitk[k]->xbr1[q] = groupk->xbr1[q];
+                unitk[k]->xbr2[q] = groupk->xbr2[q];
             }
-            strcpy( unitk->smt, groupk->smt );
-            unitk->na = groupk->na;
-            uk_al_tmp = (int *) inchi_calloc( unitk->na, sizeof( int ) );
-            unitk->alist = uk_al_tmp;
-            if (!uk_al_tmp)
+            strcpy( unitk[k]->smt, groupk->smt);
+            unitk[k]->na = groupk->na;
+            uk_al_tmp[k] = (int*)inchi_calloc(unitk[k]->na, sizeof(int));
+            if (!uk_al_tmp[k])
             {
-                err = 9001; goto exitf;
+                err = 9001; 
+                goto exitf;
             }
-            for (m = 0; m < unitk->na; m++)
+            unitk[k]->alist = uk_al_tmp[k];
+            for (m = 0; m < unitk[k]->na; m++)
             {
-                uk_al_tmp[m] = groupk->alist[m];
+                uk_al_tmp[k][m] = groupk->alist[m];
             }
-            unitk->nb = groupk->nb;
-            if (unitk->nb > 0)
+            unitk[k]->nb = groupk->nb;
+            if (unitk[k]->nb > 0)
             {
-                unitk->blist = (int *) inchi_calloc( 2 * (long long)unitk->nb, sizeof( int ) ); /* djb-rwth: cast operator added */
-                if (!unitk->blist)
+                unitk[k]->blist = (int*)inchi_calloc(2 * (long long)unitk[k]->nb, sizeof(int)); /* djb-rwth: cast operator added */
+                if (!unitk[k]->blist)
                 {
-                    err = 9001; goto exitf;
+                    err = 9001;
+                    goto exitf;
                 }
                 for (m = 0; m < 2 * groupk->nb; m++)
                 {
-                    unitk->blist[m] = groupk->blist[m];
+                    unitk[k]->blist[m] = groupk->blist[m];
                 }
             }
             else
             {
-                unitk->blist = NULL;
+                unitk[k]->blist = NULL;
             }
+
+            inchi_free(unitk[k]);
+            inchi_free(uk_al_tmp[k]);
         }
+        inchi_free(iip_tmp);
+        inchi_free(units_tmp);
+        inchi_free(uk_al_tmp);
+        inchi_free(unitk);
     }
 
     if (orv)
