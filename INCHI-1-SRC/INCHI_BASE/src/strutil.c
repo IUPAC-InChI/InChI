@@ -4396,13 +4396,16 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
         return 0;
     }
 
-    if (!( nNewCompNumber = (AT_NUMB *) inchi_calloc( num_at, sizeof( nNewCompNumber[0] ) ) ) ||
-         /* for non-recursive DFS only: */
-         !( nPrevAtom = (AT_NUMB *) inchi_calloc( num_at, sizeof( nPrevAtom[0] ) ) ) ||
-         !( iNeigh = (S_CHAR  *) inchi_calloc( num_at, sizeof( iNeigh[0] ) ) ))
+    nNewCompNumber = (AT_NUMB*)inchi_calloc(num_at, sizeof(nNewCompNumber[0]));
+    nPrevAtom = (AT_NUMB*)inchi_calloc(num_at, sizeof(nPrevAtom[0]));
+    iNeigh = (S_CHAR*)inchi_calloc(num_at, sizeof(iNeigh[0]));
+
+    if (!nNewCompNumber || !nPrevAtom || !iNeigh) /* nNewCompNumber: for non-recursive DFS only: */ 
     {
         goto exit_function;
     }
+
+    /*printf("\nnum_at = %d\n", num_at);*/
 
     /* Mark and count; avoid deep DFS recursion: it may make verifying software unhappy */
     /* nNewCompNumber[i] will contain new component number for atoms at[i], i=0..num_at-1 */
@@ -4411,19 +4414,26 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
         if (!nNewCompNumber[j])
         {
             /* mark starting with at[j] */
-            int fst_at, nxt_at, cur_at = j;
+            int fst_at = 0, nxt_at = 0, cur_at = j;
             num_components++;
 
             /* first time at at[j] */
-            nNewCompNumber[fst_at = cur_at] = (AT_NUMB) num_components;
+            fst_at = cur_at;
+            nNewCompNumber[fst_at] = (AT_NUMB) num_components;
+
+            bool cur_neq_fst = true;
 
             /* find next neighbor */
-            while (1)
+            do
             {
-
+                /* djb-rwth: GCC 12/13 compiled executables crash here for 7 PubChem structures */
+                /*printf("\ncur_at = % d, nxt_at = % d, iNeigh[cur_at] = % d, at[cur_at].val = % d ", cur_at, nxt_at, iNeigh[cur_at], at[cur_at].valence);*/
                 if (iNeigh[cur_at] < at[cur_at].valence)
                 {
-                    nxt_at = at[cur_at].neighbor[(int) iNeigh[cur_at] ++];
+                    int ineigh_incr = (int)iNeigh[cur_at];
+                    nxt_at = at[cur_at].neighbor[ineigh_incr];
+                    iNeigh[cur_at]++;
+                    /*printf("/ ineigh_incr = %d, new_nxt_at = %d, iNeigh[cur_at]_inc = %d, nNewCompNumber[nxt_at] = %d ", ineigh_incr, nxt_at, iNeigh[cur_at], nNewCompNumber[nxt_at]);*/
 
                     if (!nNewCompNumber[nxt_at])
                     {
@@ -4435,13 +4445,16 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
                 }
                 else if (cur_at == fst_at)
                 {
-                    break; /* done */
+                    cur_neq_fst = false;
+                    /* break;  done */
                 }
                 else
                 {
                     cur_at = nPrevAtom[cur_at]; /* retract */
                 }
-            }
+            } while (cur_neq_fst);
+
+            /*printf("\n");*/
         }
     }
 
@@ -4453,12 +4466,11 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
     /* Allocate more memory */
     i = inchi_max( num_components, orig_at_data->num_components );
 
-    if (!( nCurAtLen = (AT_NUMB *)
-           inchi_calloc( (long long)num_components + 1, sizeof( nCurAtLen[0] ) ) ) || /* djb-rwth: cast operator added */
-         !( nOldCompNumber = (AT_NUMB *)
-            inchi_calloc( (long long)i + 1, sizeof( nOldCompNumber[0] ) ) ) || /* djb-rwth: cast operator added */
-         !( component_nbr = (AT_TRIPLE *)
-            inchi_calloc( (long long)num_components + 1, sizeof( component_nbr[0] ) ) )) /* djb-rwth: cast operator added */
+    nCurAtLen = (AT_NUMB*)inchi_calloc((long long)num_components + 1, sizeof(nCurAtLen[0])); /* djb-rwth: cast operator added */
+    nOldCompNumber = (AT_NUMB*)inchi_calloc((long long)i + 1, sizeof(nOldCompNumber[0])); /* djb-rwth: cast operator added */
+    component_nbr = (AT_TRIPLE*)inchi_calloc((long long)num_components + 1, sizeof(component_nbr[0])); /* djb-rwth: cast operator added */
+
+    if (!nCurAtLen || !nOldCompNumber || !component_nbr)
     {
         goto exit_function;
     }
@@ -4614,8 +4626,7 @@ exit_function:
 
     orig_at_data->num_components = num_components;
 
-    return
-        ret;  /* number of disconnected components;
+    return ret;  /* number of disconnected components;
               1=>single connected structure        */
 }
 

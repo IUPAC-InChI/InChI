@@ -3316,6 +3316,9 @@ void OAD_Polymer_SetAtProps( OAD_Polymer *pd,
     int i, j, k, nrings = 0;
     int a1, a2, dummy = 0, bond_type = -1, bond_stereo = -1;
     int *num_ring_sys = NULL, *size_ring_sys = NULL;
+    /* djb-rwth: fixing oss-fuzz issue #68112 */
+    int err2_len = sizeof(erank_rule2) / sizeof(erank_rule2[0]);
+    int err4_len = sizeof(erank_rule4) / sizeof(erank_rule4[0]);
 
     if (NULL == aprops)
     {
@@ -3326,13 +3329,14 @@ void OAD_Polymer_SetAtProps( OAD_Polymer *pd,
     for (k = 0; k < nat; k++)
     {
         int atnum = at[k].orig_at_number, index = k;
+        U_CHAR err4_ind = at[k].el_number;
         if (cano_nums)
         {
             index = cano_nums[atnum];
         }
-        if (index >= 0)
+        if (index >= 0 && err4_ind < err4_len)
         {
-            aprops[index].erank = erank_rule4[at[k].el_number];
+            aprops[index].erank = erank_rule4[err4_ind];
             aprops[index].ring_erank = 0;
             aprops[index].ring_size = 0;
             aprops[index].ring_num = -1;

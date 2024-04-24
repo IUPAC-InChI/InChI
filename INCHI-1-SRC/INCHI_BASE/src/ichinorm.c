@@ -106,8 +106,10 @@ int MarkRingSystemsInp( inp_ATOM *at, int num_atoms, int start )
     nNumRingSystems = 0;
     u = start; /*  start atom */
     /* djb-rwth: fixing oss-fuzz issue #66720 */
-    if (u > num_atoms)
+    if (u > num_atoms-1)
+    {
         u = 0;
+    }
     nDfs = 0;
     nTopStackAtom = -1;
     nTopRingStack = -1;

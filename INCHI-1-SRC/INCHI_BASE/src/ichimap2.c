@@ -258,7 +258,6 @@ int SetNewRanksFromNeighLists3( CANON_GLOBALS *pCG,
     /*  sorting */
     for (i = 0, r1 = 1; i < num_atoms; r1++)
     {
-        /* djb-rwth: fixing oss-fuzz issue #25642 */
         j = (int)nAtomNumber[i];
         r2 = nRank[j];
         if (r1 == r2)

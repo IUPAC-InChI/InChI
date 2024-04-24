@@ -96,9 +96,6 @@ int FixRestoredStructureStereo( struct tagCANON_GLOBALS *pCG,
     int        nPathLen, nDeltaH, nDeltaCharge, nNumVisitedAtoms;
     INChI_Stereo *pStereoInChI, *pStereo2InChI, *pStereoRevrs, *pStereo2Revrs;
 
-    pe = (BNS_EDGE *) malloc (sizeof (*pe)); /* djb-rwth: initialisation added; cast operator added for compatibility */
-    pe->flow = 0; /* djb-rwth: proper initialisation required to avoid garbage values */
-
     /* Stereo */
 
     /* currently being processed layer */
@@ -151,13 +148,11 @@ int FixRestoredStructureStereo( struct tagCANON_GLOBALS *pCG,
     if (cmpInChI & IDIF_PROBLEM)
     {
         ret = RI_ERR_PROGR; /* severe restore problem */
-        inchi_free(pe); /* djb-rwth: avoiding memory leak */
         goto exit_function;
     }
     if (err)
     {
         ret = RI_ERR_ALLOC;
-        inchi_free(pe); /* djb-rwth: avoiding memory leak */
         goto exit_function;
     }
 
@@ -183,20 +178,17 @@ int FixRestoredStructureStereo( struct tagCANON_GLOBALS *pCG,
         if (cmpInChI & IDIF_PROBLEM)
         {
             ret = RI_ERR_PROGR; /* severe restore problem */
-            inchi_free(pe); /* djb-rwth: avoiding memory leak */
             goto exit_function;
         }
         if (err)
         {
             ret = RI_ERR_ALLOC;
-            inchi_free(pe); /* djb-rwth: avoiding memory leak */
             goto exit_function;
         }
     }
 
     if (!( cmpInChI & IDIFF_SB ) && !( cmpInChI2 & IDIFF_SB ))
     {
-        inchi_free(pe); /* djb-rwth: avoiding memory leak */
         goto exit_function;
     }
     /* need to temporarily remove fixing of stereogenic bonds */
@@ -825,7 +817,9 @@ int FixRestoredStructureStereo( struct tagCANON_GLOBALS *pCG,
             j12 = icr->sb_undef_in1_only[i];
             pv1 = pBNS->vert + ( v1 = pStereoRevrs->nBondAtom1[j12] - 1 );
             pv2 = pBNS->vert + ( v2 = pStereoRevrs->nBondAtom2[j12] - 1 ); /* djb-rwth: ignoring LLVM warning: variable used */
-
+            
+            /* djb-rwth: fixing oss-fuzz issue #67650 */
+            pe = pBNS->edge + (e = pv1->iedge[0]); /* djb-rwth: proper initialisation required to avoid garbage values */
             /* find the edge between v1 and v2 */
             for (k = 0; k < at2[v1].valence; k++)
             {

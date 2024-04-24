@@ -494,7 +494,7 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
         va_end( argList );
         if (max_len >= 0)
         {
-            /* djb-rwth: fixing oss-fuzz issue #30163 */
+            /* djb-rwth: fixing oss-fuzz issue #30152 */
             int  nAddLength = inchi_max(INCHI_ADD_STR_LEN, max_len);
             long long new_str_len = (long long)ios->s.nAllocatedLength + (long long)nAddLength;
             if (ios->s.nAllocatedLength - ios->s.nUsedLength <= max_len)
@@ -523,7 +523,7 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
             if (ios->s.nUsedLength <= new_str_len)
             {
                 my_va_start(argList, lpszFormat);
-                ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
+                ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, new_str_len - (long long)ios->s.nUsedLength, lpszFormat, argList);
                 va_end(argList);
             }
             if (ret >= 0)
@@ -651,10 +651,11 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
                 }
             }
             /* output */
+            /* djb-rwth: fixing oss-fuzz issue #67676 */
             if (ios->s.nUsedLength <= new_str_len)
             {
                 my_va_start(argList, lpszFormat);
-                ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList);
+                ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, new_str_len - (long long)ios->s.nUsedLength, lpszFormat, argList);
                 va_end(argList);
             }
             if (ret >= 0)

@@ -3106,34 +3106,27 @@ int MarkSaltChargeGroups2( CANON_GLOBALS *pCG,
         /************************************************************************************/
         /* Mark redundant candidates so that only one candidate from one t-group is left in */
         /************************************************************************************/
-        /* djb-rwth: fixing oss-fuzz issue #45059 */
-        if (nNumCandidates <= num_atoms)
+        for (i = 0; i < nNumCandidates; i++)
         {
-            for (i = 0; i < nNumCandidates; i++)
+            /* djb-rwth: fixing oss-fuzz issue #45059 */
+            if ((nNumCandidates < nMaxNumCandidates) && (2 == s_candidate[nNumCandidates].type))
             {
-                if (2 == s_candidate[nNumCandidates].type)
+                s_candidate[i].type -= DISABLE_CANDIDATE; /* disable >C-SH candidates */
+                nNumLeftCandidates++; /* count rejected */
+                continue;
+            }
+            if (s_candidate[i].endpoint)
+            {
+                for (j = i - 1; 0 <= j; j--)
                 {
-                    s_candidate[i].type -= DISABLE_CANDIDATE; /* disable >C-SH candidates */
-                    nNumLeftCandidates++; /* count rejected */
-                    continue;
-                }
-                if (s_candidate[i].endpoint)
-                {
-                    for (j = i - 1; 0 <= j; j--)
+                    if (s_candidate[i].endpoint == s_candidate[j].endpoint)
                     {
-                        if (s_candidate[i].endpoint == s_candidate[j].endpoint)
-                        {
-                            s_candidate[i].type -= DISABLE_CANDIDATE; /* disable subsequent redundant */
-                            nNumLeftCandidates++; /* count rejected */
-                            break;
-                        }
+                        s_candidate[i].type -= DISABLE_CANDIDATE; /* disable subsequent redundant */
+                        nNumLeftCandidates++; /* count rejected */
+                        break;
                     }
                 }
             }
-        }
-        else
-        {
-            return BNS_VERT_EDGE_OVFL;
         }
 
         nNumLeftCandidates = nNumCandidates - nNumLeftCandidates; /* subtract num. rejected from the total */
@@ -6415,12 +6408,14 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
         {
             /* djb-rwth: fixing oss-fuzz issue #52978 */
             T_GROUP* tgi_tg = (T_GROUP*)inchi_malloc(len * sizeof(t_group_info->t_group[0]));
-            t_group_info->t_group = tgi_tg;
-            if (tgi_tg) /* djb-rwth: addressing LLVM warning */
+            T_GROUP* tgior_tg = (T_GROUP*)realloc(t_group_info_orig->t_group, len * sizeof(t_group_info_orig->t_group[0]));
+            if (tgi_tg && tgior_tg) /* djb-rwth: addressing LLVM warning */
             {
+                t_group_info->t_group = tgi_tg;
+                t_group_info_orig->t_group = tgior_tg;
                 memcpy(tgi_tg,
-                    t_group_info_orig->t_group,
-                    len * sizeof(tgi_tg[0]));
+                    tgior_tg,
+                    len * sizeof(t_group_info->t_group[0]));
             }
             else
             {
@@ -6459,11 +6454,13 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
         {
             /* djb-rwth: fixing oss-fuzz issue #53519 */
             AT_NUMB* tgi_niean = (AT_NUMB*)inchi_malloc(len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]));
-            t_group_info->nIsotopicEndpointAtomNumber = tgi_niean;
-            if (tgi_niean) /* djb-rwth: addressing LLVM warning */
+            AT_NUMB* tgior_niean = (AT_NUMB*)realloc(t_group_info_orig->nIsotopicEndpointAtomNumber, len * sizeof(t_group_info_orig->nIsotopicEndpointAtomNumber[0]));
+            if (tgi_niean && tgior_niean) /* djb-rwth: addressing LLVM warning */
             {
+                t_group_info->nIsotopicEndpointAtomNumber = tgi_niean;
+                t_group_info_orig->nIsotopicEndpointAtomNumber = tgior_niean;
                 memcpy(tgi_niean,
-                    t_group_info_orig->nIsotopicEndpointAtomNumber,
+                    tgior_niean,
                     len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]));
             }
             else

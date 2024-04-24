@@ -7525,11 +7525,13 @@ int ParseSegmentPolymer( const char  *str,
     pStart++;
     if (!pStart)
     {
-        ret = RI_ERR_PROGR; goto exit_function;
+        ret = RI_ERR_PROGR; 
+        goto exit_function;
     }
 
     iunit = 0;
-    while (*pStart)
+    /* djb-rwth: fixing oss-fuzz issue #67678 */
+    while (pStart && (*pStart))
     {
         OAD_PolymerUnit *unit = NULL;
 
@@ -8190,7 +8192,7 @@ int ParseSegmentMobileH( const char *str,
 
     /* Pass 1: count bonds and find actual numbers of  atom */
 
-    int i, mpy_component, num_H, num_Minus, val, num_Atoms, numCtAtoms, tg_alloc_len, len, len2;
+    int i, mpy_component, num_H, num_Minus, val, num_Atoms, numCtAtoms, tg_alloc_len, len, len2, k = 0;
     int num_H_component, num_H_formula, num_taut_H_component, num_H_InChI, ret2;
     int nNumComponents, iComponent, lenTautomer, tg_pos_Tautomer, iTGroup; /* djb-rwth: removing redundant variables */
     const char *p, *q, *h, *t, *p1, *pTaut, *pStart, *pEnd;
@@ -8206,6 +8208,11 @@ int ParseSegmentMobileH( const char *str,
 
                             /* number of immobile H is always allocated; immobile H are present in M layer only */
     nNumComponents = pnNumComponents[bMobileH];
+
+    /* djb-rwth: fixing oss-fuzz issues #66985, #66718, #43512, #43456, #43420, #42774, #34772, #30156 */
+    S_CHAR** pi_nnh1 = (S_CHAR**)inchi_malloc(nNumComponents * sizeof(S_CHAR*));
+    S_CHAR** pi_nnh2 = (S_CHAR**)inchi_malloc(nNumComponents * sizeof(S_CHAR*));
+    bool pi_nnh2_init = false;
     for (i = 0; i < nNumComponents; i++)
     {
         len = pInChI[i].nNumberOfAtoms;
@@ -8222,30 +8229,60 @@ int ParseSegmentMobileH( const char *str,
             }
         }
         len++;
-        /* djb-rwth: fixing oss-fuzz issues #66985, #66718, #43512, #43456, #43420, #42774, #34772, #30156 */
-        if (!pInChI[i].nNum_H) /* allocate immobile H segment if it has not been allocated yet */
+        if (!pInChI[i].nNum_H)
         {
-            S_CHAR* pi_nnh = (S_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nNum_H[0]));
-            pInChI[i].nNum_H = pi_nnh;
-            if (!pi_nnh)
+            pi_nnh2[i] = (S_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nNum_H[0]));
+            if (!pi_nnh2[i])
             {
                 ret = RI_ERR_ALLOC; /* allocation error */
                 goto exit_function;
             }
-            else
+            pInChI[i].nNum_H = pi_nnh2[i];
+            pi_nnh2_init = true;
+        }
+        /* copy immobile H from Mobile-H layer to Fixed-H layer */
+        if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
+        {
+            S_CHAR* pai_nnh = (S_CHAR*)realloc(pAltInChI[i].nNum_H, len * sizeof(pAltInChI[0].nNum_H[0]));
+            if (pai_nnh)
             {
-                if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
+                pAltInChI[i].nNum_H = pai_nnh;
+                if (!pi_nnh2_init)
                 {
-                    memcpy(pi_nnh, pAltInChI[i].nNum_H, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0])); /* djb-rwth: cast operator added */
+                    pi_nnh1[i] = (S_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nNum_H[0]));
+                    if (!pi_nnh1[i])
+                    {
+                        ret = RI_ERR_ALLOC; /* allocation error */
+                        goto exit_function;
+                    }
+                    memcpy(pi_nnh1[i], pai_nnh, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0])); /* djb-rwth: cast operator added */
+                    /* djb-rwth: alternative solution
+                    k = memcpy_custom(&pi_nnh1[i], pAltInChI[i].nNum_H, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0]))
+                    if (k)
+                    {
+                        ret = RI_ERR_ALLOC;
+                        goto exit_function;
+                    }
+                    */
+                    pInChI[i].nNum_H = pi_nnh1[i];
+                }
+                else
+                {
+                    memcpy(pi_nnh2[i], pai_nnh, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0])); /* djb-rwth: cast operator added */
+                    /* djb-rwth: alternative solution
+                    k = memcpy_custom(&pi_nnh2[i], pAltInChI[i].nNum_H, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0]))
+                    if (k)
+                    {
+                        ret = RI_ERR_ALLOC;
+                        goto exit_function;
+                    }
+                    */
                 }
             }
-        }
-        else
-        {
-            /* copy immobile H from Mobile-H layer to Fixed-H layer */
-            if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
+            else
             {
-                memcpy(pInChI[i].nNum_H, pAltInChI[i].nNum_H, ((long long)len - 1) * sizeof(pInChI[0].nNum_H[0])); /* djb-rwth: cast operator added */
+                ret = RI_ERR_ALLOC; /* allocation error */
+                goto exit_function;
             }
         }
     }
@@ -9824,6 +9861,9 @@ int ParseSegmentFormula( const char *str,
                     }
                     pInpInChI[bMobileH] = pInChI;
                     pnNumComponents[bMobileH] = nNumComponents;
+                    /* djb-rwth: fixing oss-fuzz issue #66985, #66718 */
+                    U_CHAR** piibmi_na = (U_CHAR**)inchi_malloc(nNumComponents * sizeof(U_CHAR*));
+                    char** piibmi_shf = (char**)inchi_malloc(nNumComponents * sizeof(char*));
                     for (i = 0; i < nNumComponents; i++)
                     {
                         /* copy number of atoms */
@@ -9834,13 +9874,12 @@ int ParseSegmentFormula( const char *str,
                         {
                             inchi_free( pInpInChI[bMobileH][i].nAtom );
                         }
-                        /* djb-rwth: fixing oss-fuzz issue #66985, #66718 */
-                        pInChI[i].nAtom = (U_CHAR*)inchi_malloc(((long long)len + 1) * sizeof(pInpInChI[0][0].nAtom[0]));
-                        pInpInChI[bMobileH][i].nAtom = pInChI[i].nAtom;
-                        if ((pInChI[i].nAtom)) /* djb-rwth: cast operator added; addressing LLVM warning */
+                        piibmi_na[i] = (U_CHAR*)inchi_malloc(((long long)len + 1) * sizeof(pInpInChI[0][0].nAtom[0]));
+                        if (piibmi_na[i]) /* djb-rwth: cast operator added; addressing LLVM warning */
                         {
-                            memcpy(pInChI[i].nAtom, pInpInChI[nAltMobileH][i].nAtom, len);
-                            pInChI[i].nAtom[len] = 0;
+                            pInpInChI[bMobileH][i].nAtom = piibmi_na[i];
+                            memcpy(piibmi_na[i], pInpInChI[nAltMobileH][i].nAtom, len);
+                            piibmi_na[i][len] = 0;
                         }
                         else
                         {
@@ -9852,12 +9891,11 @@ int ParseSegmentFormula( const char *str,
                         {
                             inchi_free( pInpInChI[bMobileH][i].szHillFormula );
                         }
-                        /* djb-rwth: fixing oss-fuzz issue #66985, #66718 */
-                        pInChI[i].szHillFormula = (char*)inchi_malloc(inchi_max(len, 2));
-                        pInpInChI[bMobileH][i].szHillFormula = pInChI[i].szHillFormula;
-                        if ((pInChI[i].szHillFormula)) /* djb-rwth: addressing LLVM warning */
+                        piibmi_shf[i] = (char*)inchi_malloc((inchi_max(len, 2)) * sizeof(char));
+                        if (piibmi_shf[i]) /* djb-rwth: addressing LLVM warning */
                         {
-                            memcpy(pInChI[i].szHillFormula, pInpInChI[nAltMobileH][i].szHillFormula, len);
+                            pInpInChI[bMobileH][i].szHillFormula = piibmi_shf[i];
+                            memcpy(piibmi_shf[i], pInpInChI[nAltMobileH][i].szHillFormula, len);
                         }
                         else
                         {
@@ -10084,21 +10122,17 @@ int ParseSegmentFormula( const char *str,
             }
             else
             {
-                /* djb-rwth: fixing oss-fuzz issue #34772 */
-                U_CHAR* pci1 = (U_CHAR *) inchi_malloc ((long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
-                pInChI[iComponent + i].nAtom = pci1;
                 /* Copy duplicated formula */
                 strcpy(pInChI[iComponent + i].szHillFormula, pInChI[iComponent].szHillFormula);
                 /* Copy atoms in the duplicated formula */
                 pInChI[iComponent + i].nNumberOfAtoms = nNumAtoms;
-                if (pci1)
-                {
-                    inchi_free( pci1 );
-                }
+                /* djb-rwth: fixing oss-fuzz issue #43420, #34772 */
+                U_CHAR* pci1 = (U_CHAR*)inchi_malloc((long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
                 if (!pci1)
                 {
                     return RI_ERR_ALLOC; /* failed allocation */
                 }
+                pInChI[iComponent + i].nAtom = pci1;
                 memcpy(pci1, pInChI[iComponent].nAtom, (long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
             }
         }

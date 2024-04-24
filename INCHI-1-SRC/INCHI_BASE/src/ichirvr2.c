@@ -384,7 +384,8 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
                 i2++;
             }
 
-            if (!is_in_the_list( at[n_vertex].neighbor,
+            /* djb-rwth: fixing oss-fuzz issue #67650 */
+            if ((n_vertex < num_atoms) && !is_in_the_list( at[n_vertex].neighbor,
                 (AT_NUMB) n_neigh, at[n_vertex].valence ))
             {
                 /* must be a cumulene */
@@ -396,7 +397,7 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
                 }
             }
 
-            if (!at[n_vertex].at_type && at[n_vertex].num_H)
+            if ((n_vertex < num_atoms) && !at[n_vertex].at_type && at[n_vertex].num_H)
             {
                 nNumDeletedH += at[n_vertex].num_H;
                 at[n_vertex].at_type++;  /* H should be added as an explicit H */

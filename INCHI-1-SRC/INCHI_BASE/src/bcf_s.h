@@ -66,5 +66,6 @@
 #endif
 
 int max_3(int a, int b, int c);
+int memcpy_custom(char** dst, char* src, unsigned long long len);
 
 #endif

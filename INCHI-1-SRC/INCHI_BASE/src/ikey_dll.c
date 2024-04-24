@@ -487,6 +487,8 @@ fin:
     if (NULL != sminor)
     {
         inchi_free( sminor );
+        /* djb-rwth: fixing oss-fuzz issue #66746 */
+        sminor = NULL;
     }
     if (NULL != stmp)
     {

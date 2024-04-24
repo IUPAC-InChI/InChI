@@ -637,7 +637,8 @@ int GetTgroupInfoFromInChI( T_GROUP_INFO *ti,
             j = 1; /* index in pInChI->nTautomer[] */
         i = 0; /* index in ti->nEndpointAtomNumber[] */
 
-        for (itg = 0; itg < pInChI->nTautomer[0]; itg++)
+        /* djb-rwth: fixing oss-fuzz issues #67681, #67641 */
+        for (itg = 0; itg < pInChI->nTautomer[0] && itg <= ti->max_num_t_groups; itg++)
         {
             len_tg = pInChI->nTautomer[j]; /* t-group length not including pInChI->nTautomer[j] */
             ti->t_group[itg].num[0] = pInChI->nTautomer[j + 1] + pInChI->nTautomer[j + 2]; /* num mobile H & (-) */
@@ -650,7 +651,7 @@ int GetTgroupInfoFromInChI( T_GROUP_INFO *ti,
             ti->t_group[itg].nNumEndpoints = len_tg;
             ti->t_group[itg].nFirstEndpointAtNoPos = i;
 
-            for (; 0 < len_tg--; j++, i++)
+            while (len_tg > 0)
             {
                 k = ti->nEndpointAtomNumber[i] = pInChI->nTautomer[j] - 1; /* djb-rwth: buffer overrun avoided implicitly in loop condition */
 #if ( FIX_GAF_2019_1==1 )
@@ -668,6 +669,9 @@ int GetTgroupInfoFromInChI( T_GROUP_INFO *ti,
                 {
                     endpoint[k] = itg + 1;
                 }
+                len_tg--;
+                j++;
+                i++;
             }
         }
 
