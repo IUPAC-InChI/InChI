@@ -30,9 +30,16 @@ if __name__ == "__main__":
     )
 
     for i, sdf_path in enumerate(sdf_paths):
-        exit_code = max(
-            exit_code, getattr(runners, test.replace("-", "_"))(sdf_path, dataset)
-        )
-        logging.info(f"{get_progress(i + 1, n_sdf)}; Ran {test} on {sdf_path.name}.")
+        try:
+            exit_code = max(
+                exit_code, getattr(runners, test.replace("-", "_"))(sdf_path, dataset)
+            )
+            logging.info(
+                f"{get_progress(i + 1, n_sdf)}; Ran {test} on {sdf_path.name}."
+            )
+        except Exception as exception:
+            logging.info(
+                f"{get_progress(i + 1, n_sdf)}; Aborted {test} on {sdf_path.name} due to {type(exception).__name__}; {exception}."
+            )
 
     raise SystemExit(exit_code)
