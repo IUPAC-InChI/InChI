@@ -38,7 +38,7 @@ if __name__ == "__main__":
                 f"{get_progress(i + 1, n_sdf)}; Ran {test} on {sdf_path.name}."
             )
         except Exception as exception:
-            logging.info(
+            logging.error(
                 f"{get_progress(i + 1, n_sdf)}; Aborted {test} on {sdf_path.name} due to {type(exception).__name__}; {exception}."
             )
 
