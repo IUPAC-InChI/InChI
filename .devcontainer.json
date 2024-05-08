@@ -3,7 +3,8 @@
 {
     "name": "InChI",
     "build": {
-        "dockerfile": "INCHI-1-TEST/Dockerfile"
+        "dockerfile": "INCHI-1-TEST/Dockerfile",
+        "context": "INCHI-1-TEST"
     },
     "customizations": {
         "vscode": {

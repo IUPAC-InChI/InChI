@@ -1,0 +1,16 @@
+[project]
+name = "sdf_pipeline"
+version = "1.2.0"
+requires-python = "==3.12.*"
+dependencies = ["pydantic == 2.7.1"]
+
+[project.optional-dependencies]
+invariance-tests = ["rdkit == 2023.9.6"]
+development = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"

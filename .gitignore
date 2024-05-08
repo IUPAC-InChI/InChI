@@ -10,3 +10,6 @@ INCHI-1-TEST/legacy.bak/
 __pycache__
 .pytest_cache
 .vscode/
+*.egg-info/
+# Ignore core dump files
+core.*[0-9]
