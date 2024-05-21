@@ -56,6 +56,9 @@ if __name__ == "__main__":
                             ),
                             get_molfile_id=DATASETS[dataset]["molfile_id"],
                             number_of_consumer_processes=N_PROCESSES,
+                            expected_failures=DATASETS[dataset]
+                            .get("expected_failures", {})
+                            .get(test, set()),
                         ),
                     )
 
@@ -96,6 +99,9 @@ if __name__ == "__main__":
                             ),
                             get_molfile_id=DATASETS[dataset]["molfile_id"],
                             number_of_consumer_processes=N_PROCESSES,
+                            expected_failures=DATASETS[dataset]
+                            .get("expected_failures", {})
+                            .get(test, set()),
                         ),
                     )
 

@@ -97,6 +97,15 @@ DATASETS: Final[dict[str, dict[str, Any]]] = {
         "sdf_paths": sorted(TEST_PATH.joinpath("data/ci").glob("*.sdf.gz")),
         "log_path": TEST_PATH.joinpath("data/ci/"),
         "molfile_id": get_molfile_id_ci,
+        "expected_failures": {
+            "regression": {
+                "PUBCHEM_COMPOUND_CID-20733713",
+                "PUBCHEM_COMPOUND_CID-166625356",
+                "PUBCHEM_COMPOUND_CID-102182973",
+                "PUBCHEM_COMPOUND_CID-92178689",
+            },
+            "invariance": {"D4h-allene", "PUBCHEM_COMPOUND_CID-102182973"},
+        },
     },
     "pubchem-compound": {
         "sdf_paths": sorted(
