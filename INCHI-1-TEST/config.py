@@ -30,11 +30,12 @@ def get_args() -> tuple[str, str]:
     parser = argparse.ArgumentParser(
         description="Choose a test and dataset.",
     )
+    test_types = ["regression", "invariance", "regression-reference"]
     parser.add_argument(
         "test",
-        choices=TEST_TYPES.keys(),
+        choices=test_types,
         type=str,
-        help=f"Choose a test from {set(TEST_TYPES.keys())}",
+        help=f"Choose a test from {test_types}",
     )
     parser.add_argument(
         "dataset",
@@ -125,17 +126,5 @@ DATASETS: Final[dict[str, dict[str, Any]]] = {
         "log_path": TEST_PATH.joinpath("data/pubchem/substance"),
         "molfile_id": get_molfile_id_pubchem,
         "download_path": "Substance/CURRENT-Full",
-    },
-}
-
-TEST_TYPES: Final[dict[str, dict[str, str]]] = {
-    "regression": {
-        "script": f"{TEST_PATH}/compile_inchi_lib.sh",
-    },
-    "regression-reference": {
-        "script": f"{TEST_PATH}/compile_reference_inchi_lib.sh",
-    },
-    "invariance": {
-        "script": f"{TEST_PATH}/compile_inchi_lib.sh",
     },
 }

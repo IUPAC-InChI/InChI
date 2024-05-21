@@ -9,17 +9,20 @@ from .config import (
     get_current_time,
     get_progress,
     DATASETS,
-    TEST_TYPES,
     N_PROCESSES,
     INCHI_LIB_PATH,
     INCHI_REFERENCE_LIB_PATH,
+    TEST_PATH,
 )
 
 
 if __name__ == "__main__":
     test, dataset = get_args()
 
-    subprocess.run(TEST_TYPES[test]["script"], check=True)
+    if test == "regression-reference":
+        subprocess.run(f"{TEST_PATH}/compile_inchi_reference_lib.sh", check=True)
+    else:
+        subprocess.run(f"{TEST_PATH}/compile_inchi_lib.sh", check=True)
 
     exit_code = 0
     sdf_paths = DATASETS[dataset]["sdf_paths"]
