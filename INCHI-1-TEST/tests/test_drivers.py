@@ -60,18 +60,28 @@ def test_regression_reference_driver(sdf_path, tmp_path):
         )
 
 
-def test_regression_driver(sdf_path, reference_path, caplog):
+@pytest.mark.parametrize("expected_failures,exit_code", [({}, 1), ({"9261759198"}, 0)])
+def test_regression_driver(
+    sdf_path, reference_path, caplog, expected_failures, exit_code
+):
     caplog.set_level(logging.INFO, logger="sdf_pipeline")
-    exit_code = drivers.regression(
-        sdf_path=sdf_path,
-        reference_path=reference_path,
-        consumer_function=regression_consumer,
-        get_molfile_id=_get_mcule_id,
-        number_of_consumer_processes=2,
+    assert (
+        drivers.regression(
+            sdf_path=sdf_path,
+            reference_path=reference_path,
+            consumer_function=regression_consumer,
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+            expected_failures=expected_failures,
+        )
+        == exit_code
     )
-    assert exit_code == 1
     assert len(caplog.records) == 1
-    log_entry = json.loads(caplog.records[0].message.lstrip("regression test failed:"))
+    log_message = caplog.records[0].message
+    if exit_code == 0:
+        assert "regression test failed expectedly" in log_message
+    start_log_entry = log_message.index("{")
+    log_entry = json.loads(log_message[start_log_entry:])
     assert log_entry["molfile_id"] == "9261759198"
     assert log_entry["sdf"] == "mcule_20000.sdf.gz"
     assert log_entry["info"] == {"consumer": "regression", "parameters": ""}
@@ -81,17 +91,25 @@ def test_regression_driver(sdf_path, reference_path, caplog):
     }
 
 
-def test_invariance_driver(sdf_path, caplog):
+@pytest.mark.parametrize("expected_failures,exit_code", [({}, 1), ({"9261759198"}, 0)])
+def test_invariance_driver(sdf_path, caplog, expected_failures, exit_code):
     caplog.set_level(logging.INFO, logger="sdf_pipeline")
-    exit_code = drivers.invariance(
-        sdf_path=sdf_path,
-        consumer_function=invariance_consumer,
-        get_molfile_id=_get_mcule_id,
-        number_of_consumer_processes=2,
+    assert (
+        drivers.invariance(
+            sdf_path=sdf_path,
+            consumer_function=invariance_consumer,
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+            expected_failures=expected_failures,
+        )
+        == exit_code
     )
-    assert exit_code == 1
     assert len(caplog.records) == 1
-    log_entry = json.loads(caplog.records[0].message.lstrip("invariance test failed:"))
+    log_message = caplog.records[0].message
+    if exit_code == 0:
+        assert "invariance test failed expectedly" in log_message
+    start_log_entry = log_message.index("{")
+    log_entry = json.loads(log_message[start_log_entry:])
     assert log_entry["molfile_id"] == "9261759198"
     assert log_entry["sdf"] == "mcule_20000.sdf.gz"
     assert log_entry["info"] == {"consumer": "invariance", "parameters": ""}

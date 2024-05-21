@@ -39,6 +39,7 @@ def regression(
     consumer_function: Callable,
     get_molfile_id: Callable,
     number_of_consumer_processes: int = 8,
+    expected_failures: set[str] = set(),
 ) -> int:
     with sqlite3.connect(reference_path) as reference_db:
         exit_code = 0
@@ -66,7 +67,8 @@ def regression(
 
             current_result = json.dumps(consumer_result.result)
             if current_result != reference_result:
-                exit_code = 1
+                expected_failure = molfile_id in expected_failures
+                exit_code = 0 if expected_failure else 1
                 log_entry = json.dumps(
                     {
                         "time": consumer_result.time,
@@ -79,7 +81,9 @@ def regression(
                         },
                     }
                 )
-                logger.info(f"regression test failed:{log_entry}")
+                logger.info(
+                    f"regression test failed{' expectedly' if expected_failure else ''}:{log_entry}"
+                )
 
         unprocessed_molfile_ids = (
             set(
@@ -141,6 +145,7 @@ def invariance(
     consumer_function: Callable,
     get_molfile_id: Callable,
     number_of_consumer_processes: int = 8,
+    expected_failures: set[str] = set(),
 ) -> int:
     exit_code = 0
 
@@ -152,7 +157,8 @@ def invariance(
         n_variants = len(consumer_result.result["variants"])
         if n_variants == 1:
             continue
-        exit_code = 1
+        expected_failure = consumer_result.molfile_id in expected_failures
+        exit_code = 0 if expected_failure else 1
         if n_variants == 0:
             logger.info(
                 f"invariance test didn't run: molfile ID {consumer_result.molfile_id} from {Path(sdf_path).name} could not be read."
@@ -167,6 +173,8 @@ def invariance(
                     "variants": consumer_result.result["variants"],
                 }
             )
-            logger.info(f"invariance test failed:{log_entry}")
+            logger.info(
+                f"invariance test failed{' expectedly' if expected_failure else ''}:{log_entry}"
+            )
 
     return exit_code

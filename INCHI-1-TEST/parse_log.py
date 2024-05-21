@@ -183,11 +183,10 @@ if __name__ == "__main__":
 
     with log_path.open("r") as log_file:
         for line in log_file:
-            if not line.startswith(f"INFO:sdf_pipeline:{test} test failed:"):
+            if not line.startswith(f"INFO:sdf_pipeline:{test} test failed"):
                 continue
-            log_entry = json.loads(
-                line.lstrip(f"INFO:sdf_pipeline:{test} test failed:")
-            )
+            log_entry_start = line.index("{")
+            log_entry = json.loads(line[log_entry_start:])
             sdf_logs[log_entry["sdf"]][log_entry["molfile_id"]] = _build_molfile_log[
                 test
             ](log_entry)
