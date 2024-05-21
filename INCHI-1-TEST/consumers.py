@@ -4,7 +4,6 @@ from typing import Callable
 from pathlib import Path
 from sdf_pipeline import drivers
 from .inchi_api import make_inchi_from_molfile_text, get_inchi_key_from_inchi
-from .config import INCHI_API_PARAMETERS, N_INVARIANCE_RUNS
 
 try:
     # Optional import of RDKit.
@@ -18,18 +17,21 @@ except ImportError:
 
 
 def regression_consumer(
-    molfile: str, get_molfile_id: Callable, inchi_lib_path: Path
+    molfile: str,
+    get_molfile_id: Callable,
+    inchi_lib_path: Path,
+    inchi_api_parameters: str,
 ) -> drivers.ConsumerResult:
 
     inchi_lib = ctypes.CDLL(str(inchi_lib_path))
     exit_code, inchi_string, log, message, aux_info = make_inchi_from_molfile_text(
-        inchi_lib, molfile, INCHI_API_PARAMETERS
+        inchi_lib, molfile, inchi_api_parameters
     )
     _, inchi_key = get_inchi_key_from_inchi(inchi_lib, inchi_string)
 
     return drivers.ConsumerResult(
         molfile_id=get_molfile_id(molfile),
-        info={"consumer": "regression", "parameters": INCHI_API_PARAMETERS},
+        info={"consumer": "regression", "parameters": inchi_api_parameters},
         result={
             "inchi": inchi_string,
             "key": inchi_key,
@@ -66,7 +68,11 @@ def permute_molblock(molblock: str) -> str | None:
 
 
 def invariance_consumer(
-    molfile: str, get_molfile_id: Callable, inchi_lib_path: Path
+    molfile: str,
+    get_molfile_id: Callable,
+    inchi_lib_path: Path,
+    inchi_api_parameters: str,
+    n_invariance_runs: int,
 ) -> drivers.ConsumerResult:
 
     inchi_lib = ctypes.CDLL(str(inchi_lib_path))
@@ -75,7 +81,7 @@ def invariance_consumer(
     inchi_key_variants = set()
     random.seed(42)
 
-    for _ in range(N_INVARIANCE_RUNS):
+    for _ in range(n_invariance_runs):
         molfile_permuted = permute_molblock(molfile)
         if molfile_permuted is None:
             # Failure to parse `molfile`,
@@ -83,7 +89,7 @@ def invariance_consumer(
             break
 
         exit_code, inchi_string, log, message, aux_info = make_inchi_from_molfile_text(
-            inchi_lib, molfile_permuted, INCHI_API_PARAMETERS
+            inchi_lib, molfile_permuted, inchi_api_parameters
         )
         _, inchi_key = get_inchi_key_from_inchi(inchi_lib, inchi_string)
 
@@ -111,8 +117,8 @@ def invariance_consumer(
         molfile_id=get_molfile_id(molfile),
         info={
             "consumer": "invariance",
-            "parameters": INCHI_API_PARAMETERS
-            + f"; number_of_runs={N_INVARIANCE_RUNS}",
+            "parameters": inchi_api_parameters
+            + f"; number_of_runs={n_invariance_runs}",
         },
         result={
             "variants": variants,

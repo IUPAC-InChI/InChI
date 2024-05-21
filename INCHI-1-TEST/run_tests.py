@@ -13,6 +13,8 @@ from .config import (
     INCHI_LIB_PATH,
     INCHI_REFERENCE_LIB_PATH,
     TEST_PATH,
+    INCHI_API_PARAMETERS,
+    N_INVARIANCE_RUNS,
 )
 
 
@@ -48,7 +50,9 @@ if __name__ == "__main__":
                                 f"{sdf_path.stem}.regression_reference.sqlite"
                             ),
                             consumer_function=partial(
-                                regression_consumer, inchi_lib_path=INCHI_LIB_PATH
+                                regression_consumer,
+                                inchi_lib_path=INCHI_LIB_PATH,
+                                inchi_api_parameters=INCHI_API_PARAMETERS,
                             ),
                             get_molfile_id=DATASETS[dataset]["molfile_id"],
                             number_of_consumer_processes=N_PROCESSES,
@@ -72,6 +76,7 @@ if __name__ == "__main__":
                             consumer_function=partial(
                                 regression_consumer,
                                 inchi_lib_path=INCHI_REFERENCE_LIB_PATH,
+                                inchi_api_parameters=INCHI_API_PARAMETERS,
                             ),
                             get_molfile_id=DATASETS[dataset]["molfile_id"],
                             number_of_consumer_processes=N_PROCESSES,
@@ -84,7 +89,10 @@ if __name__ == "__main__":
                         drivers.invariance(
                             sdf_path=sdf_path,
                             consumer_function=partial(
-                                invariance_consumer, inchi_lib_path=INCHI_LIB_PATH
+                                invariance_consumer,
+                                inchi_lib_path=INCHI_LIB_PATH,
+                                inchi_api_parameters=INCHI_API_PARAMETERS,
+                                n_invariance_runs=N_INVARIANCE_RUNS,
                             ),
                             get_molfile_id=DATASETS[dataset]["molfile_id"],
                             number_of_consumer_processes=N_PROCESSES,
