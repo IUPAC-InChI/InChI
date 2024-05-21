@@ -1,7 +1,9 @@
 import subprocess
 import logging
+from functools import partial
 from datetime import datetime
-from . import runners
+from sdf_pipeline import drivers
+from .consumers import regression_consumer, invariance_consumer
 from .config import (
     get_args,
     get_current_time,
@@ -9,6 +11,8 @@ from .config import (
     DATASETS,
     TEST_TYPES,
     N_PROCESSES,
+    INCHI_LIB_PATH,
+    INCHI_REFERENCE_LIB_PATH,
 )
 
 
@@ -31,12 +35,63 @@ if __name__ == "__main__":
 
     for i, sdf_path in enumerate(sdf_paths):
         try:
-            exit_code = max(
-                exit_code, getattr(runners, test.replace("-", "_"))(sdf_path, dataset)
-            )
+            match test:
+                case "regression":
+                    exit_code = max(
+                        exit_code,
+                        drivers.regression(
+                            sdf_path=sdf_path,
+                            reference_path=DATASETS[dataset]["log_path"].joinpath(
+                                f"{sdf_path.stem}.regression_reference.sqlite"
+                            ),
+                            consumer_function=partial(
+                                regression_consumer, inchi_lib_path=INCHI_LIB_PATH
+                            ),
+                            get_molfile_id=DATASETS[dataset]["molfile_id"],
+                            number_of_consumer_processes=N_PROCESSES,
+                        ),
+                    )
+
+                case "regression-reference":
+                    reference_path = DATASETS[dataset]["log_path"].joinpath(
+                        f"{sdf_path.stem}.regression_reference.sqlite"
+                    )
+                    if reference_path.exists():
+                        logging.info(f"Not re-computing reference for {sdf_path.name}.")
+
+                        continue
+
+                    exit_code = max(
+                        exit_code,
+                        drivers.regression_reference(
+                            sdf_path=sdf_path,
+                            reference_path=reference_path,
+                            consumer_function=partial(
+                                regression_consumer,
+                                inchi_lib_path=INCHI_REFERENCE_LIB_PATH,
+                            ),
+                            get_molfile_id=DATASETS[dataset]["molfile_id"],
+                            number_of_consumer_processes=N_PROCESSES,
+                        ),
+                    )
+
+                case "invariance":
+                    exit_code = max(
+                        exit_code,
+                        drivers.invariance(
+                            sdf_path=sdf_path,
+                            consumer_function=partial(
+                                invariance_consumer, inchi_lib_path=INCHI_LIB_PATH
+                            ),
+                            get_molfile_id=DATASETS[dataset]["molfile_id"],
+                            number_of_consumer_processes=N_PROCESSES,
+                        ),
+                    )
+
             logging.info(
                 f"{get_progress(i + 1, n_sdf)}; Ran {test} on {sdf_path.name}."
             )
+
         except Exception as exception:
             logging.error(
                 f"{get_progress(i + 1, n_sdf)}; Aborted {test} on {sdf_path.name} due to {type(exception).__name__}; {exception}."
