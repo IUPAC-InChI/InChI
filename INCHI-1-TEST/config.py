@@ -93,11 +93,6 @@ N_PROCESSES: Final[int] = len(
 )  # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count
 
 DATASETS: Final[dict[str, dict[str, Any]]] = {
-    "foo": {
-        "sdf_paths": [Path("/workspaces/InChI/foo.sdf.gz")],
-        "log_path": Path("/workspaces/InChI/"),
-        "molfile_id": get_molfile_id_ci,
-    },
     "ci": {
         "sdf_paths": sorted(TEST_PATH.joinpath("data/ci").glob("*.sdf.gz")),
         "log_path": TEST_PATH.joinpath("data/ci/"),
