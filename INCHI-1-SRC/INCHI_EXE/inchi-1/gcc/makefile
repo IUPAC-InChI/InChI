@@ -38,7 +38,7 @@ ifeq ($(CCN),$(filter $(CCN),1 2))
 ifeq ($(GCC_DETECTED),1)
 ifeq ($(CLANG_DETECTED),1)
 # djb-rwth: Choose C compiler if both GCC and Clang are detected -- CCN = 1 for GCC, CCN = 2 for Clang/LLVM
-CCN = 2
+CCN = 1
 endif
 endif
 # === C/C++ Compilers ===============
