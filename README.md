@@ -1,12 +1,12 @@
 # Official home of the InChI
 
-- <em>Release Candidate 1 (RC1)</em> (27/05/2024):
+- <em>Version 1.07-RC1 (Release Candidate 1)</em> (27/05/2024):
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Minor bugs fixed
-- <em>Release 1.07-Beta5</em> (24/04/2024):
+- <em>Version 1.07-Beta5</em> (24/04/2024):
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Licence updated
-- <em>Release 1.07-Beta4</em> (24/03/2024):
+- <em>Version 1.07-Beta4</em> (24/03/2024):
   - ["/b-layer" issue / Issue #9](https://github.com/IUPAC-InChI/InChI/issues/9#issue-2151944482) has been fixed
   - [Incorrect output message regarding CPU architecture on ARM64 CPUs / Issue #10](https://github.com/IUPAC-InChI/InChI/issues/10#issue-2169630260) has been fixed
   - Further <code>Google<sup>&reg;</sup> oss-fuzz</code> issues have been addressed
