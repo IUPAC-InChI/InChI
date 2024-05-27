@@ -92,7 +92,11 @@ Use old (classic) library interface (see main() below)
 #include "e_0dstereo.h"
 #endif
 
-/*#include "jhj.h"*/ /* djb-rwrh: rinchi testing */
+#define RINCHI_TEST 0 /* djb-rwrh: RInChI testing */
+
+#if (RINCHI_TEST)
+#include "jhj.h" 
+#endif
 
 /* External (from former e_ichi_parms.h) */
 #ifndef COMPILE_ALL_CPP
@@ -283,6 +287,12 @@ int main( int argc, char *argv[] )
     /*^^^ Post-1.02b */
     INCHI_IOSTREAM outputstr, logstr, prbstr, instr;
     INCHI_IOSTREAM *out_stream = &outputstr, *log_stream = &logstr, *prb_stream = &prbstr, *inp_stream = &instr;
+
+#if (RINCHI_TEST)
+    printf("\nv.1.07 - JHJ BLOCK:\n");
+    jhj_main();
+    printf("\n");
+#endif
 
 #if( TRACE_MEMORY_LEAKS == 1 )
     _CrtSetDbgFlag( _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_ALLOC_MEM_DF );
