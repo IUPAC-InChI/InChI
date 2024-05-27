@@ -580,120 +580,127 @@ int CopyLinearCTStereoToINChIStereo( INChI_Stereo *Stereo,
 
     /* Stereo centers */
 
-    n = Stereo->nNumberOfStereoCenters = nLenLinearCTStereoCarb;
-
-    for (i = 0; i < n; i++)
+    /* djb-rwth: fixing oss-fuzz issue #68271 */
+    if (Stereo)
     {
-        if (LinearCTStereoCarb) /* djb-rwth: fixing a NULL pointer dereference */
+        n = Stereo->nNumberOfStereoCenters = nLenLinearCTStereoCarb;
+
+        for (i = 0; i < n; i++)
         {
-            Stereo->nNumber[i] = LinearCTStereoCarb[i].at_num;
-            Stereo->t_parity[i] = LinearCTStereoCarb[i].parity;
+            if (LinearCTStereoCarb) /* djb-rwth: fixing a NULL pointer dereference */
+            {
+                Stereo->nNumber[i] = LinearCTStereoCarb[i].at_num;
+                Stereo->t_parity[i] = LinearCTStereoCarb[i].parity;
+            }
+            if (LinearCTStereoCarbInv) /* djb-rwth: fixing a NULL pointer dereference */
+            {
+                Stereo->nNumberInv[i] = LinearCTStereoCarbInv[i].at_num;
+                Stereo->t_parityInv[i] = LinearCTStereoCarbInv[i].parity;
+            }
         }
-        if (LinearCTStereoCarbInv) /* djb-rwth: fixing a NULL pointer dereference */
+
+        /* Stereo bonds */
+
+        n = nLenLinearCTStereoDble;
+        lenInv = Stereo->nNumberOfStereoCenters;
+
+        for (i = len = 0; i < n; i++)
         {
-            Stereo->nNumberInv[i] = LinearCTStereoCarbInv[i].at_num;
-            Stereo->t_parityInv[i] = LinearCTStereoCarbInv[i].parity;
+            bAllene =
+                Copy2StereoBondOrAllene(Stereo,
+                    &Stereo->nNumberOfStereoCenters,
+                    &len,
+                    LinearCTStereoDble + i,
+                    pCanonOrd, pCanonRank,
+                    at,
+                    bIsotopic);
+
+            bAlleneInv =
+                Copy2StereoBondOrAllene(Stereo,
+                    &lenInv,
+                    NULL,
+                    LinearCTStereoDbleInv + i,
+                    pCanonOrdInv, pCanonRankInv,
+                    at,
+                    bIsotopic);
+
+            /* make sure double bond stereo is identical in original and inverted geometry */
+            /* Note: all allenes are AFTER double bonds in LinearCTStereoDble... */
+            if (bAllene != bAlleneInv || (!bAllene &&
+                CompareLinCtStereoDble(LinearCTStereoDble + i, 1,
+                    LinearCTStereoDbleInv + i, 1))) /* djb-rwth: addressing LLVM warning */
+            {
+                /* double bond stereo Inv is NOT identical to Abs */
+                nErrorCode = -4;
+                goto exit_function;
+            }
         }
-    }
 
-    /* Stereo bonds */
+        Stereo->nNumberOfStereoBonds = len;
 
-    n = nLenLinearCTStereoDble;
-    lenInv = Stereo->nNumberOfStereoCenters;
-
-    for (i = len = 0; i < n; i++)
-    {
-        bAllene =
-            Copy2StereoBondOrAllene( Stereo,
-                                     &Stereo->nNumberOfStereoCenters,
-                                     &len,
-                                     LinearCTStereoDble + i,
-                                     pCanonOrd, pCanonRank,
-                                     at,
-                                     bIsotopic );
-
-        bAlleneInv =
-            Copy2StereoBondOrAllene( Stereo,
-                                     &lenInv,
-                                     NULL,
-                                     LinearCTStereoDbleInv + i,
-                                     pCanonOrdInv, pCanonRankInv,
-                                     at,
-                                     bIsotopic );
-
-        /* make sure double bond stereo is identical in original and inverted geometry */
-        /* Note: all allenes are AFTER double bonds in LinearCTStereoDble... */
-        if (bAllene != bAlleneInv || (!bAllene &&
-             CompareLinCtStereoDble( LinearCTStereoDble + i, 1,
-                 LinearCTStereoDbleInv + i, 1 ))) /* djb-rwth: addressing LLVM warning */
+        if (lenInv != Stereo->nNumberOfStereoCenters)
         {
-            /* double bond stereo Inv is NOT identical to Abs */
-            nErrorCode = -4;
+            nErrorCode = -5; /* different number of stereo centers in Abs and Inv */
             goto exit_function;
         }
-    }
-
-    Stereo->nNumberOfStereoBonds = len;
-
-    if (lenInv != Stereo->nNumberOfStereoCenters)
-    {
-        nErrorCode = -5; /* different number of stereo centers in Abs and Inv */
-        goto exit_function;
-    }
 
 
-    /* compare inverted stereocenters to absolute */
+        /* compare inverted stereocenters to absolute */
 
-    n = Stereo->nNumberOfStereoCenters;
-    /* djb-rwth: removing redundant code */
+        n = Stereo->nNumberOfStereoCenters;
+        /* djb-rwth: removing redundant code */
 
-    for (i = 0, diff = 0; i < n; i++)
-    {
-        if (Stereo->nNumberInv[i] != Stereo->nNumber[i])
-        {
-            diff = ( Stereo->nNumberInv[i] > Stereo->nNumber[i] ) ? 2 : -2;
-            break; /* Abs != Inv */
-        }
-        if (Stereo->t_parityInv[i] != Stereo->t_parity[i])
-        {
-            diff = ( Stereo->t_parityInv[i] > Stereo->t_parity[i] ) ? 1 : -1;
-            break; /* Abs != Inv */
-        }
-    }
-
-    Stereo->nCompInv2Abs =
-        ( diff > 0 ) ? 1 : ( diff < 0 ) ? -1 : 0;
-
-    if (diff == -1 || diff == 1)
-    {
-        /* The first found difference was in parities */
         for (i = 0, diff = 0; i < n; i++)
         {
             if (Stereo->nNumberInv[i] != Stereo->nNumber[i])
             {
-                diff = 2; /* difference in stereo center numbering */
-                break;
+                diff = (Stereo->nNumberInv[i] > Stereo->nNumber[i]) ? 2 : -2;
+                break; /* Abs != Inv */
             }
-
-            /*  Parities can be only 1, 2, 3, 4. Therefore only mutually inverted pairs
-             *  (t_parityInv, t_parity) = (1,2) or (2,1) statisfy conditions
-             *  (t_parityInv != t_parity) && (t_parityInv + t_parity == 3)
-             */
-
-            if (Stereo->t_parityInv[i] == Stereo->t_parity[i] ||
-                 Stereo->t_parityInv[i] + Stereo->t_parity[i] != 3)
+            if (Stereo->t_parityInv[i] != Stereo->t_parity[i])
             {
-                diff = 1; /* parities are same or different and cannot be obtained by simple inversion */
-                break;
+                diff = (Stereo->t_parityInv[i] > Stereo->t_parity[i]) ? 1 : -1;
+                break; /* Abs != Inv */
             }
         }
-        Stereo->bTrivialInv = !diff;
+
+        Stereo->nCompInv2Abs =
+            (diff > 0) ? 1 : (diff < 0) ? -1 : 0;
+
+        if (diff == -1 || diff == 1)
+        {
+            /* The first found difference was in parities */
+            for (i = 0, diff = 0; i < n; i++)
+            {
+                if (Stereo->nNumberInv[i] != Stereo->nNumber[i])
+                {
+                    diff = 2; /* difference in stereo center numbering */
+                    break;
+                }
+
+                /*  Parities can be only 1, 2, 3, 4. Therefore only mutually inverted pairs
+                 *  (t_parityInv, t_parity) = (1,2) or (2,1) statisfy conditions
+                 *  (t_parityInv != t_parity) && (t_parityInv + t_parity == 3)
+                 */
+
+                if (Stereo->t_parityInv[i] == Stereo->t_parity[i] ||
+                    Stereo->t_parityInv[i] + Stereo->t_parity[i] != 3)
+                {
+                    diff = 1; /* parities are same or different and cannot be obtained by simple inversion */
+                    break;
+                }
+            }
+            Stereo->bTrivialInv = !diff;
+        }
+        else
+        {
+            Stereo->bTrivialInv = 0;
+        }
     }
     else
     {
-        Stereo->bTrivialInv = 0;
+        nErrorCode = 1;
     }
-
 
 exit_function:
     return nErrorCode;
@@ -1128,6 +1135,15 @@ int FillOutINChI( INChI *pINChI,
                                                       pCS->LinearCTStereoDbleInv,
                                                       pCanonOrdInv, pCanonRankInv );
 
+        /* djb-rwth: fixing oss-fuzz issue #68271 */
+        if (nErrorCode == 1)
+        {
+            nErrorCode = 0;
+            ret = CT_OUT_OF_RAM;  /*   <BRKPT> */
+            pINChI->nErrorCode = pINChI_Aux->nErrorCode = CT_OUT_OF_RAM;
+            goto exit_function;
+        }
+
         if (Stereo->t_parityInv && Stereo->nNumberInv)
         {
             if (nUserMode & REQ_MODE_RELATIVE_STEREO)
@@ -1530,6 +1546,15 @@ int FillOutINChI( INChI *pINChI,
                                                       pCS->LinearCTIsotopicStereoDbleInv,
                                                       pCanonOrdInv, pCanonRankInv );
 
+        /* djb-rwth: fixing oss-fuzz issue #68271 */
+        if (nErrorCode == 1)
+        {
+            nErrorCode = 0;
+            ret = CT_OUT_OF_RAM;  /*   <BRKPT> */
+            pINChI->nErrorCode = pINChI_Aux->nErrorCode = CT_OUT_OF_RAM;
+            goto exit_function;
+        }
+        
         if (Stereo->t_parityInv && Stereo->nNumberInv)
         {
             if (nUserMode & REQ_MODE_RELATIVE_STEREO)

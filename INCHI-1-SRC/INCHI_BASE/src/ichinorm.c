@@ -105,20 +105,24 @@ int MarkRingSystemsInp( inp_ATOM *at, int num_atoms, int start )
     /*start           = 0;*/
     nNumRingSystems = 0;
     u = start; /*  start atom */
-    /* djb-rwth: fixing oss-fuzz issue #66720 */
-    if (u > num_atoms-1)
-    {
-        u = 0;
-    }
     nDfs = 0;
     nTopStackAtom = -1;
     nTopRingStack = -1;
     memset( nDfsNumber, 0, num_atoms * sizeof( nDfsNumber[0] ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     memset( cNeighNumb, 0, num_atoms * sizeof( cNeighNumb[0] ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     /*  push the start atom on the stack */
-    nLowNumber[u] = nDfsNumber[u] = ++nDfs;
-    nStackAtom[++nTopStackAtom] = (AT_NUMB) u;
-    nRingStack[++nTopRingStack] = (AT_NUMB) u;
+    /* djb-rwth: fixing oss-fuzz issue #66720 */
+    if (u <= num_atoms - 1)
+    {
+        nLowNumber[u] = nDfsNumber[u] = ++nDfs;
+        nStackAtom[++nTopStackAtom] = (AT_NUMB)u;
+        nRingStack[++nTopRingStack] = (AT_NUMB)u;
+    }
+    else
+    {
+        nNumRingSystems = CT_OVERFLOW;  /*  program error */ /*   <BRKPT> */
+        goto exit_function;
+    }
 
     nNumStartChildren = 0;
 

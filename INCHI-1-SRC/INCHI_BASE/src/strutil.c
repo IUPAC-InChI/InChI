@@ -4426,7 +4426,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
             /* find next neighbor */
             do
             {
-                /* djb-rwth: GCC 12/13 compiled executables crash here for 7 PubChem structures */
+                /* djb-rwth: GCC 12/13/14 compiled executables crash here for 7 PubChem structures */
                 /*printf("\ncur_at = % d, nxt_at = % d, iNeigh[cur_at] = % d, at[cur_at].val = % d ", cur_at, nxt_at, iNeigh[cur_at], at[cur_at].valence);*/
                 if (iNeigh[cur_at] < at[cur_at].valence)
                 {

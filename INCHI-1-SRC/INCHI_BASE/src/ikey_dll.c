@@ -476,6 +476,8 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
 
 
 fin:
+    /* djb-rwth: fixing oss-fuzz issue #66746 */
+    /*
     if (NULL != str)
     {
         inchi_free( str );
@@ -487,7 +489,6 @@ fin:
     if (NULL != sminor)
     {
         inchi_free( sminor );
-        /* djb-rwth: fixing oss-fuzz issue #66746 */
         sminor = NULL;
     }
     if (NULL != stmp)
@@ -498,6 +499,7 @@ fin:
     {
         inchi_free( sproto );
     }
+    */
     if (( ret == INCHIKEY_OK ) && ( ret1 != INCHIKEY_OK ))
     {
         ret = ret1;

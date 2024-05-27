@@ -4424,9 +4424,17 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
         t_group_info->tni = tni;
         t_group_info->tGroupNumber = tGroupNumber;
         t_group_info->max_num_t_groups = num_atoms / 2 + 1; /*  upper limit */
-        if (!( t_group_info->t_group = (T_GROUP*) inchi_calloc( t_group_info->max_num_t_groups, sizeof( t_group[0] ) ) ))
+        /* djb-rwth: fixing oss-fuzz issue #52978 */
+        T_GROUP* tgi_tgr = (T_GROUP*)inchi_calloc(t_group_info->max_num_t_groups + 1, sizeof(t_group[0]));
+        if (!tgi_tgr)
         {
-            return ( t_group_info->max_num_t_groups = -1 ); /*  failed, out of RAM */
+            t_group_info->max_num_t_groups = -1;
+            t_group_info->t_group = NULL;
+            return (-1); /*  failed, out of RAM */
+        }
+        else
+        {
+            t_group_info->t_group = tgi_tgr;
         }
     }
 
@@ -6408,14 +6416,17 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
         {
             /* djb-rwth: fixing oss-fuzz issue #52978 */
             T_GROUP* tgi_tg = (T_GROUP*)inchi_malloc(len * sizeof(t_group_info->t_group[0]));
-            T_GROUP* tgior_tg = (T_GROUP*)realloc(t_group_info_orig->t_group, len * sizeof(t_group_info_orig->t_group[0]));
-            if (tgi_tg && tgior_tg) /* djb-rwth: addressing LLVM warning */
+            if (tgi_tg && t_group_info_orig->t_group)
             {
-                t_group_info->t_group = tgi_tg;
-                t_group_info_orig->t_group = tgior_tg;
-                memcpy(tgi_tg,
-                    tgior_tg,
-                    len * sizeof(t_group_info->t_group[0]));
+                T_GROUP* tgior_tg = (T_GROUP*)realloc(t_group_info_orig->t_group, len * sizeof(t_group_info_orig->t_group[0]));
+                if (tgior_tg) /* djb-rwth: addressing LLVM warning */
+                {
+                    t_group_info->t_group = tgi_tg;
+                    t_group_info_orig->t_group = tgior_tg;
+                    memcpy(tgi_tg,
+                        tgior_tg,
+                        len * sizeof(t_group_info->t_group[0]));
+                }
             }
             else
             {

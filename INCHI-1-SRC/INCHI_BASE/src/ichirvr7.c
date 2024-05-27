@@ -62,6 +62,7 @@
 #include "inchi_gui.h"
 
 #include "bcf_s.h"
+int at_size_check1; /* djb-rwth: required for fixing oss-fuzz issue #68329 */
 
 #if 0
 #ifndef COMPILE_ANSI_ONLY
@@ -492,7 +493,9 @@ int MergeStructureComponents( ICHICONST INPUT_PARMS *ip,
     tot_atoms = nDelHOffs[num_components];
 
     /* merge atoms together: 1. Allocate */
-    if (NULL == ( at = (inp_ATOM *) inchi_malloc( ( (long long)tot_atoms + 1 ) * sizeof( at[0] ) ) )) /* djb-rwth: cast operator added */
+    at = (inp_ATOM*)inchi_malloc(((long long)tot_atoms + 1) * sizeof(at[0])); /* djb-rwth: cast operator added */
+    at_size_check1 = tot_atoms + 1;
+    if (NULL == at)
     {
         ret = RI_ERR_ALLOC;
         goto exit_function;

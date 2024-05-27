@@ -109,8 +109,7 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
                                      INChI *pInChI,
                                      INChI *pInChIMobH )
 {
-    inp_ATOM     *at = NULL;
-    inp_ATOM_STEREO * st = NULL;
+    inp_ATOM_STEREO *st = NULL;
     int           num_atoms, i, jv, jn, n_vertex, n_neigh, num_H, parity;
     int           nNumDeletedH = 0, iDeletedH = 0, idelH1, idelH2, ret = 0, len;
     int           num_stereo_bonds2, num_stereo_centers2; /* djb-rwth: removing redundant variables */
@@ -125,14 +124,14 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
 
     INCHI_HEAPCHK
 
-    /* atoms */
-        pStruct->at = at = (inp_ATOM *) inchi_calloc( num_atoms, sizeof( pStruct->at[0] ) );
+        /* atoms */
+    inp_ATOM* at = (inp_ATOM*)inchi_calloc(num_atoms, sizeof(pStruct->at[0]));
     if (!at)
     {
         ret = RI_ERR_ALLOC;
         goto exit_function;
     }
-
+    pStruct->at = at;
     pStruct->num_atoms = num_atoms;
 
     /* charge */
@@ -200,8 +199,8 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
         for (i = 0; i < pInChI->nNumberOfIsotopicAtoms; i++)
         {
             n_vertex = pInChI->IsotopicAtom[i].nAtomNumber - 1;
-            /* djb-rwth: fixing oss-fuzz issue #30956 */
-            if (n_vertex <= num_atoms)
+            /* djb-rwth: fixing oss-fuzz issues #68742, #30956 */
+            if (n_vertex < num_atoms)
             {
                 at[n_vertex].iso_atw_diff = (char)pInChI->IsotopicAtom[i].nIsoDifference;
                 at[n_vertex].num_iso_H[0] = (char)pInChI->IsotopicAtom[i].nNum_H;
@@ -6570,9 +6569,9 @@ int RemoveRadFromMobileHEndpoint( BN_STRUCT *pBNS,
             {
                 etg0 = pBNS->edge + ptg1->iedge[i];         /* edge from t-group to endpoint */
                 endpoint0 = etg0->neighbor12 ^ vtg1;        /* taut endpoint vertex index */
-                /* djb-rwth: fixing oss-fuzz issue #25732 */
+                /* djb-rwth: fixing oss-fuzz issues #68494, #25732 */
                 max_vertices = pTCGroups->nVertices + nMaxAddAtoms;
-                if (endpoint0 <= max_vertices)
+                if (endpoint0 < max_vertices)
                 {
                     pEndp0 = pBNS->vert + endpoint0;            /* taut endpoint vertex (possible location of mobile H */
                     if (pEndp0->st_edge.cap > pEndp0->st_edge.flow)
