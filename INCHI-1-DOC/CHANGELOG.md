@@ -1,5 +1,5 @@
 # Change log
-## v. 1.07-RC2 2024-05-27
+## v. 1.07-RC2 2024-06-04
 ### Changed
 - 9 mathematical functions had to be rewritten in `ichister.c` and `e_0dstereo.c` to address functions' arguments issues related to arrays of various dimensions
 - 25 blocks of code in files in `runichi2.c`, `inchi_dll.c`, `inchi_dll_a2.c`, `ichiprt3.c`, `ichiread.c`, `ichirvr1.c`, `runichi.c`, `ichiparm.c`, `ichitaut.c` had to be rewritten to address:
