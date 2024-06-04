@@ -1,8 +1,11 @@
 # Official home of the InChI
 
-- <em>Version 1.07-RC1 (Release Candidate 1)</em> (27/05/2024):
+- <em>Release Candidate 2 (RC1)</em>: 04/06/2024:
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Minor bugs fixed
+  - Minor bugs fixes
+- <em>Release Candidate 1 (RC1)</em>: 27/05/2024:
+  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
+  - Minor bugs fixes
 - <em>Version 1.07-Beta5</em> (24/04/2024):
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Licence updated
