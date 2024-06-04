@@ -5753,7 +5753,8 @@ int ParseSegmentPerm( const char *str,
                     ret = RI_ERR_SYNTAX;
                     goto exit_function;
                 }
-                if (!( iComponent1 = (int) inchi_strtol( p, &q, 10 ) ) || iComponent1 > nNumComponents)
+                iComponent1 = (int)inchi_strtol(p, &q, 10);
+                if (!iComponent1 || (iComponent1 > nNumComponents) || (iComponent1 > sminor_size)) /* djb-rwth: fixing oss-fuzz issue #66746 */
                 {
                     ret = RI_ERR_SYNTAX;  /* syntax error */
                     goto exit_function;
@@ -8850,14 +8851,15 @@ int ParseSegmentMobileH( const char *str,
                                         for (i = 0; i < mpy_component; i++)
                                         {
                                             /* djb-rwth: fixing oss-fuzz issue #68314 */
-                                            if (iComponent + i <= nnumcomp_limit)
+                                            if (iComponent + i < nnumcomp_limit)
                                             {
-                                                pInChI[iComponent + i].nTautomer = (AT_NUMB*)inchi_calloc((long long)tg_alloc_len + 1, sizeof(pInChI->nTautomer[0])); /* djb-rwth: cast operator added */
-                                                if (!pInChI[iComponent + i].nTautomer)
+                                                AT_NUMB* pinchi_icint = (AT_NUMB*)inchi_calloc((long long)tg_alloc_len + 1, sizeof(pInChI->nTautomer[0])); /* djb-rwth: cast operator added */
+                                                if (!pinchi_icint)
                                                 {
                                                     ret = RI_ERR_ALLOC; /* allocation error */
                                                     goto exit_function;
                                                 }
+                                                pInChI[iComponent + i].nTautomer = pinchi_icint;
                                                 pInChI[iComponent + i].lenTautomer = 0;
                                             }
                                             else

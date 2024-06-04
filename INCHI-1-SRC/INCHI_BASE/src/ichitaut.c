@@ -6415,18 +6415,13 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
         if (( len = t_group_info_orig->max_num_t_groups ) > 0)
         {
             /* djb-rwth: fixing oss-fuzz issue #52978 */
-            T_GROUP* tgi_tg = (T_GROUP*)inchi_malloc(len * sizeof(t_group_info->t_group[0]));
+            T_GROUP* tgi_tg = (T_GROUP*)inchi_malloc(((long long)len+1) * sizeof(t_group_info->t_group[0])); /* djb-rwth: cast operator added */
             if (tgi_tg && t_group_info_orig->t_group)
             {
-                T_GROUP* tgior_tg = (T_GROUP*)realloc(t_group_info_orig->t_group, len * sizeof(t_group_info_orig->t_group[0]));
-                if (tgior_tg) /* djb-rwth: addressing LLVM warning */
-                {
-                    t_group_info->t_group = tgi_tg;
-                    t_group_info_orig->t_group = tgior_tg;
-                    memcpy(tgi_tg,
-                        tgior_tg,
-                        len * sizeof(t_group_info->t_group[0]));
-                }
+                t_group_info->t_group = tgi_tg;
+                memcpy(tgi_tg,
+                    t_group_info_orig->t_group,
+                    ((long long)len+1) * sizeof(t_group_info->t_group[0])); /* djb-rwth: cast operator added */
             }
             else
             {

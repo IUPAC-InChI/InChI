@@ -2509,32 +2509,35 @@ int  OrigAtData_RemoveHalfBond( int      this_atom,
     if (at && (at + this_atom))
     {
         inp_ATOM* a = &(at[this_atom]);
-        for (k = 0; k < a->valence; k++)
+        if (a)
         {
-            if (a->neighbor[k] != other_atom)
+            for (k = 0; k < a->valence; k++)
             {
-                continue;
-            }
+                if (a->neighbor[k] != other_atom)
+                {
+                    continue;
+                }
 
-            *bond_type = a->bond_type[k];
-            *bond_stereo = a->bond_stereo[k];
+                *bond_type = a->bond_type[k];
+                *bond_stereo = a->bond_stereo[k];
 
-            a->neighbor[k] = a->bond_type[k] = a->bond_stereo[k] = 0;
+                a->neighbor[k] = a->bond_type[k] = a->bond_stereo[k] = 0;
 
-            for (kk = k + 1; kk < a->valence; kk++)
-            {
-                a->neighbor[kk - 1] = a->neighbor[kk];
-                a->bond_type[kk - 1] = a->bond_type[kk];
-                a->bond_stereo[kk - 1] = a->bond_stereo[kk];
-            }
-            for (kk = a->valence - 1; kk < MAXVAL; kk++)
-            {
-                a->neighbor[kk] = 0;
-                a->bond_type[kk] = (U_CHAR)0;
-                a->bond_stereo[kk] = (S_CHAR)0;
-            }
-            return 1;
-        } /* k */
+                for (kk = k + 1; kk < a->valence; kk++)
+                {
+                    a->neighbor[kk - 1] = a->neighbor[kk];
+                    a->bond_type[kk - 1] = a->bond_type[kk];
+                    a->bond_stereo[kk - 1] = a->bond_stereo[kk];
+                }
+                for (kk = a->valence - 1; kk < MAXVAL; kk++)
+                {
+                    a->neighbor[kk] = 0;
+                    a->bond_type[kk] = (U_CHAR)0;
+                    a->bond_stereo[kk] = (S_CHAR)0;
+                }
+                return 1;
+            } /* k */
+        }
     }
 
     return 0;
@@ -3864,6 +3867,11 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
     {
         return;
     }
+    /* djb-rwth: fixing oss-fuzz issue #68329 */
+    if ((nat <= 0) || (nat > at_size_check1)) 
+    {
+        return;
+    }
 
     /*ITRACE_( "\n\n*********************************************************************\n* ENTERING OAD_Polymer_SmartReopenCyclizedUnits()" );
     OAD_Polymer_DebugTrace( p );*/
@@ -4174,7 +4182,7 @@ int OAD_Polymer_CompareRanksOfTwoAtoms( int atom1, int atom2, OAD_AtProps *aprop
     int a2typ = CARBOAT;
 
     /* djb-rwth: fixing oss-fuzz issue #68277 */
-    if ((a1 > nat_global - 1) || (a2 > nat_global - 1))
+    if ((a1 > nat_global) || (a2 > nat_global) || (a1 < 0) || (a2 < 0))
     {
         return 0;
     }

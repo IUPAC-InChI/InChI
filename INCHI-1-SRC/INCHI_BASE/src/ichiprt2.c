@@ -1023,7 +1023,7 @@ int MakeHString( int              bAddDelim,
                         }
                         else
                         {
-                            strcpy(szValue + len, pH);
+                            strcpy(szValue + len, pH); /* djb-rwth: GCC 14 false positive */
                             len++;
                         }
                     }
@@ -1423,7 +1423,7 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                     switch (OrigInfo[k].cRadical)
                     {
                         case 1:
-                            szValue[len++] = 'd';
+                            szValue[len++] = 'd'; /* djb-rwth: GCC 14 false positive */
                             break;
                         case 2:
                             szValue[len++] = 't';
@@ -2243,7 +2243,7 @@ int MakeDecNumber( char        *szString,
     }
     while (szLeadingDelim && *szLeadingDelim && --nStringLen)
     {
-        *p++ = *szLeadingDelim++;
+        *p++ = *szLeadingDelim++; /* djb-rwth: GCC 14 false positive */
     }
     if (nStringLen < 2)
     {

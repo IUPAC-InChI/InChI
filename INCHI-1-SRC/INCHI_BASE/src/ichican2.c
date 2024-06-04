@@ -54,6 +54,7 @@
 #include "ichitime.h"
 
 #include "bcf_s.h"
+static int na_global; /* djb-rwth: required for fixing oss-fuzz issue #69315 */
 
 #define MAX_CELLS    32766
 #define MAX_NODES    32766
@@ -4665,15 +4666,22 @@ int SetInitialRanks2( int num_atoms,
     /* nNewRank[i]: non-decreading order; do not increment nCurrentRank */
     /*           if consecutive sorted atom invariants are identical */
 
-    for (i = num_atoms - 1, nCurrentRank = nNewRank[nAtomNumber[i]] = (AT_RANK) num_atoms, nNumDiffRanks = 1; 0 < i; i--)
+    /* djb-rwth: fixing oss-fuzz issue #69315 */
+    nNumDiffRanks = 1;
+    if ((num_atoms > 0) && (num_atoms <= na_global))
     {
-        /* Note: CompAtomInvariants2Only() in following line implicitly reads pAtomInvariant2 pointed by pAtomInvariant2ForSort */
-        if (CompAtomInvariants2Only( &nAtomNumber[i - 1], &nAtomNumber[i], pCG ))
+        nCurrentRank = (AT_RANK)num_atoms;
+        nNewRank[nAtomNumber[num_atoms - 1]] = nCurrentRank;
+        for (i = num_atoms - 1; i > 0; i--)
         {
-            nNumDiffRanks++;
-            nCurrentRank = (AT_RANK) i;
+            /* Note: CompAtomInvariants2Only() in following line implicitly reads pAtomInvariant2 pointed by pAtomInvariant2ForSort */
+            if (CompAtomInvariants2Only(&nAtomNumber[i - 1], &nAtomNumber[i], pCG))
+            {
+                nNumDiffRanks++;
+                nCurrentRank = (AT_RANK)i;
+            }
+            nNewRank[nAtomNumber[i - 1]] = nCurrentRank;
         }
-        nNewRank[nAtomNumber[i - 1]] = nCurrentRank;
     }
 
     return nNumDiffRanks;
@@ -5285,6 +5293,7 @@ int GetBaseCanonRanking( INCHI_CLOCK *ic,
     nRank = (AT_RANK *) inchi_calloc( num_max, sizeof( nRank[0] ) );
     nAtomNumber = (AT_NUMB *) inchi_calloc( num_max, sizeof( nAtomNumber[0] ) );
     nTempRank = (AT_RANK *) inchi_calloc( num_max, sizeof( nTempRank[0] ) );
+    na_global = num_max; /* djb-rwth: fixing oss-fuzz issue #69315 */
 
     if (!pAtomInvariant ||
          !nSymmRankNoH || !nCanonRankNoH || !nAtomNumberCanonNoH ||

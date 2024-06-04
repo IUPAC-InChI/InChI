@@ -65,6 +65,7 @@
 #include "util.h"
 
 #include "bcf_s.h"
+int sminor_size; /* djb-rwth: required for fixing oss-fuzz issue #66746 */
 
 /*    Local options */
 
@@ -235,6 +236,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
         ret = INCHIKEY_NOT_ENOUGH_MEMORY; goto fin;
     }
     sminor = (char*) inchi_calloc( 2 * slen + 2, sizeof( char ) ); /* we may double the length ... */
+    sminor_size = 2 * slen + 2;
     if (NULL == sminor)
     {
         ret = INCHIKEY_NOT_ENOUGH_MEMORY; goto fin;

@@ -65,9 +65,16 @@
 #define USE_BCF 0
 #endif
 
+/* djb-rwth: control macros */
+#define GCC_DEBUG 1 /* djb-rwth: required for GCC 12+ vs GCC 11- debugging */
+#define RINCHI_TEST 0 /* djb-rwrh: RInChI testing */
+
+/* djb-rwth: custom functions */
 int max_3(int a, int b, int c);
 int memcpy_custom(char** dst, char* src, unsigned long long len);
 
-extern int at_size_check1;
+/* djb-rwth: external variables required for oss-fuzz fixes */
+extern int at_size_check1; /* djb-rwth: required for fixing oss-fuzz issue #68329 */
+extern int sminor_size; /* djb-rwth: required for fixing oss-fuzz issue #66746 */
 
 #endif
