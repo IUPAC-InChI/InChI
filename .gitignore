@@ -13,3 +13,4 @@ __pycache__
 *.egg-info/
 # Ignore core dump files
 core.*[0-9]
+gcc_crash_report.txt
