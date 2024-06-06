@@ -8,6 +8,7 @@ from .config import (
     get_args,
     get_current_time,
     get_progress,
+    get_versions,
     DATASETS,
     N_PROCESSES,
     INCHI_LIB_PATH,
@@ -35,7 +36,7 @@ if __name__ == "__main__":
     logging.basicConfig(filename=log_path, encoding="utf-8", level=logging.INFO)
 
     logging.info(
-        f"{get_current_time()}: Starting to process {n_sdf} SDFs on {N_PROCESSES} cores."
+        f"{get_current_time()}: Starting to process {n_sdf} SDFs on {N_PROCESSES} cores, using {get_versions()}."
     )
 
     for i, sdf_path in enumerate(sdf_paths):
