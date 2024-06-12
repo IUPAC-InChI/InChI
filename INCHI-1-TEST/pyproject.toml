@@ -1,7 +1,7 @@
 [project]
 name = "sdf_pipeline"
 version = "1.3.0"
-requires-python = "==3.12.*"
+requires-python = ">=3.11"
 dependencies = ["pydantic == 2.7.1"]
 
 [project.optional-dependencies]
