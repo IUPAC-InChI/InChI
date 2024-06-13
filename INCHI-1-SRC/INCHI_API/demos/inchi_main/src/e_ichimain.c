@@ -92,10 +92,8 @@ Use old (classic) library interface (see main() below)
 #include "e_0dstereo.h"
 #endif
 
-#define RINCHI_TEST 0 /* djb-rwrh: RInChI testing */
-
 #if (RINCHI_TEST)
-#include "jhj.h" 
+#include "jhj.h"
 #endif
 
 /* External (from former e_ichi_parms.h) */
@@ -358,6 +356,14 @@ int main( int argc, char *argv[] )
         e_HelpCommandLineParms( log_stream );
         return 0;
     }
+
+    /* djb-rwth: printing out InChI version */
+    if (argc == 2 && ((argv[1][0] == INCHI_OPTION_PREFX)) && (!strcmp(argv[1] + 1, "v") || !strcmp(argv[1] + 1, "V")))
+    {
+        printf("%s\n", APP_DESCRIPTION);
+        return 0;
+    }
+
     /*  original input structure */
     memset( pInp, 0, sizeof( *pInp ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     memset( pOut, 0, sizeof( *pOut ) ); /* djb-rwth: memset_s C11/Annex K variant? */

@@ -298,6 +298,13 @@ int main( int argc, char *argv[] )
         return 0;
     }
 
+    /* djb-rwth: printing out InChI version */
+    if (argc == 2 && ((argv[1][0] == INCHI_OPTION_PREFX)) && (!strcmp(argv[1] + 1, "v") || !strcmp(argv[1] + 1, "V")))
+    {
+        printf("%s\n", APP_DESCRIPTION);
+        return 0;
+    }
+
     if (0 > e_ReadCommandLineParms( argc, (const char **) argv, ip, szSdfDataValue, &ulDisplTime, bReleaseVersion, log_stream ))
                                     /*^^^ Explicitly cast to (const char **) to avoid a
                                           warning about "incompatible pointer type":*/
