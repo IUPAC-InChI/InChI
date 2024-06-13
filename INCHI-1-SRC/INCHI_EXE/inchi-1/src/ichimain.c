@@ -82,7 +82,6 @@
 #endif
 
 #include "../../../INCHI_BASE/src/bcf_s.h"
-#define __MYTOLOWER(c) ( ((c) >= 'A') && ((c) <= 'Z') ? ((c) - 'A' + 'a') : (c) )
 
  /*  Console-specific */
 
