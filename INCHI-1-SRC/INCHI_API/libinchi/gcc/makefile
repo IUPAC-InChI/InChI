@@ -264,3 +264,6 @@ else
 $(info GCC or Clang not detected. Please edit makefile to include available C compiler. Terminating.)
 $(info )
 endif
+.PHONY: clean
+clean:
+	rm -f $(INCHI_LIB_OBJS)
