@@ -80,7 +80,7 @@
 /* */
 
 #include "bcf_s.h"
-
+static int pi_nnc; /* djb-rwth: required for fixing oss-fuzz issue #69489 */
 
 #define SEGM_LINE_ADD 128
 
@@ -5754,7 +5754,7 @@ int ParseSegmentPerm( const char *str,
                     goto exit_function;
                 }
                 iComponent1 = (int)inchi_strtol(p, &q, 10);
-                if (!iComponent1 || (iComponent1 > nNumComponents) || (iComponent1 > sminor_size)) /* djb-rwth: fixing oss-fuzz issue #66746 */
+                if ((iComponent1 < 1) || (iComponent1 > nNumComponents) || (iComponent1 >= sminor_size)) /* djb-rwth: fixing oss-fuzz issue #66746 */
                 {
                     ret = RI_ERR_SYNTAX;  /* syntax error */
                     goto exit_function;
@@ -8367,7 +8367,8 @@ int ParseSegmentMobileH( const char *str,
             pTaut = pEnd;
             t = NULL; /* found no tautomeric group for this component */
         }
-        for (i = 0; i < mpy_component; i++)
+        /* djb-rwth: fixing oss-fuzz issue #69489 */
+        for (i = 0; (i < mpy_component) && (iComponent + i < pi_nnc); i++)
         {
             if (bMobileH == TAUT_NON)
             {
@@ -9869,6 +9870,7 @@ int ParseSegmentFormula( const char *str,
                 {
                     /* allocate InChI */
                     pInChI = (INChI*)inchi_calloc(nNumComponents, sizeof(INChI));
+                    pi_nnc = nNumComponents;
                     if (!(pInChI))
                     {
                         return RI_ERR_ALLOC; /* alloc failure */

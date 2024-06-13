@@ -54,7 +54,7 @@
 #include "ichitime.h"
 
 #include "bcf_s.h"
-static int na_global; /* djb-rwth: required for fixing oss-fuzz issue #69315 */
+int na_global; /* djb-rwth: required for fixing oss-fuzz issue #69315 */
 
 #define MAX_CELLS    32766
 #define MAX_NODES    32766

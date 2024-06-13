@@ -4410,16 +4410,6 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
     /* Mark and count; avoid deep DFS recursion: it may make verifying software unhappy */
     /* nNewCompNumber[i] will contain new component number for atoms at[i], i=0..num_at-1 */
     
-    /* djb-rwth: GCC 12+ compiled executables crash here for 7 PubChem structures */
-#if (GCC_DEBUG)
-    FILE* gcc_fptr;
-    gcc_fptr = fopen("gcc_crash_report.txt", "w");
-    if (!gcc_fptr)
-    {
-        printf("\n>>>>>Error opening gcc_crash_report.txt file!<<<<<\n");
-    }
-#endif
-
     for (j = 0; j < num_at; j++)
     {
         if (!nNewCompNumber[j])
@@ -4437,17 +4427,11 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
             /* find next neighbor */
             do
             {
-#if (GCC_DEBUG)
-                fprintf(gcc_fptr, "\ncur_at = %d, nxt_at = %d, iNeigh[cur_at] = %d, at[cur_at].val = %d ", cur_at, nxt_at, iNeigh[cur_at], at[cur_at].valence);
-#endif
                 if (iNeigh[cur_at] < at[cur_at].valence)
                 {
                     int ineigh_incr = (int)iNeigh[cur_at];
                     nxt_at = at[cur_at].neighbor[ineigh_incr];
                     iNeigh[cur_at]++;
-#if (GCC_DEBUG)
-                    fprintf(gcc_fptr, "/ ineigh_incr = %d, new_nxt_at = %d, iNeigh[cur_at]_inc = %d, nNewCompNumber[nxt_at] = %d ", ineigh_incr, nxt_at, iNeigh[cur_at], nNewCompNumber[nxt_at]);
-#endif
 
                     if (!nNewCompNumber[nxt_at])
                     {
@@ -4467,18 +4451,8 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
                     cur_at = nPrevAtom[cur_at]; /* retract */
                 }
             } while (cur_neq_fst);
-#if (GCC_DEBUG)
-            fprintf(gcc_fptr, "\n");
-#endif
         }
     }
-
-#if (GCC_DEBUG)
-    if (gcc_fptr)
-    {
-        fclose(gcc_fptr);
-    }
-#endif
 
     inchi_free( nPrevAtom );
     nPrevAtom = NULL;

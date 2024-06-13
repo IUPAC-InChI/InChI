@@ -379,7 +379,7 @@ int SetNewRanksFromNeighLists( CANON_GLOBALS *pCG,
                                int bUseAltSort,
                                int( *comp )( const void *, const void *, void * ) )
 {
-    int     i, nNumDiffRanks;
+    int     i, nNumDiffRanks, j;
     AT_RANK nCurrentRank;
     /*  -- nAtomNumber[] is already properly set --
     for ( i = 0; i < num_atoms; i++ ) {
@@ -397,17 +397,24 @@ int SetNewRanksFromNeighLists( CANON_GLOBALS *pCG,
     else
         inchi_qsort( pCG, nAtomNumber, num_atoms, sizeof( nAtomNumber[0] ), comp /*CompNeighListRanksOrd*/ );
 
-    for (i = num_atoms - 1, nCurrentRank = nNewRank[(int) nAtomNumber[i]] = (AT_RANK) num_atoms, nNumDiffRanks = 1;
-          0 < i;
-          i--)
+    /* djb-rwth: fixing oss-fuzz issue #69315 */
+    nNumDiffRanks = 1;
+    if ((num_atoms > 0) && (num_atoms <= na_global))
     {
-        /*  Note: CompNeighListRanks() in following line implicitly reads nRank pointed by pn_RankForSort */
-        if (CompNeighListRanks( &nAtomNumber[i - 1], &nAtomNumber[i], pCG ))
+        nCurrentRank = (AT_RANK)num_atoms;
+        j = num_atoms - 1;
+        nNewRank[(int)nAtomNumber[j]] = nCurrentRank;
+        
+        for (i = num_atoms - 1; i > 0; i--)
         {
-            nNumDiffRanks++;
-            nCurrentRank = (AT_RANK) i;
+            /*  Note: CompNeighListRanks() in following line implicitly reads nRank pointed by pn_RankForSort */
+            if (CompNeighListRanks(&nAtomNumber[i - 1], &nAtomNumber[i], pCG))
+            {
+                nNumDiffRanks++;
+                nCurrentRank = (AT_RANK)i;
+            }
+            nNewRank[(int)nAtomNumber[i - 1]] = nCurrentRank;
         }
-        nNewRank[(int) nAtomNumber[i - 1]] = nCurrentRank;
     }
 
     return nNumDiffRanks;

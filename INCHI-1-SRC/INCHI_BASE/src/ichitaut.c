@@ -50,6 +50,7 @@
 #include "util.h"
 
 #include "bcf_s.h"
+static int tgi_mntg_global;
 
 /* Local prototypes */
 
@@ -4394,7 +4395,6 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
     int  nNumEndPoints, nNumBondPos, nNumPossibleMobile;
     int  bNonTautBond, bAltBond; /* djb-rwth: removing redundant variables */
     int  nNumDonor, nNumAcceptor, bPossiblyEndpoint;
-    T_GROUP *t_group;
     int bIgnoreIsotopic; /* djb-rwth: removing redundant variables */
     ENDPOINT_INFO eif1, eif2;
     int nErr = 0;
@@ -4425,7 +4425,8 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
         t_group_info->tGroupNumber = tGroupNumber;
         t_group_info->max_num_t_groups = num_atoms / 2 + 1; /*  upper limit */
         /* djb-rwth: fixing oss-fuzz issue #52978 */
-        T_GROUP* tgi_tgr = (T_GROUP*)inchi_calloc(t_group_info->max_num_t_groups + 1, sizeof(t_group[0]));
+        T_GROUP* tgi_tgr = (T_GROUP*)inchi_calloc((long long)t_group_info->max_num_t_groups + 1, sizeof(t_group_info->t_group[0]));
+        tgi_mntg_global = t_group_info->max_num_t_groups;
         if (!tgi_tgr)
         {
             t_group_info->max_num_t_groups = -1;
@@ -6415,13 +6416,17 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
         if (( len = t_group_info_orig->max_num_t_groups ) > 0)
         {
             /* djb-rwth: fixing oss-fuzz issue #52978 */
+            if (len != tgi_mntg_global)
+            {
+                len = tgi_mntg_global;
+            }
             T_GROUP* tgi_tg = (T_GROUP*)inchi_malloc(((long long)len+1) * sizeof(t_group_info->t_group[0])); /* djb-rwth: cast operator added */
             if (tgi_tg && t_group_info_orig->t_group)
             {
                 t_group_info->t_group = tgi_tg;
                 memcpy(tgi_tg,
                     t_group_info_orig->t_group,
-                    ((long long)len+1) * sizeof(t_group_info->t_group[0])); /* djb-rwth: cast operator added */
+                    len * sizeof(t_group_info->t_group[0])); /* djb-rwth: cast operator added */
             }
             else
             {

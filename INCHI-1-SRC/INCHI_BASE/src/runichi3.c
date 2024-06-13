@@ -2506,7 +2506,7 @@ int  OrigAtData_RemoveHalfBond( int      this_atom,
 {
     int k, kk;
     /* djb-rwth: fixing oss-fuzz issues #68286, #30342 */
-    if (at && (at + this_atom))
+    if (at)
     {
         inp_ATOM* a = &(at[this_atom]);
         if (a)
@@ -4181,8 +4181,8 @@ int OAD_Polymer_CompareRanksOfTwoAtoms( int atom1, int atom2, OAD_AtProps *aprop
     int a1typ = CARBOAT;
     int a2typ = CARBOAT;
 
-    /* djb-rwth: fixing oss-fuzz issue #68277 */
-    if ((a1 > nat_global) || (a2 > nat_global) || (a1 < 0) || (a2 < 0))
+    /* djb-rwth: fixing oss-fuzz issue #69501, #68277 */
+    if ((a1 >= nat_global) || (a2 >= nat_global) || (a1 < 0) || (a2 < 0))
     {
         return 0;
     }
