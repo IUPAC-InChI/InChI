@@ -23,7 +23,7 @@ if __name__ == "__main__":
     test, dataset = get_args()
 
     if test == "regression-reference":
-        subprocess.run(f"{TEST_PATH}/compile_inchi_reference_lib.sh", check=True)
+        subprocess.run(f"{TEST_PATH}/compile_reference_inchi_lib.sh", check=True)
     else:
         subprocess.run(f"{TEST_PATH}/compile_inchi_lib.sh", check=True)
 
