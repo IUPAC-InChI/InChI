@@ -1,7 +1,7 @@
 # Official home of the InChI
 
 - <em>Version 1.07-Release Candidate 3 (RC3)</em> (13/06/2024):
-  - Issues with executables compiled with `GCC` versions `12.x/13.x/14.x` whilst processing several [PubChem](https://pubchem.ncbi.nlm.nih.gov/) structures has been fixed. Starting with `InChI v.1.07-RC3`, any version of `GCC` compiler can be used.
+  - Issues with executables compiled with `GCC` versions `12.x/13.x/14.x` has been fixed. Starting with `InChI v.1.07-RC3`, any version of `GCC` compiler can be used.
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Minor bugs fixes
 - <em>Version 1.07-Release Candidate 2 (RC2)</em> (04/06/2024):
