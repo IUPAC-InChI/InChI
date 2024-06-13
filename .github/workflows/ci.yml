@@ -10,7 +10,7 @@ on:
 jobs:
   test_glibc_gcc:
     runs-on: ubuntu-latest
-    container: gcc:12
+    container: gcc:14
 
     steps:
       - uses: actions/checkout@v4
