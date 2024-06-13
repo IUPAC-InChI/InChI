@@ -114,9 +114,9 @@ endif
 # === C Compiler Options =======
 ifndef C_OPTIONS
 	ifndef CALLER_IS_MOL2INCHI
-	C_OPTIONS = -std=c11 -ansi -O3 -c
+	C_OPTIONS = -std=c11 -ansi -O2 -c -fno-strict-aliasing
 	else
-	C_OPTIONS = -std=c11 -O3 -c
+	C_OPTIONS = -std=c11 -O2 -c -fno-strict-aliasing
 	endif
 	ifneq ($(OS_ID),0)
 	ifndef C_SO_OPTIONS
@@ -264,7 +264,3 @@ else
 $(info GCC or Clang not detected. Please edit makefile to include available C compiler. Terminating.)
 $(info )
 endif
-
-.PHONY: clean
-clean:
-	rm -f $(INCHI_LIB_OBJS)

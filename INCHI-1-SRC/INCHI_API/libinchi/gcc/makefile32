@@ -2,7 +2,7 @@
 #
 #
 # Comment out the next line to create so/dll only
-#CREATE_MAIN = 1
+CREATE_MAIN = 1
 # Comment out the next line to create mol2inchi executable (otherwise, inchi_maiin is created)
 #CALLER_IS_MOL2INCHI = 1
 # djb-rwth: detecting the OS in Makefile -- no need to specify ISLINUX externally; OS can also be defined in command line: e.g. make OS_ID=1
@@ -68,20 +68,20 @@ ifneq ($(OS_ID),0)
 endif
 # === executable & library directory ===
 ifndef LIB_DIR
-	LIB_DIR = ../../bin/Linux/32bit
+  LIB_DIR = ../../bin/Linux/32bit
 endif
 # === InChI Library name ===
 ifndef INCHI_LIB_NAME
-	INCHI_LIB_NAME = libinchi
+  INCHI_LIB_NAME = libinchi
 endif
 INCHI_LIB_PATHNAME = $(LIB_DIR)/$(INCHI_LIB_NAME)
 # === Main program name ====
 ifndef API_CALLER_NAME
-	ifndef CALLER_IS_MOL2INCHI 
-	API_CALLER_NAME = inchi_main
-	else
-	API_CALLER_NAME = mol2inchi
-	endif
+  ifndef CALLER_IS_MOL2INCHI 
+  API_CALLER_NAME = inchi_main
+  else
+  API_CALLER_NAME = mol2inchi
+  endif
 endif
 API_CALLER_PATHNAME = $(LIB_DIR)/$(API_CALLER_NAME)
 # === Linker to create (Shared) InChI library ====
@@ -97,7 +97,6 @@ ifndef LINKER
 	endif
 	LINKER = $(C_COMPILER) -s $(LINKER_CWD_PATH)
 endif
-# djb-rwth: space for shared link parameters SHARED_LINK_PARMS
 ifndef P_LIBR
 	P_LIBR = ../../libinchi/src/
 endif
@@ -105,21 +104,21 @@ ifndef P_LIBR_IXA
 	P_LIBR_IXA = ../../libinchi/src/ixa/
 endif
 ifndef P_BASE
-	P_BASE = ../../../INCHI_BASE/src/
+  P_BASE = ../../../INCHI_BASE/src/
 endif
 ifndef P_MAIN
-	ifndef CALLER_IS_MOL2INCHI
+  ifndef CALLER_IS_MOL2INCHI
 	P_MAIN = ../src/
-	else
+  else
 	P_MAIN = ../src/
-	endif
+  endif
 endif
 # === C Compiler Options =======
 ifndef C_OPTIONS
 	ifndef CALLER_IS_MOL2INCHI
-	C_OPTIONS = -std=c11 -m32 -ansi -O3 -c
+	C_OPTIONS = -std=c11 -m32 -ansi -O2 -c -fno-strict-aliasing
 	else
-	C_OPTIONS = -std=c11 -m32 -O3 -c
+	C_OPTIONS = -std=c11 -m32 -O2 -c -fno-strict-aliasing
 	endif
 	ifneq ($(OS_ID),0)
 	ifndef C_SO_OPTIONS
@@ -170,8 +169,8 @@ endif
 ifneq ($(OS_ID),0)
 # djb-rwth: linking to .so on Linux
 $(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).so$(VERSION)
-	$(LINKER) -o $(API_CALLER_PATHNAME) $(API_CALLER_OBJS) \
-$(INCHI_LIB_PATHNAME).so$(VERSION) -lm
+	$(LINKER) -m32 -o $(API_CALLER_PATHNAME) $(API_CALLER_OBJS) \
+	$(INCHI_LIB_PATHNAME).so$(VERSION) -lm
 else
 # djb-rwth: linking to .dll on Windows
 $(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).dll$(VERSION)
@@ -239,13 +238,13 @@ runichi3.o	\
 runichi4.o	\
 sha2.o	\
 strutil.o	\
-util.o  \
+util.o	\
 bcf_s.o
 # === InChI Library link rule =========
 ifneq ($(OS_ID),0)
 # djb-rwth: creating .so on Linux
 $(INCHI_LIB_PATHNAME).so$(VERSION): $(INCHI_LIB_OBJS)
-	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME).so$(VERSION)	\
+	$(SHARED_LINK) $(SHARED_LINK_PARM) -m32 -o $(INCHI_LIB_PATHNAME).so$(VERSION)	\
 $(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO),-soname,$(INCHI_LIB_NAME).so$(VERSION) -lm
 else
 # djb-rwth: creating .dll on Windows
