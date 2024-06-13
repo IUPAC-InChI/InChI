@@ -1,19 +1,19 @@
 # Official home of the InChI
 
-- <em>Version 1.07-Release Candidate 3 (RC3)</em>: 13/06/2024:
+- <em>Version 1.07-Release Candidate 3 (RC3)</em> (13/06/2024):
   - Issues with executables compiled with `GCC` versions `12.x/13.x/14.x` whilst processing several [PubChem](https://pubchem.ncbi.nlm.nih.gov/) structures has been fixed. Starting with `InChI v.1.07-RC3`, any version of `GCC` compiler can be used.
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Minor bugs fixes
-- <em>Version 1.07-Release Candidate 2 (RC2)</em>: 04/06/2024:
+- <em>Version 1.07-Release Candidate 2 (RC2)</em> (04/06/2024):
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Minor bugs fixes
-- <em>Version 1.07-Release Candidate 1 (RC1)</em>: 27/05/2024:
+- <em>Version 1.07-Release Candidate 1 (RC1)</em> (27/05/2024):
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Minor bugs fixes
-- <em>Beta5</em>: 23/04/2024:
+- <em>Beta5</em> (23/04/2024):
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Licence updated
-- <em>Beta4</em>: 24/03/2024:
+- <em>Beta4</em> (24/03/2024):
   - ["/b-layer" issue / Issue #9](https://github.com/IUPAC-InChI/InChI/issues/9#issue-2151944482) has been fixed
   - [Incorrect output message regarding CPU architecture on ARM64 CPUs / Issue #10](https://github.com/IUPAC-InChI/InChI/issues/10#issue-2169630260) has been fixed
   - Further <code>Google<sup>&reg;</sup> oss-fuzz</code> issues have been addressed
@@ -154,9 +154,10 @@ If you wish to use [Intel<sup>&reg;</sup> oneAPI Threading Building Blocks (oneT
 
 ### Known issues
 
+<!--
 1. In case `GCC` is used to compile `InChI v.1.07`, `GCC` version `11.x` is recommended, since compiling any `InChI` version (incl. `v.1.07` and `v.1.06`) using `GCC` versions `12.x` and `13.x` can produce very rare segmentation errors whilst processing the following [PubChem](https://pubchem.ncbi.nlm.nih.gov/) structures: [453841144](https://pubchem.ncbi.nlm.nih.gov/substance/453841144), [453979403](https://pubchem.ncbi.nlm.nih.gov/substance/453979403), [450031964](https://pubchem.ncbi.nlm.nih.gov/substance/450031964), [449987684](https://pubchem.ncbi.nlm.nih.gov/substance/449987684), [448775139](https://pubchem.ncbi.nlm.nih.gov/substance/448775139), [448753468](https://pubchem.ncbi.nlm.nih.gov/substance/448753468), [448623641](https://pubchem.ncbi.nlm.nih.gov/substance/448623641). This issue is expected to be fixed in the forthcoming update of `InChI v.1.07`.
-
-2. If API version (i.e. `libinchi.so.1.07` and `inchi_main` ELF file) is compiled using `Clang/LLVM` on `Linux` OS, and `libinchi.so.1.07` cannot be found by `inchi_main`, `LD_LIBRARY_PATH` should be set either temporarily or permanently before `inchi_main` ELF file is used.
+-->
+If API version (i.e. `libinchi.so.1.07` and `inchi_main` ELF file) is compiled using `Clang/LLVM` on `Linux` OS, and `libinchi.so.1.07` cannot be found by `inchi_main`, `LD_LIBRARY_PATH` should be set either temporarily or permanently before `inchi_main` ELF file is used.
 It might be worth trying to change the value of `LINKER_CWD_PATH` to `-Wl,-R,"",-rpath,$(LIB_DIR)` (i.e. replacing `=` with `,`) in corresponding `makefile/makefile32`; however, please note that during our tests, this option failed to generate `libinchi.so.1.07` with `Clang/LLVM` on Linux.
 More reliably, `LD_LIBRARY_PATH` can be set in several ways:
 
