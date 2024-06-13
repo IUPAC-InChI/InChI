@@ -46,6 +46,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <float.h>
+#include <ctype.h>
 
 #ifndef COMPILE_ANSI_ONLY
 #include <conio.h>
@@ -81,6 +82,7 @@
 #endif
 
 #include "../../../INCHI_BASE/src/bcf_s.h"
+#define __MYTOLOWER(c) ( ((c) >= 'A') && ((c) <= 'Z') ? ((c) - 'A' + 'a') : (c) )
 
  /*  Console-specific */
 
@@ -549,6 +551,7 @@ int ProcessSingleInputFile(int argc, char* argv[])
     INCHI_IOS_STRING* strbuf = &temp_string_container;
     INCHI_IOSTREAM outputstr, logstr, prbstr, instr;
     INCHI_IOSTREAM* pout = &outputstr, * plog = &logstr, * pprb = &prbstr, * inp_file = &instr;
+
 #ifdef TARGET_EXE_STANDALONE
     int inchi_ios_type = INCHI_IOS_TYPE_STRING;
 #else
@@ -626,13 +629,18 @@ int ProcessSingleInputFile(int argc, char* argv[])
     inchi_ios_init(pprb, inchi_ios_type, NULL);
     memset(strbuf, 0, sizeof(*strbuf)); /* djb-rwth: memset_s C11/Annex K variant?; dereferencing strbuf */
 
-
-
     if (argc == 1 || (argc == 2 && (argv[1][0] == INCHI_OPTION_PREFX)) &&
         (!strcmp(argv[1] + 1, "?") || !inchi_stricmp(argv[1] + 1, "help"))) /* djb-rwth: addressing LLVM warning */
     {
         HelpCommandLineParms(plog);
         inchi_ios_flush(plog);
+        return 0;
+    }
+
+    /* djb-rwth: printing out InChI version */
+    if (argc == 2 && ((argv[1][0] == INCHI_OPTION_PREFX)) && (!strcmp(argv[1] + 1, "v") || !strcmp(argv[1] + 1, "V")))
+    {
+        printf("%s\n", APP_DESCRIPTION);
         return 0;
     }
 
