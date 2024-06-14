@@ -8,7 +8,6 @@ from .config import (
     get_args,
     get_current_time,
     get_progress,
-    get_versions,
     DATASETS,
     N_PROCESSES,
     INCHI_LIB_PATH,
@@ -21,12 +20,6 @@ from .config import (
 
 if __name__ == "__main__":
     test, dataset = get_args()
-
-    if test == "regression-reference":
-        subprocess.run(f"{TEST_PATH}/compile_reference_inchi_lib.sh", check=True)
-    else:
-        subprocess.run(f"{TEST_PATH}/compile_inchi_lib.sh", check=True)
-
     exit_code = 0
     sdf_paths = DATASETS[dataset]["sdf_paths"]
     n_sdf = len(sdf_paths)
@@ -35,8 +28,24 @@ if __name__ == "__main__":
     )
     logging.basicConfig(filename=log_path, encoding="utf-8", level=logging.INFO)
 
+    if test == "regression-reference":
+        output = subprocess.run(
+            f"{TEST_PATH}/compile_reference_inchi_lib.sh",
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    else:
+        output = subprocess.run(
+            f"{TEST_PATH}/compile_inchi_lib.sh",
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    inchi_and_gcc_version = output.stdout.split("\n")[-2].strip()
+    logging.info(f"{get_current_time()}: {inchi_and_gcc_version}")
     logging.info(
-        f"{get_current_time()}: Starting to process {n_sdf} SDFs on {N_PROCESSES} cores, using {get_versions()}."
+        f"{get_current_time()}: Starting to process {n_sdf} SDFs on {N_PROCESSES} cores."
     )
 
     for i, sdf_path in enumerate(sdf_paths):

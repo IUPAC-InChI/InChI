@@ -7,14 +7,6 @@ from datetime import datetime
 from sdf_pipeline.core import read_records_from_gzipped_sdf
 
 
-def get_versions() -> str:
-    inchi_version = os.popen("git describe --tags").read().strip()
-    python_version = os.popen("python --version").read().strip()
-    gcc_version = os.popen("gcc --version").read().split("\n")[0].strip()
-
-    return f"InChI {inchi_version}; {python_version}; {gcc_version}"
-
-
 def get_molfile_id_ci(molfile: str) -> str:
     molfile_id = ""
 

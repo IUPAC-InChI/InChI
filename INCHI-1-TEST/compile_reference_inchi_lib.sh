@@ -12,5 +12,10 @@ git checkout tags/$reference_version
 (cd INCHI-1-SRC/INCHI_API/libinchi/gcc &&
 make -j LIB_DIR=../../../../INCHI-1-TEST VERSION=.$reference_version)
 
+gcc_version=$(gcc --version | head -n 1)
+inchi_version=$(git describe --tags)
+
 # Switch back to the branch that was checked out prior to checking out the tag.
 git switch -
+
+echo "InChI $inchi_version compiled with $gcc_version."
