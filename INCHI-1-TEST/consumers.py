@@ -57,6 +57,9 @@ def permute_molblock(molblock: str) -> str | None:
         return None
 
     atom_indices = [atom.GetIdx() for atom in mol.GetAtoms()]
+    if not atom_indices:
+        return None
+
     atom_indices_permuted = _permute(atom_indices)
     if len(atom_indices) > 1:
         # Enforce different permutation of atom indices.
