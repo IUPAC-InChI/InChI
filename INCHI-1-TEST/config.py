@@ -1,10 +1,9 @@
 import re
 import os
 import argparse
-from typing import Final, Generator, Any, Callable
+from typing import Final, Any
 from pathlib import Path
 from datetime import datetime
-from sdf_pipeline.core import read_records_from_gzipped_sdf
 
 
 def get_molfile_id_ci(molfile: str) -> str:
@@ -69,18 +68,6 @@ def get_current_time() -> str:
 
 def get_progress(current: int, total: int) -> str:
     return f"{get_current_time()}: Processed {current}/{total} ({current / total * 100:.2f}%) SDFs"
-
-
-def select_molfiles_from_sdf(
-    sdf_path: Path, molfile_ids: set[str], get_molfile_id: Callable
-) -> Generator[tuple[str, str], None, None]:
-
-    for molfile in read_records_from_gzipped_sdf(sdf_path):
-        molfile_id = get_molfile_id(molfile)
-        if molfile_id in molfile_ids:
-            yield molfile_id, molfile
-
-    return None
 
 
 INCHI_API_PARAMETERS: Final[str] = ""

@@ -4,7 +4,8 @@ from pathlib import Path
 from difflib import SequenceMatcher
 from collections import defaultdict
 from typing import Callable, Final, TextIO
-from .config import get_args, select_molfiles_from_sdf, DATASETS
+from sdf_pipeline.utils import select_records_from_gzipped_sdf
+from .config import get_args, DATASETS
 
 
 def _get_html_diff(current: str, reference: str) -> str:
@@ -139,7 +140,7 @@ def _write_html_log(
         html_file.write("<body>\n")
 
         molfile_ids = set(sdf_log.keys())
-        for molfile_id, molfile in select_molfiles_from_sdf(
+        for molfile_id, molfile in select_records_from_gzipped_sdf(
             sdf_path, molfile_ids, get_molfile_id
         ):
             molfile_log: dict = sdf_log[molfile_id]
