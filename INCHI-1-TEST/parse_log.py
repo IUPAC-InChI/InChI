@@ -86,7 +86,7 @@ def _write_html_entry_invariance(molfile_log: dict, html_file: TextIO) -> None:
             else:
                 html_file.write(f"<td>{i + 1}.: {value}</td>\n")
             html_file.write("</tr>\n")
-        html_file.write("<table>\n")
+        html_file.write("</table>\n")
 
     return None
 
@@ -111,7 +111,7 @@ def _write_html_entry_regression(molfile_log: dict, html_file: TextIO) -> None:
             f"<td>{_get_html_diff(str(current_value), str(reference_value))}<td>\n"
         )
         html_file.write("</tr>\n")
-        html_file.write("<table>\n")
+        html_file.write("</table>\n")
 
     return None
 
