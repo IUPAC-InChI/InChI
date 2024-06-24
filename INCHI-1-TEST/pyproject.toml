@@ -5,7 +5,8 @@ requires-python = ">=3.11"
 dependencies = ["pydantic == 2.7.1"]
 
 [project.optional-dependencies]
-invariance-tests = ["rdkit == 2023.9.6"]
+# FIXME: We're forcing numpy major version for now until https://github.com/kuelumbus/rdkit-pypi/issues/102 is resolved.
+invariance-tests = ["rdkit == 2023.9.6", "numpy < 2.0.0"]
 development = ["pytest"]
 
 [tool.setuptools.packages.find]
