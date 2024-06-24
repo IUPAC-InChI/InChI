@@ -706,8 +706,12 @@ M  END
 ]
 
 
-def get_molblock_id(val):
+def get_molblock_id(val) -> str:
     return val.split()[0].strip()
+
+
+def strip_coordinates_from_cxsmiles(cxsmiles: str) -> str:
+    return cxsmiles.split("|")[0].strip()
 
 
 @pytest.mark.parametrize("molblock", molblocks, ids=get_molblock_id)
@@ -721,6 +725,6 @@ def test_permutation_integrity(molblock):
             permuted_molblock, sanitize=False, removeHs=False, strictParsing=False
         )
         canonical_smiles = Chem.MolToCXSmiles(permuted_mol)
-        unique_smiles.add(canonical_smiles)
+        unique_smiles.add(strip_coordinates_from_cxsmiles(canonical_smiles))
 
     assert len(unique_smiles) == 1
