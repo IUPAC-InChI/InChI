@@ -32,7 +32,8 @@
                 "ms-azuretools.vscode-docker",
                 "GitHub.copilot",
                 "qwtel.sqlite-viewer",
-                "ms-vscode.live-server"
+                "ms-vscode.live-server",
+                "tamasfe.even-better-toml"
             ]
         }
     }
