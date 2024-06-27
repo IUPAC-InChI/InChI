@@ -1,5 +1,5 @@
 # Change log
-## v. 1.07-RC3 2024-06-13
+## v. 1.07-RC4 2024-06-27
 ### Changed
 - 9 mathematical functions had to be rewritten in `ichister.c` and `e_0dstereo.c` to address functions' arguments issues related to arrays of various dimensions
 - 25 blocks of code in files in `runichi2.c`, `inchi_dll.c`, `inchi_dll_a2.c`, `ichiprt3.c`, `ichiread.c`, `ichirvr1.c`, `runichi.c`, `ichiparm.c`, `ichitaut.c` had to be rewritten to address:
@@ -12,8 +12,8 @@
 
 ### Fixed (security)
 - 31 buffer overflow issues due to use of large array dimensions
-- 149 security bugs related to improper `NULL` pointer dereferencing which might cause crashes or exits
-- 65 memory leaks
+- 153 security bugs related to improper `NULL` pointer dereferencing which might cause crashes or exits
+- 67 memory leaks
 - 530 potential applications of optional [bounds checking functions](/README.md#BCF)  
 
 Additionally, 29 potential security issues have been marked for further revision.
