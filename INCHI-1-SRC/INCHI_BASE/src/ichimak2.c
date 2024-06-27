@@ -1059,6 +1059,15 @@ int FillOutINChI( INChI *pINChI,
     }
 
     /*  Total charge */
+    /* djb-rwth: required for fixing oss-fuzz issue #69656 */
+    if (num_atoms + num_removed_H > sp_at_size)
+    {
+        nErrorCode = 0;
+        ret = CT_OVERFLOW;
+        pINChI->nErrorCode = pINChI_Aux->nErrorCode = CT_OVERFLOW;
+        goto exit_function;
+    }
+
     for (i = 0, n = 0; i < num_atoms + num_removed_H; i++)
     {
         n += at[i].charge;

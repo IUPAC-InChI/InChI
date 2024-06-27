@@ -1860,7 +1860,7 @@ void CtPartFill( Graph *G,
     int     startCtbl;
     int     startAtOrd;
     AT_RANK r, rj, nn, j, rj_prev; /* djb-rwth: ignoring LLVM warning as the variable is used */
-    int     i, m;
+    int     i, m, an_sao;
 
 #ifdef INCHI_CANON_USE_HASH
     CtHash  hash = 0;
@@ -1871,7 +1871,7 @@ void CtPartFill( Graph *G,
     INCHI_HEAPCHK
 
     k--;
-    if (k)
+    if (Ct && k) /* djb-rwth: fixing oss-fuzz issue #69612 */
     {
         startCtbl = Ct->nextCtblPos[k - 1];
         startAtOrd = Ct->nextAtRank[k - 1] - 1;  /* here  p->Rank[p->AtNumber[r-1]] = r */
@@ -1883,7 +1883,13 @@ void CtPartFill( Graph *G,
     }
 
     /******* Well-defined (by fixed ranks) part of the connection table ************/
-    r = ( rank_mask_bit & p->Rank[(int) p->AtNumber[startAtOrd]] );
+    /* djb-rwth: fixing oss-fuzz issue #69612 */
+    if ((startAtOrd < 0) || (startAtOrd >= na_global))
+    {
+        return;
+    }
+    an_sao = (int)p->AtNumber[startAtOrd];
+    r = ( rank_mask_bit & p->Rank[an_sao] );
 
     for (i = startAtOrd; i < n_tg && r == ( rank_mask_bit&p->Rank[m = (int) p->AtNumber[i]] ); i++, r++)
     {
@@ -5293,7 +5299,7 @@ int GetBaseCanonRanking( INCHI_CLOCK *ic,
     nRank = (AT_RANK *) inchi_calloc( num_max, sizeof( nRank[0] ) );
     nAtomNumber = (AT_NUMB *) inchi_calloc( num_max, sizeof( nAtomNumber[0] ) );
     nTempRank = (AT_RANK *) inchi_calloc( num_max, sizeof( nTempRank[0] ) );
-    na_global = num_max; /* djb-rwth: fixing oss-fuzz issue #69315 */
+    na_global = num_max; /* djb-rwth: required for fixing oss-fuzz issue #69315 */
 
     if (!pAtomInvariant ||
          !nSymmRankNoH || !nCanonRankNoH || !nAtomNumberCanonNoH ||

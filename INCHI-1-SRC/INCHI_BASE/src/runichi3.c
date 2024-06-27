@@ -2566,18 +2566,21 @@ int  OrigAtData_RemoveBond( int      this_atom,
                             int      *num_inp_bonds )
 {
     int del = 0;
-
-    del = OrigAtData_RemoveHalfBond( this_atom, other_atom, at, bond_type, bond_stereo );
-    del += OrigAtData_RemoveHalfBond( other_atom, this_atom, at, bond_type, bond_stereo );
-
-    if (del == 2)
+    
+    if (at) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
-        ( *num_inp_bonds )--;
-        at[this_atom].valence--;
-        at[this_atom].chem_bonds_valence -= *bond_type;
-        at[other_atom].valence--;
-        at[other_atom].chem_bonds_valence -= *bond_type;
-        return 1;
+        del = OrigAtData_RemoveHalfBond(this_atom, other_atom, at, bond_type, bond_stereo);
+        del += OrigAtData_RemoveHalfBond(other_atom, this_atom, at, bond_type, bond_stereo);
+
+        if (del == 2)
+        {
+            (*num_inp_bonds)--;
+            at[this_atom].valence--;
+            at[this_atom].chem_bonds_valence -= *bond_type;
+            at[other_atom].valence--;
+            at[other_atom].chem_bonds_valence -= *bond_type;
+            return 1;
+        }
     }
 
     return 0;
@@ -3328,7 +3331,7 @@ void OAD_Polymer_SetAtProps( OAD_Polymer *pd,
     int err2_len = sizeof(erank_rule2) / sizeof(erank_rule2[0]);
     int err4_len = sizeof(erank_rule4) / sizeof(erank_rule4[0]);
 
-    if (NULL == aprops)
+    if ((NULL == aprops) && !at) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
         return;
     }
@@ -3868,7 +3871,7 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
         return;
     }
     /* djb-rwth: fixing oss-fuzz issue #68329 */
-    if ((nat <= 0) || (nat > at_size_check1)) 
+    if ((nat <= 0) || (nat >= at_size_check1)) 
     {
         return;
     }
@@ -3880,7 +3883,7 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
     aprops = (OAD_AtProps *) inchi_calloc( (long long)nat + 1, sizeof( OAD_AtProps ) ); /* djb-rwth: cast operator added */
                                         /* nat + 1: add extra element for possibe 1-based indexing */
     nat_global = nat + 1; /* djb-rwth: fixing oss-fuzz issue #68277 */
-    if (!aprops)
+    if (!aprops || !at) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
         return;
     }

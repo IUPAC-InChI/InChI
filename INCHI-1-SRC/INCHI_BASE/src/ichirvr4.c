@@ -3219,6 +3219,7 @@ int RestoreAtomMakeBNS( INCHI_CLOCK *ic, CANON_GLOBALS *pCG,
     ALL_TC_GROUPS   TCGroups;
     ALL_TC_GROUPS *pTCGroups = &TCGroups;
     int            nAddEdges2eachAtom = 2, nAddVertices = 0;
+    T_GROUP_INFO* tgi_tmp_oti = &(pStruct->One_ti); /* djb-rwth: required for fixing oss-fuzz issue #69602 */
 
     BFS_Q bfsq;
 
@@ -3266,7 +3267,11 @@ int RestoreAtomMakeBNS( INCHI_CLOCK *ic, CANON_GLOBALS *pCG,
                 pStruct->pOne_norm_data[i] = NULL;
             }
         }
-        free_t_group_info( &pStruct->One_ti );
+        /* djb-rwth: fixing oss-fuzz issue #69602 */
+        if (tgi_tmp_oti)
+        {
+            free_t_group_info(tgi_tmp_oti);
+        }
         inchi_free( at3 );
 
         return ret;

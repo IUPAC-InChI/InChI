@@ -80,7 +80,8 @@
 /* */
 
 #include "bcf_s.h"
-static int pi_nnc; /* djb-rwth: required for fixing oss-fuzz issue #69489 */
+static int pi_nnc1; /* djb-rwth: required for fixing oss-fuzz issue #69489 */
+static int pi_nnc2; /* djb-rwth: required for fixing oss-fuzz issue #69699 */
 
 #define SEGM_LINE_ADD 128
 
@@ -8240,6 +8241,7 @@ int ParseSegmentMobileH( const char *str,
             }
             pInChI[i].nNum_H = pi_nnh2;
             /* pi_nnh2_init = true; */
+            pi_nnc2 = len;
         }
         /* copy immobile H from Mobile-H layer to Fixed-H layer */
         if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
@@ -8368,7 +8370,7 @@ int ParseSegmentMobileH( const char *str,
             t = NULL; /* found no tautomeric group for this component */
         }
         /* djb-rwth: fixing oss-fuzz issue #69489 */
-        for (i = 0; (i < mpy_component) && (iComponent + i < pi_nnc); i++)
+        for (i = 0; (i < mpy_component) && (iComponent + i < pi_nnc1); i++)
         {
             if (bMobileH == TAUT_NON)
             {
@@ -8964,12 +8966,19 @@ int ParseSegmentMobileH( const char *str,
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
             }
+
             if ((pInChI[iComponent + i].nNumberOfAtoms <= 0) || (pInChI[iComponent + i].nNumberOfAtoms>MAX_ATOMS))
             {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
             }
 #endif
+            /* djb-rwth: fixing oss-fuzz issue #69699 */
+            if ((iComponent + i < 0) || (iComponent + i >= pi_nnc2))
+            {
+                ret = RI_ERR_SYNTAX; /* syntax error */
+                goto exit_function;
+            }
             memcpy(nNum_H(iComponent + i), nNum_H(iComponent), pInChI[iComponent + i].nNumberOfAtoms * sizeof(nNum_H(0)[0]));
             /*
             memcpy( pInChI[iComponent+i].nNum_H, pInChI[iComponent].nNum_H,
@@ -9870,7 +9879,7 @@ int ParseSegmentFormula( const char *str,
                 {
                     /* allocate InChI */
                     pInChI = (INChI*)inchi_calloc(nNumComponents, sizeof(INChI));
-                    pi_nnc = nNumComponents;
+                    pi_nnc1 = nNumComponents;
                     if (!(pInChI))
                     {
                         return RI_ERR_ALLOC; /* alloc failure */
