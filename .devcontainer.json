@@ -2,10 +2,7 @@
 // https://hub.docker.com/_/python
 {
     "name": "InChI",
-    "build": {
-        "dockerfile": "INCHI-1-TEST/Dockerfile",
-        "context": "INCHI-1-TEST"
-    },
+    "image": "gcc:14-bookworm",
     "customizations": {
         "vscode": {
             "settings": {
@@ -33,8 +30,10 @@
                 "GitHub.copilot",
                 "qwtel.sqlite-viewer",
                 "ms-vscode.live-server",
-                "tamasfe.even-better-toml"
+                "tamasfe.even-better-toml",
+                "DavidAnson.vscode-markdownlint"
             ]
         }
-    }
+    },
+    "postCreateCommand": "cd INCHI-1-TEST && ./install.sh"
 }

@@ -5,7 +5,8 @@ from difflib import SequenceMatcher
 from collections import defaultdict
 from typing import Callable, Final, TextIO
 from sdf_pipeline.utils import select_records_from_gzipped_sdf
-from .config import get_args, DATASETS
+from inchi_tests.utils import get_config_args
+from inchi_tests.config_models import load_config
 
 
 def _get_html_diff(current: str, reference: str) -> str:
@@ -169,12 +170,20 @@ def _write_html_log(
     return None
 
 
-if __name__ == "__main__":
-    test, dataset = get_args()
+def main() -> None:
+    test_config_path, dataset_config_path = get_config_args()
 
-    log_paths = sorted(DATASETS[dataset]["log_path"].glob(f"*_{test}_{dataset}.log"))
+    test_config = load_config("test_config", test_config_path)
+    data_config = load_config("data_config", dataset_config_path)
+
+    test = test_config.name
+    dataset = data_config.name
+
+    data_path = data_config.path
+
+    log_paths = sorted(data_path.glob(f"*_{test}_{dataset}.log"))
     if not log_paths:
-        print(f"No logs for {test} in {DATASETS[dataset]['log_path']}.")
+        print(f"No logs for {test} in {data_path}.")
         sys.exit()
 
     # Process most recent log file
@@ -193,13 +202,15 @@ if __name__ == "__main__":
             ](log_entry)
 
     for sdf, sdf_log in sdf_logs.items():
-        sdf_path = DATASETS[dataset]["log_path"].joinpath(sdf)
+        sdf_path = data_path.joinpath(sdf)
         _write_html_log(
             sdf_log,
-            DATASETS[dataset]["log_path"].joinpath(
-                f"{log_path.stem}_{sdf_path.stem}.html"
-            ),
+            data_path.joinpath(f"{log_path.stem}_{sdf_path.stem}.html"),
             sdf_path,
-            DATASETS[dataset]["molfile_id"],
+            data_config.molfile_id_getter,
             test,
         )
+
+
+if __name__ == "__main__":
+    main()
