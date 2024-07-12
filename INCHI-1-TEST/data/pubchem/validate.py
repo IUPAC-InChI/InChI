@@ -1,10 +1,11 @@
 import hashlib
-from ...config import get_dataset_arg, DATASETS, get_progress
+from inchi_tests.utils import get_progress
+from .utils import get_dataset_arg, PUBCHEM_DIR
 
 
 if __name__ == "__main__":
     dataset = get_dataset_arg()
-    sdf_paths = DATASETS[dataset]["sdf_paths"]
+    sdf_paths = sorted(PUBCHEM_DIR.joinpath(dataset).glob("*.sdf.gz"))
     n_sdf = len(sdf_paths)
 
     for i, sdf_path in enumerate(sdf_paths):

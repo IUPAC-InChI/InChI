@@ -1,0 +1,14 @@
+services:
+  inchi-test:
+    build:
+      context: ..
+      dockerfile: INCHI-1-TEST/Dockerfile
+    volumes:
+      # `source` paths are relative to the `docker-compose.yml` file, not the build context.
+      # `target` paths are absolute paths in the container. The `/inchi/INCHI-1-TEST` directory already exists in the container.
+      - type: bind
+        source: data
+        target: /inchi/INCHI-1-TEST/data
+      - type: bind
+        source: config
+        target: /inchi/INCHI-1-TEST/config

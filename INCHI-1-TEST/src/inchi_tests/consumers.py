@@ -3,7 +3,7 @@ import random
 from typing import Callable
 from pathlib import Path
 from sdf_pipeline import drivers, utils
-from .inchi_api import make_inchi_from_molfile_text, get_inchi_key_from_inchi
+from inchi_tests.inchi_api import make_inchi_from_molfile_text, get_inchi_key_from_inchi
 
 
 def regression_consumer(
@@ -21,7 +21,9 @@ def regression_consumer(
 
     return drivers.ConsumerResult(
         molfile_id=get_molfile_id(molfile),
-        info={"consumer": "regression", "parameters": inchi_api_parameters},
+        info=drivers.ConsumerInfo(
+            consumer="regression", parameters=inchi_api_parameters
+        ),
         result={
             "inchi": inchi_string,
             "key": inchi_key,
@@ -81,11 +83,10 @@ def invariance_consumer(
 
     return drivers.ConsumerResult(
         molfile_id=get_molfile_id(molfile),
-        info={
-            "consumer": "invariance",
-            "parameters": inchi_api_parameters
-            + f"; number_of_runs={n_invariance_runs}",
-        },
+        info=drivers.ConsumerInfo(
+            consumer="invariance",
+            parameters=inchi_api_parameters + f"; number_of_runs={n_invariance_runs}",
+        ),
         result={
             "variants": variants,
         },
