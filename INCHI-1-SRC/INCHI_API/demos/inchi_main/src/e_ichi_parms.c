@@ -1213,6 +1213,11 @@ int ReadCommandLineParms( int argc, const char *argv[],
 #endif
 
 #endif
+            /* djb-rwth: avoiding Error 98 for empty .mol files -- GH issue #25, thanks to @wijnand1 */
+            else if (!inchi_stricmp(pArg, "WarnOnEmptyStructure"))
+            {
+                ip->bAllowEmptyStructure = 1;
+            }
 
             /*--- Generation options ---*/
             else if (!inchi_memicmp( pArg, "W", 1 ))
@@ -1269,10 +1274,6 @@ int ReadCommandLineParms( int argc, const char *argv[],
                 }
             }
 
-            else if (!inchi_stricmp( pArg, "WarnOnEmptyStructure" ))
-            {
-                ip->bAllowEmptyStructure = 1;
-            }
             else if (!inchi_stricmp( pArg, "LooseTSACheck" ))
             {
                 bLooseTSACheck = 1;

@@ -364,6 +364,13 @@ int main( int argc, char *argv[] )
         return 0;
     }
 
+    /* djb-rwth: disallowing endless execution if no file(s) is given as the first argument */
+    if (argc >= 2 && ((argv[1][0] == INCHI_OPTION_PREFX)) && (strcmp(argv[1] + 1, "v") || strcmp(argv[1] + 1, "V") || strcmp(argv[1] + 1, "?") || inchi_stricmp(argv[1] + 1, "help")))
+    {
+        e_HelpCommandLineParms(log_stream);
+        return 0;
+    }
+
     /*  original input structure */
     memset( pInp, 0, sizeof( *pInp ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     memset( pOut, 0, sizeof( *pOut ) ); /* djb-rwth: memset_s C11/Annex K variant? */
