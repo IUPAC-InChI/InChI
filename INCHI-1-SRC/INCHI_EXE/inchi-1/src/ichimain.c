@@ -643,6 +643,14 @@ int ProcessSingleInputFile(int argc, char* argv[])
         return 0;
     }
 
+    /* djb-rwth: disallowing endless execution if no file(s) is given as the first argument */
+    if (argc >= 2 && ((argv[1][0] == INCHI_OPTION_PREFX)) && (strcmp(argv[1] + 1, "v") || strcmp(argv[1] + 1, "V") || strcmp(argv[1] + 1, "?") || inchi_stricmp(argv[1] + 1, "help")))
+    {
+        HelpCommandLineParms(plog);
+        inchi_ios_flush(plog);
+        return 0;
+    }
+
     /*  original input structure */
     memset(orig_inp_data, 0, sizeof(*orig_inp_data)); /* djb-rwth: memset_s C11/Annex K variant? */
     memset(prep_inp_data, 0, 2 * sizeof(*prep_inp_data)); /* djb-rwth: memset_s C11/Annex K variant? */
