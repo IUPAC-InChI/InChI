@@ -1,5 +1,10 @@
 # Official home of the InChI
 
+- <em>Version 1.07.0</em> (17/07/2024):
+  - ["WarnOnEmptyStructure option problem / Issue #25](https://github.com/IUPAC-InChI/InChI/issues/25) has been fixed
+  - Software unresponsiveness when options are applied without any input file(s) has been fixed
+  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
+  - Minor bugs fixes
 - <em>Version 1.07-Release Candidate 4 (RC4)</em> (27/06/2024):
   - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
   - Minor bugs fixes
