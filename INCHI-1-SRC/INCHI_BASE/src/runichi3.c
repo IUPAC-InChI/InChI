@@ -2506,7 +2506,7 @@ int  OrigAtData_RemoveHalfBond( int      this_atom,
 {
     int k, kk;
     /* djb-rwth: fixing oss-fuzz issues #68286, #30342 */
-    if (at)
+    if (at && (this_atom >= 0) && (other_atom >= 0))
     {
         inp_ATOM* a = &(at[this_atom]);
         if (a)
@@ -2567,7 +2567,7 @@ int  OrigAtData_RemoveBond( int      this_atom,
 {
     int del = 0;
     
-    if (at) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
+    if (at && (this_atom >= 0) && (other_atom >= 0)) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
         del = OrigAtData_RemoveHalfBond(this_atom, other_atom, at, bond_type, bond_stereo);
         del += OrigAtData_RemoveHalfBond(other_atom, this_atom, at, bond_type, bond_stereo);
@@ -3331,7 +3331,7 @@ void OAD_Polymer_SetAtProps( OAD_Polymer *pd,
     int err2_len = sizeof(erank_rule2) / sizeof(erank_rule2[0]);
     int err4_len = sizeof(erank_rule4) / sizeof(erank_rule4[0]);
 
-    if ((NULL == aprops) && !at) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
+    if ((NULL == aprops) || !at || !pd) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
         return;
     }

@@ -6581,7 +6581,7 @@ int CountTautomerGroups( sp_ATOM *at,
     /* the following 2 arrays are to be rebuilt here */
     if (t_group_info->nEndpointAtomNumber)
     {
-        inchi_free( t_group_info->nEndpointAtomNumber );
+        free( t_group_info->nEndpointAtomNumber ); /* djb-rwth: fixing oss-fuzz issue # */
         t_group_info->nEndpointAtomNumber = NULL;
     }
     if (t_group_info->tGroupNumber)

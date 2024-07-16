@@ -155,24 +155,31 @@ int SortedEquInfoToRanks( const AT_RANK* nSymmRank, AT_RANK* nRank, const AT_RAN
     int            nNumDiffRanks = 1;
 
 
-    int            i, j, nNumChanges = 0;
-    for (i = num_atoms - 1, j = (int) nAtomNumber[i],
-          rOld = nSymmRank[j], rNew = nRank[j] = (AT_RANK) num_atoms,
-          nNumDiffRanks = 1;
-             i > 0;
-                 i--)
+    int            i, j, nNumChanges = 0, i_init;
+
+    i_init = num_atoms - 1;
+    /* djb-rwth: fixing oss-fuzz issue #69965 */
+    if (i_init < na_global)
     {
-        j = (int) nAtomNumber[i - 1];
-
-        if (nSymmRank[j] != rOld)
+        j = (int)nAtomNumber[i_init];
+        rOld = nSymmRank[j];
+        rNew = (AT_RANK)num_atoms;
+        nRank[j] = (AT_RANK)num_atoms;
+        nNumDiffRanks = 1;
+        for (i = i_init; i > 0; i--)
         {
-            nNumDiffRanks++;
-            rNew = (AT_RANK) i;
-            nNumChanges += ( rOld != rNew + 1 );
-            rOld = nSymmRank[j];
-        }
+            j = (int)nAtomNumber[i - 1];
 
-        nRank[j] = rNew;
+            if (nSymmRank[j] != rOld)
+            {
+                nNumDiffRanks++;
+                rNew = (AT_RANK)i;
+                nNumChanges += (rOld != rNew + 1);
+                rOld = nSymmRank[j];
+            }
+
+            nRank[j] = rNew;
+        }
     }
     if (bChanged)
     {

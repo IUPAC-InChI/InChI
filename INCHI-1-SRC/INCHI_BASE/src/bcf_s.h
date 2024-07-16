@@ -76,7 +76,7 @@ int memcpy_custom(char** dst, char* src, unsigned long long len);
 /* djb-rwth: external variables required for oss-fuzz fixes */
 extern int at_size_check1; /* djb-rwth: required for fixing oss-fuzz issue #68329 */
 extern int sminor_size; /* djb-rwth: required for fixing oss-fuzz issue #66746 */
-extern int na_global; /* djb-rwth: required for fixing oss-fuzz issue #69315 */
+extern int na_global; /* djb-rwth: required for fixing oss-fuzz issues #69965, #69315 */
 extern int sp_at_size; /* djb-rwth: required for fixing oss-fuzz issue #69656 */
 
 #endif

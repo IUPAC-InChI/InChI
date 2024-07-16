@@ -211,7 +211,7 @@ extern "C" {
 
 #elif defined(__linux__)
 
-#if defined(__x86_64__)||defined(__ppc64__)||defined(__aarch64__) /* djb-rwth: macro added for 64-bit ARM CPUs */
+#if defined(__x86_64__)||defined(__ppc64__)||defined(__aarch64__) /* djb-rwth: macro added for 64-bit ARM CPUs -- GH issue #10, thanks to Vincent F. Scalfani */
 #define INCHI_BUILD_PLATFORM "Linux 64-bit"
 #else
 #define INCHI_BUILD_PLATFORM "Linux 32-bit"

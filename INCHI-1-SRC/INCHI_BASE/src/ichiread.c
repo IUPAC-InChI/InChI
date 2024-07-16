@@ -6925,7 +6925,7 @@ int ParseSegmentSp2( const char *str,
             pEnd = pStart + strlen( pStart );
         }
 
-        /* djb-rwth: condition for if block had to be rewritten */
+        /* djb-rwth: condition for if block had to be rewritten -- GH issue #09, thanks to Istvan Ori */
         if ((int)inchi_strtol(pStart, &q, 10) > 0)
         {
             val = (int)inchi_strtol(pStart, &q, 10);
@@ -8974,7 +8974,7 @@ int ParseSegmentMobileH( const char *str,
             }
 #endif
             /* djb-rwth: fixing oss-fuzz issue #69699 */
-            if ((iComponent + i < 0) || (iComponent + i >= pi_nnc2))
+            if ((iComponent < 0) || (iComponent >= pi_nnc2))
             {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
