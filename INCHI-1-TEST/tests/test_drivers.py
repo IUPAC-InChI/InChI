@@ -121,7 +121,7 @@ def test_core_raises(sdf_path, caplog, consumer):
     caplog.set_level(logging.ERROR, logger="sdf_pipeline")
     with pytest.raises(RuntimeError):
         for _ in core.run(
-            sdf_path=str(sdf_path),
+            sdf_path=sdf_path,
             consumer_function=partial(consumer, get_molfile_id=_get_mcule_id),
             number_of_consumer_processes=2,
             timeout_seconds_per_molfile=5,

@@ -34,8 +34,8 @@ class ConsumerResult(BaseModel):
 
 
 def regression(
-    sdf_path: str,
-    reference_path: str,
+    sdf_path: Path,
+    reference_path: Path,
     consumer_function: Callable,
     get_molfile_id: Callable,
     number_of_consumer_processes: int = 8,
@@ -73,7 +73,7 @@ def regression(
                     {
                         "time": consumer_result.time,
                         "molfile_id": molfile_id,
-                        "sdf": Path(sdf_path).name,
+                        "sdf": sdf_path.name,
                         "info": dict(consumer_result.info),
                         "diff": {
                             "current": current_result,
@@ -105,8 +105,8 @@ def regression(
 
 
 def regression_reference(
-    sdf_path: str,
-    reference_path: str,
+    sdf_path: Path,
+    reference_path: Path,
     consumer_function: Callable,
     get_molfile_id: Callable,
     number_of_consumer_processes: int = 8,
@@ -141,7 +141,7 @@ def regression_reference(
 
 
 def invariance(
-    sdf_path: str,
+    sdf_path: Path,
     consumer_function: Callable,
     get_molfile_id: Callable,
     number_of_consumer_processes: int = 8,
@@ -161,14 +161,14 @@ def invariance(
         exit_code = 0 if expected_failure else 1
         if n_variants == 0:
             logger.info(
-                f"invariance test didn't run: molfile ID {consumer_result.molfile_id} from {Path(sdf_path).name} could not be read."
+                f"invariance test didn't run: molfile ID {consumer_result.molfile_id} from {sdf_path.name} could not be read."
             )
         else:
             log_entry = json.dumps(
                 {
                     "time": consumer_result.time,
                     "molfile_id": consumer_result.molfile_id,
-                    "sdf": Path(sdf_path).name,
+                    "sdf": sdf_path.name,
                     "info": dict(consumer_result.info),
                     "variants": consumer_result.result["variants"],
                 }
