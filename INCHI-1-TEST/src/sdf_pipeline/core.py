@@ -2,6 +2,7 @@ import multiprocessing
 from queue import Empty
 from typing import Callable, TYPE_CHECKING
 from collections.abc import Generator
+from pathlib import Path
 from sdf_pipeline import logger, utils
 
 if TYPE_CHECKING:
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def _produce_molfiles(
-    molfile_queue: multiprocessing.Queue, sdf_path: str, n_poison_pills: int
+    molfile_queue: multiprocessing.Queue, sdf_path: Path, n_poison_pills: int
 ) -> None:
     for molfile in utils.read_records_from_gzipped_sdf(sdf_path):
         molfile_queue.put(molfile)
@@ -33,7 +34,7 @@ def _consume_molfiles(
 
 
 def run(
-    sdf_path: str,
+    sdf_path: Path,
     consumer_function: Callable,
     number_of_consumer_processes: int,
     timeout_seconds_per_molfile: int = 60,

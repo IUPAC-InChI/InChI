@@ -15,7 +15,7 @@ except ImportError:
     pass
 
 
-def read_records_from_gzipped_sdf(sdf_path: str) -> Generator[str, None, None]:
+def read_records_from_gzipped_sdf(sdf_path: Path) -> Generator[str, None, None]:
     # https://en.wikipedia.org/wiki/Chemical_table_file#SDF"
     current_record = ""
     # TODO: guard file opening.
@@ -37,7 +37,7 @@ def select_records_from_gzipped_sdf(
     sdf_path: Path, molfile_ids: set[str], get_molfile_id: Callable
 ) -> Generator[tuple[str, str], None, None]:
 
-    for molfile in read_records_from_gzipped_sdf(str(sdf_path)):
+    for molfile in read_records_from_gzipped_sdf(sdf_path):
         molfile_id = get_molfile_id(molfile)
         if molfile_id in molfile_ids:
             yield molfile_id, molfile
