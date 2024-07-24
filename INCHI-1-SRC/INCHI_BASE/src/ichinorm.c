@@ -714,17 +714,17 @@ void set_R2C_el_numbers( void )
     /*
     if (!el_number_O)
     {
-    el_number_O = (U_CHAR) get_periodic_table_number( "O" );
-    el_number_C = (U_CHAR) get_periodic_table_number( "C" );
-    el_number_N = (U_CHAR) get_periodic_table_number( "N" );
-    el_number_P = (U_CHAR) get_periodic_table_number( "P" );
-    el_number_S = (U_CHAR) get_periodic_table_number( "S" );
-    el_number_Si = (U_CHAR) get_periodic_table_number( "Si" );
-    el_number_F = (U_CHAR) get_periodic_table_number( "F" );
-    el_number_Cl = (U_CHAR) get_periodic_table_number( "Cl" );
-    el_number_Br = (U_CHAR) get_periodic_table_number( "Br" );
-    el_number_I = (U_CHAR) get_periodic_table_number( "I" );
-    el_number_H = (U_CHAR) get_periodic_table_number( "H" );
+    el_number_O = EL_NUMBER_O;
+    el_number_C = EL_NUMBER_C;
+    el_number_N = EL_NUMBER_N;
+    el_number_P = EL_NUMBER_P;
+    el_number_S = EL_NUMBER_S;
+    el_number_Si = EL_NUMBER_SI;
+    el_number_F = EL_NUMBER_F;
+    el_number_Cl = EL_NUMBER_CL;
+    el_number_Br = EL_NUMBER_BR;
+    el_number_I = EL_NUMBER_I;
+    el_number_H = EL_NUMBER_H;
     }
     */
 }

@@ -2939,23 +2939,23 @@ int DisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
     {
         i = 0;
         /* halogens */
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "F" ); /* 0 */
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "Cl" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "Br" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "I" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "At" ); /* 4 */
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_F; /* 0 */
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_CL;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_BR;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_I;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_AT; /* 4 */
         num_halogens2 = i;
         /* other non-metal */
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "N" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "P" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "As" );
-        /*elnumber_Heteroat[i++] = get_periodic_table_number( "Sb" );*/ /* metal 10-28-2003 */
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "O" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "S" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "Se" );
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "Te" );
-        /*elnumber_Heteroat[i++] = get_periodic_table_number( "Po" );*/ /* metal 10-28-2003 */
-        elnumber_Heteroat[i++] = (char) get_periodic_table_number( "B" );
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_N;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_P;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_AS;
+        /*elnumber_Heteroat[i++] = EL_NUMBER_SB;*/ /* metal 10-28-2003 */
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_O;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_S;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_SE;
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_TE;
+        /*elnumber_Heteroat[i++] = EL_NUMBER_PO;*/ /* metal 10-28-2003 */
+        elnumber_Heteroat[i++] = (char) EL_NUMBER_B;
         elnumber_Heteroat[i++] = 0;
         num_halogens = num_halogens2;
     }
@@ -4094,18 +4094,18 @@ int bHeteroAtomMayHaveXchgIsoH( inp_ATOM *atom, int iat )
 
     if (!el_num[IAT_H])
     {
-        el_num[IAT_H] = get_periodic_table_number( "H" );
-        el_num[IAT_C] = get_periodic_table_number( "C" );
-        el_num[IAT_N] = get_periodic_table_number( "N" );
-        el_num[IAT_P] = get_periodic_table_number( "P" );
-        el_num[IAT_O] = get_periodic_table_number( "O" );
-        el_num[IAT_S] = get_periodic_table_number( "S" );
-        el_num[IAT_Se] = get_periodic_table_number( "Se" );
-        el_num[IAT_Te] = get_periodic_table_number( "Te" );
-        el_num[IAT_F] = get_periodic_table_number( "F" );
-        el_num[IAT_Cl] = get_periodic_table_number( "Cl" );
-        el_num[IAT_Br] = get_periodic_table_number( "Br" );
-        el_num[IAT_I] = get_periodic_table_number( "I" );
+        el_num[IAT_H] = EL_NUMBER_H;
+        el_num[IAT_C] = EL_NUMBER_C;
+        el_num[IAT_N] = EL_NUMBER_N;
+        el_num[IAT_P] = EL_NUMBER_P;
+        el_num[IAT_O] = EL_NUMBER_O;
+        el_num[IAT_S] = EL_NUMBER_S;
+        el_num[IAT_Se] = EL_NUMBER_SE;
+        el_num[IAT_Te] = EL_NUMBER_TE;
+        el_num[IAT_F] = EL_NUMBER_F;
+        el_num[IAT_Cl] = EL_NUMBER_CL;
+        el_num[IAT_Br] = EL_NUMBER_BR;
+        el_num[IAT_I] = EL_NUMBER_I;
     }
 
     if (0 > ( iat_numb = get_iat_number( at->el_number, el_num, IAT_MAX ) ))
@@ -4198,18 +4198,18 @@ int bNumHeterAtomHasIsotopicH( inp_ATOM *atom, int num_atoms )
     /* one time initialization */
     if (!el_num[IAT_H])
     {
-        el_num[IAT_H] = get_periodic_table_number( "H" );
-        el_num[IAT_C] = get_periodic_table_number( "C" );
-        el_num[IAT_N] = get_periodic_table_number( "N" );
-        el_num[IAT_P] = get_periodic_table_number( "P" );
-        el_num[IAT_O] = get_periodic_table_number( "O" );
-        el_num[IAT_S] = get_periodic_table_number( "S" );
-        el_num[IAT_Se] = get_periodic_table_number( "Se" );
-        el_num[IAT_Te] = get_periodic_table_number( "Te" );
-        el_num[IAT_F] = get_periodic_table_number( "F" );
-        el_num[IAT_Cl] = get_periodic_table_number( "Cl" );
-        el_num[IAT_Br] = get_periodic_table_number( "Br" );
-        el_num[IAT_I] = get_periodic_table_number( "I" );
+        el_num[IAT_H] = EL_NUMBER_H;
+        el_num[IAT_C] = EL_NUMBER_C;
+        el_num[IAT_N] = EL_NUMBER_N;
+        el_num[IAT_P] = EL_NUMBER_P;
+        el_num[IAT_O] = EL_NUMBER_O;
+        el_num[IAT_S] = EL_NUMBER_S;
+        el_num[IAT_Se] = EL_NUMBER_SE;
+        el_num[IAT_Te] = EL_NUMBER_TE;
+        el_num[IAT_F] = EL_NUMBER_F;
+        el_num[IAT_Cl] = EL_NUMBER_CL;
+        el_num[IAT_Br] = EL_NUMBER_BR;
+        el_num[IAT_I] = EL_NUMBER_I;
     }
 
     num_iso_H = 0;

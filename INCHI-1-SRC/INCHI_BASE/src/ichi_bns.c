@@ -2850,24 +2850,24 @@ int is_Z_atom( U_CHAR el_number )
 
     if (!el_numb[el_C])
     {
-        el_numb[el_C] = (U_CHAR) get_periodic_table_number( "C" );
-        el_numb[el_N] = (U_CHAR) get_periodic_table_number( "N" );
-        el_numb[el_P] = (U_CHAR) get_periodic_table_number( "P" );
-        el_numb[el_As] = (U_CHAR) get_periodic_table_number( "As" );
-        el_numb[el_Sb] = (U_CHAR) get_periodic_table_number( "Sb" );
-        el_numb[el_S] = (U_CHAR) get_periodic_table_number( "S" );
-        el_numb[el_Se] = (U_CHAR) get_periodic_table_number( "Se" );
-        el_numb[el_Te] = (U_CHAR) get_periodic_table_number( "Te" );
-        el_numb[el_Cl] = (U_CHAR) get_periodic_table_number( "Cl" );
-        el_numb[el_Br] = (U_CHAR) get_periodic_table_number( "Br" );
-        el_numb[el_I] = (U_CHAR) get_periodic_table_number( "I" );
+        el_numb[el_C] = EL_NUMBER_C;
+        el_numb[el_N] = EL_NUMBER_N;
+        el_numb[el_P] = EL_NUMBER_P;
+        el_numb[el_As] = EL_NUMBER_AS;
+        el_numb[el_Sb] = EL_NUMBER_SB;
+        el_numb[el_S] = EL_NUMBER_S;
+        el_numb[el_Se] = EL_NUMBER_SE;
+        el_numb[el_Te] = EL_NUMBER_TE;
+        el_numb[el_Cl] = EL_NUMBER_CL;
+        el_numb[el_Br] = EL_NUMBER_BR;
+        el_numb[el_I] = EL_NUMBER_I;
 #if ( ALL_NONMETAL_Z == 1 )
-        el_numb[el_B] = (U_CHAR) get_periodic_table_number( "B" );
-        el_numb[el_O] = (U_CHAR) get_periodic_table_number( "O" );
-        el_numb[el_Si] = (U_CHAR) get_periodic_table_number( "Si" );
-        el_numb[el_Ge] = (U_CHAR) get_periodic_table_number( "Ge" );
-        el_numb[el_F] = (U_CHAR) get_periodic_table_number( "F" );
-        el_numb[el_At] = (U_CHAR) get_periodic_table_number( "At" );
+        el_numb[el_B] = EL_NUMBER_B;
+        el_numb[el_O] = EL_NUMBER_O;
+        el_numb[el_Si] = EL_NUMBER_SI;
+        el_numb[el_Ge] = EL_NUMBER_GE;
+        el_numb[el_F] = EL_NUMBER_F;
+        el_numb[el_At] = EL_NUMBER_AT;
 #endif
     }
 

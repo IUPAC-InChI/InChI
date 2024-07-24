@@ -1435,7 +1435,7 @@ int SetAtomAndBondProperties( inp_ATOM *at,
 
     if (!el_number_H)
     {
-        el_number_H = get_periodic_table_number( "H" );
+        el_number_H = EL_NUMBER_H;
     }
 
     nRadical = nCharge = 0;
