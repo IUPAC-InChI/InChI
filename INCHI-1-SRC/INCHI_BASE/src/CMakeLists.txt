@@ -1,6 +1,6 @@
 add_library( 
     inchi
-SHARED
+
     ichican2.c
     ichicano.c
     ichi_io.c

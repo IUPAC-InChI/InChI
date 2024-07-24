@@ -5,6 +5,8 @@ project(
     VERSION 1.07
 )
 
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+
 set( CMAKE_C_STANDARD 11 )
 
 # this works but maybe it's preferable to only export 
