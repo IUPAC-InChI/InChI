@@ -2185,15 +2185,21 @@ int fix_special_bonds( BN_STRUCT *pBNS,
 {
     int num_changes = 0;
 
-    /*                           0 1 2  3  4 5 6  7  8  9                   8  9  */
-#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )
-    static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si;";  /* 8 elements + C, Si */
-#else
-    static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si";   /* 8 elements + C, Si */
-#endif
-    static char    en[12];  /* Same number: 8 elements  */
-    static int     ne = 0;  /* will be 8 and 10         */
-    int ne2;
+    static char en[] = {
+        EL_NUMBER_N,
+        EL_NUMBER_P,
+        EL_NUMBER_AS,
+        EL_NUMBER_SB,
+        EL_NUMBER_O,
+        EL_NUMBER_S,
+        EL_NUMBER_SE,
+        EL_NUMBER_TE,
+        EL_NUMBER_C
+#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )        
+        ,EL_NUMBER_SI
+#endif        
+    };
+    static int ne = sizeof(en)/sizeof(en[0]);
 
 #define ELEM_N_FST  0
 #define ELEM_N_LEN  4
@@ -2208,7 +2214,6 @@ int fix_special_bonds( BN_STRUCT *pBNS,
 
     int i, k, n1, n2, n3, i1, i2, i3, i4, bond_type; /* djb-rwth: removing redundant variables */
     inp_ATOM *a;
-    char elname[ATOM_EL_LEN];
     int j[3], m[3], num_O, k_O, num_N, num_OH, num_OM, num_X, num_other, k_N;
 
     BNS_IEDGE iedge;
@@ -2216,24 +2221,6 @@ int fix_special_bonds( BN_STRUCT *pBNS,
     S_CHAR    edge_forbidden_mask = forbidden_mask;
 
     pBNS->edge_forbidden_mask |= edge_forbidden_mask;
-
-    if (!ne)
-    {
-        /* One time initialization */
-        const char *b, *e;
-        int  len;
-        ne2 = 0;
-        for (b = el; (e = strchr( b, ';' )); b = e + 1) /* djb-rwth: addressing LLVM warning */
-        {
-            len = (int) ( e - b );
-            memcpy(elname, b, len);
-            elname[len] = '\0';
-            en[ne2++] = get_periodic_table_number( elname );
-        }
-        en[ne2] = '\0';
-        en[ne2 + 1] = '\0';
-        ne = ne2;
-    }
 
     for (i = 0, a = at; i < num_atoms; i++, a++)
     {

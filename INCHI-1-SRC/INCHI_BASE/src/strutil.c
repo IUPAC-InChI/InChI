@@ -607,10 +607,20 @@ int fix_odd_things( int num_atoms,
                     int bFixBug,
                     int bFixNonUniformDraw )
 {
-    /*                           0 1 2  3  4 5 6  7                       8  9  */
-    static const char    el[] = "N;P;As;Sb;O;S;Se;Te;";   /* 8 elements + C, Si */
-    static U_CHAR  en[10];              /* same number: 8 elements */
-    static int     ne = 0;           /* will be 8 and 10 */
+    // N;P;As;Sb;O;S;Se;Te;C;Si
+    static U_CHAR en[] = {
+        EL_NUMBER_N,
+        EL_NUMBER_P,
+        EL_NUMBER_AS,
+        EL_NUMBER_SB,
+        EL_NUMBER_O,
+        EL_NUMBER_S,
+        EL_NUMBER_SE,
+        EL_NUMBER_TE,
+        EL_NUMBER_C,
+        EL_NUMBER_SI
+    };
+    static int ne = sizeof(en)/sizeof(en[0]);
 
 #define FIRST_NEIGHB2  4
 #define FIRST_CENTER2  5
@@ -618,32 +628,12 @@ int fix_odd_things( int num_atoms,
 
     int i1, i2, k1, k2, c = -1, num_changes = 0;
     char elname[ATOM_EL_LEN];
-    int ne2, ne3;
 
     if (bFixNonUniformDraw)
     {
         int ret1; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
         ret1 = fix_non_uniform_drawn_oxoanions( num_atoms, at, &num_changes ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
         ret1 = fix_non_uniform_drawn_amidiniums( num_atoms, at, &num_changes ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
-    }
-
-    if (!ne)
-    {
-        /* one time initialization */
-        const char *b, *e;
-        int  len;
-        ne3 = 0;
-        for (b = el; (e = strchr( b, ';' )); b = e + 1) /* djb-rwth: addressing LLVM warning */
-        {
-            len = (int) ( e - b );
-            memcpy(elname, b, len);
-            elname[len] = '\0';
-            en[ne3++] = get_periodic_table_number( elname );
-        }
-        ne2 = ne3;
-        en[ne2++] = EL_NUMBER_C;
-        en[ne2++] = EL_NUMBER_SI;
-        ne = ne3;
     }
 
     /* H(-)-X  -> H-X(-);  H(+)-X  -> H-X(+) */
@@ -1057,15 +1047,22 @@ the bonds are fixed in fix_special_bonds()
 int remove_ion_pairs( int num_atoms, inp_ATOM *at )
 {
     int num_changes = 0;
-
-    /*                           0 1 2  3  4 5 6  7  8  9                   8  9  */
-#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )
-    static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si;";   /* 8 elements + C, Si */
-#else
-    static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si";   /* 8 elements + C, Si */
-#endif
-    static char    en[12];         /* same number: 8 elements */
-    static int     ne = 0;           /* will be 8 and 10 */
+    // N;P;As;Sb;O;S;Se;Te;C;Si?
+    static char en[] = {
+        EL_NUMBER_N,
+        EL_NUMBER_P,
+        EL_NUMBER_AS,
+        EL_NUMBER_SB,
+        EL_NUMBER_O,
+        EL_NUMBER_S,
+        EL_NUMBER_SE,
+        EL_NUMBER_TE,
+        EL_NUMBER_C
+#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )        
+        ,EL_NUMBER_SI
+#endif        
+    };
+    static int ne = sizeof(en)/sizeof(en[0]);
 
 #define ELEM_N_FST  0
 #define ELEM_N_LEN  4
@@ -1084,26 +1081,7 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
 #endif
 
     inp_ATOM *a;
-    char elname[ATOM_EL_LEN], *p;
-
-    int ne2;
-
-    if (!ne)
-    {
-        /* one time initialization */
-        const char *b, *e;
-        int  len;
-        ne2 = 0;
-        for (b = el; (e = strchr( b, ';' )); b = e + 1) /* djb-rwth: addressing LLVM warning */
-        {
-            len = (int) ( e - b );
-            memcpy(elname, b, len);
-            elname[len] = '\0';
-            en[ne2++] = get_periodic_table_number( elname );
-        }
-        en[ne2] = '\0';
-        ne = ne2;
-    }
+    char *p;
 
     /****** count candidates ********/
     for (i = 0, a = at; i < num_atoms; i++, a++)
