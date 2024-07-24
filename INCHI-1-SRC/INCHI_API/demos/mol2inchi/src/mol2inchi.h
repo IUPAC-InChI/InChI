@@ -244,8 +244,7 @@ int  m2i_WorkPool_wait_and_print_all( m2i_WorkPool *pool, THREAD_PTR *Thread );
 
 #ifdef _WIN32
 #define M2I_THREADFUNC unsigned __stdcall
-#endif
-#if ( !defined(_WIN32) && defined(__linux__) )
+#else
 #define M2I_THREADFUNC void *
 #endif
 
