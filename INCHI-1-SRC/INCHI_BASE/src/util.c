@@ -364,6 +364,20 @@ int el_number_in_internal_ref_table( const char* elname )
 int get_periodic_table_number( const char* elname )
 {
     int num;
+    // the single letter (common) elements
+    if (!elname[1]) {
+        switch (elname[0]) {
+            case 'H': return EL_NUMBER_H; break;
+            case 'B': return EL_NUMBER_B; break;
+            case 'C': return EL_NUMBER_C; break;
+            case 'N': return EL_NUMBER_N; break;
+            case 'O': return EL_NUMBER_O; break;
+            case 'P': return EL_NUMBER_P; break;
+            case 'S': return EL_NUMBER_S; break;
+            case 'F': return EL_NUMBER_F; break;
+            case 'I': return EL_NUMBER_I; break;
+        }
+    }
 
     num = el_number_in_internal_ref_table( elname );
 
