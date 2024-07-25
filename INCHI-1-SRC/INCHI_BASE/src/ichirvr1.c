@@ -748,50 +748,41 @@ int cmp_charge_val( const void *a1, const void *a2, void *p )
 /************************************************************************************/
 int bMayBeACationInMobileHLayer( inp_ATOM *at, VAL_AT *pVA, int iat, int bMobileH )
 {
-    static const char szEl[] = "N;P;O;S;Se;Te;";
-    static const char cVal[] = { 4,4,3,3, 3, 3, 0 };
-    static char en[8];
-    static int  ne;
-    int ne2;
-    int    i, j, neigh;
-    char   *p;
+    int    j, neigh;
     if (!bMobileH || !at[iat].num_H)
     {
         return 1;
     }
-    if (!ne)
-    { /* one time initialization */
-        const char *b, *e;
-        int  len;
-        char elname[ATOM_EL_LEN];
-        ne2 = 0;
-        for (b = szEl; (e = strchr( b, ';' )); b = e + 1) /* djb-rwth: addressing LLVM warning */
-        {
-            len = (int) ( e - b );
-            memcpy(elname, b, len);
-            elname[len] = '\0';
-            en[ne2++] = get_periodic_table_number( elname );
-        }
-        en[ne2] = '\0';
-        ne = ne2;
+
+    /* cVal, cation valence */
+    U_CHAR cVal;
+    switch ( at[iat].el_number ) {
+        case EL_NUMBER_N: /* fallthrough */
+        case EL_NUMBER_P:
+            cVal = 4;
+            break;
+        case EL_NUMBER_O: /* fallthrough */
+        case EL_NUMBER_S:
+        case EL_NUMBER_SE:
+        case EL_NUMBER_TE:
+            cVal = 3;
+            break;
+        default:
+            return 1;    
     }
-    if ((p = (char *) memchr( en, at[iat].el_number, ne ))) /* djb-rwth: addressing LLVM warning */
+
+    if (at[iat].valence + at[iat].num_H <= cVal)
     {
-        i = (int) ( p - en );
-        /* >B(-)< exception */
-        if (at[iat].valence + at[iat].num_H <= cVal[i])
+        for (j = 0; j < at[iat].valence; j++)
         {
-            for (j = 0; j < at[iat].valence; j++)
+            neigh = at[iat].neighbor[j];
+            if (at[neigh].valence == 4 && at[neigh].chem_bonds_valence == 4 && !at[neigh].num_H &&
+                    pVA[neigh].cNumValenceElectrons == 3 && pVA[neigh].cPeriodicRowNumber == 1)
             {
-                neigh = at[iat].neighbor[j];
-                if (at[neigh].valence == 4 && at[neigh].chem_bonds_valence == 4 && !at[neigh].num_H &&
-                     pVA[neigh].cNumValenceElectrons == 3 && pVA[neigh].cPeriodicRowNumber == 1)
-                {
-                    return 1;
-                }
+                return 1;
             }
-            return 0;
         }
+        return 0;
     }
     return 1;
 }
