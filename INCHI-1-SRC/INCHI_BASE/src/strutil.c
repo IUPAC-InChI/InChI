@@ -608,23 +608,20 @@ int fix_odd_things( int num_atoms,
                     int bFixNonUniformDraw )
 {
     /* N;P;As;Sb;O;S;Se;Te;C;Si */
-    static U_CHAR en[] = {
+    static const U_CHAR en[] = {
         EL_NUMBER_N,
         EL_NUMBER_P,
         EL_NUMBER_AS,
-        EL_NUMBER_SB,
+        EL_NUMBER_SB, 
         EL_NUMBER_O,
         EL_NUMBER_S,
         EL_NUMBER_SE,
-        EL_NUMBER_TE,
-        EL_NUMBER_C,
-        EL_NUMBER_SI
+        EL_NUMBER_TE
     };
     static int ne = sizeof(en)/sizeof(en[0]);
 
 #define FIRST_NEIGHB2  4
 #define FIRST_CENTER2  5
-#define NUM_CENTERS_N  4
 
     int i1, i2, k1, k2, c = -1, num_changes = 0;
     char elname[ATOM_EL_LEN];
