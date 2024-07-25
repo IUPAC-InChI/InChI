@@ -124,7 +124,7 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
 /*int bIsMetalSalt( inp_ATOM *at, int i ); - moved to strutil,h */
 int DisconnectMetalSalt( inp_ATOM *at, int i );
 int bIsMetalToDisconnect( inp_ATOM *at, int i, int bCheckMetalValence );
-int get_iat_number( int el_number, const int el_num[], int el_num_len );
+int get_iat_number( int el_number );
 int tot_unsat( int unsat[] );
 int max_unsat( int unsat[] );
 double dist3D( inp_ATOM *at1, inp_ATOM *at2 );
@@ -612,7 +612,7 @@ int fix_odd_things( int num_atoms,
         EL_NUMBER_N,
         EL_NUMBER_P,
         EL_NUMBER_AS,
-        EL_NUMBER_SB, 
+        EL_NUMBER_SB,
         EL_NUMBER_O,
         EL_NUMBER_S,
         EL_NUMBER_SE,
@@ -4019,23 +4019,6 @@ exit_function:
 }
 
 
-
-/****************************************************************************/
-int get_iat_number( int el_number, const int el_num[], int el_num_len )
-{
-    int i;
-    for (i = 0; i < el_num_len; i++)
-    {
-        if (el_num[i] == el_number)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-
 /*#endif*/ /* } DISCONNECT_SALTS */
 
 typedef enum tagIonAtomType
@@ -4052,10 +4035,28 @@ typedef enum tagIonAtomType
     IAT_Cl,
     IAT_Br,
     IAT_I,
-    IAT_MAX
+    IAT_MAX = 12
 } ION_ATOM_TYPE;
 
-
+/****************************************************************************/
+int get_iat_number( int el_number )
+{
+    switch (el_number) {
+        case EL_NUMBER_H:  return IAT_H;
+        case EL_NUMBER_C:  return IAT_C;
+        case EL_NUMBER_N:  return IAT_N;
+        case EL_NUMBER_P:  return IAT_P;
+        case EL_NUMBER_O:  return IAT_O;
+        case EL_NUMBER_S:  return IAT_S;
+        case EL_NUMBER_SE: return IAT_Se;
+        case EL_NUMBER_TE: return IAT_Te;
+        case EL_NUMBER_F:  return IAT_F;
+        case EL_NUMBER_CL: return IAT_Cl;
+        case EL_NUMBER_BR: return IAT_Br;
+        case EL_NUMBER_I:  return IAT_I;
+        default: return -1;
+    }
+}
 
 #if ( READ_INCHI_STRING == 1 )
 
@@ -4064,26 +4065,9 @@ typedef enum tagIonAtomType
 int bHeteroAtomMayHaveXchgIsoH( inp_ATOM *atom, int iat )
 {
     inp_ATOM *at = atom + iat, *at2;
-    static int el_num[IAT_MAX];
     int j, val, is_H = 0, num_H, iat_numb, bAccept; /* djb-rwth: removing redundant variables */
 
-    if (!el_num[IAT_H])
-    {
-        el_num[IAT_H] = EL_NUMBER_H;
-        el_num[IAT_C] = EL_NUMBER_C;
-        el_num[IAT_N] = EL_NUMBER_N;
-        el_num[IAT_P] = EL_NUMBER_P;
-        el_num[IAT_O] = EL_NUMBER_O;
-        el_num[IAT_S] = EL_NUMBER_S;
-        el_num[IAT_Se] = EL_NUMBER_SE;
-        el_num[IAT_Te] = EL_NUMBER_TE;
-        el_num[IAT_F] = EL_NUMBER_F;
-        el_num[IAT_Cl] = EL_NUMBER_CL;
-        el_num[IAT_Br] = EL_NUMBER_BR;
-        el_num[IAT_I] = EL_NUMBER_I;
-    }
-
-    if (0 > ( iat_numb = get_iat_number( at->el_number, el_num, IAT_MAX ) ))
+    if (0 > ( iat_numb = get_iat_number( at->el_number ) ))
     {
         return 0;
     }
@@ -4166,26 +4150,8 @@ int bHeteroAtomMayHaveXchgIsoH( inp_ATOM *atom, int iat )
 /****************************************************************************/
 int bNumHeterAtomHasIsotopicH( inp_ATOM *atom, int num_atoms )
 {
-    static int el_num[IAT_MAX];
     int i, j, val, is_H = 0, num_H, iat_numb, bAccept, num_iso_H, cur_num_iso_H, num_iso_atoms; /* djb-rwth: removing redundant variables */
     inp_ATOM *at, *at2;
-
-    /* one time initialization */
-    if (!el_num[IAT_H])
-    {
-        el_num[IAT_H] = EL_NUMBER_H;
-        el_num[IAT_C] = EL_NUMBER_C;
-        el_num[IAT_N] = EL_NUMBER_N;
-        el_num[IAT_P] = EL_NUMBER_P;
-        el_num[IAT_O] = EL_NUMBER_O;
-        el_num[IAT_S] = EL_NUMBER_S;
-        el_num[IAT_Se] = EL_NUMBER_SE;
-        el_num[IAT_Te] = EL_NUMBER_TE;
-        el_num[IAT_F] = EL_NUMBER_F;
-        el_num[IAT_Cl] = EL_NUMBER_CL;
-        el_num[IAT_Br] = EL_NUMBER_BR;
-        el_num[IAT_I] = EL_NUMBER_I;
-    }
 
     num_iso_H = 0;
     num_iso_atoms = 0;
@@ -4196,7 +4162,7 @@ int bNumHeterAtomHasIsotopicH( inp_ATOM *atom, int num_atoms )
         num_iso_atoms += ( at->iso_atw_diff != 0 || NUM_ISO_H( at, 0 ) );
         /* isotopic atoms and implicit isotopic H */
 
-        if (0 >( iat_numb = get_iat_number( at->el_number, el_num, IAT_MAX ) ))
+        if (0 >( iat_numb = get_iat_number( at->el_number ) ))
         {
             continue;
         }
@@ -4270,7 +4236,7 @@ int bNumHeterAtomHasIsotopicH( inp_ATOM *atom, int num_atoms )
                     bAccept = 0; /* adjacent charged/radical atoms: do not neutralizate */
                     break;
                 }
-                else if (at2->el_number == el_num[IAT_H] &&
+                else if (at2->el_number == EL_NUMBER_H &&
                           at2->valence == 1 && at2->iso_atw_diff)
                 {
                     cur_num_iso_H++; /* isotopic explicit H */
@@ -5112,7 +5078,7 @@ Lt-wt subgraph
  Establish light-weight subgraph representing (part of) orig_inp_data
  ****************************************************************************/
 subgraf *subgraf_new( ORIG_ATOM_DATA *orig_inp_data,
-                      int nnodes, 
+                      int nnodes,
                       int *nodes )
 {
     int i, j, iat, nbr, jat, nj, degree, nat, err = 0;
@@ -5320,7 +5286,7 @@ void subgraf_pathfinder_free( subgraf_pathfinder *spf )
  and fill bonds[nbonds] and atoms[natoms]
  Do not traverse through supplied forbidden edges (if not zero/NULL)
 ****************************************************************************/
-void subgraf_pathfinder_run( subgraf_pathfinder *spf, 
+void subgraf_pathfinder_run( subgraf_pathfinder *spf,
                              int nforbidden,		/* number of edges forbidden for traversal	*/
                              int *forbidden,		/* nodes of forbidden edges: [edge1node1,edge1node2, edge2node1, edge2node2, ... ] */
                              int *nbonds,
@@ -5428,9 +5394,9 @@ void subgraf_pathfinder_run( subgraf_pathfinder *spf,
 
 /****************************************************************************/
 void add_bond_if_unseen( subgraf_pathfinder *spf,
-                         int node0, 
+                         int node0,
                          int node,
-                         int *nbonds, 
+                         int *nbonds,
                          int **bonds )
 {
     int seen, p, at1, at2;
@@ -5469,7 +5435,7 @@ void add_bond_if_unseen( subgraf_pathfinder *spf,
 /****************************************************************************
  At the first call, push start node to spf->start and set spf->nseen = 0
 ****************************************************************************/
-int subgraf_pathfinder_collect_all(subgraf_pathfinder *spf, 
+int subgraf_pathfinder_collect_all(subgraf_pathfinder *spf,
                                    int nforbidden,		/* number of edges forbidden for traversal	*/
                                    int *forbidden,		/* nodes of forbidden edges: [edge1node1,edge1node2, edge2node1, edge2node2, ... ] */
                                    int *atnums          /* 1-based origs# */
