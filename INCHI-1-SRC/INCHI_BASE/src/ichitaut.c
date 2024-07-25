@@ -157,35 +157,22 @@ is_centerpoint... functions
 /****************************************************************************/
 int is_centerpoint_elem( U_CHAR el_number )
 {
-    static U_CHAR el_numb[12];
-    static int len;
-    int len2;
-    int i;
-    if (!len)
-    {
-        len2 = 0;
-        el_numb[len2++] = EL_NUMBER_C;
-        el_numb[len2++] = EL_NUMBER_N;
-        el_numb[len2++] = EL_NUMBER_P;
-        el_numb[len2++] = EL_NUMBER_S;
-        el_numb[len2++] = EL_NUMBER_I;
-        el_numb[len2++] = EL_NUMBER_AS;
-        el_numb[len2++] = EL_NUMBER_SB;
-        el_numb[len2++] = EL_NUMBER_SE;
-        el_numb[len2++] = EL_NUMBER_TE;
-        el_numb[len2++] = EL_NUMBER_CL;
-        el_numb[len2++] = EL_NUMBER_BR;
-        len = len2;
-    }
-    for (i = 0; i < len; i++)
-    {
-        if (el_numb[i] == el_number)
-        {
+    switch (el_number) {
+        case EL_NUMBER_C: 
+        case EL_NUMBER_N: 
+        case EL_NUMBER_P: 
+        case EL_NUMBER_S: 
+        case EL_NUMBER_I: 
+        case EL_NUMBER_AS: 
+        case EL_NUMBER_SB: 
+        case EL_NUMBER_SE: 
+        case EL_NUMBER_TE: 
+        case EL_NUMBER_CL:
+        case EL_NUMBER_BR:
             return 1;
-        }
+        default:
+            return 0; 
     }
-
-    return 0;
 }
 
 
@@ -195,22 +182,7 @@ int is_centerpoint_elem( U_CHAR el_number )
 /****************************************************************************/
 int is_centerpoint_elem_KET( U_CHAR el_number )
 {
-    static U_CHAR el_numb[1];
-    static int len;
-    int i;
-    if (!el_numb[0] && !len)
-    {
-        el_numb[len++] = EL_NUMBER_C;
-    }
-    for (i = 0; i < len; i++)
-    {
-        if (el_numb[i] == el_number)
-        {
-            return 1;
-        }
-    }
-
-    return 0;
+    return el_number == EL_NUMBER_C;
 }
 #endif
 
@@ -218,28 +190,16 @@ int is_centerpoint_elem_KET( U_CHAR el_number )
 /****************************************************************************/
 int is_centerpoint_elem_strict( U_CHAR el_number )
 {
-    static U_CHAR el_numb[6];
-    static int len;
-    int len2;
-    int i;
-    if (!len)
-    {
-        len2 = 0;
-        el_numb[len2++] = EL_NUMBER_C;
-        el_numb[len2++] = EL_NUMBER_N;
-        el_numb[len2++] = EL_NUMBER_P;
-        el_numb[len2++] = EL_NUMBER_AS;
-        el_numb[len2++] = EL_NUMBER_SB;
-        len = len2;
-    }
-    for (i = 0; i < len; i++)
-    {
-        if (el_numb[i] == el_number)
-        {
+    switch (el_number) {
+        case EL_NUMBER_C: 
+        case EL_NUMBER_N: 
+        case EL_NUMBER_P: 
+        case EL_NUMBER_AS: 
+        case EL_NUMBER_SB: 
             return 1;
-        }
+        default:
+            return 0; 
     }
-    return 0;
 }
 
 
@@ -570,8 +530,7 @@ int nGetEndpointInfo_PT_16_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
 
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
-    nEndpointValence = atom[iat].el_number == EL_NUMBER_C ? 4 :
-        atom[iat].el_number == EL_NUMBER_O ? 2 : 0;
+    nEndpointValence = get_endpoint_valence_KET( atom[iat].el_number );
     if (!nEndpointValence)
         return 0; /* not an endpoint */
     if (nEndpointValence <= atom[iat].valence)
@@ -648,11 +607,7 @@ int nGetEndpointInfo_PT_06_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
     nEndpointValence = atom[iat].el_number == EL_NUMBER_C ? 4 :
-        atom[iat].el_number == EL_NUMBER_N ? 3 :
-        atom[iat].el_number == EL_NUMBER_S ? 2 :
-        atom[iat].el_number == EL_NUMBER_O ? 2 :
-        atom[iat].el_number == EL_NUMBER_SE ? 2 :
-        atom[iat].el_number == EL_NUMBER_TE ? 2 : 0;
+        get_endpoint_valence( atom[iat].el_number );
     /*printf("Connectivity: %d\n", atom[iat].valence);
     printf("Charge: %d\n", atom[iat].charge);
     printf("Actual valence: %d\n", atom[iat].chem_bonds_valence);
