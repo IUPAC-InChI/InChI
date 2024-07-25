@@ -364,6 +364,20 @@ int el_number_in_internal_ref_table( const char* elname )
 int get_periodic_table_number( const char* elname )
 {
     int num;
+    // the single letter (common) elements
+    if (!elname[1]) {
+        switch (elname[0]) {
+            case 'H': return EL_NUMBER_H; break;
+            case 'B': return EL_NUMBER_B; break;
+            case 'C': return EL_NUMBER_C; break;
+            case 'N': return EL_NUMBER_N; break;
+            case 'O': return EL_NUMBER_O; break;
+            case 'P': return EL_NUMBER_P; break;
+            case 'S': return EL_NUMBER_S; break;
+            case 'F': return EL_NUMBER_F; break;
+            case 'I': return EL_NUMBER_I; break;
+        }
+    }
 
     num = el_number_in_internal_ref_table( elname );
 
@@ -1089,7 +1103,7 @@ int num_of_H( inp_ATOM *at, int iat )
 
     if (!el_number_H)
     {
-        el_number_H = get_periodic_table_number( "H" );
+        el_number_H = EL_NUMBER_H;
     }
 
     for (i = 0; i < a->valence; i++)
@@ -1448,12 +1462,12 @@ int get_endpoint_valence( U_CHAR el_number )
     if (!len)
     {
         len3 = 0;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "O" );
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "S" );
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "Se" );
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "Te" );
+        el_numb[len3++] = EL_NUMBER_O;
+        el_numb[len3++] = EL_NUMBER_S;
+        el_numb[len3++] = EL_NUMBER_SE;
+        el_numb[len3++] = EL_NUMBER_TE;
         len2 = len3;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "N" );
+        el_numb[len3++] = EL_NUMBER_N;
         len = len3;
     }
     for (i = 0; i < len; i++)
@@ -1482,9 +1496,9 @@ int get_endpoint_valence_KET( U_CHAR el_number )
     if (!len)
     {
         len3 = 0;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "O" );
+        el_numb[len3++] = EL_NUMBER_O;
         len2 = len3;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "C" );
+        el_numb[len3++] = EL_NUMBER_C;
         len = len3;
     }
 

@@ -164,17 +164,17 @@ int is_centerpoint_elem( U_CHAR el_number )
     if (!len)
     {
         len2 = 0;
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "C" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "N" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "P" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "S" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "I" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "As" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "Sb" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "Se" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "Te" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "Cl" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "Br" );
+        el_numb[len2++] = EL_NUMBER_C;
+        el_numb[len2++] = EL_NUMBER_N;
+        el_numb[len2++] = EL_NUMBER_P;
+        el_numb[len2++] = EL_NUMBER_S;
+        el_numb[len2++] = EL_NUMBER_I;
+        el_numb[len2++] = EL_NUMBER_AS;
+        el_numb[len2++] = EL_NUMBER_SB;
+        el_numb[len2++] = EL_NUMBER_SE;
+        el_numb[len2++] = EL_NUMBER_TE;
+        el_numb[len2++] = EL_NUMBER_CL;
+        el_numb[len2++] = EL_NUMBER_BR;
         len = len2;
     }
     for (i = 0; i < len; i++)
@@ -200,7 +200,7 @@ int is_centerpoint_elem_KET( U_CHAR el_number )
     int i;
     if (!el_numb[0] && !len)
     {
-        el_numb[len++] = (U_CHAR) get_periodic_table_number( "C" );
+        el_numb[len++] = EL_NUMBER_C;
     }
     for (i = 0; i < len; i++)
     {
@@ -225,11 +225,11 @@ int is_centerpoint_elem_strict( U_CHAR el_number )
     if (!len)
     {
         len2 = 0;
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "C" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "N" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "P" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "As" );
-        el_numb[len2++] = (U_CHAR) get_periodic_table_number( "Sb" );
+        el_numb[len2++] = EL_NUMBER_C;
+        el_numb[len2++] = EL_NUMBER_N;
+        el_numb[len2++] = EL_NUMBER_P;
+        el_numb[len2++] = EL_NUMBER_AS;
+        el_numb[len2++] = EL_NUMBER_SB;
         len = len2;
     }
     for (i = 0; i < len; i++)
@@ -498,7 +498,7 @@ int nGetEndpointInfo_PT_22_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
 
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
-    nEndpointValence = atom[iat].el_number == (U_CHAR)get_periodic_table_number("C") ? 4 : 0;
+    nEndpointValence = atom[iat].el_number == EL_NUMBER_C ? 4 : 0;
     if (!nEndpointValence)
         return 0; /* not an endpoint */
     if (nEndpointValence <= atom[iat].valence)
@@ -570,8 +570,8 @@ int nGetEndpointInfo_PT_16_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
 
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
-    nEndpointValence = atom[iat].el_number == (U_CHAR)get_periodic_table_number("C") ? 4 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("O") ? 2 : 0;
+    nEndpointValence = atom[iat].el_number == EL_NUMBER_C ? 4 :
+        atom[iat].el_number == EL_NUMBER_O ? 2 : 0;
     if (!nEndpointValence)
         return 0; /* not an endpoint */
     if (nEndpointValence <= atom[iat].valence)
@@ -647,12 +647,12 @@ int nGetEndpointInfo_PT_06_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
 
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
-    nEndpointValence = atom[iat].el_number == (U_CHAR)get_periodic_table_number("C") ? 4 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("N") ? 3 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("S") ? 2 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("O") ? 2 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("Se") ? 2 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("Te") ? 2 : 0;
+    nEndpointValence = atom[iat].el_number == EL_NUMBER_C ? 4 :
+        atom[iat].el_number == EL_NUMBER_N ? 3 :
+        atom[iat].el_number == EL_NUMBER_S ? 2 :
+        atom[iat].el_number == EL_NUMBER_O ? 2 :
+        atom[iat].el_number == EL_NUMBER_SE ? 2 :
+        atom[iat].el_number == EL_NUMBER_TE ? 2 : 0;
     /*printf("Connectivity: %d\n", atom[iat].valence);
     printf("Charge: %d\n", atom[iat].charge);
     printf("Actual valence: %d\n", atom[iat].chem_bonds_valence);
@@ -728,8 +728,8 @@ int nGetEndpointInfo_PT_39_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
 
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
-    nEndpointValence = atom[iat].el_number == (U_CHAR)get_periodic_table_number("C") ? 4 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("N") ? 3 : 0;
+    nEndpointValence = atom[iat].el_number == EL_NUMBER_C ? 4 :
+        atom[iat].el_number == EL_NUMBER_N ? 3 : 0;
 
     if (!nEndpointValence)
         return 0; /* not an endpoint */
@@ -807,11 +807,11 @@ int nGetEndpointInfo_PT_13_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
 
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
-    nEndpointValence = atom[iat].el_number == (U_CHAR)get_periodic_table_number("C") ? 4 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("S") ? 2 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("O") ? 2 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("Se") ? 2 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("Te") ? 2 : 0;
+    nEndpointValence = atom[iat].el_number == EL_NUMBER_C ? 4 :
+        atom[iat].el_number == EL_NUMBER_S ? 2 :
+        atom[iat].el_number == EL_NUMBER_O ? 2 :
+        atom[iat].el_number == EL_NUMBER_SE ? 2 :
+        atom[iat].el_number == EL_NUMBER_TE ? 2 : 0;
     /*printf("Connectivity: %d\n", atom[iat].valence);
     printf("Charge: %d\n", atom[iat].charge);
     printf("Actual valence: %d\n", atom[iat].chem_bonds_valence);
@@ -883,8 +883,8 @@ int nGetEndpointInfo_PT_18_00(inp_ATOM *atom, int iat, ENDPOINT_INFO *eif)
     /* int res; removed */ 
     if (atom[iat].radical && atom[iat].radical != RADICAL_SINGLET)
         return 0; /* a radical */
-    nEndpointValence = atom[iat].el_number == (U_CHAR)get_periodic_table_number("O") ? 2 :
-        atom[iat].el_number == (U_CHAR)get_periodic_table_number("N") ? 3 : 0;
+    nEndpointValence = atom[iat].el_number == EL_NUMBER_O ? 2 :
+        atom[iat].el_number == EL_NUMBER_N ? 3 : 0;
     /*printf("Connectivity: %d\n", atom[iat].valence);
     printf("Charge: %d\n", atom[iat].charge);
     printf("Actual valence: %d\n", atom[iat].chem_bonds_valence);
@@ -4645,7 +4645,7 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                     if ((bond_type == BOND_DOUBLE ||
                         bond_type == BOND_ALTERN ||
                         bond_type == BOND_ALT12NS ||
-                        bond_type == BOND_TAUTOM) && at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("N")
+                        bond_type == BOND_TAUTOM) && at[centerpoint].el_number == EL_NUMBER_N
                         && ALLOWED_EDGE(pBNS, i, j)
                         ) {
                         /*  test a centerpoint candidate. */
@@ -4805,7 +4805,7 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                         bond_type == BOND_ALTERN ||
                         bond_type == BOND_ALT12NS ||
                         bond_type == BOND_TAUTOM)
-                        && at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("N")
+                        && at[centerpoint].el_number == EL_NUMBER_N
                         && at[centerpoint].valence == 2
                         && at[centerpoint].charge == 0
                         && ALLOWED_EDGE(pBNS, i, j)
@@ -4844,7 +4844,7 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
 
                             if (!(endpoint_valence = nGetEndpointInfo_PT_16_00(at, endpoint, &eif1))) /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
                                 continue; /*  not an endpoint element or can't have mobile groups */
-                            if (at[endpoint].el_number == (U_CHAR)get_periodic_table_number("O") &&
+                            if (at[endpoint].el_number == EL_NUMBER_O &&
                                 at[endpoint].nNumAtInRingSystem != 1)
                                 continue;
                             if (endpoint != i && at[endpoint].el_number == at[i].el_number)
@@ -4972,9 +4972,9 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                         bond_type == BOND_ALTERN ||
                         bond_type == BOND_ALT12NS ||
                         bond_type == BOND_TAUTOM) &&
-                        (at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("N") ||
-                            at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("C") ||
-                            at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("P"))
+                        (at[centerpoint].el_number == EL_NUMBER_N ||
+                            at[centerpoint].el_number == EL_NUMBER_C ||
+                            at[centerpoint].el_number == EL_NUMBER_P)
                         && ALLOWED_EDGE(pBNS, i, j)
                         ) {
                         /*  test a centerpoint candidate. */
@@ -5011,8 +5011,8 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                             if (!(endpoint_valence = nGetEndpointInfo_PT_06_00(at, endpoint, &eif1))) /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
                                 continue; /*  not an endpoint element or can't have mobile groups */
                             if (i != endpoint &&
-                                at[endpoint].el_number == (U_CHAR)get_periodic_table_number("C") &&
-                                at[i].el_number == (U_CHAR)get_periodic_table_number("C"))
+                                at[endpoint].el_number == EL_NUMBER_C &&
+                                at[i].el_number == EL_NUMBER_C)
                                 continue;
                             /*  save information about the found possible tautomeric endpoint */
                             /*  2 = T_NUM_NO_ISOTOPIC non-isotopic values */
@@ -5138,7 +5138,7 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                         bond_type == BOND_ALTERN ||
                         bond_type == BOND_ALT12NS ||
                         bond_type == BOND_TAUTOM)
-                        && at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("N")
+                        && at[centerpoint].el_number == EL_NUMBER_N
                         && at[centerpoint].valence == 3
                         && ALLOWED_EDGE(pBNS, i, j)
                         ) {
@@ -5152,8 +5152,8 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                         nNumDonor = nNumAcceptor = 0;
                         for (k = 0, nNumEndPoints = 0, nNumBondPos = 0; k < at[centerpoint].valence; k++) {
                             endpoint = at[centerpoint].neighbor[k]; /*  endpoint candidate */
-                            num_O += (at[endpoint].el_number == (U_CHAR)get_periodic_table_number("O"));
-                            num_N += (at[endpoint].el_number == (U_CHAR)get_periodic_table_number("N"));
+                            num_O += (at[endpoint].el_number == EL_NUMBER_O);
+                            num_N += (at[endpoint].el_number == EL_NUMBER_N);
                             bond_type = (int)at[centerpoint].bond_type[k] & ~BOND_MARK_ALL;
 #if ( FIX_BOND23_IN_TAUT == 1 )
                             bond_type = ACTUAL_ORDER(pBNS, centerpoint, k, bond_type);
@@ -5307,7 +5307,7 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                         bond_type == BOND_ALT12NS ||
                         bond_type == BOND_ALT_13 ||
                         bond_type == BOND_TAUTOM) &&
-                        at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("C") &&
+                        at[centerpoint].el_number == EL_NUMBER_C &&
                         at[centerpoint].valence == 2 &&
                         ALLOWED_EDGE(pBNS, i, j)
                         ) {
@@ -5478,7 +5478,7 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
                         bond_type == BOND_ALT12NS ||
                         bond_type == BOND_ALT_13 ||
                         bond_type == BOND_TAUTOM) &&
-                        at[centerpoint].el_number == (U_CHAR)get_periodic_table_number("C") &&
+                        at[centerpoint].el_number == EL_NUMBER_C &&
                         at[centerpoint].valence == 2 &&
                         ALLOWED_EDGE(pBNS, i, j)
                         ) {
