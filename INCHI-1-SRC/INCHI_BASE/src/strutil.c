@@ -607,7 +607,7 @@ int fix_odd_things( int num_atoms,
                     int bFixBug,
                     int bFixNonUniformDraw )
 {
-    // N;P;As;Sb;O;S;Se;Te;C;Si
+    /* N;P;As;Sb;O;S;Se;Te;C;Si */
     static U_CHAR en[] = {
         EL_NUMBER_N,
         EL_NUMBER_P,
@@ -1047,7 +1047,7 @@ the bonds are fixed in fix_special_bonds()
 int remove_ion_pairs( int num_atoms, inp_ATOM *at )
 {
     int num_changes = 0;
-    // N;P;As;Sb;O;S;Se;Te;C;Si?
+    /* N;P;As;Sb;O;S;Se;Te;C;Si? */
     static char en[] = {
         EL_NUMBER_N,
         EL_NUMBER_P,
