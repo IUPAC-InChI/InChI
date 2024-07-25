@@ -364,7 +364,7 @@ int el_number_in_internal_ref_table( const char* elname )
 int get_periodic_table_number( const char* elname )
 {
     int num;
-    // the single letter (common) elements
+    /* the single letter (common) elements */
     if (!elname[1]) {
         switch (elname[0]) {
             case 'H': return EL_NUMBER_H; break;
