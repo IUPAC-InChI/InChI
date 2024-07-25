@@ -1454,31 +1454,15 @@ int MakeRemovedProtonsString( int nNumRemovedProtons,
 
 /****************************************************************************/
 int get_endpoint_valence( U_CHAR el_number )
-{
-    static U_CHAR el_numb[6];
-    static int len, len2;
-    int i;
-    int len3;
-    if (!len)
-    {
-        len3 = 0;
-        el_numb[len3++] = EL_NUMBER_O;
-        el_numb[len3++] = EL_NUMBER_S;
-        el_numb[len3++] = EL_NUMBER_SE;
-        el_numb[len3++] = EL_NUMBER_TE;
-        len2 = len3;
-        el_numb[len3++] = EL_NUMBER_N;
-        len = len3;
+{   
+    switch (el_number) {
+        case EL_NUMBER_O:  /* fallthrough */
+        case EL_NUMBER_S:  
+        case EL_NUMBER_SE: 
+        case EL_NUMBER_TE: return 2;
+        case EL_NUMBER_N:  return 3;
+        default: return 0;
     }
-    for (i = 0; i < len; i++)
-    {
-        if (el_numb[i] == el_number)
-        {
-            return i < len2 ? 2 : 3;
-        }
-    }
-
-    return 0;
 }
 
 
@@ -1488,29 +1472,11 @@ int get_endpoint_valence( U_CHAR el_number )
 /****************************************************************************/
 int get_endpoint_valence_KET( U_CHAR el_number )
 {
-    static U_CHAR el_numb[2];
-    static int len, len2;
-    int len3;
-    int i;
-
-    if (!len)
-    {
-        len3 = 0;
-        el_numb[len3++] = EL_NUMBER_O;
-        len2 = len3;
-        el_numb[len3++] = EL_NUMBER_C;
-        len = len3;
+    switch (el_number) {
+        case EL_NUMBER_C: return 4;
+        case EL_NUMBER_O: return 2;
+        default: return 0;
     }
-
-    for (i = 0; i < len; i++)
-    {
-        if (el_numb[i] == el_number)
-        {
-            return i < len2 ? 2 : 4;
-        }
-    }
-
-    return 0;
 }
 #endif
 
