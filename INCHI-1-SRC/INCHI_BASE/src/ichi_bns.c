@@ -2805,65 +2805,31 @@ int fix_explicitly_indicated_bonds( int nebend,
 /****************************************************************************/
 int is_Z_atom( U_CHAR el_number )
 {
-    enum tag_Z_elnumber
+    switch ( el_number ) 
     {
-        el_C,
-        el_N,
-        el_P,
-        el_As,
-        el_Sb,
-        el_S,
-        el_Se,
-        el_Te,
-        el_Cl,
-        el_Br,
-        el_I,
-#if ( ALL_NONMETAL_Z == 1 )
-        el_B,
-        el_O,
-        el_Si,
-        el_Ge,
-        el_F,
-        el_At,
-#endif
-        el_len
-    }; /* djb-rwth: removing redundant typedef name */
-
-    static U_CHAR el_numb[el_len];
-
-    /*
-    return is_el_a_metal( (int)el_number );
-    */
-
-    if (!el_numb[el_C])
-    {
-        el_numb[el_C] = EL_NUMBER_C;
-        el_numb[el_N] = EL_NUMBER_N;
-        el_numb[el_P] = EL_NUMBER_P;
-        el_numb[el_As] = EL_NUMBER_AS;
-        el_numb[el_Sb] = EL_NUMBER_SB;
-        el_numb[el_S] = EL_NUMBER_S;
-        el_numb[el_Se] = EL_NUMBER_SE;
-        el_numb[el_Te] = EL_NUMBER_TE;
-        el_numb[el_Cl] = EL_NUMBER_CL;
-        el_numb[el_Br] = EL_NUMBER_BR;
-        el_numb[el_I] = EL_NUMBER_I;
-#if ( ALL_NONMETAL_Z == 1 )
-        el_numb[el_B] = EL_NUMBER_B;
-        el_numb[el_O] = EL_NUMBER_O;
-        el_numb[el_Si] = EL_NUMBER_SI;
-        el_numb[el_Ge] = EL_NUMBER_GE;
-        el_numb[el_F] = EL_NUMBER_F;
-        el_numb[el_At] = EL_NUMBER_AT;
-#endif
+        case EL_NUMBER_C: /* fallthrough */
+        case EL_NUMBER_N:
+        case EL_NUMBER_P:
+        case EL_NUMBER_AS:
+        case EL_NUMBER_SB:
+        case EL_NUMBER_S:
+        case EL_NUMBER_SE:
+        case EL_NUMBER_TE:
+        case EL_NUMBER_CL:
+        case EL_NUMBER_BR:
+        case EL_NUMBER_I:
+#if ( ALL_NONMETAL_Z == 1 )        
+        case EL_NUMBER_B:
+        case EL_NUMBER_O:
+        case EL_NUMBER_SI:
+        case EL_NUMBER_GE:
+        case EL_NUMBER_F:
+        case EL_NUMBER_AT:
+#endif        
+            return 1;
+        default:
+            return 0;    
     }
-
-    if (memchr( el_numb, el_number, el_len ))
-    {
-        return 1;
-    }
-
-    return 0;
 }
 
 
