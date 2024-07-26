@@ -64,6 +64,13 @@ PRIVATE
     COMPILE_ANSI_ONLY # why would one want to compile without this?
 )
 
+set_target_properties(
+    inchi
+    PROPERTIES
+    VERSION ${inchi_VERSION}
+    SOVERSION 1
+)
+
 # makefile in INCHI-1-INCHI_API/libinchi/gcc
 # applies a libinchi.map file to the linker (line 52 and bejond)
 # is that necessary? can we do that with cmake? 
