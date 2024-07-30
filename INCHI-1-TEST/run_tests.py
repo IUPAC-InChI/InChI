@@ -47,6 +47,7 @@ if __name__ == "__main__":
             text=True,
         )
     inchi_and_gcc_version = output.stdout.split("\n")[-2].strip()
+    print(output.stdout)
     logging.info(f"{get_current_time()}: {inchi_and_gcc_version}")
     logging.info(
         f"{get_current_time()}: Starting to process {n_sdf} SDFs on {N_PROCESSES} cores."
