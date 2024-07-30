@@ -19,7 +19,11 @@ from .config import (
 
 
 if __name__ == "__main__":
-    test, dataset = get_args()
+    args = get_args()
+    test = args.test
+    dataset = args.dataset
+    inchi_lib_path = args.library_path or INCHI_LIB_PATH
+    
     exit_code = 0
     sdf_paths = DATASETS[dataset]["sdf_paths"]
     n_sdf = len(sdf_paths)
@@ -61,7 +65,7 @@ if __name__ == "__main__":
                             ),
                             consumer_function=partial(
                                 regression_consumer,
-                                inchi_lib_path=INCHI_LIB_PATH,
+                                inchi_lib_path=inchi_lib_path,
                                 inchi_api_parameters=INCHI_API_PARAMETERS,
                             ),
                             get_molfile_id=DATASETS[dataset]["molfile_id"],
@@ -103,7 +107,7 @@ if __name__ == "__main__":
                             sdf_path=sdf_path,
                             consumer_function=partial(
                                 invariance_consumer,
-                                inchi_lib_path=INCHI_LIB_PATH,
+                                inchi_lib_path=inchi_lib_path,
                                 inchi_api_parameters=INCHI_API_PARAMETERS,
                                 n_invariance_runs=N_INVARIANCE_RUNS,
                             ),
