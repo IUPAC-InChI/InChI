@@ -36,10 +36,3 @@ INCHI-1-SRC/INCHI_API
 
     demos/python_sample    Python 3 source files specific for 
                             Python demo
-
-
-The portion of this distribution, the files sha2.c and sha2.h
-are Copyright (C) Brainspark B.V., and are distributed under 
-the terms of the same  IUPAC/InChI-Trust Licence for the 
-International Chemical Identifier (InChI) Software version 1.0.
-
