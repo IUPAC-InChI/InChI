@@ -20,12 +20,12 @@ runs:
       shell: bash
 
     - name: Run regression tests
-      run: python -m INCHI-1-TEST.run_tests regression ci
+      run: run-tests --test-config=INCHI-1-TEST/config/config.regression.py --data-config=INCHI-1-TEST/config/config.ci.py
       shell: bash
 
     - name: Write regression summary
       if: '!cancelled()'
-      run: python -m INCHI-1-TEST.parse_log regression ci
+      run: parse-log --test-config=INCHI-1-TEST/config/config.regression.py --data-config=INCHI-1-TEST/config/config.ci.py
       shell: bash
 
     - name: Upload regression test results

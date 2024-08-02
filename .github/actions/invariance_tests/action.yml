@@ -20,12 +20,12 @@ runs:
       shell: bash
 
     - name: Run invariance tests
-      run: python -m INCHI-1-TEST.run_tests invariance ci
+      run: run-tests --test-config=INCHI-1-TEST/config/config.invariance.py --data-config=INCHI-1-TEST/config/config.ci.py
       shell: bash
 
     - name: Write invariance summary
       if: '!cancelled()'
-      run: python -m INCHI-1-TEST.parse_log invariance ci
+      run: parse-log --test-config=INCHI-1-TEST/config/config.invariance.py --data-config=INCHI-1-TEST/config/config.ci.py
       shell: bash
 
     - name: Upload invariance test results
