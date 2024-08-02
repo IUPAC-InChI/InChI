@@ -21,6 +21,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e INCHI-1-TEST[invariance-tests]
+      - name: Compile InChI library from triggering branch
+        # https://github.com/actions/runner-images/issues/6775
+        run: |
+          mkdir "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ./INCHI-1-TEST/compile_inchi_lib.sh ${{ github.ref_name }} "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
       - uses: ./.github/actions/regression_tests
         with:
           artifact-name: regression-test-results_glibc_gcc
@@ -38,10 +44,12 @@ jobs:
     container: alpine:edge
 
     steps:
-      - uses: actions/checkout@v4
       - name: Install build and test environment
         run: |
           apk add bash git musl-dev gcc make python3 py-pip
+      # We need to install git before checking out the repository.
+      # Otherwise, the repository will be downloaded using the GitHub REST API instead of git.
+      - uses: actions/checkout@v4
       - name: Show Python version
         run: |
           python --version
@@ -56,6 +64,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e INCHI-1-TEST
+      - name: Compile InChI library from triggering branch
+        # https://github.com/actions/runner-images/issues/6775
+        run: |
+          mkdir "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ./INCHI-1-TEST/compile_inchi_lib.sh ${{ github.ref_name }} "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
       - uses: ./.github/actions/regression_tests
         with:
           artifact-name: regression-test-results_musl_gcc
