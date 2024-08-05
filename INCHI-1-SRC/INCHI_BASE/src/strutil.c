@@ -1054,17 +1054,14 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
 #endif
 
     inp_ATOM *a;
-    U_CHAR grp;
-
     /****** count candidates ********/
     for (i = 0, a = at; i < num_atoms; i++, a++)
     {
         if (1 == ( chrg = a->charge ) || -1 == chrg)
         {
-            if ((grp = ion_el_group( a->el_number )))
+            switch (ion_el_group( a->el_number ))
             {
-                if (grp == EL_NUMBER_C)
-                {
+                case EL_NUMBER_C:
                     if (chrg > 0)
                     {
                         num_C_plus++;
@@ -1073,9 +1070,8 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     {
                         num_C_minus++;
                     }
-                }
-                else if (grp == EL_NUMBER_O)
-                {
+                    break;
+                case EL_NUMBER_O:
                     if (chrg > 0)
                     {
                         num_O_plus++;
@@ -1084,9 +1080,8 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     {
                         num_O_minus++;
                     }
-                }
-                else // grp == EL_NUMBER_N
-                {
+                    break;
+                case EL_NUMBER_N:
                     if (chrg > 0)
                     {
                         num_N_plus++;
@@ -1095,11 +1090,13 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     {
                         num_N_minus++;
                     }
-
 #ifdef FIX_P_IV_Plus_O_Minus
-                    num_P_IV_plus += n > 0 && chrg == 1 && a->valence == 4 && a->chem_bonds_valence == 4; /* added 2010-03-17 DT */
-#endif
-                }
+                    num_P_IV_plus += a->el_number != EL_NUMBER_N && 
+                                     chrg == 1 &&
+                                     a->valence == 4 && 
+                                     a->chem_bonds_valence == 4; /* added 2010-03-17 DT */
+#endif 
+                    break;                
             }
         }
         else if (!chrg && a->chem_bonds_valence + NUMH( a, 0 ) == 2 &&
