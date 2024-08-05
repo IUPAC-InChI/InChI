@@ -174,8 +174,9 @@ extern "C" {
 
 
     int num_of_H( inp_ATOM *at, int iat );
-    int has_other_ion_neigh( inp_ATOM *at, int iat, int iat_ion_neigh, const char *el, int el_len );
-    int has_other_ion_in_sphere_2( inp_ATOM *at, int iat, int iat_ion_neigh, const char *el, int el_len );
+    U_CHAR ion_el_group( int el );
+    int has_other_ion_neigh( inp_ATOM *at, int iat, int iat_ion_neigh );
+    int has_other_ion_in_sphere_2( inp_ATOM *at, int iat, int iat_ion_neigh);
     int nNoMetalNumBonds( inp_ATOM *at, int at_no );
     int nNoMetalBondsValence( inp_ATOM *at, int at_no );
     int nNoMetalNeighIndex( inp_ATOM *at, int at_no );
