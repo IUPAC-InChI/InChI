@@ -1115,12 +1115,39 @@ int num_of_H( inp_ATOM *at, int iat )
     return num_explicit_H + NUMH( at, iat );
 }
 
+/****************************************************************************/
+/* Get the element group of an element. The base element rather than the    */
+/* periodic group is used to aid readability.                               */
+/* - NitrogenGroup = 7 (EL_NUMBER_N)                                        */
+/* - OxygenGroup   = 8 (EL_NUMBER_O)                                        */
+/* - Cargbon       = 6 (EL_NUMBER_C)                                        */
+/****************************************************************************/
+U_CHAR ion_el_group( int el )
+{
+    switch ( el ) {
+        case EL_NUMBER_C: /* fallthrough */
+#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )        
+        case EL_NUMBER_SI:
+#endif        
+            return EL_NUMBER_C;
+        case EL_NUMBER_N: /* fallthrough */
+        case EL_NUMBER_P:
+        case EL_NUMBER_AS:
+        case EL_NUMBER_SB:
+            return EL_NUMBER_N;
+        case EL_NUMBER_O: /* fallthrough */
+        case EL_NUMBER_S:
+        case EL_NUMBER_SE:
+        case EL_NUMBER_TE:
+            return EL_NUMBER_O;
+        default:
+            return 0;
+    }
+}
 
 int has_other_ion_neigh( inp_ATOM *at,
                          int iat,
-                         int iat_ion_neigh,
-                         const char *el,
-                         int el_len )
+                         int iat_ion_neigh)
 {
     int charge = at[iat_ion_neigh].charge;
     int i, neigh;
@@ -1130,7 +1157,7 @@ int has_other_ion_neigh( inp_ATOM *at,
         neigh = at[iat].neighbor[i];
 
         if (neigh != iat_ion_neigh && at[neigh].charge == charge &&
-             NULL != memchr( el, at[neigh].el_number, el_len ))
+            ion_el_group( at[neigh].el_number ))
         {
             return 1;
         }
@@ -1145,8 +1172,7 @@ int has_other_ion_neigh( inp_ATOM *at,
     BFS r=2
 ****************************************************************************/
 int has_other_ion_in_sphere_2( inp_ATOM *at, int iat,
-                               int iat_ion_neigh,
-                               const char *el, int el_len )
+                               int iat_ion_neigh )
 {
 #define MAXQ 16
     AT_NUMB q[MAXQ];
@@ -1170,7 +1196,7 @@ int has_other_ion_in_sphere_2( inp_ATOM *at, int iat,
 
                 if (!at[neigh].cFlags &&
                      at[neigh].valence <= 3 &&
-                     NULL != memchr( el, at[neigh].el_number, el_len ))
+                     ion_el_group( at[neigh].el_number ))
                 {
                     q[lenq++] = neigh;
                     at[neigh].cFlags = 1;
