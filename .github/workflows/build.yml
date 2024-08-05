@@ -18,11 +18,11 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt update
-          sudo apt install -y cmake
+          sudo apt install -y cmake ninja-build
 
       - name: Build InChI
         run: |
-          cmake -B builddir
+          cmake -B builddir -G Ninja
           cmake --build builddir
 
   build-windows:
@@ -38,11 +38,11 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          choco install cmake
+          choco install cmake ninja
 
       - name: Build InChI
         run: |
-          cmake -B builddir
+          cmake -B builddir -G Ninja
           cmake --build builddir
 
 
@@ -54,9 +54,9 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          brew install cmake
+          brew install ninja
 
       - name: Build InChI
         run: |
-          cmake -B builddir
+          cmake -B builddir -G Ninja
           cmake --build builddir
