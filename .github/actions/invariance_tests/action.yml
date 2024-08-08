@@ -20,7 +20,7 @@ runs:
       shell: bash
 
     - name: Run invariance tests
-      run: python -m INCHI-1-TEST.run_tests invariance ci
+      run: python -m INCHI-1-TEST.run_tests --library-path inchi.dev/INCHI-1-SRC/INCHI_BASE/src/libinchi.so invariance ci
       shell: bash
 
     - name: Write invariance summary

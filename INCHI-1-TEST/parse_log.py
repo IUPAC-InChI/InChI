@@ -170,8 +170,10 @@ def _write_html_log(
 
 
 if __name__ == "__main__":
-    test, dataset = get_args()
-
+    args = get_args()
+    test = args.test
+    dataset = args.dataset
+    
     log_paths = sorted(DATASETS[dataset]["log_path"].glob(f"*_{test}_{dataset}.log"))
     if not log_paths:
         print(f"No logs for {test} in {DATASETS[dataset]['log_path']}.")

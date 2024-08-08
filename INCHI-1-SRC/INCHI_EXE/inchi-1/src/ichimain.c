@@ -216,7 +216,11 @@ int WasInterrupted(void)
 #endif /* ifndef COMPILE_ANSI_ONLY */
 #endif /* if( defined( _WIN32 ) && defined( _CONSOLE ) ) */
 
-
+int DetectInputINChIFileType(FILE **inp_file, INPUT_PARMS *ip, const char *fmode);
+void PrintFileName(const char *fmt,
+                   FILE *out_file,
+                   const char *szFname);
+void SplitTime(unsigned long ulTotalTime, int *hours, int *minutes, int *seconds, int *mseconds);
 
 /****************************************************************************/
 int main(int argc, char* argv[])
@@ -1811,3 +1815,272 @@ int RepeatedlyRenumberAtomsAndRecalcINCHI(struct tagINCHI_CLOCK* ic,
 
 
 #endif
+
+#define fprintf2 inchi_fprintf
+
+/****************************************************************************/
+int OpenFiles(FILE **inp_file,
+              FILE **out_file,
+              FILE **log_file,
+              FILE **prb_file,
+              INPUT_PARMS *ip)
+{
+    /*
+    -- Files --
+    ip->path[0] => Input
+    ip->path[1] => Output (INChI)
+    ip->path[2] => Log
+    ip->path[3] => Problem structures
+    ip->path[4] => Errors file (ACD Labs)
+
+    */
+
+    /*  Logfile (open as early as possible) */
+    if (!ip->path[2] || !ip->path[2][0])
+    {
+        fprintf2(stderr, "%s %-s\n%-s Build (%-s%-s) of %s %s %-s\n\n",
+                 APP_DESCRIPTION, INCHI_SRC_REV,
+                 INCHI_BUILD_PLATFORM, INCHI_BUILD_COMPILER, INCHI_BUILD_DEBUG, __DATE__, __TIME__,
+                 RELEASE_IS_FINAL ? "" : " *** pre-release, for evaluation only ***");
+        fprintf2(stderr, "Log file not specified. Using standard error output.\n");
+        *log_file = stderr;
+    }
+    else if (!(*log_file = fopen(ip->path[2], "w")))
+    {
+        fprintf2(stderr, "%s %-s\n%-s Build (%-s%-s) of %s %s%-s\n\n",
+                 APP_DESCRIPTION, INCHI_SRC_REV,
+                 INCHI_BUILD_PLATFORM, INCHI_BUILD_COMPILER, INCHI_BUILD_DEBUG, __DATE__, __TIME__,
+                 RELEASE_IS_FINAL ? "" : " *** pre-release, for evaluation only ***");
+        fprintf2(stderr, "Cannot open log file '%s'. Using standard error output.\n", ip->path[2]);
+        *log_file = stderr;
+    }
+    else
+    {
+        fprintf2(*log_file, "%s %-s\n%-s Build (%-s%-s) of %s %s%-s\n\n",
+                 APP_DESCRIPTION, INCHI_SRC_REV,
+                 INCHI_BUILD_PLATFORM, INCHI_BUILD_COMPILER, INCHI_BUILD_DEBUG, __DATE__, __TIME__,
+                 RELEASE_IS_FINAL ? "" : " *** pre-release, for evaluation only ***");
+        fprintf2(*log_file, "Opened log file '%s'\n", ip->path[2]);
+    }
+
+    /* Input file */
+    if ((ip->nInputType == INPUT_MOLFILE || ip->nInputType == INPUT_SDFILE ||
+         ip->nInputType == INPUT_INCHI || ip->nInputType == INPUT_INCHI_PLAIN) &&
+        ip->num_paths > 0)
+    {
+        const char *fmode = NULL;
+
+#if (defined(_MSC_VER) && defined(_WIN32) || defined(__BORLANDC__) && defined(__WIN32__) || defined(__GNUC__) && defined(__MINGW32__) && defined(_WIN32))
+        /* compilers that definitely allow fopen "rb" (binary read) mode */
+        fmode = "rb";
+        if (!ip->path[0] || !ip->path[0][0] || !(*inp_file = fopen(ip->path[0], "rb")))
+        {
+            fprintf2(*log_file, "Cannot open input file '%s'. Terminating.\n", ip->path[0] ? ip->path[0] : "<No name>");
+            goto exit_function;
+        }
+        else
+        {
+            fprintf2(*log_file, "Opened input file '%s'\n", ip->path[0]);
+        }
+
+#else
+
+        if (!ip->path[0] || !ip->path[0][0] || !(*inp_file = fopen(ip->path[0], "r")))
+        {
+            fprintf2(*log_file, "Cannot open input file '%s'. Terminating.\n", ip->path[0] ? ip->path[0] : "<No Name>");
+            goto exit_function;
+        }
+        else
+        {
+            fprintf2(*log_file, "Opened input file '%s'\n", ip->path[0]);
+        }
+        fmode = "r";
+#endif /* ( defined(_MSC_VER)&&defined(_WIN32) || defined(__BORLANDC__)&&defined(__WIN32__) || defined(__GNUC__)&&defined(__MINGW32__)&&defined(_WIN32) ) */
+
+        DetectInputINChIFileType(inp_file, ip, fmode);
+    }
+
+    else if ((ip->nInputType != INPUT_MOLFILE &&
+              ip->nInputType != INPUT_SDFILE &&
+              ip->nInputType != INPUT_INCHI &&
+              /* post-1.02b */
+              ip->nInputType != INPUT_INCHI_PLAIN))
+    {
+        fprintf2(*log_file, "Input file type not specified. Terminating.\n");
+        goto exit_function;
+    }
+    else
+    {
+        fprintf2(*log_file, "Input file not specified. Using standard input.\n");
+        *inp_file = stdin;
+    }
+
+    /*  Output file */
+    if (!ip->path[1] || !ip->path[1][0])
+    {
+        fprintf2(*log_file, "Output file not specified. Using standard output.\n");
+        *out_file = stdout;
+    }
+    else
+    {
+        if (!(*out_file = fopen(ip->path[1], "w")))
+        {
+            fprintf2(*log_file, "Cannot open output file '%s'. Terminating.\n", ip->path[1]);
+            goto exit_function;
+        }
+        else
+        {
+            fprintf2(*log_file, "Opened output file '%s'\n", ip->path[1]);
+            if ((ip->bINChIOutputOptions & (INCHI_OUT_PLAIN_TEXT)) &&
+                *inp_file != stdin &&
+                !(ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY) &&
+                !ip->bNoStructLabels &&
+                !(ip->bINChIOutputOptions & INCHI_OUT_TABBED_OUTPUT))
+            {
+                PrintFileName("* Input_File: \"%s\"\n", *out_file, ip->path[0]);
+            }
+        }
+    }
+
+    /*  Problem file */
+    if (ip->path[3] && ip->path[3][0])
+    {
+        const char *fmode = "w";
+
+#if (defined(_MSC_VER) && defined(_WIN32) || defined(__BORLANDC__) && defined(__WIN32__) || defined(__GNUC__) && defined(__MINGW32__) && defined(_WIN32))
+        fmode = "wb";
+#endif
+
+        if (!(*prb_file = fopen(ip->path[3], fmode)))
+        {
+            fprintf2(*log_file, "Cannot open problem file '%s'. Terminating.\n", ip->path[3]);
+            goto exit_function;
+        }
+        else
+        {
+            fprintf2(*log_file, "Opened problem file '%s'\n", ip->path[3]);
+        }
+    }
+
+    /*  Success */
+    return 1;
+
+exit_function:
+
+    /*  Failed */
+    return 0;
+}
+
+#define NUM_VERSIONS 7
+#define LEN_VERSIONS 64
+
+static int bMatchOnePrefix(int len, char *str, int lenPrefix[],
+                           char strPrefix[][LEN_VERSIONS], int numPrefix);
+
+/****************************************************************************/
+static int bMatchOnePrefix(int len, char *str,
+                           int lenPrefix[],
+                           char strPrefix[][LEN_VERSIONS],
+                           int numPrefix)
+{
+    int i;
+    for (i = 0; i < numPrefix; i++)
+    {
+        if (len >= lenPrefix[i] &&
+            !memcmp(str, strPrefix[i], lenPrefix[i]))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/****************************************************************************/
+int DetectInputINChIFileType(FILE **inp_file,
+                             INPUT_PARMS *ip,
+                             const char *fmode)
+{
+    char szLine[256], ret = 0;
+    static char szPlnVersion[NUM_VERSIONS][LEN_VERSIONS]; /* = "INChI:1.1Beta/";*/
+    static int lenPlnVersion[NUM_VERSIONS];
+    static char szPlnAuxVer[NUM_VERSIONS][LEN_VERSIONS]; /* = "AuxInfo:1.1Beta/";*/
+    static int lenPlnAuxVer[NUM_VERSIONS];
+    static int bInitialized = 0;
+    int bINChI_plain = 0, len, i;
+
+    if (ip->nInputType == INPUT_INCHI_PLAIN || ip->nInputType == INPUT_INCHI)
+    {
+        return 1;
+    }
+
+    if (!bInitialized)
+    {
+        lenPlnVersion[0] = sprintf(szPlnVersion[0], "%s=%s/", INCHI_NAME, INCHI_VERSION);
+        lenPlnVersion[1] = sprintf(szPlnVersion[1], "INChI=1.12Beta/");
+        lenPlnVersion[2] = sprintf(szPlnVersion[2], "INChI=1.0RC/");
+        lenPlnVersion[3] = sprintf(szPlnVersion[3], "InChI=1.0RC/");
+        lenPlnVersion[4] = sprintf(szPlnVersion[4], "InChI=1/");
+        lenPlnVersion[5] = sprintf(szPlnVersion[5], "MoChI=1a/");
+        lenPlnVersion[6] = sprintf(szPlnVersion[6], "InChI=1S/");
+        lenPlnAuxVer[0] = sprintf(szPlnAuxVer[0], "AuxInfo=%s/", INCHI_VERSION);
+        lenPlnAuxVer[1] = sprintf(szPlnAuxVer[1], "AuxInfo=1.12Beta/");
+        lenPlnAuxVer[2] = sprintf(szPlnAuxVer[2], "AuxInfo=1.0RC/");
+        lenPlnAuxVer[3] = sprintf(szPlnAuxVer[3], "AuxInfo=1.0RC/");
+        lenPlnAuxVer[4] = sprintf(szPlnAuxVer[4], "AuxInfo=1/");
+        lenPlnAuxVer[5] = sprintf(szPlnAuxVer[5], "AuxInfo=1a/");
+        lenPlnAuxVer[6] = sprintf(szPlnAuxVer[6], "AuxInfo=1/");
+#if (FIX_DALKE_BUGS == 1)
+        bInitialized = 1;
+#endif
+    }
+
+    for (i = 0; i < 4; i++)
+    {
+        len = inchi_fgetsLfTab(szLine, sizeof(szLine) - 1, *inp_file);
+        if (len < 0)
+        {
+            break;
+        }
+        if (bMatchOnePrefix(len, szLine, lenPlnVersion, szPlnVersion, NUM_VERSIONS) ||
+            bMatchOnePrefix(len, szLine, lenPlnAuxVer, szPlnAuxVer, NUM_VERSIONS))
+        {
+            bINChI_plain++;
+        }
+    }
+
+    if (bINChI_plain >= 2)
+    {
+        ip->nInputType = INPUT_INCHI_PLAIN;
+        ret = 1;
+    }
+
+    fclose(*inp_file);
+    *inp_file = fopen(ip->path[0], fmode);
+
+    return ret;
+}
+#undef NUM_VERSIONS
+#undef LEN_VERSIONS
+
+void PrintFileName(const char *fmt,
+                   FILE *out_file,
+                   /* INCHI_IOSTREAM *out_file,  */
+                   const char *szFname)
+{
+    inchi_print_nodisplay(out_file, fmt, szFname);
+}
+
+void SplitTime(unsigned long ulTotalTime,
+               int *hours, int *minutes,
+               int *seconds, int *mseconds)
+{
+
+    *mseconds = (int)(ulTotalTime % 1000);
+    ulTotalTime /= 1000;
+    *seconds = (int)(ulTotalTime % 60);
+    ulTotalTime /= 60;
+    *minutes = (int)(ulTotalTime % 60);
+    ulTotalTime /= 60;
+    *hours = (int)(ulTotalTime);
+}

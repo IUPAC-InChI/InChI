@@ -128,26 +128,27 @@
 <!--Please note that 32-bit binaries have to be compiled from the source, although the use of 64-bit versions is highly recommended.-->
 <br />
 
-## Compiling `InChI v.1.07` from source
+## Compiling from source
 
-Project files for Microsoft<sup>&reg;</sup> `Visual C++ (MSVC)/Clang/LLVM` users are provided for both command line and API versions of `InChI v.1.07`. The project files are located in the following folders:
+InChI library and demo binaries can be easily compiled with cmake out of tree. 
+For instance, the following will build everything in the `builddir` directory:
 
-- `INCHI-1-SRC/INCHI_EXE/inchi-1/vc14` (command line version)
-- `INCHI-1-SRC/INCHI_API/demos/inchi_main/vc14` (API version consisting of `libinchi.dll` and its corresponding executable `inchi_main.exe`)
-- `INCHI-1-SRC/INCHI_API/libinchi/vc14` (API version consisting only of `libinchi.dll`).
+```
+cmake -B builddir
+cmake --build builddir
+```
 
-For other C compilers, `makefile/makefile32` files are provided in the following folders:
+tested on Linux/GCC, Windows/MSVC, OSX/LLVM
 
-- `INCHI-1-SRC/INCHI_EXE/inchi-1/gcc` (command line version)
-- `INCHI-1-SRC/INCHI_API/demos/inchi_main/gcc` (API version consisting of `libinchi.dll/libinchi.so.1.07` and its corresponding executable/ELF `inchi_main.exe/inchi_main`)
-- `INCHI-1-SRC/INCHI_API/libinchi/gcc` (API version consisting only of `libinchi.dll/libinchi.so.1.07`).
+### Compilation options
 
-<a id="MAKEFILE"></a>
+the default build creates a shared library, it is possible to have a static library instead by setting `BUILD_SHARED_LIBS` to `OFF` like this:
 
-`makefile/makefile32` files are configured to detect OSs automatically, so it is no longer needed to specify OS explicitly or run batch/bash script(s) before compiling. If both `GCC` and `Clang/LLVM` compilers are detected, `GCC` is used by default; setting `Clang/LLVM` as default compiler can be done simply by changing `CCN` parameter from `1` to `2` in `makefile/makefile32`.
+```
+cmake -B builddir -D BUILD_SHARED_LIBS=OFF
+```
 
-If `makefile/makefile32` is used for compiling `libinchi` on Microsoft<sup>&reg;</sup> Windows, `libinchi.dll` is now generated instead of `libinchi.so.1.07`.
-
+### BCF
 <a id="BCF"></a>
 
 In order to further improve code security, [bounds checking functions](https://wiki.sei.cmu.edu/confluence/display/c/Scope) (see Annex K of [C11 standard](https://en.cppreference.com/w/c/11)) can be optionally used in `InChI v.1.07`. Since a number of C compilers (e.g. `GNU GCC`) do not support bounds checking functions, they can be installed using some of the third-party open-source libraries such as:

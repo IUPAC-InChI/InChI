@@ -25,7 +25,7 @@ def get_molfile_id_pubchem(molfile: str) -> str:
     return molfile.split()[0].strip()
 
 
-def get_args() -> tuple[str, str]:
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Choose a test and dataset.",
     )
@@ -42,9 +42,13 @@ def get_args() -> tuple[str, str]:
         type=str,
         help=f"Choose a dataset from {set(DATASETS.keys())}",
     )
-    args = parser.parse_args()
-
-    return args.test, args.dataset
+    parser.add_argument(
+        "--library-path",
+        type=Path,
+        help=f"InChI library location. Default: {INCHI_LIB_PATH}",
+    )
+    
+    return parser.parse_args()
 
 
 def get_dataset_arg() -> str:

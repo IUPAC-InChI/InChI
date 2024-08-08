@@ -20,7 +20,7 @@ runs:
       shell: bash
 
     - name: Run regression tests
-      run: python -m INCHI-1-TEST.run_tests regression ci
+      run: python -m INCHI-1-TEST.run_tests --library-path inchi.dev/INCHI-1-SRC/INCHI_BASE/src/libinchi.so regression ci
       shell: bash
 
     - name: Write regression summary

@@ -51,6 +51,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <sys/time.h>
 #endif
 
 #include "moreutil.h"
@@ -765,7 +766,7 @@ unsigned int get_msec_timer( void )
 #if ( defined(_WIN32) && defined(_MSC_VER) )
     t = GetTickCount( );
 #endif
-#if ( !defined(_WIN32) && defined(__linux__) )
+#ifndef _WIN32 
     /* NB: not reboot/date-change safe */
     struct timeval tv;
     gettimeofday( &tv, NULL );
