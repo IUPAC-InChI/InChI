@@ -3,9 +3,6 @@ name: InChI build matrix
 
 on:
   push:
-    branches: [ main, rwth, giallu/* ]
-  pull_request:
-    branches: [ main, rwth ]
   workflow_dispatch:
 
 jobs:
