@@ -55,10 +55,12 @@ endif
 # "Error: cannot restore segment prot after reloc: Permission denied"
 # In addition, inchi.map restricts set of expoorted from .so
 # functions to those which belong to InChI API
-LINUX_MAP = ,--version-script=libinchi.map
+ifneq ($(OS_ID),2)
+	LINUX_MAP = ,--version-script=libinchi.map
+	LINUX_Z_RELRO = ,-z,relro
+endif
 ifneq ($(OS_ID),0)
 	LINUX_FPIC  = -fPIC
-	LINUX_Z_RELRO = ,-z,relro
 # === version ===
 	MAIN_VERSION = .1
 	VERSION = $(MAIN_VERSION).07
@@ -164,16 +166,21 @@ getcputime.o	\
 moreutil.o
 endif
 # === InChI Main Link rule ================
-ifneq ($(OS_ID),0)
-# djb-rwth: linking to .so on Linux
-$(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).so$(VERSION)
-	$(LINKER) -o $(API_CALLER_PATHNAME) $(API_CALLER_OBJS) \
-$(INCHI_LIB_PATHNAME).so$(VERSION) -lm
-else
+ifeq ($(OS_ID),0)
 # djb-rwth: linking to .dll on Windows
 $(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).dll$(VERSION)
 	$(LINKER) -o $(API_CALLER_PATHNAME) $(API_CALLER_OBJS) \
 $(INCHI_LIB_PATHNAME).dll$(VERSION) -lm
+else ifeq ($(OS_ID),2)
+# jwm: linking to .dylib on OS X
+$(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).so$(VERSION)
+	$(LINKER) -o $(API_CALLER_PATHNAME) $(API_CALLER_OBJS) \
+$(INCHI_LIB_PATHNAME).dylib$(VERSION) -lm
+else
+# djb-rwth: linking to .so on Linux
+$(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).so$(VERSION)
+	$(LINKER) -o $(API_CALLER_PATHNAME) $(API_CALLER_OBJS) \
+$(INCHI_LIB_PATHNAME).so$(VERSION) -lm
 endif
 # === InChI Main compile rule ============
 %.o: $(P_MAIN)%.c
@@ -239,16 +246,21 @@ strutil.o	\
 util.o \
 bcf_s.o
 # === InChI Library link rule =========
-ifneq ($(OS_ID),0)
-# djb-rwth: creating .so on Linux
-$(INCHI_LIB_PATHNAME).so$(VERSION): $(INCHI_LIB_OBJS)
-	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME).so$(VERSION)	\
-$(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO),-soname,$(INCHI_LIB_NAME).so$(VERSION) -lm
-else
+ifeq ($(OS_ID),0)
 # djb-rwth: creating .dll on Windows
 $(INCHI_LIB_PATHNAME).dll$(VERSION): $(INCHI_LIB_OBJS)
 	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME).dll$(VERSION)	\
 $(INCHI_LIB_OBJS) -Wl$(LINUX_MAP),-soname,$(INCHI_LIB_NAME).dll$(VERSION) -Wl,--subsystem,windows -lm
+else ifeq ($(OS_ID), 2)
+# jwm: creating .dylib on OS X
+$(INCHI_LIB_PATHNAME).dylib$(VERSION): $(INCHI_LIB_OBJS)
+	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME).dylib$(VERSION)	\
+$(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO) -install_name $(INCHI_LIB_NAME).dylib$(VERSION) -lm
+else
+# djb-rwth: creating .so on Linux
+$(INCHI_LIB_PATHNAME).so$(VERSION): $(INCHI_LIB_OBJS)
+	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME).so$(VERSION)	\
+$(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO),-soname,$(INCHI_LIB_NAME).so$(VERSION) -lm
 endif
 # djb-rwth: no forceful linking is required if .so version extensions are the same
 #	ln -fs $(INCHI_LIB_NAME).so$(VERSION)	\
@@ -261,9 +273,6 @@ $(INCHI_LIB_PATHNAME).so$(MAIN_VERSION)
 %.o: $(P_BASE)%.c
 	$(C_COMPILER) $(C_SO_OPTIONS) $(C_OPTIONS) $<
 else
-$(info GCC or Clang not detected. Please edit makefile to include available C compiler. Terminating.)
+$(info GCC or Clang not detected. Please edit makefile in order to include available C compiler. Terminating.)
 $(info )
 endif
-.PHONY: clean
-clean:
-	rm -f $(INCHI_LIB_OBJS)

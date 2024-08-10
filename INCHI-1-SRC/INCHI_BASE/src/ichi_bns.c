@@ -2174,7 +2174,6 @@ int CorrectFixing_NH_NH_Bonds( BN_STRUCT *pBNS, inp_ATOM *at, int num_atoms )
 }
 #endif
 
-
 /****************************************************************************
 Fixes bonds which were set by remove_ion_pairs( ... )
 ****************************************************************************/
@@ -2185,30 +2184,10 @@ int fix_special_bonds( BN_STRUCT *pBNS,
 {
     int num_changes = 0;
 
-    /*                           0 1 2  3  4 5 6  7  8  9                   8  9  */
-#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )
-    static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si;";  /* 8 elements + C, Si */
-#else
-    static const char    el[] = "N;P;As;Sb;O;S;Se;Te;C;Si";   /* 8 elements + C, Si */
-#endif
-    static char    en[12];  /* Same number: 8 elements  */
-    static int     ne = 0;  /* will be 8 and 10         */
-    int ne2;
-
-#define ELEM_N_FST  0
-#define ELEM_N_LEN  4
-#define ELEM_O_FST  4
-#define ELEM_O_LEN  4
-#define ELEM_S_FST  (ELEM_O_FST+1)
-#define ELEM_S_LEN  (ELEM_O_LEN-1)
-#define ELEM_C_FST  8
-#define ELEM_C_LEN  2
-
 #define MAX_NEIGH 6
 
     int i, k, n1, n2, n3, i1, i2, i3, i4, bond_type; /* djb-rwth: removing redundant variables */
     inp_ATOM *a;
-    char elname[ATOM_EL_LEN];
     int j[3], m[3], num_O, k_O, num_N, num_OH, num_OM, num_X, num_other, k_N;
 
     BNS_IEDGE iedge;
@@ -2217,24 +2196,6 @@ int fix_special_bonds( BN_STRUCT *pBNS,
 
     pBNS->edge_forbidden_mask |= edge_forbidden_mask;
 
-    if (!ne)
-    {
-        /* One time initialization */
-        const char *b, *e;
-        int  len;
-        ne2 = 0;
-        for (b = el; (e = strchr( b, ';' )); b = e + 1) /* djb-rwth: addressing LLVM warning */
-        {
-            len = (int) ( e - b );
-            memcpy(elname, b, len);
-            elname[len] = '\0';
-            en[ne2++] = get_periodic_table_number( elname );
-        }
-        en[ne2] = '\0';
-        en[ne2 + 1] = '\0';
-        ne = ne2;
-    }
-
     for (i = 0, a = at; i < num_atoms; i++, a++)
     {
 
@@ -2242,7 +2203,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
              2 <= a->chem_bonds_valence + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
              0 == num_of_H( at, i ) &&
              2 == nNoMetalBondsValence( at, i ) + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
-             NULL != memchr( en + ELEM_N_FST, at[i].el_number, ELEM_N_LEN ))
+             ion_el_group( at[i].el_number ) == EL_NUMBER_N )
         {
             /* Found N(V), no H */
             if (2 == nNoMetalNumBonds( at, i ))
@@ -2283,7 +2244,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                 }
                 if (0 == NUMH( at, n3 ) && 2 == nNoMetalNumBonds( at, n3 ) &&
                      3 == nNoMetalBondsValence( at, n3 ) &&
-                     NULL != memchr( en + ELEM_N_FST, at[n3].el_number, ELEM_N_LEN ) &&
+                     ion_el_group( at[n3].el_number ) == EL_NUMBER_N &&
                      0 <= ( k = nNoMetalOtherNeighIndex( at, n3, i ) ))
                 {
                     /* found =N- ; forbid the edge*/
@@ -2311,13 +2272,13 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                 {
                     n1 = m[k];
                     i1 = j[k]; /* djb-rwth: ignoring LLVM warning: variable used */
-                    if (NULL != memchr( en + ELEM_N_FST, at[n1].el_number, ELEM_N_LEN ))
+                    if (ion_el_group( at[n1].el_number ) == EL_NUMBER_N)
                     {
                         k_N = k;
                         num_N++;
                     }
-                    else if (NULL != memchr( en + ELEM_O_FST, at[n1].el_number, ELEM_O_LEN ) &&
-                              1 == nNoMetalNumBonds( at, n1 ))
+                    else if (ion_el_group( at[n1].el_number ) == EL_NUMBER_O &&
+                             1 == nNoMetalNumBonds( at, n1 ))
                     {
                         k_O = k;
                         num_O++;
@@ -2363,7 +2324,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                 {
                     if (BOND_TYPE_DOUBLE == ( at[i].bond_type[i1] & BOND_TYPE_MASK ) &&
                          !is_el_a_metal( at[n1 = (int) at[i].neighbor[i1]].el_number ) &&
-                         NULL != memchr( en + ELEM_N_FST, at[n1].el_number, ELEM_N_LEN ))
+                         ion_el_group( at[n1].el_number ) == EL_NUMBER_N)
                     {
                         num_N++;
                         n2 = n1;
@@ -2392,7 +2353,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                   2 <= a->chem_bonds_valence + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
                   0 == num_of_H( at, i ) &&
                   2 == nNoMetalBondsValence( at, i ) + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
-                  NULL != memchr( en + ELEM_S_FST, a->el_number, ELEM_S_LEN ) &&
+                  a->el_number != EL_NUMBER_O && ion_el_group( a->el_number ) == EL_NUMBER_O &&
                   3 == nNoMetalNumBonds( at, i ))
         {
             /* Found S(IV), no H, one double bond, total 3 bonds */
@@ -2429,7 +2390,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                     num_N++;
                     n2 = n1;
                     i2 = i1;
-                    if (NULL != memchr( en + ELEM_O_FST, at[n1].el_number, ELEM_O_LEN ))
+                    if (ion_el_group( at[n1].el_number ) == EL_NUMBER_O)
                     {
                         num_O++;
                     }
@@ -2437,7 +2398,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                 else if (BOND_TYPE_SINGLE == bond_type &&
                           1 == nNoMetalNumBonds( at, n1 ) &&
                           1 == nNoMetalBondsValence( at, n1 ) &&
-                          NULL != memchr( en + ELEM_O_FST, at[n1].el_number, ELEM_O_LEN ))
+                          ion_el_group( at[n1].el_number ) == EL_NUMBER_O)
                 {
                     if (0 == at[n1].charge)
                     {
@@ -2473,7 +2434,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                 int    bFound = 0; /* flag */
                 int    bDoNotFixAnyBond = 0; /* flag */
                                              /* Avoid case N=S-NH or N=S-N(-); N = N, P, As, Sb */
-                if (NULL != memchr( en + ELEM_N_FST, at[n2].el_number, ELEM_N_LEN ))
+                if (ion_el_group( at[n2].el_number ) == EL_NUMBER_N)
                 {
                     U_CHAR el_number = at[n2].el_number;
                     for (i1 = 0; i1 < a->valence; i1++)
@@ -2540,7 +2501,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                   4 <= a->chem_bonds_valence + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
                   0 == num_of_H( at, i ) &&
                   4 == nNoMetalBondsValence( at, i ) + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
-                  NULL != memchr( en + ELEM_S_FST, a->el_number, ELEM_S_LEN ) &&
+                  a->el_number != EL_NUMBER_O && ion_el_group( a->el_number ) == EL_NUMBER_O &&
                   4 == nNoMetalNumBonds( at, i ))
         {
             /* Found S(VI), no H, two double bonds or one triple bond */
@@ -2588,7 +2549,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                           ) &&
                          0 == at[n1].radical &&
                          0 == num_of_H( at, n1 ) &&
-                         NULL != memchr( en + ELEM_O_FST, at[n1].el_number, ELEM_O_LEN ) &&
+                         ion_el_group( at[n1].el_number ) == EL_NUMBER_O &&
                          1 == nNoMetalNumBonds( at, n1 ))
                     {
                         num_O++;
@@ -2596,7 +2557,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                 }
                 else if (BOND_TYPE_SINGLE == bond_type &&
                           1 == nNoMetalNumBonds( at, n1 ) &&
-                          NULL != memchr( en + ELEM_O_FST, at[n1].el_number, ELEM_O_LEN ) &&
+                          ion_el_group( at[n1].el_number ) == EL_NUMBER_O &&
                           1 >= num_of_H( at, n1 ) &&
                           1 == ( ( 0 == at[n1].charge ) && 1 == num_of_H( at, n1 ) )
                           + ( ( -1 == at[n1].charge ) && 0 == num_of_H( at, n1 ) ))
@@ -2635,7 +2596,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                   6 <= a->chem_bonds_valence + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
                   0 == num_of_H( at, i ) &&
                   6 == nNoMetalBondsValence( at, i ) + NUMH( a, 0 ) - get_el_valence( a->el_number, 0, 0 ) &&
-                  NULL != memchr( en + ELEM_S_FST, a->el_number, ELEM_S_LEN ) &&
+                  a->el_number != EL_NUMBER_O && ion_el_group( a->el_number ) == EL_NUMBER_O &&
                   5 == nNoMetalNumBonds( at, i ))
         {
             /* Found S(VIII), no H, three double bonds or two triple bond */
@@ -2682,7 +2643,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                           )
                          && 0 == at[n1].radical &&
                          0 == num_of_H( at, n1 ) &&
-                         NULL != memchr( en + ELEM_O_FST, at[n1].el_number, ELEM_O_LEN ) &&
+                         ion_el_group( at[n1].el_number ) == EL_NUMBER_O &&
                          1 == nNoMetalNumBonds( at, n1 ))
                     {
                         num_O++;
@@ -2690,7 +2651,7 @@ int fix_special_bonds( BN_STRUCT *pBNS,
                 }
                 else if (BOND_TYPE_SINGLE == bond_type &&
                           1 == nNoMetalNumBonds( at, n1 ) &&
-                          NULL != memchr( en + ELEM_O_FST, at[n1].el_number, ELEM_O_LEN ) &&
+                          ion_el_group( at[n1].el_number ) == EL_NUMBER_O &&
                           1 >= num_of_H( at, n1 ) &&
                           1 == ( ( 0 == at[n1].charge ) && 1 == num_of_H( at, n1 ) )
                           + ( ( -1 == at[n1].charge ) && 0 == num_of_H( at, n1 ) ))
@@ -2818,65 +2779,31 @@ int fix_explicitly_indicated_bonds( int nebend,
 /****************************************************************************/
 int is_Z_atom( U_CHAR el_number )
 {
-    enum tag_Z_elnumber
+    switch ( el_number ) 
     {
-        el_C,
-        el_N,
-        el_P,
-        el_As,
-        el_Sb,
-        el_S,
-        el_Se,
-        el_Te,
-        el_Cl,
-        el_Br,
-        el_I,
-#if ( ALL_NONMETAL_Z == 1 )
-        el_B,
-        el_O,
-        el_Si,
-        el_Ge,
-        el_F,
-        el_At,
-#endif
-        el_len
-    }; /* djb-rwth: removing redundant typedef name */
-
-    static U_CHAR el_numb[el_len];
-
-    /*
-    return is_el_a_metal( (int)el_number );
-    */
-
-    if (!el_numb[el_C])
-    {
-        el_numb[el_C] = (U_CHAR) get_periodic_table_number( "C" );
-        el_numb[el_N] = (U_CHAR) get_periodic_table_number( "N" );
-        el_numb[el_P] = (U_CHAR) get_periodic_table_number( "P" );
-        el_numb[el_As] = (U_CHAR) get_periodic_table_number( "As" );
-        el_numb[el_Sb] = (U_CHAR) get_periodic_table_number( "Sb" );
-        el_numb[el_S] = (U_CHAR) get_periodic_table_number( "S" );
-        el_numb[el_Se] = (U_CHAR) get_periodic_table_number( "Se" );
-        el_numb[el_Te] = (U_CHAR) get_periodic_table_number( "Te" );
-        el_numb[el_Cl] = (U_CHAR) get_periodic_table_number( "Cl" );
-        el_numb[el_Br] = (U_CHAR) get_periodic_table_number( "Br" );
-        el_numb[el_I] = (U_CHAR) get_periodic_table_number( "I" );
-#if ( ALL_NONMETAL_Z == 1 )
-        el_numb[el_B] = (U_CHAR) get_periodic_table_number( "B" );
-        el_numb[el_O] = (U_CHAR) get_periodic_table_number( "O" );
-        el_numb[el_Si] = (U_CHAR) get_periodic_table_number( "Si" );
-        el_numb[el_Ge] = (U_CHAR) get_periodic_table_number( "Ge" );
-        el_numb[el_F] = (U_CHAR) get_periodic_table_number( "F" );
-        el_numb[el_At] = (U_CHAR) get_periodic_table_number( "At" );
-#endif
+        case EL_NUMBER_C: /* fallthrough */
+        case EL_NUMBER_N:
+        case EL_NUMBER_P:
+        case EL_NUMBER_AS:
+        case EL_NUMBER_SB:
+        case EL_NUMBER_S:
+        case EL_NUMBER_SE:
+        case EL_NUMBER_TE:
+        case EL_NUMBER_CL:
+        case EL_NUMBER_BR:
+        case EL_NUMBER_I:
+#if ( ALL_NONMETAL_Z == 1 )        
+        case EL_NUMBER_B:
+        case EL_NUMBER_O:
+        case EL_NUMBER_SI:
+        case EL_NUMBER_GE:
+        case EL_NUMBER_F:
+        case EL_NUMBER_AT:
+#endif        
+            return 1;
+        default:
+            return 0;    
     }
-
-    if (memchr( el_numb, el_number, el_len ))
-    {
-        return 1;
-    }
-
-    return 0;
 }
 
 

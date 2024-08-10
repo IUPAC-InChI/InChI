@@ -55,11 +55,15 @@
 #define EL_NUMBER_P ((U_CHAR) 15)
 #define EL_NUMBER_S ((U_CHAR) 16)
 #define EL_NUMBER_CL ((U_CHAR) 17)
+#define EL_NUMBER_GE ((U_CHAR) 32)
 #define EL_NUMBER_AS ((U_CHAR) 33)
 #define EL_NUMBER_SE ((U_CHAR) 34)
 #define EL_NUMBER_BR ((U_CHAR) 35)
+#define EL_NUMBER_SB ((U_CHAR) 51)
 #define EL_NUMBER_TE ((U_CHAR) 52)
 #define EL_NUMBER_I ((U_CHAR) 53)
+#define EL_NUMBER_PO ((U_CHAR) 84)
+#define EL_NUMBER_AT ((U_CHAR) 85)
 
 #define EL_NUMBER_ZY ((U_CHAR) 119)
 #define EL_NUMBER_ZZ ((U_CHAR) 120)
@@ -170,8 +174,9 @@ extern "C" {
 
 
     int num_of_H( inp_ATOM *at, int iat );
-    int has_other_ion_neigh( inp_ATOM *at, int iat, int iat_ion_neigh, const char *el, int el_len );
-    int has_other_ion_in_sphere_2( inp_ATOM *at, int iat, int iat_ion_neigh, const char *el, int el_len );
+    U_CHAR ion_el_group( int el );
+    int has_other_ion_neigh( inp_ATOM *at, int iat, int iat_ion_neigh );
+    int has_other_ion_in_sphere_2( inp_ATOM *at, int iat, int iat_ion_neigh);
     int nNoMetalNumBonds( inp_ATOM *at, int at_no );
     int nNoMetalBondsValence( inp_ATOM *at, int at_no );
     int nNoMetalNeighIndex( inp_ATOM *at, int at_no );

@@ -364,6 +364,20 @@ int el_number_in_internal_ref_table( const char* elname )
 int get_periodic_table_number( const char* elname )
 {
     int num;
+    /* the single letter (common) elements */
+    if (!elname[1]) {
+        switch (elname[0]) {
+            case 'H': return EL_NUMBER_H; break;
+            case 'B': return EL_NUMBER_B; break;
+            case 'C': return EL_NUMBER_C; break;
+            case 'N': return EL_NUMBER_N; break;
+            case 'O': return EL_NUMBER_O; break;
+            case 'P': return EL_NUMBER_P; break;
+            case 'S': return EL_NUMBER_S; break;
+            case 'F': return EL_NUMBER_F; break;
+            case 'I': return EL_NUMBER_I; break;
+        }
+    }
 
     num = el_number_in_internal_ref_table( elname );
 
@@ -1089,7 +1103,7 @@ int num_of_H( inp_ATOM *at, int iat )
 
     if (!el_number_H)
     {
-        el_number_H = get_periodic_table_number( "H" );
+        el_number_H = EL_NUMBER_H;
     }
 
     for (i = 0; i < a->valence; i++)
@@ -1101,12 +1115,39 @@ int num_of_H( inp_ATOM *at, int iat )
     return num_explicit_H + NUMH( at, iat );
 }
 
+/****************************************************************************/
+/* Get the element group of an element. The base element rather than the    */
+/* periodic group is used to aid readability.                               */
+/* - NitrogenGroup = 7 (EL_NUMBER_N)                                        */
+/* - OxygenGroup   = 8 (EL_NUMBER_O)                                        */
+/* - Cargbon       = 6 (EL_NUMBER_C)                                        */
+/****************************************************************************/
+U_CHAR ion_el_group( int el )
+{
+    switch ( el ) {
+        case EL_NUMBER_C: /* fallthrough */
+#if ( FIX_REM_ION_PAIRS_Si_BUG == 1 )        
+        case EL_NUMBER_SI:
+#endif        
+            return EL_NUMBER_C;
+        case EL_NUMBER_N: /* fallthrough */
+        case EL_NUMBER_P:
+        case EL_NUMBER_AS:
+        case EL_NUMBER_SB:
+            return EL_NUMBER_N;
+        case EL_NUMBER_O: /* fallthrough */
+        case EL_NUMBER_S:
+        case EL_NUMBER_SE:
+        case EL_NUMBER_TE:
+            return EL_NUMBER_O;
+        default:
+            return 0;
+    }
+}
 
 int has_other_ion_neigh( inp_ATOM *at,
                          int iat,
-                         int iat_ion_neigh,
-                         const char *el,
-                         int el_len )
+                         int iat_ion_neigh)
 {
     int charge = at[iat_ion_neigh].charge;
     int i, neigh;
@@ -1116,7 +1157,7 @@ int has_other_ion_neigh( inp_ATOM *at,
         neigh = at[iat].neighbor[i];
 
         if (neigh != iat_ion_neigh && at[neigh].charge == charge &&
-             NULL != memchr( el, at[neigh].el_number, el_len ))
+            ion_el_group( at[neigh].el_number ))
         {
             return 1;
         }
@@ -1131,8 +1172,7 @@ int has_other_ion_neigh( inp_ATOM *at,
     BFS r=2
 ****************************************************************************/
 int has_other_ion_in_sphere_2( inp_ATOM *at, int iat,
-                               int iat_ion_neigh,
-                               const char *el, int el_len )
+                               int iat_ion_neigh )
 {
 #define MAXQ 16
     AT_NUMB q[MAXQ];
@@ -1156,7 +1196,7 @@ int has_other_ion_in_sphere_2( inp_ATOM *at, int iat,
 
                 if (!at[neigh].cFlags &&
                      at[neigh].valence <= 3 &&
-                     NULL != memchr( el, at[neigh].el_number, el_len ))
+                     ion_el_group( at[neigh].el_number ))
                 {
                     q[lenq++] = neigh;
                     at[neigh].cFlags = 1;
@@ -1440,31 +1480,15 @@ int MakeRemovedProtonsString( int nNumRemovedProtons,
 
 /****************************************************************************/
 int get_endpoint_valence( U_CHAR el_number )
-{
-    static U_CHAR el_numb[6];
-    static int len, len2;
-    int i;
-    int len3;
-    if (!len)
-    {
-        len3 = 0;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "O" );
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "S" );
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "Se" );
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "Te" );
-        len2 = len3;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "N" );
-        len = len3;
+{   
+    switch (el_number) {
+        case EL_NUMBER_O:  /* fallthrough */
+        case EL_NUMBER_S:  
+        case EL_NUMBER_SE: 
+        case EL_NUMBER_TE: return 2;
+        case EL_NUMBER_N:  return 3;
+        default: return 0;
     }
-    for (i = 0; i < len; i++)
-    {
-        if (el_numb[i] == el_number)
-        {
-            return i < len2 ? 2 : 3;
-        }
-    }
-
-    return 0;
 }
 
 
@@ -1474,29 +1498,11 @@ int get_endpoint_valence( U_CHAR el_number )
 /****************************************************************************/
 int get_endpoint_valence_KET( U_CHAR el_number )
 {
-    static U_CHAR el_numb[2];
-    static int len, len2;
-    int len3;
-    int i;
-
-    if (!len)
-    {
-        len3 = 0;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "O" );
-        len2 = len3;
-        el_numb[len3++] = (U_CHAR) get_periodic_table_number( "C" );
-        len = len3;
+    switch (el_number) {
+        case EL_NUMBER_C: return 4;
+        case EL_NUMBER_O: return 2;
+        default: return 0;
     }
-
-    for (i = 0; i < len; i++)
-    {
-        if (el_numb[i] == el_number)
-        {
-            return i < len2 ? 2 : 4;
-        }
-    }
-
-    return 0;
 }
 #endif
 
