@@ -2595,63 +2595,70 @@ int  OrigAtData_AddBond( int        this_atom,
                          int        bond_stereo,
                          int        *num_bonds )
 {
-    int i, k, already_here;
-    inp_ATOM *a;
+    if (at)
+    {
+        /* djb-rwth: fixing oss-fuzz issue #68286 */
+        int i, k, already_here;
+        inp_ATOM* a = &(at[this_atom]);
 
-    if (at[this_atom].valence >= MAXVAL ||
-         at[other_atom].valence >= MAXVAL)
+        if (at[this_atom].valence >= MAXVAL ||
+            at[other_atom].valence >= MAXVAL)
+        {
+            return 0;
+        }
+
+        if (bond_type != INCHI_BOND_TYPE_DOUBLE && bond_type != INCHI_BOND_TYPE_TRIPLE)
+        {
+            bond_type = INCHI_BOND_TYPE_SINGLE;
+        }
+
+        k = a->valence;
+        already_here = 0;
+        for (i = 0; i < k; i++)
+        {
+            if (a->neighbor[i] == other_atom)
+            {
+                already_here = 1; break;
+            }
+        }
+
+        if (!already_here)
+        {
+            a->neighbor[k] = other_atom;
+            a->bond_type[k] = (U_CHAR)bond_type;
+            a->bond_stereo[k] = (S_CHAR)bond_stereo;
+            a->chem_bonds_valence += bond_type;
+            a->valence++;
+        }
+
+        a = &(at[other_atom]);
+        k = a->valence;
+        already_here = 0;
+        for (i = 0; i < k; i++)
+        {
+            if (a->neighbor[i] == this_atom)
+            {
+                already_here = 1; break;
+            }
+        }
+
+        if (!already_here && (k < MAXVAL)) /* djb-rwth: condition added to prevent buffer overrun */
+        {
+            a->neighbor[k] = this_atom;
+            a->bond_type[k] = (U_CHAR)bond_type;
+            a->bond_stereo[k] = (S_CHAR)bond_stereo;
+            a->chem_bonds_valence += bond_type;
+            a->valence++;
+        }
+
+        (*num_bonds)++;
+
+        return 1;
+    }
+    else
     {
         return 0;
     }
-
-    if (bond_type != INCHI_BOND_TYPE_DOUBLE && bond_type != INCHI_BOND_TYPE_TRIPLE)
-    {
-        bond_type = INCHI_BOND_TYPE_SINGLE;
-    }
-
-    a = &( at[this_atom] );
-    k = a->valence;
-    already_here = 0;
-    for (i = 0; i < k; i++)
-    {
-        if (a->neighbor[i] == other_atom)
-        {
-            already_here = 1; break;
-        }
-    }
-
-    if (!already_here)
-    {
-        a->neighbor[k] = other_atom;
-        a->bond_type[k] = (U_CHAR) bond_type;
-        a->bond_stereo[k] = (S_CHAR) bond_stereo;
-        a->chem_bonds_valence += bond_type;
-        a->valence++;
-    }
-
-    a = &( at[other_atom] );
-    k = a->valence;
-    already_here = 0;
-    for (i = 0; i < k; i++)
-    {
-        if (a->neighbor[i] == this_atom)
-        {
-            already_here = 1; break;
-        }
-    }
-
-    if (!already_here && (k < MAXVAL)) /* djb-rwth: condition added to prevent buffer overrun */
-    {
-        a->neighbor[k] = this_atom;
-        a->bond_type[k] = (U_CHAR) bond_type;
-        a->bond_stereo[k] = (S_CHAR) bond_stereo;
-        a->chem_bonds_valence += bond_type;
-        a->valence++;
-    }
-
-    ( *num_bonds )++;
-
-    return 1;
 }
 
 
@@ -3856,7 +3863,9 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
                                            int         *num_inp_bonds )
 {
     int i;
-    OAD_AtProps *aprops = NULL;
+    /* djb-rwth: fixing oss-fuzz issue #68329 */
+    OAD_AtProps *aprops = (OAD_AtProps*)inchi_calloc((long long)nat + 1, sizeof(OAD_AtProps)); /* djb-rwth: cast operator added */
+    /* nat + 1: add extra element for possibe 1-based indexing */
 
     if (!p)
     {
@@ -3880,8 +3889,6 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
     OAD_Polymer_DebugTrace( p );*/
 
     /* Set atom properties for sorting */
-    aprops = (OAD_AtProps *) inchi_calloc( (long long)nat + 1, sizeof( OAD_AtProps ) ); /* djb-rwth: cast operator added */
-                                        /* nat + 1: add extra element for possibe 1-based indexing */
     nat_global = nat + 1; /* djb-rwth: fixing oss-fuzz issue #68277 */
     if (!aprops || !at) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
@@ -3890,24 +3897,27 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
     OAD_Polymer_SetAtProps( p, at, nat, num_inp_bonds, aprops, NULL ); /* NULL as we alredy are in 1-based cano_nums while at i2s/i2i*/
     for (i = 0; i < p->n; i++)
     {
-        OAD_PolymerUnit *u = p->units[i];
-        if (p->frame_shift_scheme == FSS_NONE)
+        if (p->units[i]) /* djb-rwth: fixing oss-fuzz issue #68329 */
         {
-            continue;
+            OAD_PolymerUnit *u = p->units[i];
+            if (p->frame_shift_scheme == FSS_NONE)
+            {
+                continue;
+            }
+            if ( /* !u->cyclizable || u->cyclized  || */
+                u->nbkbonds < 1 ||
+                u->cap1 < 1 || u->cap2 < 1 ||
+                u->cap1 > nat || u->cap2 > nat)
+            {
+                continue;
+            }
+            if (OAD_PolymerUnit_SetReopeningDetails(u, at))
+            {
+                int senior_bond;
+                OAD_PolymerUnit_SortBackboneBondsAndSetSeniors(u, at, aprops, &senior_bond);
+            }
+            OAD_PolymerUnit_ReopenCyclized(u, at, aprops, nat, num_inp_bonds);
         }
-        if ( /* !u->cyclizable || u->cyclized  || */
-            u->nbkbonds < 1 ||
-            u->cap1 < 1 || u->cap2 < 1 ||
-            u->cap1 > nat || u->cap2 > nat)
-        {
-            continue;
-        }
-        if (OAD_PolymerUnit_SetReopeningDetails( u, at ))
-        {
-            int senior_bond;
-            OAD_PolymerUnit_SortBackboneBondsAndSetSeniors( u, at, aprops, &senior_bond );
-        }
-        OAD_PolymerUnit_ReopenCyclized( u, at, aprops, nat, num_inp_bonds );
     }
 
     p->really_do_frame_shift = 0;

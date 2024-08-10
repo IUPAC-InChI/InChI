@@ -82,6 +82,7 @@
 #include "bcf_s.h"
 static int pi_nnc1; /* djb-rwth: required for fixing oss-fuzz issue #69489 */
 static int pi_nnc2; /* djb-rwth: required for fixing oss-fuzz issue #69699 */
+static int pi_nnc3; /* djb-rwth: required for fixing GH issues #27/#28 */
 
 #define SEGM_LINE_ADD 128
 
@@ -8368,8 +8369,8 @@ int ParseSegmentMobileH( const char *str,
             pTaut = pEnd;
             t = NULL; /* found no tautomeric group for this component */
         }
-        /* djb-rwth: fixing oss-fuzz issue #69489 -- ui_rr */
-        for (i = 0; (i < mpy_component); i++)
+        /* djb-rwth: fixing oss-fuzz issue #69489 */
+        for (i = 0; (i < mpy_component) && (iComponent + i < nNumComponents); i++)
         {
             if (bMobileH == TAUT_NON)
             {
@@ -8388,6 +8389,7 @@ int ParseSegmentMobileH( const char *str,
                     len = pInChI[iComponent + i].nNumberOfAtoms + 1;
                 }
                 pInChI[iComponent + i].nNum_H_fixed = (S_CHAR *) inchi_calloc( len, sizeof( pInChI[0].nNum_H_fixed[0] ) );
+                pi_nnc3 = len;
                 if (!pInChI[iComponent + i].nNum_H_fixed)
                 {
                     ret = RI_ERR_ALLOC; /* allocation error */
@@ -8960,13 +8962,13 @@ int ParseSegmentMobileH( const char *str,
         for (i = 1; i < mpy_component; i++)
         {
 #if ( FIX_GAF_2019_2==1 )
-            if ((iComponent + i> nNumComponents - 1) || (iComponent + i<0))
+            if ((iComponent + i > nNumComponents - 1) || (iComponent + i < 0)) 
             {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
             }
 
-            if ((pInChI[iComponent + i].nNumberOfAtoms <= 0) || (pInChI[iComponent + i].nNumberOfAtoms>MAX_ATOMS))
+            if ((pInChI[iComponent + i].nNumberOfAtoms <= 0) || (pInChI[iComponent + i].nNumberOfAtoms > MAX_ATOMS))
             {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
@@ -8978,7 +8980,10 @@ int ParseSegmentMobileH( const char *str,
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
             }
-            memcpy(nNum_H(iComponent + i), nNum_H(iComponent), pInChI[iComponent + i].nNumberOfAtoms * sizeof(nNum_H(0)[0]));
+            if (nNum_H(iComponent)) /* djb-rwth: fixing GH issues #27/#28 */
+            {
+                memcpy(nNum_H(iComponent + i), nNum_H(iComponent), pInChI[iComponent + i].nNumberOfAtoms * sizeof(nNum_H(0)[0]));
+            }
             /*
             memcpy( pInChI[iComponent+i].nNum_H, pInChI[iComponent].nNum_H,
             pInChI[iComponent+i].nNumberOfAtoms * sizeof(pInChI[0].nNum_H[0]) );

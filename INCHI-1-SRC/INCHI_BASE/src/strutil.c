@@ -624,7 +624,7 @@ int fix_odd_things( int num_atoms,
 #define FIRST_CENTER2  5
 
     int i1, i2, k1, k2, c = -1, num_changes = 0;
-    char elname[ATOM_EL_LEN];
+    /* djb-rwth: removing redundant variables */
 
     if (bFixNonUniformDraw)
     {

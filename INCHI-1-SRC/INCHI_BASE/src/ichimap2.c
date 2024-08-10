@@ -159,7 +159,7 @@ int SortedEquInfoToRanks( const AT_RANK* nSymmRank, AT_RANK* nRank, const AT_RAN
 
     i_init = num_atoms - 1;
     /* djb-rwth: fixing oss-fuzz issue #69965 */
-    if (i_init < na_global)
+    if ((i_init >= 0) && (i_init < na_global))
     {
         j = (int)nAtomNumber[i_init];
         rOld = nSymmRank[j];

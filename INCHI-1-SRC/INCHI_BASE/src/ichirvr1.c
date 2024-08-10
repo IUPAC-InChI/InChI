@@ -5698,6 +5698,13 @@ int MakeInChIOutOfStrFromINChI2( INCHI_CLOCK *ic,
         goto exit_error;
     }
 
+    /* djb-rwth: fixing oss-fuzz issue #70552 */
+    if (!ip_inp || !sd_inp || !pStruct)
+    {
+        ret = RI_ERR_ALLOC;
+        goto exit_error;
+    }
+
     *ip = *ip_inp;
     ip->bDisplay = 0;
     ip->bDisplayCompositeResults = 0;

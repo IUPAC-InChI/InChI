@@ -3862,6 +3862,7 @@ int  Create_INChI( CANON_GLOBALS *pCG,
     t_group_info->bIgnoreIsotopic = 0;   /*  include tautomeric group isotopic info in MarkTautomerGroups() */
     t_group_info->bTautFlags = *pbTautFlags;
     t_group_info->bTautFlagsDone = *pbTautFlagsDone;
+    t_group_info->t_group = NULL; /* djb-rwth: fixing oss-fuzz issue #70475 */
 
     /*
         Preprocess the structure
