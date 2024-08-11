@@ -226,7 +226,7 @@ If a similar issue occurs on MacOS<sup>&reg;</sup>, one of the above solutions s
 
   The use of bounds checking functions in `InChI v.1.07` can be enabled/disabled in `bcf_s.h`.
 
-- If you wish to use [Intel<sup>&reg;</sup> oneAPI Threading Building Blocks (oneTBB)](https://github.com/oneapi-src/oneTBB), please follow the instructions given in header files `mode.h` and `tbbmalloc_proxy.h`. Please note that the [pre-compiled binaries](#using-precompiled-binaries) mentioned in the previous section do not use `oneTBB`.
+- If you wish to use [Intel<sup>&reg;</sup> oneAPI Threading Building Blocks (oneTBB)](https://github.com/oneapi-src/oneTBB), please follow the instructions given in header files `mode.h` and `tbbmalloc_proxy.h`. Please note that the [pre-compiled binaries](#using-precompiled-binaries) do not use `oneTBB`.
 
 ## Experimental features under development
 
