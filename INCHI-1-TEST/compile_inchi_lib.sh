@@ -18,12 +18,6 @@ cleanup() {
 # Register cleanup to be called on EXIT.
 trap cleanup EXIT
 
-if [[ $inchi_version != "v1.05" && $inchi_version != "v1.06" && $inchi_version != "v1.07.0" && $inchi_version != "main" ]]; then
-    echo "InChI version '$inchi_version' cannot be compiled."
-    echo "Choose a version from 'v1.05', 'v1.06', 'v1.07.0', or 'main'."
-    exit 1
-fi
-
 if [ -n "$(git status --porcelain)" ]; then
     echo "There are uncommitted changes on the current branch."
     echo "Please commit or stash them before compiling '$inchi_version'."

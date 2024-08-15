@@ -22,11 +22,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e INCHI-1-TEST[invariance-tests]
       - name: Compile InChI library from triggering branch
-        # https://github.com/actions/runner-images/issues/6775
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE" # https://github.com/actions/runner-images/issues/6775
           mkdir "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           ./INCHI-1-TEST/compile_inchi_lib.sh ${{ github.ref_name }} "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            # Rename library to libinchi.so.main, since that's the name the tests expect.
+            mv "$GITHUB_WORKSPACE/INCHI-1-TEST/libs/libinchi.so.${{ github.ref_name }}" "$GITHUB_WORKSPACE/INCHI-1-TEST/libs/libinchi.so.main"
+          fi
       - uses: ./.github/actions/regression_tests
         with:
           artifact-name: regression-test-results_glibc_gcc
@@ -65,11 +68,14 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e INCHI-1-TEST
       - name: Compile InChI library from triggering branch
-        # https://github.com/actions/runner-images/issues/6775
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE" # https://github.com/actions/runner-images/issues/6775
           mkdir "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           ./INCHI-1-TEST/compile_inchi_lib.sh ${{ github.ref_name }} "$GITHUB_WORKSPACE/INCHI-1-TEST/libs"
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            # Rename library to libinchi.so.main, since that's the name the tests expect.
+            mv "$GITHUB_WORKSPACE/INCHI-1-TEST/libs/libinchi.so.${{ github.ref_name }}" "$GITHUB_WORKSPACE/INCHI-1-TEST/libs/libinchi.so.main"
+          fi
       - uses: ./.github/actions/regression_tests
         with:
           artifact-name: regression-test-results_musl_gcc
