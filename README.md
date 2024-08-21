@@ -1,47 +1,19 @@
 # Official home of the InChI
 
-- <em>Version 1.07.1</em> (09/08/2024):
-  - 64-bit `makefile` now supports native/default MacOS<sup>&reg;</sup> `Clang` compiler
-  - `AuxInfo`s in `CLI` version of `InChI` are now identical to `v1.06`
-  - [Intel<sup>&reg;</sup> oneAPI DPC++/C++](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html) compiler can now be used with Microsoft<sup>&reg;</sup> `Visual Studio` solutions/projects on Microsoft<sup>&reg;</sup> Windows
-  - ["Replace memchr() check with a new function to check the element group"](https://github.com/IUPAC-InChI/InChI/pull/36) pull request merged
-  - ["Faster Element Symbol Handling"](https://github.com/IUPAC-InChI/InChI/pull/31) pull request merged
-  - ["replace all instances of old license text. Fixes #33"](https://github.com/IUPAC-InChI/InChI/pull/34) pull request merged
-  <!--
-  - ["Issues with InChI I/O with /FixedH / Issue #27](https://github.com/IUPAC-InChI/InChI/issues/27) and ["Seqmentation fault in inchi-1.exe with /InChI2InChI validation / Issue #28](https://github.com/IUPAC-InChI/InChI/issues/28) have been fixed 
-  -->
-  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Minor bugs fixes
-- <em>Version 1.07.0</em> (16/07/2024):
-  - ["WarnOnEmptyStructure option problem / Issue #25](https://github.com/IUPAC-InChI/InChI/issues/25) has been fixed
-  - Software unresponsiveness when options are applied without any input file(s) has been fixed
-  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Minor bugs fixes
-- <em>Version 1.07-Release Candidate 4 (RC4)</em> (27/06/2024):
-  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Minor bugs fixes
-- <em>Version 1.07-Release Candidate 3 (RC3)</em> (13/06/2024):
-  - Issues with executables compiled with `GCC` versions `12.x/13.x/14.x` has been fixed. Starting from `InChI v.1.07-RC3`, any version of `GCC` compiler can be used.
-  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Minor bugs fixes
-- <em>Version 1.07-Release Candidate 2 (RC2)</em> (04/06/2024):
-  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Minor bugs fixes
-- <em>Version 1.07-Release Candidate 1 (RC1)</em> (27/05/2024):
-  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Minor bugs fixes
-- <em>Beta5</em> (23/04/2024):
-  - Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-  - Licence updated
-- <em>Beta4</em> (24/03/2024):
-  - ["/b-layer" issue / Issue #9](https://github.com/IUPAC-InChI/InChI/issues/9#issue-2151944482) has been fixed
-  - [Incorrect output message regarding CPU architecture on ARM64 CPUs / Issue #10](https://github.com/IUPAC-InChI/InChI/issues/10#issue-2169630260) has been fixed
-  - Further <code>Google<sup>&reg;</sup> oss-fuzz</code> issues have been addressed
-- <em>Beta3</em>: 23/01/2024
-- <em>Beta2</em>: 11/12/2023
-- <em>Beta1</em>: 20/11/2023
+## Version 1.07.1 (09/08/2024)
+
+- 64-bit `makefile` now supports native/default MacOS<sup>&reg;</sup> `Clang` compiler
+- `AuxInfo`s in `CLI` version of `InChI` are now identical to `v1.06`
+- [Intel<sup>&reg;</sup> oneAPI DPC++/C++](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html) compiler can now be used with Microsoft<sup>&reg;</sup> `Visual Studio` solutions/projects on Microsoft<sup>&reg;</sup> Windows
+- ["Replace memchr() check with a new function to check the element group"](https://github.com/IUPAC-InChI/InChI/pull/36) pull request merged
+- ["Faster Element Symbol Handling"](https://github.com/IUPAC-InChI/InChI/pull/31) pull request merged
+- ["replace all instances of old license text. Fixes #33"](https://github.com/IUPAC-InChI/InChI/pull/34) pull request merged
+- ["Issues with InChI I/O with /FixedH / Issue #27](https://github.com/IUPAC-InChI/InChI/issues/27) and ["Seqmentation fault in inchi-1.exe with /InChI2InChI validation / Issue #28](https://github.com/IUPAC-InChI/InChI/issues/28) have been fixed
+- Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
+- Minor bugs fixes
 
 ## Using precompiled binaries
+
 64-bit and 32-bit precompiled binaries (executable, `.dll/.so` and ELF files) are located in the following folders:
 <br />
 <table id="Win">
@@ -171,6 +143,7 @@ Support for native/default MacOS<sup>&reg;</sup> `Clang` compiler is now provide
 If `makefile/makefile32` is used for compiling `libinchi` on Microsoft<sup>&reg;</sup> Windows, `libinchi.dll` is now generated instead of `libinchi.so.1.07`.
 
 <strong>Additional notes</strong>:
+
 - [Intel® oneAPI DPC++/C++](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html) compiler support for UNIX-based OSs/MacOS<sup>&reg;</sup> will be available in `v.1.07.2`. Please note that the support will **not** be provided for [Intel® C++ Compiler Classic (icc)](https://www.intel.com/content/www/us/en/developer/articles/release-notes/oneapi-c-compiler-release-notes.html) as it has been discontinued since `oneAPI 2024.0 release`.
 - Compiling from source using [CMake](https://en.wikipedia.org/wiki/CMake) will be available soon. In the meanwhile, you can check [Gianluca Sforna's fork](https://github.com/giallu/InChI/tree/giallu/port_to_cmake).
 
@@ -184,35 +157,35 @@ If API version (i.e. `libinchi.so.1.07` and `inchi_main` ELF file) is compiled u
 It might be worth trying to change the value of `LINKER_CWD_PATH` to `-Wl,-R,"",-rpath,$(LIB_DIR)` (i.e. replacing `=` with `,`) in corresponding `makefile/makefile32`; however, please note that during our tests, this option failed to generate `libinchi.so.1.07` with `Clang/LLVM` on Linux.
 More reliably, `LD_LIBRARY_PATH` can be set in several ways:
 
-   - Temporarily:
+- Temporarily:
   
-     - by running a shell script `ldlp_fix.sh` (located in `/INCHI_API/bin/Linux`) with either of these two commands:
-       - `. ldlp_fix.sh` 
-       - `source ldlp_fix.sh`;
+  - by running a shell script `ldlp_fix.sh` (located in `/INCHI_API/bin/Linux`) with either of these two commands:
+    - `. ldlp_fix.sh`
+    - `source ldlp_fix.sh`;
 
         path to `libinchi.so.1.07` can be edited in `ldlp_fix.sh`
-     - using command line interface:
-     
+  - using command line interface:
+
        ```
        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/libinchi.so.1.07
        ```
 
-   - Permanently:
-     - by adding the following line in `~/.bashrc`:
+- Permanently:
+  - by adding the following line in `~/.bashrc`:
 
          ```
          LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/path/to/libinchi.so.1.07"
          ```
 
-     - by adding the `libinchi.so.1.07` path to `ld.so.conf`, which means adding a file `/etc/ld.so.conf.d/local.conf` containing just one line:
+  - by adding the `libinchi.so.1.07` path to `ld.so.conf`, which means adding a file `/etc/ld.so.conf.d/local.conf` containing just one line:
 
          ```
          path/to/libinchi.so.1.07
          ```
 
          and then running `sudo ldconfig`.
-    
-      - Open-source utility [patchelf](https://github.com/NixOS/patchelf) can also be of use.
+
+  - Open-source utility [patchelf](https://github.com/NixOS/patchelf) can also be of use.
   
 If a similar issue occurs on MacOS<sup>&reg;</sup>, one of the above solutions should be applied for setting `DYLD_LIBRARY_PATH` and/or `DYLD_FALLBACK_LIBRARY_PATH` (which behave like `LD_LIBRARY_PATH`).
 
@@ -234,12 +207,12 @@ Some of the experimental/engineering/hidden options featured in `InChI 1.07` whi
 
 - In command line version:
 
-   - <em>32-bit</em> <code>Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC) Win32</code> compiler-specific issue with the following options:
+  - <em>32-bit</em> <code>Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC) Win32</code> compiler-specific issue with the following options:
 
-      - `AMI`         Allow multiple input files (wildcards supported)
-      - `AMIOutStd`   Write output to stdout (in AMI mode)
-      - `AMILogStd`   Write log to stderr (in AMI mode)
-      - `AMIPrbNone`  Suppress creation of problem files (in AMI mode)
+    - `AMI`         Allow multiple input files (wildcards supported)
+    - `AMIOutStd`   Write output to stdout (in AMI mode)
+    - `AMILogStd`   Write log to stderr (in AMI mode)
+    - `AMIPrbNone`  Suppress creation of problem files (in AMI mode)
   
 <!-- 
   -  `MERGE`       Use bMergeAllInputStructures
@@ -262,17 +235,17 @@ Some of the experimental/engineering/hidden options featured in `InChI 1.07` whi
   -  `ANNPLAIN`    ....
 -->
 - In API/`.dll`/`.so` version:
-  -  `PT_22_00`    Account for PT_22_00 tautomerism (experimental)
-  -  `PT_16_00`    Account for PT_16_00 tautomerism (experimental)
-  -  `PT_06_00`    Account for PT_06_00 tautomerism (experimental)
-  -  `PT_39_00`    Account for PT_39_00 tautomerism (experimental)
-  -  `PT_13_00`    Account for PT_13_00 tautomerism (experimental)
-  -  `PT_18_00`    Account for PT_18_00 tautomerism (experimental)
-  -  `Polymers105` Allow processing of polymers (experimental, legacy mode of v. 1.05)
-  -  `NoEdits`     Disable polymer CRU frame shift and folding
-  -  `NPZz`        Allow non-polymer-related Zz atoms (pseudo element placeholders)
-  -  `SAtZz`       Allow stereo at atoms connected to Zz(default: disabled)
-  -  `InChI2Struct` Test mode: Mol/SDfile -> InChI -> Structure -> (InChI+AuxInfo) -- produces `Fatal Error (2)3` just like in `InChI v.1.06`
-  -  `InChI2InChI`  Convert  Convert InChI string(s) into InChI string(s) -- produces `Fatal Error(2)3` just like in `InChI v.1.06`
+  - `PT_22_00`    Account for PT_22_00 tautomerism (experimental)
+  - `PT_16_00`    Account for PT_16_00 tautomerism (experimental)
+  - `PT_06_00`    Account for PT_06_00 tautomerism (experimental)
+  - `PT_39_00`    Account for PT_39_00 tautomerism (experimental)
+  - `PT_13_00`    Account for PT_13_00 tautomerism (experimental)
+  - `PT_18_00`    Account for PT_18_00 tautomerism (experimental)
+  - `Polymers105` Allow processing of polymers (experimental, legacy mode of v. 1.05)
+  - `NoEdits`     Disable polymer CRU frame shift and folding
+  - `NPZz`        Allow non-polymer-related Zz atoms (pseudo element placeholders)
+  - `SAtZz`       Allow stereo at atoms connected to Zz(default: disabled)
+  - `InChI2Struct` Test mode: Mol/SDfile -> InChI -> Structure -> (InChI+AuxInfo) -- produces `Fatal Error (2)3` just like in `InChI v.1.06`
+  - `InChI2InChI`  Convert  Convert InChI string(s) into InChI string(s) -- produces `Fatal Error(2)3` just like in `InChI v.1.06`
 
 Please refrain from using the above mentioned options as they might not function properly, or will not be recognised. Regular updates with regard to their functionality will be posted on this page.
