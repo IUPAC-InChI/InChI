@@ -11,9 +11,8 @@ class TestConfig(BaseModel):
     # All paths are relative to the root of the repository.
 
     name: Literal["regression", "regression-reference", "invariance"]
-    # Version that's being used for compiling the InChI API binary.
-    # Must be one of the tags in `git tag` or branches in `git branch`.
-    inchi_version: str
+    # Path to the InChI shared library.
+    inchi_library_path: FilePath
     # Parameters to pass to the InChI API.
     inchi_api_parameters: str = ""
     # Permute each structure N times.

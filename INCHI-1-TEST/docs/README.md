@@ -83,7 +83,7 @@ The 2nd run results in a regression, since the output no longer matches the refe
 run-tests --test-config=INCHI-1-TEST/config/config.regression_reference.py --data-config=INCHI-1-TEST/config/config.<dataset>.py
 ```
 
-uses `libinchi.so.<version>`, the shared library belonging to the version specified with `--test-config`,
+uses `libinchi.so.<version>`, the shared library specified with `--test-config`,
 and generates an `<SDF>.regression_reference.sqlite` file for each SDF under `INCHI-1-TEST/data/<dataset>`.
 The `sqlite` file contains a table with the results for each molfile.
 
@@ -201,7 +201,7 @@ We provide two [templates](INCHI-1-TEST/src/inchi_tests/config_models.py) under 
 
 Lets you customize the test itself, e.g.,
 configuring what to run ("regression", "regression-reference", or "invariance"),
-which InChI version to use, and which parameters to pass to the InChI API.
+which InChI library to use, and which parameters to pass to the InChI API.
 For details, have a look at the comments in the `TestConfig` class.
 Your configuration file, e.g., `config/custom-regression.py` must contain an instance of `TestConfig` called `config`.
 For an example of how to instantiate a `TestConfig` object, have a look at our [regression configuration](INCHI-1-TEST/config/config.regression.py).
