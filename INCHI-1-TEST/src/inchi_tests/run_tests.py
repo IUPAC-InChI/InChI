@@ -38,13 +38,8 @@ def main() -> None:
         f"{datetime.now().strftime('%Y%m%dT%H%M%S')}_{test}_{dataset}.log"
     )
     n_processes = test_config.n_processes
-    inchi_version = test_config.inchi_version
     inchi_api_parameters = test_config.inchi_api_parameters
-    inchi_lib_dir = Path("INCHI-1-TEST/libs")
-    inchi_lib_path = inchi_lib_dir.joinpath(f"libinchi.so.{inchi_version}")
-    if not inchi_lib_path.exists():
-        logging.error(f"libinchi.so.{inchi_version} not found in {inchi_lib_dir}.")
-        raise SystemExit(1)
+    inchi_lib_path = test_config.inchi_library_path
 
     gcc_version = subprocess.run(
         "gcc -dumpversion",
@@ -56,7 +51,7 @@ def main() -> None:
 
     logging.basicConfig(filename=log_path, encoding="utf-8", level=logging.INFO)
     logging.info(
-        f"{get_current_time()}: InChI '{inchi_version}' compiled with GCC {gcc_version}."
+        f"{get_current_time()}: Using '{inchi_lib_path}' compiled with GCC {gcc_version}."
     )
     logging.info(
         f"{get_current_time()}: Starting to process {n_sdf} SDFs on {n_processes} cores."

@@ -2,7 +2,7 @@
 
 set -e
 
-inchi_version=$1
+inchi_version=$1 # Must be one of the tags in `git tag` or branches in `git branch`.
 inchi_lib_dir=$2 # Path must be absolute.
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 makefile_dir="INCHI-1-SRC/INCHI_API/libinchi/gcc"
