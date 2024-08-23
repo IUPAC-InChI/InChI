@@ -2,10 +2,7 @@
 // https://hub.docker.com/_/python
 {
     "name": "InChI",
-    "build": {
-        "dockerfile": "Dockerfile",
-        "context": ".."
-    },
+    "image": "gcc:14-bookworm",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
             "installZsh": true,
