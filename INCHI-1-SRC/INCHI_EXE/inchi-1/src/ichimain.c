@@ -1673,7 +1673,7 @@ int RepeatedlyRenumberAtomsAndRecalcINCHI(struct tagINCHI_CLOCK* ic,
     {
         if (very_silent < 2)
         {
-            inchi_ios_eprint(plog, "#%-ld-%08ld\t...\t%-s\t%s%s%s%s\n", *num_inp, 1, ikey0, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue));
+            inchi_ios_eprint(plog, "#%-ld-%08ld\t...\t%-s\t%s\n", *num_inp, 1, ikey0, get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue));
         }
     }
 
@@ -1719,7 +1719,7 @@ int RepeatedlyRenumberAtomsAndRecalcINCHI(struct tagINCHI_CLOCK* ic,
                         ndiff++;
                         /*inchi_ios_eprint( plog, "!!! #%-ld-%05ld %s%s%s%s\tcurr %-s != %-s orig\n", *num_inp, irepeat + 2, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ),  ikey, ikey0  );*/
                         /*inchi_ios_eprint( plog, "!!! %s%s%s%s renum#%05ld\t%-s != %-s\n", SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ), irepeat + 2, ikey, ikey0  );*/
-                        inchi_ios_eprint(plog, "!!! #%-ld %s%s%s%s\t%-s --> %-s @ renum#%06d/%06ld\n", *num_inp, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue), ikey0, ikey, irepeat + 2, nrepeat);
+                        inchi_ios_eprint(plog, "!!! #%-ld %s\t%-s --> %-s @ renum#%06d/%06ld\n", *num_inp, get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue), ikey0, ikey, irepeat + 2, nrepeat);
                         if (!very_silent)
                         {
                             int k;
@@ -1765,7 +1765,7 @@ int RepeatedlyRenumberAtomsAndRecalcINCHI(struct tagINCHI_CLOCK* ic,
                     {
                         if (very_silent < 2)
                         {
-                            inchi_ios_eprint(plog, "...........\n#%-ld-%08ld\t...\t%-s\t%s%s%s%s\n", *num_inp, irepeat + 2, ikey0, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue));
+                            inchi_ios_eprint(plog, "...........\n#%-ld-%08ld\t...\t%-s\t%s\n", *num_inp, irepeat + 2, ikey0, get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue));
                         }
                     }
 
@@ -1791,7 +1791,7 @@ int RepeatedlyRenumberAtomsAndRecalcINCHI(struct tagINCHI_CLOCK* ic,
                 /*inchi_ios_eprint( plog, "#%-ld-%05ld\t...\tOK ALL\n", *num_inp, nrepeat );*/
                 /*inchi_ios_eprint( plog, "OK  #%-ld %s%s%s%s\n", *num_inp, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue));*/
                 /*inchi_ios_eprint(plog, "#%-ld\n", *num_inp);*/
-                inchi_ios_eprint(plog, "OK  #%-ld %s%s%s%s\t%-s\t Same for %-d/%-d renums\n", *num_inp, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue), ikey0, nrepeat, nrepeat);
+                inchi_ios_eprint(plog, "OK  #%-ld %s\t%-s\t Same for %-d/%-d renums\n", *num_inp, get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue), ikey0, nrepeat, nrepeat);
             }
         }
         else

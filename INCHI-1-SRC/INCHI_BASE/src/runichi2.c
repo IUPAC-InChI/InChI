@@ -368,7 +368,7 @@ int GetOneComponent( INCHI_CLOCK        *ic,
     {
         /*  Log error message */
         AddErrorMessage( sd->pStrErrStruct, "Cannot extract Component" );
-        inchi_ios_eprint( log_file, "%s #%d structure #%ld.%s%s%s%s\n", sd->pStrErrStruct, i + 1, num_inp, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+        inchi_ios_eprint( log_file, "%s #%d structure #%ld.%s\n", sd->pStrErrStruct, i + 1, num_inp, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         sd->nErrorCode = inp_cur_data->num_at < 0 ? inp_cur_data->num_at : ( orig_inp_data->nCurAtLen[i] != inp_cur_data->num_at ) ? CT_ATOMCOUNT_ERR : CT_UNKNOWN_ERR;
         /* num_err ++; */
         sd->nErrorType = _IS_ERROR;
@@ -730,7 +730,7 @@ int TreatErrorsInReadTheStructure( STRUCT_DATA      *sd,
         /*  End of file */
         if (sd->pStrErrStruct[0])
         {
-            inchi_ios_eprint( log_file, "%s inp structure #%ld: End of file.%s%s%s%s    \n", sd->pStrErrStruct, *num_inp, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+            inchi_ios_eprint( log_file, "%s inp structure #%ld: End of file.%s    \n", sd->pStrErrStruct, *num_inp, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         }
 
         inchi_ios_eprint( log_file, "End of file detected after structure #%ld.   \n", *num_inp - 1 );
@@ -764,8 +764,8 @@ int TreatErrorsInReadTheStructure( STRUCT_DATA      *sd,
         /*  Fatal error */
         if (nLogMask & LOG_MASK_FATAL)
         {
-            inchi_ios_eprint( log_file, "Fatal Error %d (aborted; %s) inp structure #%ld.%s%s%s%s\n",
-                     sd->nStructReadError, sd->pStrErrStruct, *num_inp, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+            inchi_ios_eprint( log_file, "Fatal Error %d (aborted; %s) inp structure #%ld.%s\n",
+                     sd->nStructReadError, sd->pStrErrStruct, *num_inp, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         }
 
 #if ( bRELEASE_VERSION == 1 || EXTR_FLAGS == 0 )
@@ -785,9 +785,9 @@ int TreatErrorsInReadTheStructure( STRUCT_DATA      *sd,
         /*  70 => too many atoms */
         if (nLogMask & LOG_MASK_ERR)
         {
-            inchi_ios_eprint( log_file, "Error %d (no %s; %s) inp structure #%ld.%s%s%s%s\n",
+            inchi_ios_eprint( log_file, "Error %d (no %s; %s) inp structure #%ld.%s\n",
                  sd->nStructReadError, ( ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY ) ? "Molfile" : INCHI_NAME,
-                 sd->pStrErrStruct, *num_inp, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+                 sd->pStrErrStruct, *num_inp, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         }
 
 #if ( bRELEASE_VERSION == 1 || EXTR_FLAGS == 0 )
@@ -804,8 +804,8 @@ int TreatErrorsInReadTheStructure( STRUCT_DATA      *sd,
 
         if (nLogMask & LOG_MASK_WARN)
         {
-            inchi_ios_eprint( log_file, "Warning: (%s) inp structure #%ld.%s%s%s%s\n",
-               sd->pStrErrStruct, *num_inp, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+            inchi_ios_eprint( log_file, "Warning: (%s) inp structure #%ld.%s\n",
+               sd->pStrErrStruct, *num_inp, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         }
     }
 

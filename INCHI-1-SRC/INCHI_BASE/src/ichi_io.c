@@ -1738,9 +1738,9 @@ int Output_RecordInfo(INCHI_IOSTREAM   *out_file,
     }
     else
     {
-        inchi_ios_print_nodisplay(out_file, "%sStructure: %d.%s%s%s%s",
+        inchi_ios_print_nodisplay(out_file, "%sStructure: %d.%s",
             pLF, num_input_struct,
-            SDF_LBL_VAL(szSdfLabel, szSdfValue));
+            get_sdf_lbl_val(szSdfLabel, szSdfValue));
 
         if (lSdfId)
         {

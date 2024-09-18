@@ -1177,8 +1177,8 @@ int OutputINChI1( CANON_GLOBALS *pCG,
     memset( io.sDifSegs, DIFV_BOTH_EMPTY, sizeof( io.sDifSegs ) ); /* djb-rwth: memset_s C11/Annex K variant? */
     if (!strbuf || !( strbuf->pStr ) || strbuf->nAllocatedLength <= 0)
     {
-        inchi_ios_eprint( log_file, "Cannot allocate output buffer. No output for structure #%d.%s%s%s%s\n",
-                         num_input_struct, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+        inchi_ios_eprint( log_file, "Cannot allocate output buffer. No output for structure #%d.%s\n",
+                         num_input_struct, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         return ret;
     }
 
@@ -2075,8 +2075,8 @@ exit_function:
     if (intermediate_result)
     {
         ret = 0;
-        inchi_ios_eprint( log_file, "InChI serialization error for structure #%d.%s%s%s%s\n",
-                                    num_input_struct, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+        inchi_ios_eprint( log_file, "InChI serialization error for structure #%d.%s\n",
+                                    num_input_struct, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
     }
 
     return ret;

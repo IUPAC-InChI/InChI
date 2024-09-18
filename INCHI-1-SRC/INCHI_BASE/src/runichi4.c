@@ -1397,9 +1397,9 @@ int TreatErrorsInCreateOneComponentINChI( STRUCT_DATA *sd,
     {
         AddErrorMessage( sd->pStrErrStruct, ErrMsg( sd->nErrorCode ) );
         inchi_ios_eprint( log_file,
-                          "Error %d (%s) structure #%ld component %d.%s%s%s%s\n",
+                          "Error %d (%s) structure #%ld component %d.%s\n",
                           sd->nErrorCode, sd->pStrErrStruct,
-                          num_inp, i + 1, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+                          num_inp, i + 1, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         sd->nErrorType = ( sd->nErrorCode == CT_OUT_OF_RAM || sd->nErrorCode == CT_USER_QUIT_ERR )
             ? _IS_FATAL
             : _IS_ERROR;
@@ -1476,8 +1476,8 @@ int TreatCreateINChIWarning( STRUCT_DATA    *sd,
 
     if (!sd->nErrorCode && sd->pStrErrStruct[0])
     {
-        inchi_ios_eprint( log_file, "Warning (%s) structure #%ld.%s%s%s%s\n",
-            sd->pStrErrStruct, num_inp, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+        inchi_ios_eprint( log_file, "Warning (%s) structure #%ld.%s\n",
+            sd->pStrErrStruct, num_inp, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         sd->nErrorType = _IS_WARNING;
 
 #ifdef TARGET_LIB_FOR_WINCHI

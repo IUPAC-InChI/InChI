@@ -2531,8 +2531,8 @@ int ProcessStructError( INCHI_IOSTREAM *out_file,
         {
             if (!( b_ok = OutputINChIPlainError( out_file, pStrErrStruct, nErrorType ) ))
             {
-                inchi_ios_eprint( log_file, "Cannot create message for error (structure #%ld.%s%s%s%s) Terminating.\n",
-                                                            num_inp, SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+                inchi_ios_eprint( log_file, "Cannot create message for error (structure #%ld.%s) Terminating.\n",
+                                                            num_inp, get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
             }
             else
             {

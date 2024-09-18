@@ -554,7 +554,7 @@ int OrigAtData_SaveMolfile( ORIG_ATOM_DATA  *orig_inp_data,
     else
     {
         char szNumber[256];
-        sprintf(szNumber, "Structure #%ld. %s%s%s%s", num_inp, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue));
+        sprintf(szNumber, "Structure #%ld. %s", num_inp, get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue));
         ret = OrigAtData_WriteToSDfile( orig_inp_data, out_file, szNumber, NULL,
                                         ( sd->bChiralFlag&FLAG_INP_AT_CHIRAL ) ? 1 : 0,
                                         ( ip->bINChIOutputOptions&INCHI_OUT_SDFILE_ATOMS_DT ) ? 1 : 0,
@@ -1312,15 +1312,15 @@ int CreateOneStructureINChI( CANON_GLOBALS          *pCG,
         {
             if (cur_prep_inp_data->num_components == 1)
             {
-                sprintf(szTitle, "%sInput Structure #%ld.%s%s%s%s%s",
+                sprintf(szTitle, "%sInput Structure #%ld.%s%s",
                     bStructurePreprocessed ? "Preprocessed " : "",
-                    num_inp, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
+                    num_inp, get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
             }
             else
             {
-                sprintf(szTitle, "Component #%d of %d, Input Structure #%ld.%s%s%s%s%s",
+                sprintf(szTitle, "Component #%d of %d, Input Structure #%ld.%s%s",
                     i + 1, cur_prep_inp_data->num_components,
-                    num_inp, SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
+                    num_inp, get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
             }
 
 #if defined (TARGET_EXE_STANDALONE) && defined(_WIN32)
@@ -1463,21 +1463,21 @@ int CreateOneStructureINChI( CANON_GLOBALS          *pCG,
                             /*  Added number of components, added another format for a single component case - DCh */
                             if (cur_prep_inp_data->num_components > 1)
                             {
-                                sprintf(szTitle, "%s Component #%d of %d, Structure #%ld%s%s.%s%s%s%s%s",
+                                sprintf(szTitle, "%s Component #%d of %d, Structure #%ld%s%s.%s%s",
                                     bFixedBondsTaut ? "Preprocessed" : "Result for",
                                     i + 1, cur_prep_inp_data->num_components, num_inp,
                                     bDisplayTaut == 1 ? ", mobile H" : bDisplayTaut == 0 ? ", fixed H" : "",
                                     bIsotopic ? ", isotopic" : "",
-                                    SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
+                                    get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
                             }
                             else
                             {
-                                sprintf(szTitle, "%s Structure #%ld%s%s.%s%s%s%s%s",
+                                sprintf(szTitle, "%s Structure #%ld%s%s.%s%s",
                                     bFixedBondsTaut ? "Preprocessed" : "Result for",
                                     num_inp,
                                     bDisplayTaut == 1 ? ", mobile H" : bDisplayTaut == 0 ? ", fixed H" : "",
                                     bIsotopic ? ", isotopic" : "",
-                                    SDF_LBL_VAL(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
+                                    get_sdf_lbl_val(ip->pSdfLabel, ip->pSdfValue), iINChI ? " (Reconnected)" : "");
                             }
 
 #if defined (TARGET_EXE_STANDALONE) && defined(_WIN32)
@@ -2876,9 +2876,9 @@ int ValidateAndPreparePolymerAndPseudoatoms( struct tagINCHI_CLOCK *ic,
     if (res)
     {
         sd->nErrorCode = res;
-        inchi_ios_eprint( log_file, "Error %d (%s) structure #%ld.%s%s%s%s\n",
+        inchi_ios_eprint( log_file, "Error %d (%s) structure #%ld.%s\n",
                           sd->nErrorCode, sd->pStrErrStruct, num_inp,
-                          SDF_LBL_VAL( ip->pSdfLabel, ip->pSdfValue ) );
+                          get_sdf_lbl_val( ip->pSdfLabel, ip->pSdfValue ) );
         res = _IS_ERROR;
         if (orig_inp_data) /* djb-rwth: fixing a NULL pointer dereference */
             orig_inp_data->num_inp_atoms = -1;
