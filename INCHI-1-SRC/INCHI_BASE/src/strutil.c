@@ -163,6 +163,17 @@ void add_bond_if_unseen( subgraf_pathfinder *spf,
 #endif
 /****************************************************************************/
 
+const char *get_sdf_lbl_val(const char *lbl, const char *val)
+{
+    if (lbl && lbl[0]) {
+        if (val && val[0]) {
+            return " L=V";
+        } else {
+            return " L is missing";
+        }
+    }
+    return "";
+}
 
 /****************************************************************************/
 int cmp_iso_atw_diff_component_no( const void *a1, const void *a2 )

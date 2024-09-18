@@ -409,13 +409,14 @@ extern "C" {
 
     int bIsSameBond(int a1, int a2, int b1, int b2);
 
-    extern const char gsMissing[];
-    extern const char gsEmpty[];
-    extern const char gsSpace[];
-    extern const char gsEqual[];
-
-#define SDF_LBL_VAL(L,V)  ((L)&&(L)[0])?gsSpace:gsEmpty, ((L)&&(L)[0])?L:gsEmpty, ((L)&&(L)[0])? (((V)&&(V)[0])?gsEqual:gsSpace):gsEmpty, ((V)&&(V)[0])?V:((L)&&(L)[0])?gsMissing:gsEmpty
-
+/**********************************************
+ * output " L=V" or " L missing" or ""
+ * The fprintf format string must contain %s%s%s%s
+ *
+ * legacy macro, can be replaced with get_sdf_lbl_val() below
+ */
+#define SDF_LBL_VAL(L, V) get_sdf_lbl_val(L, V), "", "", ""
+    const char *get_sdf_lbl_val(const char *lbl, const char *val);
 
     /* Handle integer matrix [mxn] */
     int  imat_new(int m, int n, int ***a);
