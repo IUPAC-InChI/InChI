@@ -2,7 +2,7 @@
 
 set -e
 
-inchi_version=$1 # Must be one of the tags in `git tag` or branches in `git branch`.
+inchi_version=$1 # Must be one of the tags in `git tag`, branches in `git branch`, or a commit hash.
 inchi_lib_dir=$2 # Path must be absolute.
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 makefile_dir="INCHI-1-SRC/INCHI_API/libinchi/gcc"
@@ -24,7 +24,6 @@ if [ -n "$(git status --porcelain)" ]; then
     exit 1
 fi
 
-# Check out the specified tag or branch.
 if git rev-parse --verify --quiet refs/tags/$inchi_version; then
     echo "Checking out version tag '$inchi_version'."
     git checkout "tags/$inchi_version"
@@ -32,13 +31,13 @@ if git rev-parse --verify --quiet refs/tags/$inchi_version; then
 fi
 
 if git rev-parse --verify --quiet $inchi_version; then
-    echo "Checking out branch '$inchi_version'."
+    echo "Checking out branch or commit '$inchi_version'."
     git checkout $inchi_version
     checkout_successful=1
 fi
 
 if [ $checkout_successful -eq 0 ]; then
-    echo "Version tag or branch '$inchi_version' does not exist."
+    echo "'$inchi_version' does not exist."
     exit 1
 fi
 

@@ -1,4 +1,4 @@
-name: Compile InChI library from triggering branch
+name: Compile InChI library from triggering commit
 
 runs:
   using: "composite"
@@ -6,12 +6,10 @@ runs:
     - run: |
         git config --global --add safe.directory "$GITHUB_WORKSPACE" # https://github.com/actions/runner-images/issues/6775
         mkdir "$GITHUB_WORKSPACE/$LIB_DIR"
-        ./INCHI-1-TEST/compile_inchi_lib.sh $BRANCH "$GITHUB_WORKSPACE/$LIB_DIR"
-        if [ "$BRANCH" != "main" ]; then
-          # Rename library to libinchi.so.main, since that's the name the tests expect.
-          mv "$GITHUB_WORKSPACE/$LIB_DIR/libinchi.so.$BRANCH" "$GITHUB_WORKSPACE/$LIB_DIR/libinchi.so.main"
-        fi
+        ./INCHI-1-TEST/compile_inchi_lib.sh $COMMIT "$GITHUB_WORKSPACE/$LIB_DIR"
+        # Rename library to libinchi.so.main, since that's the name the tests expect.
+        mv "$GITHUB_WORKSPACE/$LIB_DIR/libinchi.so.$COMMIT" "$GITHUB_WORKSPACE/$LIB_DIR/libinchi.so.main"
       shell: bash
       env:
-        BRANCH: ${{ github.ref_name }}
+        COMMIT: ${{ github.sha }}
         LIB_DIR: INCHI-1-TEST/libs
