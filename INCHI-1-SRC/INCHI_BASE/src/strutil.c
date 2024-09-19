@@ -5508,23 +5508,3 @@ int FixAdjacentRadicals( int num_inp_atoms, inp_ATOM *at )
 }
 
 #endif
-
-#ifdef COMPILE_ANSI_ONLY
-
-#ifndef TARGET_API_LIB
-/*
-#include <stdio.h>
-#include "inpdef.h"
-*/
-
-/****************************************************************************/
-void PrintFileName( const char *fmt,
-                    FILE *out_file,
-                    /* INCHI_IOSTREAM *out_file,  */
-                    const char *szFname )
-{
-    inchi_print_nodisplay( out_file, fmt, szFname );
-}
-#endif
-
-#endif
