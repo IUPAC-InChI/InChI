@@ -409,7 +409,7 @@ extern "C" {
 
     int bIsSameBond(int a1, int a2, int b1, int b2);
 
-    // output " L=V" or " L missing" or ""
+    /* output " L=V" or " L missing" or "" */
     const char *get_sdf_lbl_val(const char *lbl, const char *val);
 
     /* Handle integer matrix [mxn] */
