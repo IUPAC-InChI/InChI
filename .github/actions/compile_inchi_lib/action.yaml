@@ -6,7 +6,7 @@ runs:
     - run: |
         git config --global --add safe.directory "$GITHUB_WORKSPACE" # https://github.com/actions/runner-images/issues/6775
         mkdir "$GITHUB_WORKSPACE/$LIB_DIR"
-        ./INCHI-1-TEST/compile_inchi_lib.sh $COMMIT "$GITHUB_WORKSPACE/$LIB_DIR"
+        ./INCHI-1-TEST/compile_inchi.sh $COMMIT "$GITHUB_WORKSPACE/$LIB_DIR" lib
         # Rename library to libinchi.so.main, since that's the name the tests expect.
         mv "$GITHUB_WORKSPACE/$LIB_DIR/libinchi.so.$COMMIT" "$GITHUB_WORKSPACE/$LIB_DIR/libinchi.so.main"
       shell: bash

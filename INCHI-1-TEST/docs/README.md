@@ -24,7 +24,7 @@ You can now run the commands that are mentioned in the remainder of this README.
 
 If you prefer, run the tests in the [Visual Studio Code devcontainer](https://code.visualstudio.com/docs/devcontainers/containers)
 that's specified under [.devcontainer.json](../../.devcontainer.json).
-Note that in the devcontainer, you'll have to compile the InChI libraries yourself, see `INCHI-1-TEST/compile_inchi_lib.sh` for details.
+Note that in the devcontainer, you'll have to compile the InChI libraries yourself, see `INCHI-1-TEST/compile_inchi.sh` for details.
 The test pipeline expects the library under `INCHI-1-TEST/libs`, see `INCHI-1-TEST/src/inchi_tests/run_tests.py`.
 
 ## Datasets

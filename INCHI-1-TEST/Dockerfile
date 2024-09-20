@@ -29,7 +29,7 @@ RUN git config user.name "inchi" && \
 ENV inchi_versions="v1.05 v1.06 v1.07.0 main"
 ENV lib_dir="/inchi/INCHI-1-TEST/libs"
 RUN mkdir $lib_dir && for version in $inchi_versions; do \
-    /inchi/INCHI-1-TEST/compile_inchi_lib.sh "$version" "$lib_dir" || exit 1; \
+    /inchi/INCHI-1-TEST/compile_inchi.sh "$version" "$lib_dir" lib || exit 1; \
     done
 
 FROM gcc:14-bookworm AS inchi_test
