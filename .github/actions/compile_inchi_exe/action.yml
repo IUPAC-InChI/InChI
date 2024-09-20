@@ -1,0 +1,13 @@
+name: Compile InChI executable from triggering commit
+
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE" # https://github.com/actions/runner-images/issues/6775
+        mkdir "$GITHUB_WORKSPACE/$EXE_DIR"
+        ./INCHI-1-TEST/compile_inchi.sh $COMMIT "$GITHUB_WORKSPACE/$EXE_DIR" exe
+      shell: bash
+      env:
+        COMMIT: ${{ github.sha }}
+        EXE_DIR: INCHI-1-TEST/exes

@@ -32,6 +32,13 @@ RUN mkdir $lib_dir && for version in $inchi_versions; do \
     /inchi/INCHI-1-TEST/compile_inchi.sh "$version" "$lib_dir" lib || exit 1; \
     done
 
+ENV exe_dir="/inchi/INCHI-1-TEST/exes"
+RUN for version in $inchi_versions; do \
+    version_dir="${exe_dir}/${version}"; \
+    mkdir -p $version_dir; \
+    /inchi/INCHI-1-TEST/compile_inchi.sh "$version" "$version_dir" exe || exit 1; \
+    done
+
 FROM gcc:14-bookworm AS inchi_test
 
 WORKDIR /inchi
@@ -39,6 +46,8 @@ WORKDIR /inchi
 # Include only what's necessary for running the tests.
 COPY --from=inchi_compilation /inchi/INCHI-1-TEST/src /inchi/INCHI-1-TEST/src
 COPY --from=inchi_compilation /inchi/INCHI-1-TEST/libs /inchi/INCHI-1-TEST/libs
+COPY --from=inchi_compilation /inchi/INCHI-1-TEST/exes /inchi/INCHI-1-TEST/exes
+COPY --from=inchi_compilation /inchi/INCHI-1-TEST/tests /inchi/INCHI-1-TEST/tests
 COPY --from=inchi_compilation /inchi/INCHI-1-TEST/pyproject.toml /inchi/INCHI-1-TEST/pyproject.toml
 COPY --from=inchi_compilation /inchi/INCHI-1-TEST/install.sh /inchi/INCHI-1-TEST/install.sh
 

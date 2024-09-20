@@ -2,12 +2,11 @@
 name = "inchi_tests"
 version = "1.0.0"
 requires-python = ">=3.11"
-dependencies = ["pydantic == 2.7.1"]
+dependencies = ["pydantic == 2.7.1", "pytest == 8.3.3"]
 
 [project.optional-dependencies]
 # FIXME: We're forcing numpy major version for now until https://github.com/kuelumbus/rdkit-pypi/issues/102 is resolved.
 invariance-tests = ["rdkit == 2023.9.6", "numpy < 2.0.0"]
-development = ["pytest"]
 
 [project.scripts]
 run-tests = "inchi_tests.run_tests:main"
