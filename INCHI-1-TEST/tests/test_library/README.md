@@ -1,4 +1,4 @@
-# Testing the InChI
+# Library tests
 
 ## Test environment
 
@@ -195,6 +195,9 @@ services:
 
 ### Configuration files
 
+The tests can be configured with Python files (e.g., `config.py`).
+We're not using other configuration formats (e.g., `config.yaml`),
+since the configuration needs to be powerful enough to enable dynamic customization (e.g., parsing molfile ID).
 We provide two [templates](INCHI-1-TEST/src/inchi_tests/config_models.py) under `config_models.py` that allow you to customize the configuration:
 
 #### `TestConfig`

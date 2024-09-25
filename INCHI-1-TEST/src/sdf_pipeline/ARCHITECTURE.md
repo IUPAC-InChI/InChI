@@ -6,8 +6,4 @@ such as InChI, SMILES, or TUCAN against molecules from [SDF files](https://en.wi
 Any code that's specific to the molecular identifier that is being tested does not belong in `src/sdf_pipeline`.
 In other words, you should be able to vendor the `src/sdf_pipeline` package into another project (e.g., TUCAN).
 
-In contrast, the test code that's specific to the InChI tests lives under `src/inchi_tests`.
-`src/inchi_tests` contains the entry point to the test pipeline in `run_tests.py`.
-The tests can be configured with Python files (e.g., `config.py`).
-We're not using other configuration formats (e.g., `config.yaml`),
-since the configuration needs to be powerful enough to enable dynamic customization (e.g., parsing molfile ID).
+In contrast, the test code that's specific to the InChI tests lives under `tests`.
