@@ -10,5 +10,5 @@ services:
         source: data
         target: /inchi/INCHI-1-TEST/data
       - type: bind
-        source: config
+        source: tests/test_library/config
         target: /inchi/INCHI-1-TEST/config

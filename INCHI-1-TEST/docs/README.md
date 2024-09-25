@@ -57,7 +57,7 @@ During an invariance test, the atom indices of a structure are permuted repeated
 <img src="./invariance.svg" alt="schematic" width="400"/>
 
 ```Shell
-run-tests --test-config=INCHI-1-TEST/config/config.invariance.py --data-config=INCHI-1-TEST/config/config.<dataset>.py
+run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.invariance.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
 ```
 
 uses `libinchi.so.main`, a shared library compiled from the `main` branch,
@@ -80,7 +80,7 @@ The 2nd run results in a regression, since the output no longer matches the refe
 ### Compute references
 
 ```Shell
-run-tests --test-config=INCHI-1-TEST/config/config.regression_reference.py --data-config=INCHI-1-TEST/config/config.<dataset>.py
+run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression_reference.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
 ```
 
 uses `libinchi.so.<version>`, the shared library specified with `--test-config`,
@@ -90,7 +90,7 @@ The `sqlite` file contains a table with the results for each molfile.
 ### Run tests against the references
 
 ```Shell
-run-tests --test-config=INCHI-1-TEST/config/config.regression.py --data-config=INCHI-1-TEST/config/config.<dataset>.py
+run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
 ```
 
 uses `libinchi.so.main`, a shared library compiled from the `main` branch,
@@ -107,7 +107,7 @@ The tests should now fail and indicate that the difference between the reference
 In addition to inspecting the raw logs, you can review the results by running
 
 ```Shell
-parse-log --test-config=INCHI-1-TEST/config/config.<test>.py --data-config=INCHI-1-TEST/config/config.<dataset>.py
+parse-log --test-config=INCHI-1-TEST/tests/test_library/config/config.<test>.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
 ```
 
 where `<test>` can be `regression` or `invariance`.
@@ -204,16 +204,16 @@ configuring what to run ("regression", "regression-reference", or "invariance"),
 which InChI library to use, and which parameters to pass to the InChI API.
 For details, have a look at the comments in the `TestConfig` class.
 Your configuration file, e.g., `config/custom-regression.py` must contain an instance of `TestConfig` called `config`.
-For an example of how to instantiate a `TestConfig` object, have a look at our [regression configuration](INCHI-1-TEST/config/config.regression.py).
+For an example of how to instantiate a `TestConfig` object, have a look at our [regression configuration](INCHI-1-TEST/tests/test_library/config/config.regression.py).
 
 #### `DataConfig`
 
 Lets you configure your custom data, e.g., location of the data.
 For details, have a look at the comments in the `DataConfig` class.
 Your configuration file, e.g., `config/custom-data.py` must contain an instance of `DataConfig` called `config`.
-For an example of how to instantiate a `DataConfig` object, have a look at our [CI configuration](INCHI-1-TEST/config/config.ci.py).
+For an example of how to instantiate a `DataConfig` object, have a look at our [CI configuration](INCHI-1-TEST/tests/test_library/config/config.ci.py).
 Note that the `DataConfig` object must point to data that you've [mounted into the container](#your-own-dataset).
-For an example of how to instantiate a `DataConfig` object, have a look at our the configuration of our [CI data](INCHI-1-TEST/config/config.ci.py).
+For an example of how to instantiate a `DataConfig` object, have a look at our the configuration of our [CI data](INCHI-1-TEST/tests/test_library/config/config.ci.py).
 
 ### Run your custom tests
 
