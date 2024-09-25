@@ -13,7 +13,9 @@ run-tests = "inchi_tests.run_tests:main"
 parse-log = "inchi_tests.parse_log:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "tests/test_library"]
+include = ["sdf_pipeline", "inchi_tests"]
+namespaces = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

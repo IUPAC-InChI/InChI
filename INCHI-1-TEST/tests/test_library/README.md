@@ -25,7 +25,7 @@ You can now run the commands that are mentioned in the remainder of this README.
 If you prefer, run the tests in the [Visual Studio Code devcontainer](https://code.visualstudio.com/docs/devcontainers/containers)
 that's specified under [.devcontainer.json](../../.devcontainer.json).
 Note that in the devcontainer, you'll have to compile the InChI libraries yourself, see `INCHI-1-TEST/compile_inchi.sh` for details.
-The test pipeline expects the library under `INCHI-1-TEST/libs`, see `INCHI-1-TEST/src/inchi_tests/run_tests.py`.
+The test pipeline expects the library under `INCHI-1-TEST/libs`, see for example `INCHI-1-TEST/tests/test_library/config/config.invariance.py`.
 
 ## Datasets
 
@@ -198,7 +198,7 @@ services:
 The tests can be configured with Python files (e.g., `config.py`).
 We're not using other configuration formats (e.g., `config.yaml`),
 since the configuration needs to be powerful enough to enable dynamic customization (e.g., parsing molfile ID).
-We provide two [templates](INCHI-1-TEST/src/inchi_tests/config_models.py) under `config_models.py` that allow you to customize the configuration:
+We provide two [templates](INCHI-1-TEST/tests/test_library/inchi_tests/config_models.py) under `config_models.py` that allow you to customize the configuration:
 
 #### `TestConfig`
 
