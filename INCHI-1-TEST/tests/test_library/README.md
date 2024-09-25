@@ -131,10 +131,10 @@ via [volumes](https://docs.docker.com/compose/compose-file/05-services/#volumes)
 volumes:
   - type: bind
     source: tests/test_library/data
-    target: /inchi/INCHI-1-TEST/data
+    target: /inchi/INCHI-1-TEST/tests/test_library/data
   - type: bind
     source: tests/test_library/config
-    target: /inchi/INCHI-1-TEST/config
+    target: /inchi/INCHI-1-TEST/tests/test_library/config
 ```
 
 Note that the `source` paths are relative to the location of the `docker-compose.yml` file.

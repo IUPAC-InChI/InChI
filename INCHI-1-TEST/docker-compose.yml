@@ -8,7 +8,7 @@ services:
       # `target` paths are absolute paths in the container. The `/inchi/INCHI-1-TEST` directory already exists in the container.
       - type: bind
         source: tests/test_library/data
-        target: /inchi/INCHI-1-TEST/data
+        target: /inchi/INCHI-1-TEST/tests/test_library/data
       - type: bind
         source: tests/test_library/config
-        target: /inchi/INCHI-1-TEST/config
+        target: /inchi/INCHI-1-TEST/tests/test_library/config
