@@ -32,19 +32,19 @@ The test pipeline expects the library under `INCHI-1-TEST/libs`, see `INCHI-1-TE
 In this README, `<dataset>` refers to either `ci`
 (i.e, continuous integration, aka the tests running on GitHub), or a `<subset>` of PubChem.
 `<subset>` can be either `compound`, `compound3d`, or `substance`.
-The `ci` data already lives in the repository (i.e., `mcule.sdf.gz` and `inchi.sdf.gz` under `INCHI-1-TEST/data/ci`).
+The `ci` data already lives in the repository (i.e., `mcule.sdf.gz` and `inchi.sdf.gz` under `INCHI-1-TEST/tests/test_library/data/ci`).
 The PubChem `<subset>` data doesn't live in the repository since it's too large.
 You can download the `<subset>` data from <https://ftp.ncbi.nlm.nih.gov/pubchem/> by running
 
 ```Shell
-python -m INCHI-1-TEST.data.pubchem.download <subset>
+python -m INCHI-1-TEST.tests.test_library.data.pubchem.download <subset>
 ```
 
-On completion of the download you'll find the data in `INCHI-1-TEST/data/pubchem/<subset>`.
+On completion of the download you'll find the data in `INCHI-1-TEST/tests/test_library/data/pubchem/<subset>`.
 Validate the integrity of `<subset>` (i.e., make sure the downloads aren't corrupted) by running
 
 ```Shell
-python -m INCHI-1-TEST.data.pubchem.validate <subset>
+python -m INCHI-1-TEST.tests.test_library.data.pubchem.validate <subset>
 ```
 
 Note that validation isn't available for `compound3d` (PubChem doesn't provide file hashes).
@@ -84,7 +84,7 @@ run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression
 ```
 
 uses `libinchi.so.<version>`, the shared library specified with `--test-config`,
-and generates an `<SDF>.regression_reference.sqlite` file for each SDF under `INCHI-1-TEST/data/<dataset>`.
+and generates an `<SDF>.regression_reference.sqlite` file for each SDF under `INCHI-1-TEST/tests/test_library/data/<dataset>`.
 The `sqlite` file contains a table with the results for each molfile.
 
 ### Run tests against the references
@@ -94,7 +94,7 @@ run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression
 ```
 
 uses `libinchi.so.main`, a shared library compiled from the `main` branch,
-to compute the results (e.g., InChI strings and keys) for each molfile in each SDF under `INCHI-1-TEST/data/<dataset>`.
+to compute the results (e.g., InChI strings and keys) for each molfile in each SDF under `INCHI-1-TEST/tests/test_library/data/<dataset>`.
 Those results are compared with the corresponding reference.
 Failed comparisons are logged to `<datetime>.regression_<dataset>.log` (where `<datetime>` reflects the start of the test run).
 
@@ -111,7 +111,7 @@ parse-log --test-config=INCHI-1-TEST/tests/test_library/config/config.<test>.py 
 ```
 
 where `<test>` can be `regression` or `invariance`.
-The command generates an HTML report for each SDF under `INCHI-1-TEST/data/<dataset>` that contains structures which failed the test.
+The command generates an HTML report for each SDF under `INCHI-1-TEST/tests/test_library/data/<dataset>` that contains structures which failed the test.
 You can view the HTML report in your browser.
 
 ## Inspect `.sqlite` files
@@ -130,16 +130,16 @@ via [volumes](https://docs.docker.com/compose/compose-file/05-services/#volumes)
 ```yml
 volumes:
   - type: bind
-    source: data
+    source: tests/test_library/data
     target: /inchi/INCHI-1-TEST/data
   - type: bind
-    source: config
+    source: tests/test_library/config
     target: /inchi/INCHI-1-TEST/config
 ```
 
 Note that the `source` paths are relative to the location of the `docker-compose.yml` file.
-We're mapping the `data` directory on the host machine to the `/inchi/INCHI-1-TEST/data` directory inside the container.
-Similarly we're mapping `config`, a directory containing our [configuration files](#configuration-files), into `/inchi/INCHI-1-TEST/config`.
+We're mapping the `tests/test_library/data` directory on the host machine to the `/inchi/INCHI-1-TEST/data` directory inside the container.
+Similarly we're mapping `tests/test_library/config`, a directory containing our [configuration files](#configuration-files), into `/inchi/INCHI-1-TEST/config`.
 
 To customize the tests, start by adding your own `docker-compose.custom.yml` file:
 

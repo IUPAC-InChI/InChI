@@ -7,7 +7,7 @@ services:
       # `source` paths are relative to the `docker-compose.yml` file, not the build context.
       # `target` paths are absolute paths in the container. The `/inchi/INCHI-1-TEST` directory already exists in the container.
       - type: bind
-        source: data
+        source: tests/test_library/data
         target: /inchi/INCHI-1-TEST/data
       - type: bind
         source: tests/test_library/config

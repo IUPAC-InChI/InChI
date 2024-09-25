@@ -1,11 +1,8 @@
-INCHI-1-TEST/**/*.so*
 INCHI-1-TEST/exes
-INCHI-1-TEST/data/**/*.html
-INCHI-1-TEST/data/**/*.log
-INCHI-1-TEST/data/pubchem/compound
-INCHI-1-TEST/data/pubchem/compound3d
-INCHI-1-TEST/data/pubchem/substance
-INCHI-1-TEST/legacy.bak/
+INCHI-1-TEST/libs
+INCHI-1-TEST/tests/test_library/data/**/*.html
+INCHI-1-TEST/tests/test_library/data/**/*.log
+INCHI-1-TEST/tests/test_library/data/pubchem/**
 .listing
 *.o
 __pycache__
@@ -14,4 +11,3 @@ __pycache__
 *.egg-info/
 # Ignore core dump files
 core.*[0-9]
-gcc_crash_report.txt

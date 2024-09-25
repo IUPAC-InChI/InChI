@@ -1,6 +1,5 @@
 INCHI-1-TEST/tests/test_library/config/
-INCHI-1-TEST/data/
-INCHI-1-TEST/docs/
+INCHI-1-TEST/tests/test_library/data/
 INCHI-1-TEST/libs/
 INCHI-1-TEST/exes/
 **/__pycache__/

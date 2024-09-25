@@ -34,5 +34,5 @@ runs:
       with:
         name: ${{ inputs.artifact-name }}
         path: |
-          ./INCHI-1-TEST/data/ci/*_regression_ci.log
-          ./INCHI-1-TEST/data/ci/*_regression_ci_*.html
+          ./INCHI-1-TEST/tests/test_library/data/ci/*_regression_ci.log
+          ./INCHI-1-TEST/tests/test_library/data/ci/*_regression_ci_*.html

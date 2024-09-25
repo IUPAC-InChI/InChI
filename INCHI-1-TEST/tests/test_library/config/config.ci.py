@@ -18,7 +18,7 @@ def get_molfile_id_ci(molfile: str) -> str:
     return molfile_id
 
 
-BASEPATH = "INCHI-1-TEST/data/ci/"
+BASEPATH = "INCHI-1-TEST/tests/test_library/data/ci/"
 
 config = DataConfig(
     name="ci",
