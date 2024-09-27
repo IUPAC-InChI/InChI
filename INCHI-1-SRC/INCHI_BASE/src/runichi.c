@@ -198,18 +198,6 @@ static int OrigAtData_CheckForSubstructure(ORIG_ATOM_DATA *orig_inp_data);
 #endif
 #endif
 
-
-/**********************************************
- * output " L=V" or " L missing" or ""
- * The fprintf format string must contain %s%s%s%s
- */
-const char gsMissing[] = "is missing";
-const char gsEmpty[] = "";
-const char gsSpace[] = " ";
-const char gsEqual[] = "=";
-
-
-
 /****************************************************************************
  Process a portion of input data (molecule, InChI string, ...)
  in a relevant way (generate InChI, restore molecule by InChI )
