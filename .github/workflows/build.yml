@@ -7,7 +7,7 @@ on:
 
 jobs:
   build_linux:
-    name: Build on Ubuntu 22.04
+    name: Ubuntu 22.04
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
           cmake --build builddir
 
   build-windows:
-    name: Build on Windows Server 2019
+    name: Windows Server 2019
     runs-on: windows-2019
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
 
 
   buid-mac:
-    name: Build on macOS 14
+    name: MacOS 14
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +52,23 @@ jobs:
       - name: Install build dependencies
         run: |
           brew install ninja
+
+      - name: Build InChI
+        run: |
+          cmake -B builddir -G Ninja
+          cmake --build builddir
+
+  build-alpine:
+    name: Alpine Linux
+    runs-on: ubuntu-22.04
+    container:
+      image: alpine:edge
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apk add bash git musl-dev gcc g++ make python3 py-pip cmake ninja
 
       - name: Build InChI
         run: |
