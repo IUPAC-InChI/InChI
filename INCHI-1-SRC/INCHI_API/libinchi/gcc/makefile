@@ -175,7 +175,7 @@ else ifeq ($(OS_ID),2)
 # jwm: linking to .dylib on OS X
 $(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).so$(VERSION)
 	$(LINKER) -o $(API_CALLER_PATHNAME) $(API_CALLER_OBJS) \
-$(INCHI_LIB_PATHNAME).dylib$(VERSION) -lm
+$(INCHI_LIB_PATHNAME)$(VERSION).dylib -lm
 else
 # djb-rwth: linking to .so on Linux
 $(API_CALLER_PATHNAME) : $(API_CALLER_OBJS) $(INCHI_LIB_PATHNAME).so$(VERSION)
@@ -253,9 +253,9 @@ $(INCHI_LIB_PATHNAME).dll$(VERSION): $(INCHI_LIB_OBJS)
 $(INCHI_LIB_OBJS) -Wl$(LINUX_MAP),-soname,$(INCHI_LIB_NAME).dll$(VERSION) -Wl,--subsystem,windows -lm
 else ifeq ($(OS_ID), 2)
 # jwm: creating .dylib on OS X
-$(INCHI_LIB_PATHNAME).dylib$(VERSION): $(INCHI_LIB_OBJS)
-	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME).dylib$(VERSION)	\
-$(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO) -install_name $(INCHI_LIB_NAME).dylib$(VERSION) -lm
+$(INCHI_LIB_PATHNAME)$(VERSION).dylib: $(INCHI_LIB_OBJS)
+	$(SHARED_LINK) $(SHARED_LINK_PARM) -o $(INCHI_LIB_PATHNAME)$(VERSION).dylib	\
+$(INCHI_LIB_OBJS) -Wl$(LINUX_MAP)$(LINUX_Z_RELRO) -install_name $(INCHI_LIB_NAME)$(VERSION).dylib -lm
 else
 # djb-rwth: creating .so on Linux
 $(INCHI_LIB_PATHNAME).so$(VERSION): $(INCHI_LIB_OBJS)

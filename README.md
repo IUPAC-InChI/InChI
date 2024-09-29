@@ -129,8 +129,8 @@ Solution/project files for Microsoft<sup>&reg;</sup> `Visual C++ (MSVC)/Clang/LL
 For `GCC` and `Clang/LLVM` compilers, `InChI v.1.07` can be compiled from the source using [Make](https://en.wikipedia.org/wiki/Make_(software)) software. `makefile/makefile32` files are provided in the following folders:
 
 - `INCHI-1-SRC/INCHI_EXE/inchi-1/gcc` (command line version)
-- `INCHI-1-SRC/INCHI_API/demos/inchi_main/gcc` (API version consisting of `libinchi.dll/libinchi.so.1.07/libinchi.dylib.1.07` and its corresponding executable/ELF `inchi_main.exe/inchi_main`)
-- `INCHI-1-SRC/INCHI_API/libinchi/gcc` (API version consisting only of `libinchi.dll/libinchi.so.1.07/libinchi.dylib.1.07`).
+- `INCHI-1-SRC/INCHI_API/demos/inchi_main/gcc` (API version consisting of `libinchi.dll/libinchi.so.1.07/libinchi.1.07.dylib` and its corresponding executable/ELF `inchi_main.exe/inchi_main`)
+- `INCHI-1-SRC/INCHI_API/libinchi/gcc` (API version consisting only of `libinchi.dll/libinchi.so.1.07/libinchi.1.07.dylib`).
 
 <a id="MAKEFILE"></a>
 
