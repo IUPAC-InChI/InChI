@@ -1,4 +1,86 @@
-# Official home of the InChI
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-blue.svg)](https://github.com/IUPAC-InChI/InChI/graphs/commit-activity)
+[![GitHub issues](https://img.shields.io/github/issues/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/issues/)
+[![GitHub contributors](https://img.shields.io/github/contributors/IUPAC-InChI/InChI.svg)](https://GitHub.com/IUPAC-InChI/InChI/graphs/contributors/)
+[![GitHub release](https://img.shields.io/github/release/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/releases/)
+[![Good reads](https://img.shields.io/badge/Goodreads-372213?style=flat&logo=goodreads&logoColor=white)](https://www.inchi-trust.org/inchi-overview-papers-presentations/?wpv_aux_current_post_id=4309&wpv_aux_parent_post_id=4309&wpv_view_count=4473)
+
+![InChI wheel](./Images/inchi-wheel.png)
+
+# **InChI** - The IUPAC International Chemical Identifier
+
+**InChI** is a structure-based chemical identifier, developed by [IUPAC](https://iupac.org/) and the [InChI Trust](https://www.inchi-trust.org/). It is a standard identifier for chemical databases that facilitates effective information management across chemistry.
+
+**InChI** and **InChIKey** are open standards. They use unique machine readable strings to represent, store and search chemical structures. All the software and algorithms related to them are open source. 
+
+## Contents of this document
+- [**InChI** - The IUPAC International Chemical Identifier](#inchi---the-iupac-international-chemical-identifier)
+  - [Contents of this document](#contents-of-this-document)
+  - [What is InChI](#what-is-inchi)
+  - [InChI Trust](#inchi-trust)
+  - [How to contribute](#how-to-contribute)
+  - [Contents of this repository](#contents-of-this-repository)
+    - [INCHI-1-BIN](#inchi-1-bin)
+    - [INCHI-1-DOC](#inchi-1-doc)
+    - [INCHI-1-SRC](#inchi-1-src)
+    - [INCHI-1-SRC](#inchi-1-src-1)
+    - [Images](#images)
+  - [Version 1.07.1 (09/08/2024)](#version-1071-09082024)
+  - [Using precompiled binaries](#using-precompiled-binaries)
+  - [Compiling `InChI v.1.07` from source](#compiling-inchi-v107-from-source)
+      - [Known issues](#known-issues)
+  - [Optional features](#optional-features)
+  - [Experimental features under development](#experimental-features-under-development)
+
+## What is InChI
+**InChI** is a structure-based textual identifier, strictly unique, and non-proprietary, open source and freely accessible.
+
+**InChI** identifiers describe chemical substances in terms of layers of information – the atoms and their bond connectivity, tautomeric information, isotope information, stereochemistry and electronic charge.
+
+![inchi-structure](./Images/inchi_example.jpg)
+<img style="background: white;" src="./Images/inchi_example2.png">
+
+With is fixed length of 27 characters the **InChIKey** — the hashed version of the **InChI** — allows for a compact representation and usage in databases or search engines.
+
+**InChI** is used by most of the large chemical databases and software applications handling many millions of chemical structures.
+
+**InChI** enables the linking and interlinking of chemistry and chemical structures on the web and computer platforms.  By enhancing the discoverability of chemical structures, **InChI** advances the [FAIR Guiding Principles for scientific data management and stewardship](https://doi.org/10.1038/sdata.2016.18). FAIR was published in 2016 to provide guidelines to improve the Findability, Accessibility, Interoperability, and Reuse of digital assets. **InChI** provides ‘Findability’ for chemical structures and extends Interoperability between platforms, both of which foster Accessibility and Reuse.
+
+## InChI Trust
+The [InChI Trust](https://www.inchi-trust.org/) is a charity that supports the development and promotion of the InChI standard. It works in partnership with [IUPAC](https://iupac.org/) to update and release new extensions to and applications of InChI. The Trust is a membership organisation, governed by its Board of Trustees which includes representation from [IUPAC](https://iupac.org/).
+
+![InChI-Members](./Images/inchi-members-30-08.jpg)
+
+The scientific design of the various tools and capabilities that comprise the InChI code are defined by the InChI Working Groups which are made up of volunteers from the InChI community with [IUPAC](https://iupac.org/) oversight. These voluntary groups are each focused on specific areas of chemistry or tools within the InChI code. See [Working Groups](https://www.inchi-trust.org/inchi-working-groups/) for details on each group and their membership.
+
+The development of the code is coordinated by the Technical Director of the InChI Trust, together with the working groups, [IUPAC](https://iupac.org/) and our development partners. Our development partners currently include [RWTH Aachen](https://www.rwth-aachen.de) (as part of [NFDI4Chem](https://www.nfdi4chem.de/), acknowledging funding from [Volkswagen Stiftung](https://www.volkswagenstiftung.de/de) and the [Data Literacy Alliance – DALIA](https://dalia.education/)), and the [Beilstein Institut](https://www.beilstein-institut.de/en/).
+
+![Dev-Partners](./Images/development-partner-logos-2.jpg)
+
+## How to contribute
+Should you have any questions, comments, or suggestions, please feel free to post them here: [GitHub discussion page](https://github.com/IUPAC-InChI/InChI/discussions).
+
+If you encounter a bug, we kindly request you to [create an issue](https://github.com/IUPAC-InChI/InChI/issues).
+
+You are welcome to contribute to this project. To do so, you may [create a pull request](https://github.com/IUPAC-InChI/InChI/pulls).
+
+## Contents of this repository
+### INCHI-1-BIN
+The [INCHI-1-BIN](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-BIN) subfolder contains binaries of command line `InChI` executable (<code>inchi-1</code>) and <code>InChI API</code> library (<code>libinchi</code>).
+
+### INCHI-1-DOC
+The [INCHI-1-DOC](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-DOC) subfolder contains documentation related to the InChI Software.
+
+### INCHI-1-SRC
+The [INCHI-1-SRC](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-SRC) subfolder contains InChI Software source codes. It also contains examples of InChI API usage, for C 
+(`inchi_main`, `mol2inchi`, `test_ixa`). Also supplied are InChI API Library source codes and 
+related projects/makefiles.
+
+### INCHI-1-SRC
+The [INCHI-1-TEST](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-TEST) subfolder contains the test scripts and test resource.
+
+### Images
+The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder contains the images used in this readme.
 
 ## Version 1.07.1 (09/08/2024)
 
