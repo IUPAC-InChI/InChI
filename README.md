@@ -38,7 +38,7 @@
 **InChI** identifiers describe chemical substances in terms of layers of information – the atoms and their bond connectivity, tautomeric information, isotope information, stereochemistry and electronic charge.
 
 ![inchi-structure](./Images/inchi_example.jpg)
-<img style="background: white;" src="./Images/inchi_example2.png">
+![inchi-example](./Images/inchi_example2.png)
 
 With is fixed length of 27 characters the **InChIKey** — the hashed version of the **InChI** — allows for a compact representation and usage in databases or search engines.
 
