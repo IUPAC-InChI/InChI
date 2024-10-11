@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_linux:
+  build-linux:
     name: Ubuntu 22.04
     runs-on: ubuntu-22.04
     steps:
@@ -22,6 +22,7 @@ jobs:
           cmake -B builddir -G Ninja
           cmake --build builddir
 
+
   build-windows:
     name: Windows Server 2019
     runs-on: windows-2019
@@ -35,7 +36,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          choco install cmake ninja
+          choco install ninja
 
       - name: Build InChI
         run: |
@@ -43,7 +44,7 @@ jobs:
           cmake --build builddir
 
 
-  buid-mac:
+  build-mac:
     name: MacOS 14
     runs-on: macos-14
     steps:
@@ -58,6 +59,7 @@ jobs:
           cmake -B builddir -G Ninja
           cmake --build builddir
 
+
   build-alpine:
     name: Alpine Linux
     runs-on: ubuntu-22.04
@@ -69,6 +71,25 @@ jobs:
       - name: Install build dependencies
         run: |
           apk add bash git musl-dev gcc g++ make python3 py-pip cmake ninja
+
+      - name: Build InChI
+        run: |
+          cmake -B builddir -G Ninja
+          cmake --build builddir
+
+
+  build-gcc-latest:
+    name: GCC latest
+    runs-on: ubuntu-22.04
+    container:
+      image: gcc:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apt update
+          apt install -y cmake ninja-build
 
       - name: Build InChI
         run: |
