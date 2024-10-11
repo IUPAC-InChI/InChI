@@ -35,14 +35,14 @@
 
 ## What is InChI
 
-**InChI** is a structure-based textual identifier, strictly unique, and non-proprietary, open source and freely accessible.
+**InChI** is a structure-based textual identifier, strictly unique, non-proprietary, open source, and freely accessible.
 
-**InChI** identifiers describe chemical substances in terms of layers of information – the atoms and their bond connectivity, tautomeric information, isotope information, stereochemistry and electronic charge.
+**InChI** identifiers describe chemical substances in terms of layers of information – the atoms and their bond connectivity, tautomeric information, isotope information, stereochemistry, and electronic charge.
 
 ![inchi-structure](./Images/inchi_example.jpg)
 ![inchi-example](./Images/inchi_example2.png)
 
-With is fixed length of 27 characters the **InChIKey** — the hashed version of the **InChI** — allows for a compact representation and usage in databases or search engines.
+With its fixed length of 27 characters the **InChIKey** — the hashed version of the **InChI** — allows for a compact representation and usage in databases or search engines.
 
 **InChI** is used by most of the large chemical databases and software applications handling many millions of chemical structures.
 
@@ -72,7 +72,7 @@ You are welcome to contribute to this project. To do so, you may [create a pull 
 
 ### INCHI-1-BIN
 
-The [INCHI-1-BIN](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-BIN) subfolder contains binaries of command line `InChI` executable (<code>inchi-1</code>) and <code>InChI API</code> library (<code>libinchi</code>).
+The [INCHI-1-BIN](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-BIN) subfolder contains binaries of the command line `InChI` executable (<code>inchi-1</code>) and the <code>InChI API</code> library (<code>libinchi</code>).
 
 ### INCHI-1-DOC
 
@@ -80,13 +80,13 @@ The [INCHI-1-DOC](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-DOC) su
 
 ### INCHI-1-SRC
 
-The [INCHI-1-SRC](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-SRC) subfolder contains InChI Software source codes. It also contains examples of InChI API usage, for C
-(`inchi_main`, `mol2inchi`, `test_ixa`). Also supplied are InChI API Library source codes and
+The [INCHI-1-SRC](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-SRC) subfolder contains the InChI source code. It also contains examples of InChI API usage, for C
+(`inchi_main`, `mol2inchi`, `test_ixa`), as well as the InChI API library source code and
 related projects/makefiles.
 
 ### INCHI-1-SRC
 
-The [INCHI-1-TEST](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-TEST) subfolder contains the test scripts and test resource.
+The [INCHI-1-TEST](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-TEST) subfolder contains the test scripts and resources.
 
 ### Images
 
