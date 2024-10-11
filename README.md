@@ -72,7 +72,7 @@ You are welcome to contribute to this project. To do so, you may [create a pull 
 
 ### INCHI-1-BIN
 
-The [INCHI-1-BIN](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-BIN) subfolder contains binaries of the command line `InChI` executable (<code>inchi-1</code>) and the <code>InChI API</code> library (<code>libinchi</code>).
+The [INCHI-1-BIN](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-BIN) subfolder contains binaries of the command line `InChI` executable (`inchi-1`) and the `InChI API` library (`libinchi`).
 
 ### INCHI-1-DOC
 
@@ -101,7 +101,7 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
 - ["Faster Element Symbol Handling"](https://github.com/IUPAC-InChI/InChI/pull/31) pull request merged
 - ["replace all instances of old license text. Fixes #33"](https://github.com/IUPAC-InChI/InChI/pull/34) pull request merged
 - ["Issues with InChI I/O with /FixedH / Issue #27](https://github.com/IUPAC-InChI/InChI/issues/27) and ["Seqmentation fault in inchi-1.exe with /InChI2InChI validation / Issue #28](https://github.com/IUPAC-InChI/InChI/issues/28) have been fixed
-- Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
+- Addressing `Google<sup>&reg;</sup> oss-fuzz` issues
 - Minor bugs fixes
 
 ## Using precompiled binaries
@@ -110,114 +110,114 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
 <br />
 <table id="Win">
   <tr>
-    <td colspan="3" align="center"><strong>Microsoft<sup>&reg;</sup> Windows</strong></td>
+    <td colspan="3" align="center">**Microsoft<sup>&reg;</sup> Windows**</td>
   </tr>
   <tr>
     <td>
-      <strong>Files</strong> (given in compressed <code>.zip</code> format)
+      **Files** (given in compressed `.zip` format)
     </td>
     <td>
-      <strong>Location(s)</strong>
+      **Location(s)**
     </td>
     <td>
-      <strong>Compiler</strong>
+      **Compiler**
     </td>
   </tr>
   <tc>
     <td rowspan="2">
-      <code>inchi-1.exe</code>
+      `inchi-1.exe`
     </td>
     <td>
-      <em>64-bit</em>: <code>INCHI-1-BIN/windows/64bit</code>
+      *64-bit*: `INCHI-1-BIN/windows/64bit`
     </td>
     <td>
-      <code>Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC)</code>
+      `Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC)`
     </td>
   </tr>
   <tr>
     <td>
-      <em>32-bit</em>: <code>INCHI-1-BIN/windows/32bit</code>
+      *32-bit*: `INCHI-1-BIN/windows/32bit`
     </td>
     <td>
-      <code>MinGW-w64/GCC</code>
+      `MinGW-w64/GCC`
     </td>
   </tr>
   <tc>
     <td rowspan="2">
-      <code>libinchi.dll</code><br /> + corresponding <code>inchi_main.exe</code>
+      `libinchi.dll`<br /> + corresponding `inchi_main.exe`
     </td>
     <td>
-      <em>64-bit</em>: <code>INCHI-1-BIN/windows/64bit/dll</code>
+      *64-bit*: `INCHI-1-BIN/windows/64bit/dll`
     </td>
     <td>
-      <code>Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC)</code>
+      `Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC)`
     </td>
   </tr>
   <tr>
     <td>
-      <em>32-bit</em>: <code>INCHI-1-BIN/windows/32bit/dll</code>
+      *32-bit*: `INCHI-1-BIN/windows/32bit/dll`
     </td>
     <td>
-      <code>MinGW-w64/GCC</code>
+      `MinGW-w64/GCC`
     </td>
   </tr>
 </table>
 <br />
 <table id="OtherOS">
   <tr>
-    <td colspan="3" align="center"><strong>UNIX-based OSs (except MacOS<sup>&reg;</sup>)</strong></td>
+    <td colspan="3" align="center">**UNIX-based OSs (except MacOS<sup>&reg;</sup>)**</td>
   </tr>
   <tr>
     <td>
-      <strong>Files</strong> (given in compressed <code>.gz</code> format)
+      **Files** (given in compressed `.gz` format)
     </td>
     <td>
-      <strong>Location(s)</strong>
+      **Location(s)**
     </td>
     <td>
-      <strong>Compiler</strong>
-    </td>
-  </tr>
-  <tc>
-    <td>
-      <code>inchi-1</code> (ELF file)
-    </td>
-    <td>
-      <em>64-bit</em>: <code>INCHI-1-BIN/linux/64bit/</code><br />
-      <em>32-bit</em>: <code>INCHI-1-BIN/linux/32bit/</code>
-    </td>
-    <td>
-      <code>GCC</code>
+      **Compiler**
     </td>
   </tr>
   <tc>
     <td>
-      <code>libinchi.so.1.07</code><br /> + corresponding <code>inchi_main</code> (ELF file)
+      `inchi-1` (ELF file)
     </td>
     <td>
-      <em>64-bit</em>: <code>INCHI-1-BIN/linux/64bit/so/</code><br />
-      <em>32-bit</em>: <code>INCHI-1-BIN/linux/32bit/so/</code>
+      *64-bit*: `INCHI-1-BIN/linux/64bit/`<br />
+      *32-bit*: `INCHI-1-BIN/linux/32bit/`
     </td>
     <td>
-      <code>GCC</code>
+      `GCC`
+    </td>
+  </tr>
+  <tc>
+    <td>
+      `libinchi.so.1.07`<br /> + corresponding `inchi_main` (ELF file)
+    </td>
+    <td>
+      *64-bit*: `INCHI-1-BIN/linux/64bit/so/`<br />
+      *32-bit*: `INCHI-1-BIN/linux/32bit/so/`
+    </td>
+    <td>
+      `GCC`
     </td>
   </tr>
 </table>
 <!--Please note that 32-bit binaries have to be compiled from the source, although the use of 64-bit versions is highly recommended.-->
 <br />
-Precompiled binaries for <strong>MacOS<sup>&reg;</sup></strong> (i.e. <code>.app</code> executables and <code>.dylib</code> libraries) will be provided very soon. Until then, please note that <code>InChI</code> can now be <a href="#compiling-inchi-v107-from-source">compiled from source</a> on <strong>MacOS<sup>&reg;</sup></strong> using native/default <code>Clang</code> or <code>GCC</code> (if installed).
+Precompiled binaries for **MacOS<sup>&reg;</sup>** (i.e. `.app` executables and `.dylib` libraries) will be provided very soon. Until then, please note that `InChI` can now be <a href="#compiling-inchi-v107-from-source">compiled from source</a> on **MacOS<sup>&reg;</sup>** using native/default `Clang` or `GCC` (if installed).
 <br />
 
 ## Compiling `InChI v.1.07` from source
 
-<strong>Microsoft<sup>&reg;</sup> Windows</strong>:
+**Microsoft<sup>&reg;</sup> Windows**:
 Solution/project files for Microsoft<sup>&reg;</sup> `Visual C++ (MSVC)/Clang/LLVM` and Intel<sup>&reg;</sup> `oneAPI DPC++/C++ Compiler` are provided for both command line and API versions of `InChI v.1.07`. The solution/project files are located in the following folders:
 
 - `INCHI-1-SRC/INCHI_EXE/inchi-1/vc14` (command line version)
 - `INCHI-1-SRC/INCHI_API/demos/inchi_main/vc14` (API version consisting of `libinchi.dll` and its corresponding executable `inchi_main.exe`)
 - `INCHI-1-SRC/INCHI_API/libinchi/vc14` (API version consisting only of `libinchi.dll`).
 
-<strong>UNIX-based OSs/MacOS<sup>&reg;</sup>/Microsoft<sup>&reg;</sup> Windows</strong>:
+**UNIX-based OSs/MacOS<sup>&reg;</sup>/Microsoft<sup>&reg;</sup> Windows**:
 For `GCC` and `Clang/LLVM` compilers, `InChI v.1.07` can be compiled from the source using [Make](https://en.wikipedia.org/wiki/Make_(software)) software. `makefile/makefile32` files are provided in the following folders:
 
 - `INCHI-1-SRC/INCHI_EXE/inchi-1/gcc` (command line version)
@@ -234,7 +234,7 @@ Support for native/default MacOS<sup>&reg;</sup> `Clang` compiler is now provide
 
 If `makefile/makefile32` is used for compiling `libinchi` on Microsoft<sup>&reg;</sup> Windows, `libinchi.dll` is now generated instead of `libinchi.so.1.07`.
 
-<strong>Additional notes</strong>:
+**Additional notes**:
 
 - [Intel® oneAPI DPC++/C++](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html) compiler support for UNIX-based OSs/MacOS<sup>&reg;</sup> will be available in `v.1.07.2`. Please note that the support will **not** be provided for [Intel® C++ Compiler Classic (icc)](https://www.intel.com/content/www/us/en/developer/articles/release-notes/oneapi-c-compiler-release-notes.html) as it has been discontinued since `oneAPI 2024.0 release`.
 - Compiling from source using [CMake](https://en.wikipedia.org/wiki/CMake) will be available soon. In the meanwhile, you can check [Gianluca Sforna's fork](https://github.com/giallu/InChI/tree/giallu/port_to_cmake).
@@ -299,7 +299,7 @@ Some of the experimental/engineering/hidden options featured in `InChI 1.07` whi
 
 - In command line version:
 
-  - <em>32-bit</em> <code>Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC) Win32</code> compiler-specific issue with the following options:
+  - *32-bit* `Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC) Win32` compiler-specific issue with the following options:
 
     - `AMI`         Allow multiple input files (wildcards supported)
     - `AMIOutStd`   Write output to stdout (in AMI mode)
