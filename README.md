@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/release/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/releases/)
 [![Good reads](https://img.shields.io/badge/Goodreads-372213?style=flat&logo=goodreads&logoColor=white)](https://www.inchi-trust.org/inchi-overview-papers-presentations/?wpv_aux_current_post_id=4309&wpv_aux_parent_post_id=4309&wpv_view_count=4473)
 
-![InChI wheel](./Images/inchi-wheel.png)
+<img src="./Images/inchi-wheel.png" width="300" height="300" />
 
 # **InChI** - The IUPAC International Chemical Identifier
 
