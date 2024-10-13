@@ -37,6 +37,7 @@
       - [Known issues](#known-issues)
   - [Optional features](#optional-features)
   - [Experimental features under development](#experimental-features-under-development)
+  - [References](#references)
 
 ## What is InChI
 
