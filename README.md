@@ -32,6 +32,7 @@
     - [Known issues](#known-issues)
   - [Optional features](#optional-features)
   - [Experimental features under development](#experimental-features-under-development)
+  - [References](#references)
 
 ## What is InChI
 
@@ -338,5 +339,5 @@ Some of the experimental/engineering/hidden options featured in `InChI 1.07` whi
 
 Please refrain from using the above mentioned options as they might not function properly, or will not be recognised. Regular updates with regard to their functionality will be posted on this page.
 
-# Links
+# References
 
