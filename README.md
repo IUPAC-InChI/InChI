@@ -337,3 +337,6 @@ Some of the experimental/engineering/hidden options featured in `InChI 1.07` whi
   - `InChI2InChI`  Convert  Convert InChI string(s) into InChI string(s) -- produces `Fatal Error(2)3` just like in `InChI v.1.06`
 
 Please refrain from using the above mentioned options as they might not function properly, or will not be recognised. Regular updates with regard to their functionality will be posted on this page.
+
+# Links
+
