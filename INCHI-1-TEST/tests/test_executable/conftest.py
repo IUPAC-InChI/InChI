@@ -24,7 +24,7 @@ def run_inchi_exe(request) -> Callable:
             raise FileNotFoundError(f"InChI executable not found at {exe_path}.")
 
         return subprocess.run(
-            [exe_path, molfile_path, args],
+            [exe_path, molfile_path] + args.split(),
             capture_output=True,
             text=True,
         )
