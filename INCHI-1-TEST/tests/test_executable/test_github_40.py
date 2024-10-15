@@ -110,4 +110,4 @@ M  END
 def test_spiro_compound_chiral(molfile, run_inchi_exe):
     result = run_inchi_exe(molfile)
 
-    assert "Warning (Not chiral) structure #1." not in result.stderr
+    assert "Warning (Not chiral) structure #1." not in result.stdout
