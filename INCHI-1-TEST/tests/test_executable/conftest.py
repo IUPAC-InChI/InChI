@@ -26,6 +26,7 @@ def run_inchi_exe(request) -> Callable:
         return subprocess.run(
             [exe_path, molfile_path, args],
             capture_output=True,
+            text=True,
         )
 
     return _run_inchi_exe
