@@ -1,9 +1,7 @@
 import pytest
-from helpers import tmp_molfile
 
 
 @pytest.fixture
-@tmp_molfile
 def molfile_empty_bondblock():
     return """
   -INDIGO-08292417452D
@@ -22,7 +20,6 @@ M  END
 
 
 @pytest.fixture
-@tmp_molfile
 def molfile_no_bondblock():
     return """
   -INDIGO-08292417452D

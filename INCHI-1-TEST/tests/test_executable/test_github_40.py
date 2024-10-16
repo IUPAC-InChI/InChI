@@ -1,9 +1,7 @@
 import pytest
-from helpers import tmp_molfile
 
 
 @pytest.fixture
-@tmp_molfile
 def molfile():
     return """(R)-SDP
   ChemDraw08122419562D

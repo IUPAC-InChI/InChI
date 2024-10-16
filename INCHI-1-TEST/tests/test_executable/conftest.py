@@ -48,15 +48,18 @@ def parse_aux_info_from_executable_output(output: str) -> str:
 
 @pytest.fixture
 def run_inchi_exe(request, tmp_path: Path) -> Callable:
-    def _run_inchi_exe(molfile_path: str, args: str = "") -> InchiResult:
+    def _run_inchi_exe(molfile: str, args: str = "") -> InchiResult:
 
         exe_path: str = request.config.getoption("--exe-path")
         if not Path(exe_path).exists():
             raise FileNotFoundError(f"InChI executable not found at {exe_path}.")
 
         output_path = tmp_path.joinpath("output.txt")
+        molfile_path = tmp_path.joinpath("tmp.mol")
+        molfile_path.write_text(molfile)
+
         result = subprocess.run(
-            [exe_path, molfile_path, str(output_path)] + args.split(),
+            [exe_path, str(molfile_path), str(output_path)] + args.split(),
             capture_output=True,
             text=True,
         )
