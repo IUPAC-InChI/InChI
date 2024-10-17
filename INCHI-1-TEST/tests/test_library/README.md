@@ -49,6 +49,14 @@ python -m INCHI-1-TEST.tests.test_library.data.pubchem.validate <subset>
 
 Note that validation isn't available for `compound3d` (PubChem doesn't provide file hashes).
 
+## Multithreading tests
+
+Test the thread safety of the InChI library by running
+
+`python INCHI-1-TEST/tests/test_library/test_multithreading.py`
+
+The script triggers a segfault should the thread safety of the library be compromised.
+
 ## Invariance tests
 
 Invariance tests are meant to detect problems with InChI's canonicalization algorithm.
