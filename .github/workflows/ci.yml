@@ -29,6 +29,7 @@ jobs:
       - uses: ./.github/actions/compile_inchi_lib
       - name: Run multithreading test
         run: python INCHI-1-TEST/tests/test_library/test_multithreading.py
+        timeout-minutes: 1
       - uses: ./.github/actions/regression_tests
         with:
           artifact-name: regression-test-results_glibc_gcc
@@ -74,6 +75,7 @@ jobs:
       - uses: ./.github/actions/compile_inchi_lib
       - name: Run multithreading test
         run: python INCHI-1-TEST/tests/test_library/test_multithreading.py
+        timeout-minutes: 1
       - uses: ./.github/actions/regression_tests
         with:
           artifact-name: regression-test-results_musl_gcc
