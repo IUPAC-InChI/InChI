@@ -6,90 +6,44 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux:
-    name: Ubuntu 22.04
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
+  build-matrix:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: Ubuntu 22.04
+            prebuild: sudo apt update && sudo apt install -y cmake ninja-build
+          - os: windows-2019
+            name: Windows Server 2019
+            prebuild: choco install ninja
+          - os: macos-14
+            name: MacOS 14
+            prebuild: brew install ninja
+          - os: ubuntu-22.04
+            name: Alpine Linux
+            prebuild: apk add bash git musl-dev gcc g++ make python3 py-pip cmake ninja
+            image: alpine:edge
+          - os: ubuntu-22.04
+            name: GCC latest
+            prebuild: apt update && apt install -y cmake ninja-build
+            image: gcc:latest
 
-      - name: Install build dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y cmake ninja-build
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    container: 
+      image: ${{ matrix.image || '' }} 
 
-      - name: Build InChI
-        run: |
-          cmake -B builddir -G Ninja
-          cmake --build builddir
-
-
-  build-windows:
-    name: Windows Server 2019
-    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Visual Studio shell
+        if: runner.os == 'Windows'
         uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
 
       - name: Install build dependencies
-        run: |
-          choco install ninja
-
-      - name: Build InChI
-        run: |
-          cmake -B builddir -G Ninja
-          cmake --build builddir
-
-
-  build-mac:
-    name: MacOS 14
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install build dependencies
-        run: |
-          brew install ninja
-
-      - name: Build InChI
-        run: |
-          cmake -B builddir -G Ninja
-          cmake --build builddir
-
-
-  build-alpine:
-    name: Alpine Linux
-    runs-on: ubuntu-22.04
-    container:
-      image: alpine:edge
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install build dependencies
-        run: |
-          apk add bash git musl-dev gcc g++ make python3 py-pip cmake ninja
-
-      - name: Build InChI
-        run: |
-          cmake -B builddir -G Ninja
-          cmake --build builddir
-
-
-  build-gcc-latest:
-    name: GCC latest
-    runs-on: ubuntu-22.04
-    container:
-      image: gcc:latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install build dependencies
-        run: |
-          apt update
-          apt install -y cmake ninja-build
+        run: ${{ matrix.prebuild }}
 
       - name: Build InChI
         run: |
