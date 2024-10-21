@@ -1,0 +1,34 @@
+[
+    {
+        "os": "ubuntu-22.04",
+        "slug": "ubuntu",
+        "name": "Ubuntu 22.04",
+        "prebuild": "sudo apt update && sudo apt install -y cmake ninja-build"
+    },
+    {
+        "os": "windows-2019",
+        "slug": "windows",
+        "name": "Windows Server 2019",
+        "prebuild": "choco install ninja"
+    },
+    {
+        "os": "macos-14",
+        "slug": "macos",
+        "name": "MacOS 14",
+        "prebuild": "brew install ninja"
+    },
+    {
+        "os": "ubuntu-22.04",
+        "slug": "alpine",
+        "name": "Alpine Linux",
+        "prebuild": "apk add bash git musl-dev gcc g++ make python3 py-pip cmake ninja",
+        "image": "alpine:edge"
+    },
+    {
+        "os": "ubuntu-22.04",
+        "slug": "gcc_latest",
+        "name": "GCC latest",
+        "prebuild": "apt update && apt install -y cmake ninja-build",
+        "image": "gcc:latest"
+    }
+]
