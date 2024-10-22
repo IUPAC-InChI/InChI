@@ -66,4 +66,4 @@ jobs:
           python -m pip install -e INCHI-1-TEST[invariance-tests]
   
       - name: Run executable tests
-        run: pytest INCHI-1-TEST/tests/test_executable --exe-path builddir/INCHI-1-SRC/INCHI_EXE/inchi-1/src/inchi-1
+        run: cmake --build builddir --target run-tests
