@@ -21,6 +21,6 @@ add_subdirectory( INCHI-1-SRC/INCHI_API/demos/test_ixa/src )
 add_subdirectory( INCHI-1-SRC/INCHI_EXE/inchi-1/src )
 
 add_custom_target( run-tests 
-    COMMAND pytest INCHI-1-TEST/tests/test_executable --exe-path $<TARGET_FILE:inchi-1>
+    COMMAND pytest INCHI-1-TEST/tests/test_executable --exe-path $<TARGET_FILE:inchi-1> -vv
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
