@@ -17,6 +17,7 @@ def pytest_addoption(parser):
 
 @dataclass
 class InchiResult:
+    stdout: str
     stderr: str
     inchi: str
     aux_info: str
@@ -54,18 +55,24 @@ def run_inchi_exe(request, tmp_path: Path) -> Callable:
         if not Path(exe_path).exists():
             raise FileNotFoundError(f"InChI executable not found at {exe_path}.")
 
+        write_output_to_stdout = "-STDIO" in args
+
         output_path = tmp_path.joinpath("output.txt")
         molfile_path = tmp_path.joinpath("tmp.mol")
         molfile_path.write_text(molfile)
+        paths = (
+            [molfile_path] if write_output_to_stdout else [molfile_path, output_path]
+        )
 
         result = subprocess.run(
-            [exe_path, str(molfile_path), str(output_path)] + args.split(),
+            [exe_path, *paths, *args.split()],
             capture_output=True,
             text=True,
         )
-        output = output_path.read_text()
+        output = result.stdout if write_output_to_stdout else output_path.read_text()
 
         return InchiResult(
+            stdout=result.stdout,
             stderr=result.stderr,  # contains log
             inchi=parse_inchi_from_executable_output(output),
             aux_info=parse_aux_info_from_executable_output(output),
