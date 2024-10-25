@@ -41,7 +41,7 @@ def test_empty_bondblock(molfile_empty_bondblock, run_inchi_exe):
 
     assert (
         "Error 71 (no InChI; Error: No V3000 CTAB end marker) inp structure #1."
-        not in result.stdout
+        not in result.stderr
     )
 
 
@@ -50,5 +50,5 @@ def test_no_bondblock(molfile_no_bondblock, run_inchi_exe):
 
     assert (
         "Error 71 (no InChI; Error: No V3000 CTAB end marker) inp structure #1."
-        not in result.stdout
+        not in result.stderr
     )

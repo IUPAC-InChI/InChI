@@ -17,7 +17,7 @@ def pytest_addoption(parser):
 
 @dataclass
 class InchiResult:
-    stdout: str
+    stderr: str
     inchi: str
     aux_info: str
 
@@ -66,7 +66,7 @@ def run_inchi_exe(request, tmp_path: Path) -> Callable:
         output = output_path.read_text()
 
         return InchiResult(
-            stdout=result.stderr,
+            stderr=result.stderr,  # contains log
             inchi=parse_inchi_from_executable_output(output),
             aux_info=parse_aux_info_from_executable_output(output),
         )
