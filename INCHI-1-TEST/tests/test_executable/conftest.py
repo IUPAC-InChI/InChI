@@ -77,7 +77,7 @@ def run_inchi_exe(request, tmp_path: Path) -> Callable:
             stderr=result.stderr,  # contains log
             inchi=parse_inchi_from_executable_output(output),
             aux_info=parse_aux_info_from_executable_output(output),
-            output = output, # complete output
+            output=output,  # complete output
         )
 
     return _run_inchi_exe
