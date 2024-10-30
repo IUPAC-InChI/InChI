@@ -555,7 +555,7 @@ M  END
 
 @pytest.mark.xfail(strict=True, raises=AssertionError)
 def test_CID_166625356(molfile_CID_166625356, run_inchi_exe):
-    result = run_inchi_exe(molfile_CID_166625356, "-STDIO")
+    result = run_inchi_exe(molfile_CID_166625356)
     assert (
         "InChI=1S/C40H36BN7O3S3/c1-5-52-24-12-15-27-30(19-24)37-43-35-28-16-13-25(53-6-2)20-31(28)39-45-36-29-17-14-26(54-7-3)21-32(29)38-44-34(27)46(37)41(47(35)39,48(36)38)51-23-10-8-22(9-11-23)18-33(42)40(49)50-4/h8-17,19-21,33H,5-7,18,42H2,1-4H3/t33-,41-/m0/s1"
         == result.inchi
@@ -564,7 +564,7 @@ def test_CID_166625356(molfile_CID_166625356, run_inchi_exe):
 
 @pytest.mark.xfail(strict=True, raises=AssertionError)
 def test_CID_6419481(molfile_CID_6419481, run_inchi_exe):
-    result = run_inchi_exe(molfile_CID_6419481, "-STDIO")
+    result = run_inchi_exe(molfile_CID_6419481)
     assert (
         "InChI=1S/C16H17N5O2S/c1-21(20-16(17)24)10-11-8-13(9-14(23-2)15(11)22)19-18-12-6-4-3-5-7-12/h3-10,18-19H,1H2,2H3,(H2-,17,20,24)/b11-10-"
         == result.inchi
@@ -573,7 +573,7 @@ def test_CID_6419481(molfile_CID_6419481, run_inchi_exe):
 
 @pytest.mark.xfail(strict=True, raises=AssertionError)
 def test_CID_6419538(molfile_CID_6419538, run_inchi_exe):
-    result = run_inchi_exe(molfile_CID_6419538, "-STDIO")
+    result = run_inchi_exe(molfile_CID_6419538)
     assert (
         "InChI=1S/C16H17N5O2S/c1-21(20-16(17)24)10-11-8-13(9-14(23-2)15(11)22)19-18-12-6-4-3-5-7-12/h3-10,18-19H,1H2,2H3,(H2-,17,20,24)/b11-10+"
         == result.inchi
