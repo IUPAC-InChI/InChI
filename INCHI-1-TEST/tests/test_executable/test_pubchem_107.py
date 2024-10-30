@@ -297,8 +297,7 @@ M  END
 
 @pytest.fixture
 def molfile_CID_6419538():
-    return """
-6419481
+    return """6419481
   -OEChem-10082407562D
 
  41 42  0     0  0  0  0  0  0999 V2000
