@@ -1,6 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-blue.svg)](https://github.com/IUPAC-InChI/InChI/graphs/commit-activity)
 [![GitHub issues](https://img.shields.io/github/issues/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/issues/)
+![GitHub Discussions](https://img.shields.io/github/discussions/IUPAC-InChI/InChI)
 [![GitHub contributors](https://img.shields.io/github/contributors/IUPAC-InChI/InChI.svg)](https://GitHub.com/IUPAC-InChI/InChI/graphs/contributors/)
 [![GitHub release](https://img.shields.io/github/release/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/releases/)
 [![Changelog - v1.07.1](https://img.shields.io/badge/Changelog-v1.07.1-2ea44f)](https://github.com/IUPAC-InChI/InChI/blob/v1.07.1/INCHI-1-DOC/CHANGELOG.md)
