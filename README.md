@@ -32,9 +32,8 @@
     - [INCHI-1-SRC](#inchi-1-src)
     - [INCHI-1-SRC](#inchi-1-src-1)
     - [Images](#images)
-  - [Version 1.07.1 (09/08/2024)](#version-1071-09082024)
   - [Using precompiled binaries](#using-precompiled-binaries)
-  - [Compiling `InChI v.1.07` from source](#compiling-inchi-v107-from-source)
+  - [Compiling from source](#compiling-from-source)
       - [Known issues](#known-issues)
   - [Optional features](#optional-features)
   - [Experimental features under development](#experimental-features-under-development)
@@ -97,18 +96,6 @@ The [INCHI-1-TEST](https://github.com/IUPAC-InChI/InChI/tree/main/INCHI-1-TEST) 
 ### Images
 
 The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder contains the images used in this readme.
-
-## Version 1.07.1 (09/08/2024)
-
-- 64-bit `makefile` now supports native/default MacOS<sup>&reg;</sup> `Clang` compiler
-- `AuxInfo`s in `CLI` version of `InChI` are now identical to `v1.06`
-- [Intel<sup>&reg;</sup> oneAPI DPC++/C++](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html) compiler can now be used with Microsoft<sup>&reg;</sup> `Visual Studio` solutions/projects on Microsoft<sup>&reg;</sup> Windows
-- ["Replace memchr() check with a new function to check the element group"](https://github.com/IUPAC-InChI/InChI/pull/36) pull request merged
-- ["Faster Element Symbol Handling"](https://github.com/IUPAC-InChI/InChI/pull/31) pull request merged
-- ["replace all instances of old license text. Fixes #33"](https://github.com/IUPAC-InChI/InChI/pull/34) pull request merged
-- ["Issues with InChI I/O with /FixedH / Issue #27](https://github.com/IUPAC-InChI/InChI/issues/27) and ["Seqmentation fault in inchi-1.exe with /InChI2InChI validation / Issue #28](https://github.com/IUPAC-InChI/InChI/issues/28) have been fixed
-- Addressing <code>Google<sup>&reg;</sup> oss-fuzz</code> issues
-- Minor bugs fixes
 
 ## Using precompiled binaries
 
@@ -214,7 +201,7 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
 Precompiled binaries for <strong>MacOS<sup>&reg;</sup></strong> (i.e. <code>.app</code> executables and <code>.dylib</code> libraries) will be provided very soon. Until then, please note that <code>InChI</code> can now be <a href="#compiling-inchi-v107-from-source">compiled from source</a> on <strong>MacOS<sup>&reg;</sup></strong> using native/default <code>Clang</code> or <code>GCC</code> (if installed).
 <br />
 
-## Compiling `InChI v.1.07` from source
+## Compiling from source
 
 **Microsoft<sup>&reg;</sup> Windows**:
 Solution/project files for Microsoft<sup>&reg;</sup> `Visual C++ (MSVC)/Clang/LLVM` and Intel<sup>&reg;</sup> `oneAPI DPC++/C++ Compiler` are provided for both command line and API versions of `InChI v.1.07`. The solution/project files are located in the following folders:
