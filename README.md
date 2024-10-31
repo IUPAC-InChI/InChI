@@ -3,6 +3,8 @@
 [![GitHub issues](https://img.shields.io/github/issues/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/issues/)
 [![GitHub contributors](https://img.shields.io/github/contributors/IUPAC-InChI/InChI.svg)](https://GitHub.com/IUPAC-InChI/InChI/graphs/contributors/)
 [![GitHub release](https://img.shields.io/github/release/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/releases/)
+[![Changelog - v1.07.1](https://img.shields.io/badge/Changelog-v1.07.1-2ea44f)](https://github.com/IUPAC-InChI/InChI/blob/v1.07.1/INCHI-1-DOC/CHANGELOG.md)
+[![Software Article - JChemInf](https://img.shields.io/badge/Software_Article-JChemInf-blue)](https://doi.org/10.1186/s13321-021-00517-z)
 [![Good reads](https://img.shields.io/badge/Goodreads-372213?style=flat&logo=goodreads&logoColor=white)](https://www.inchi-trust.org/inchi-overview-papers-presentations/?wpv_aux_current_post_id=4309&wpv_aux_parent_post_id=4309&wpv_view_count=4473)
 
 <img src="./Images/inchi-wheel.png" width="300" height="300" />
@@ -29,7 +31,7 @@
   - [Version 1.07.1 (09/08/2024)](#version-1071-09082024)
   - [Using precompiled binaries](#using-precompiled-binaries)
   - [Compiling `InChI v.1.07` from source](#compiling-inchi-v107-from-source)
-    - [Known issues](#known-issues)
+      - [Known issues](#known-issues)
   - [Optional features](#optional-features)
   - [Experimental features under development](#experimental-features-under-development)
 
