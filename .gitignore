@@ -3,6 +3,7 @@ INCHI-1-TEST/libs
 INCHI-1-TEST/tests/test_library/data/**/*.html
 INCHI-1-TEST/tests/test_library/data/**/*.log
 INCHI-1-TEST/tests/test_library/data/pubchem/**
+!INCHI-1-TEST/tests/test_library/data/pubchem/*.py
 INCHI-1-SRC/INCHI_API/bin*
 INCHI-1-SRC/INCHI_EXE/bin*
 !INCHI-1-SRC/INCHI_EXE/bin/Linux/64bit/.keep
