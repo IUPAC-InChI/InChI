@@ -85,8 +85,8 @@ ifndef P_BASE
 endif
 #P_INCL = -I$(P_MAIN) -I$(P_BASE)
 P_INCL = -I$(P_MAIN) -I$(P_BASE)
-C_COMPILER_OPTIONS = $(P_INCL) -m32 -std=c11 -ansi -DCOMPILE_ANSI_ONLY -DTARGET_EXE_STANDALONE -O2 -c -fno-strict-aliasing
-CPP_COMPILER_OPTIONS = $(P_INCL) -m32 -D_LIB -DTARGET_EXE_STANDALONE -ansi -O2 -frtti -c -fno-strict-aliasing
+C_COMPILER_OPTIONS = $(P_INCL) -m32 -std=c11 -ansi -DCOMPILE_ANSI_ONLY -DTARGET_EXE_STANDALONE -O1 -c -fno-strict-aliasing
+CPP_COMPILER_OPTIONS = $(P_INCL) -m32 -D_LIB -DTARGET_EXE_STANDALONE -ansi -O1 -frtti -c -fno-strict-aliasing
 LINKER_OPTIONS = -m32
 INCHI_SRCS = $(P_BASE)/ichi_bns.c	\
 $(P_BASE)/ichi_io.c	\
