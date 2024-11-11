@@ -50,7 +50,7 @@
 #include "ichi_io.h"
 #include "ichimain.h"
 
-#include <stdbool.h>
+/* #include <stdbool.h> */
 
 #include "bcf_s.h"
 
@@ -4288,6 +4288,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
     * component_nbr[j][2] = new number of component #(component_nbr[i][1]+1)
     */
     AT_TRIPLE *component_nbr = NULL;
+    int fst_at, nxt_at, cur_at, cur_neq_fst;  /* moved from below 2024-09-01 DT */
 
     /* initialize */
     if (bProcessOldCompNumbers && !orig_at_data->nOldCompNumber)
@@ -4328,14 +4329,15 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
         if (!nNewCompNumber[j])
         {
             /* mark starting with at[j] */
-            int fst_at = 0, nxt_at = 0, cur_at = j;
+            fst_at = 0;
+            nxt_at = 0;
+            cur_at = j;
+            cur_neq_fst = 1;
             num_components++;
 
             /* first time at at[j] */
             fst_at = cur_at;
             nNewCompNumber[fst_at] = (AT_NUMB) num_components;
-
-            bool cur_neq_fst = true;
 
             /* find next neighbor */
             do
@@ -4356,7 +4358,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
                 }
                 else if (cur_at == fst_at)
                 {
-                    cur_neq_fst = false;
+                    cur_neq_fst = 0;
                     /* break;  done */
                 }
                 else

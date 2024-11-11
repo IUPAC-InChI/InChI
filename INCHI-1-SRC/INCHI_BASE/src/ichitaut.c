@@ -50,7 +50,6 @@
 #include "util.h"
 
 #include "bcf_s.h"
-static int tgi_mntg_global;
 
 /* Local prototypes */
 
@@ -4371,6 +4370,8 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
         INCHI_MODE bTautFlagsDone = t_group_info->bTautFlagsDone;   /*  save previous findings, if any */
         TNI       tni = t_group_info->tni;
         AT_NUMB   *tGroupNumber = t_group_info->tGroupNumber;
+        T_GROUP* tgi_tgr = NULL;  /* copied from below 2024-09-01 DT */
+
         bIgnoreIsotopic = t_group_info->bIgnoreIsotopic;
         memset( t_group_info, 0, sizeof( *t_group_info ) ); /* djb-rwth: memset_s C11/Annex K variant? */
         t_group_info->bIgnoreIsotopic = bIgnoreIsotopic; /*  restore initial setting */
@@ -4380,8 +4381,7 @@ int MarkTautomerGroups( CANON_GLOBALS *pCG,
         t_group_info->tGroupNumber = tGroupNumber;
         t_group_info->max_num_t_groups = num_atoms / 2 + 1; /*  upper limit */
         /* djb-rwth: fixing oss-fuzz issue #52978 */
-        T_GROUP* tgi_tgr = (T_GROUP*)inchi_calloc((long long)t_group_info->max_num_t_groups + 1, sizeof(t_group_info->t_group[0]));
-        tgi_mntg_global = t_group_info->max_num_t_groups;
+        tgi_tgr = (T_GROUP*)inchi_calloc((long long)t_group_info->max_num_t_groups + 1, sizeof(t_group_info->t_group[0]));
         if (!tgi_tgr)
         {
             t_group_info->max_num_t_groups = -1;
@@ -6370,12 +6370,9 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
     {
         if (( len = t_group_info_orig->max_num_t_groups ) > 0)
         {
+            T_GROUP* tgi_tg = NULL;  /* Copied from below 2024-09-01 DT */
             /* djb-rwth: fixing oss-fuzz issue #52978 */
-            if (len != tgi_mntg_global)
-            {
-                len = tgi_mntg_global;
-            }
-            T_GROUP* tgi_tg = (T_GROUP*)inchi_malloc(((long long)len+1) * sizeof(t_group_info->t_group[0])); /* djb-rwth: cast operator added */
+            tgi_tg = (T_GROUP*)inchi_malloc(((long long)len+1) * sizeof(t_group_info->t_group[0])); /* djb-rwth: cast operator added */
             if (tgi_tg && t_group_info_orig->t_group)
             {
                 t_group_info->t_group = tgi_tg;

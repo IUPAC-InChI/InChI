@@ -653,7 +653,7 @@ void OAD_Polymer_SetAtProps( OAD_Polymer *pd,
 int OAD_Polymer_CompareBackboneBondsSeniority( int         *b1,
                                                int         *b2,
                                                OAD_AtProps *aprops );
-int OAD_Polymer_CompareRanksOfTwoAtoms( int         atom1,
+int  OAD_Polymer_CompareRanksOfTwoAtoms( int         atom1,
                                         int         atom2,
                                         OAD_AtProps *aprops );
 int OAD_Polymer_IsFirstAtomRankLower( int atom1, int atom2, OAD_AtProps *aprops );

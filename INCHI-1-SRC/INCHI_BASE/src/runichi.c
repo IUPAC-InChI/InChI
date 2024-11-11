@@ -1750,6 +1750,8 @@ int CreateOneComponentINChI( CANON_GLOBALS      *pCG,
     INChI_Aux   *cur_INChI_Aux[TAUT_NUM];
     long          lElapsedTime;
 
+    int nAllocMode = 0;  /* moved from below 2024-09-01 DT */
+
     InchiTimeGet( &ulTStart );
     bOrigCoord =
         !( ip->bINChIOutputOptions & ( INCHI_OUT_NO_AUX_INFO | INCHI_OUT_SHORT_AUX_INFO ) );
@@ -1772,7 +1774,7 @@ int CreateOneComponentINChI( CANON_GLOBALS      *pCG,
         if (bTautFlagsDone & (TG_FLAG_FOUND_ISOTOPIC_H_DONE | TG_FLAG_FOUND_ISOTOPIC_ATOM_DONE))
             nAM2 = ip->nMode & REQ_MODE_ISO;
 
-        int nAllocMode = nAM1 | nAM2; /* djb-rwth: original sequence of bit-wise operations had to be rewritten */
+        nAllocMode = nAM1 | nAM2; /* djb-rwth: original sequence of bit-wise operations had to be rewritten */
 
 
         if ((k == TAUT_NON && ( ip->nMode & REQ_MODE_BASIC )) ||

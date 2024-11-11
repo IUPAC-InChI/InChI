@@ -40,7 +40,8 @@
 
 #include <string.h>
 #include <ctype.h>
-#include <stdbool.h> /* djb-rwth: needed for boolean variables */
+/* #include <stdbool.h>  djb-rwth: needed for boolean variables */
+#include <limits.h>
 
 /* #define CHECK_WIN32_VC_HEAP */
 
@@ -80,14 +81,8 @@
 /* */
 
 #include "bcf_s.h"
-static int pi_nnc1; /* djb-rwth: required for fixing oss-fuzz issue #69489 */
-static int pi_nnc2; /* djb-rwth: required for fixing oss-fuzz issue #69699 */
-static int pi_nnc3; /* djb-rwth: required for fixing GH issues #27/#28 */
 
 #define SEGM_LINE_ADD 128
-
-bool if_cnd = true; /* djb-rwth: needed for some if condition restructuring */
-static int nnumcomp_limit; /* djb-rwth: required for fixing oss-fuzz issue #26540 */
 
 typedef struct tagOneLinkedBond
 {
@@ -3858,6 +3853,7 @@ int ParseAuxSegmentNumbers(const char* str,               /* AuxInfo string     
     int      val, ret, k, mpy_component, num;
     AT_NUMB* pNumb;
     int      base = 10;
+    int if_cnd = 1; /* djb-rwth: needed for some if condition restructuring */
 
     switch (state)
     {
@@ -3942,10 +3938,10 @@ int ParseAuxSegmentNumbers(const char* str,               /* AuxInfo string     
         {
             val = 1;
             q = pStart;
-            if_cnd = true;
+            if_cnd = 1;
         }
 
-        if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: bool if_cnd applied; ignoring LLVM warning: variable used to store function return value */
+        if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: if_cnd applied; ignoring LLVM warning: variable used to store function return value */
         {
             /* Process the abbreviation */
             pInChI_From = NULL;
@@ -5756,7 +5752,7 @@ int ParseSegmentPerm(const char* str,
                     goto exit_function;
                 }
                 iComponent1 = (int)inchi_strtol(p, &q, 10);
-                if ((iComponent1 < 1) || (iComponent1 > nNumComponents) || (iComponent1 >= sminor_size)) /* djb-rwth: fixing oss-fuzz issue #66746 */
+                if ((iComponent1 < 1) || (iComponent1 > nNumComponents)) /* djb-rwth: fixing oss-fuzz issue #66746 */
                 {
                     ret = RI_ERR_SYNTAX;  /* syntax error */
                     goto exit_function;
@@ -5815,6 +5811,7 @@ int ParseSegmentIsoAtoms(const char* str,
     const char   parity_type[] = "-+TDH";
     int    bIsoFrom, nCpyType = CPY_ISO_AT;
     int    base = 10;
+    int if_cnd = 1; /* djb-rwth: needed for some if condition restructuring */
 
     if (str[0] != 'i')
     {
@@ -5872,10 +5869,10 @@ int ParseSegmentIsoAtoms(const char* str,
             {
                 val = 1;
                 q = pStart;
-                if_cnd = true;
+                if_cnd = 1;
             }
 
-            if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: bool if_cnd applied; ignoring LLVM warning: variable used to store function return value */
+            if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: if_cnd applied; ignoring LLVM warning: variable used to store function return value */
             {
                 /* process the abbreviation */
                 ret = 0;
@@ -6532,7 +6529,7 @@ int ParseSegmentSp3m(const char* str,
                 ret = RI_ERR_ALLOC; /* memory allocation failed */
                 goto exit_function;
             }
-        }
+}
         ret = nNumComponents + 1;
     }
     else
@@ -6608,6 +6605,7 @@ int ParseSegmentSp3(const char* str,			/* input; string of segment starting with
     int bIso = (state == IST_MOBILE_H_ISO_SP3 || state == IST_FIXED_H_ISO_SP3);
     INChI* pInChI = pInpInChI[bMobileH];
     INChI_Stereo** pStereo = NULL;
+    int if_cnd = 1; /* djb-rwth: needed for some if condition restructuring */
 
     if (!bIso && state != IST_MOBILE_H_SP3 && state != IST_FIXED_H_SP3)
     {
@@ -6648,7 +6646,7 @@ int ParseSegmentSp3(const char* str,			/* input; string of segment starting with
         {
             val = 1;
             q = pStart;
-            if_cnd = true;
+            if_cnd = 1;
         }
 
         /* Abbreviation? */
@@ -6879,6 +6877,7 @@ int ParseSegmentSp2(const char* str,
     int   bIsoTo, bIsoFrom, nCpyType = CPY_SP2;
     int   bIso = (state == IST_MOBILE_H_ISO_SP2 || state == IST_FIXED_H_ISO_SP2);
     int   base = 10;
+    int if_cnd = 1; /* djb-rwth: needed for some if condition restructuring */
 
     if (!bIso && state != IST_MOBILE_H_SP2 && state != IST_FIXED_H_SP2)
     {
@@ -6937,18 +6936,27 @@ int ParseSegmentSp2(const char* str,
         {
             val = 1;
             q = pStart;
-            if_cnd = true;
+            if_cnd = 1;
         }
 
 
-        if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: bool if_cnd applied; ignoring LLVM warning: variable used to store function return value */
+        if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: if_cnd applied; ignoring LLVM warning: variable used to store function return value */
         {
             /* process the abbreviation */
             ret = 0;
 #if (FIX_DALKE_BUGS == 1)
-            if (iComponent + val > nNumComponents)
+            /* djb-rwth: fixing GH issue #59.2 */
+            if ((iComponent + val >= INT_MIN) && (iComponent + val <= INT_MAX))
             {
-                ret = RI_ERR_SYNTAX; /* syntax error */
+                if ((iComponent + val > nNumComponents))
+                {
+                    ret = RI_ERR_SYNTAX; /* syntax error */
+                    goto exit_function;
+                }
+            }
+            else
+            {
+                ret = BNS_PROGRAM_ERR;
                 goto exit_function;
             }
 #endif
@@ -6983,7 +6991,7 @@ int ParseSegmentSp2(const char* str,
                 default:
                     ret = RI_ERR_SYNTAX;
                     break;
-                }
+            }
                 break;
             case TAUT_NON:
                 switch (state)
@@ -7058,7 +7066,7 @@ int ParseSegmentSp2(const char* str,
             default:
                 ret = RI_ERR_SYNTAX;
                 break;
-            }
+        }
             if (ret < 0)
             {
                 goto exit_function;
@@ -7096,7 +7104,7 @@ int ParseSegmentSp2(const char* str,
             }
             mpy_component = val;
             goto end_main_cycle;
-        }
+    }
         else
             /* regular multiplier */
             if ((p = strchr(pStart, '*')) && p < pEnd)
@@ -7376,7 +7384,7 @@ int ParseSegmentSp2(const char* str,
         {
             break;
         }
-        }
+}
     if (nNumComponents != iComponent)
     {
         ret = RI_ERR_SYNTAX; /* syntax error */
@@ -8001,6 +8009,7 @@ int ParseSegmentCharge(const char* str,
     int  ret;
     INChI* pInChI = pInpInChI[bMobileH];
     const char   mult_type[] = "mnMNe";
+    int if_cnd = 1; /* djb-rwth: needed for some if condition restructuring */
 
     if (str[0] != 'q')
     {
@@ -8039,11 +8048,11 @@ int ParseSegmentCharge(const char* str,
         {
             val = 1;
             q = pStart;
-            if_cnd = true;
+            if_cnd = 1;
         }
 
 
-        if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: bool if_cnd applied; ignoring LLVM warning: variable used to store function return value */
+        if (if_cnd && (t = strchr((char*)mult_type, *q)) && q + 1 == pEnd) /* djb-rwth: if_cnd applied; ignoring LLVM warning: variable used to store function return value */
         {
             /* process the abbreviation */
 
@@ -8186,11 +8195,11 @@ exit_function:
 /****************************************************************************
 Parse "/h" InChI layer
 ****************************************************************************/
-int ParseSegmentMobileH( const char *str,
-                         int        bMobileH,
-                         INChI      *pInpInChI[],
-                         int        pnNumComponents[],
-                         int        *pbAbc )
+int ParseSegmentMobileH(const char* str,
+    int        bMobileH,
+    INChI*     pInpInChI[],
+    int        pnNumComponents[],
+    int*       pbAbc)
 {
 #define nNum_H( ICOMPONENT ) ((bMobileH==TAUT_YES)? pInChI[ICOMPONENT].nNum_H : pInChI[ICOMPONENT].nNum_H_fixed)
 
@@ -8202,15 +8211,15 @@ int ParseSegmentMobileH( const char *str,
     const char* p, * q, * h, * t, * p1, * pTaut, * pStart, * pEnd;
     AT_NUMB curAtom, nxtAtom;
     int  state, ret, nAltMobileH = ALT_TAUT(bMobileH); /* djb-rwth: removing redundant variables */
-    INChI *pInChI = pInpInChI[bMobileH];
-    INChI *pAltInChI = pInpInChI[nAltMobileH];
+    INChI* pInChI = pInpInChI[bMobileH];
+    INChI* pAltInChI = pInpInChI[nAltMobileH];
     int  base = 10;
 
     num_H = -999;          /* impossible value */
     num_Minus = -999;      /* impossible value */
     tg_pos_Tautomer = -999; /* impossible value */
 
-                            /* number of immobile H is always allocated; immobile H are present in M layer only */
+    /* number of immobile H is always allocated; immobile H are present in M layer only */
     nNumComponents = pnNumComponents[bMobileH];
 
     /* djb-rwth: fixing oss-fuzz issues #66985, #66718, #43512, #43456, #43420, #42774, #34772, #30156 */
@@ -8225,7 +8234,7 @@ int ParseSegmentMobileH( const char *str,
                 len = pAltInChI[i].nNumberOfAtoms;
                 if (pInChI[i].nNum_H)
                 {
-                    inchi_free( pInChI[i].nNum_H );
+                    inchi_free(pInChI[i].nNum_H);
                     pInChI[i].nNum_H = NULL;
                 }
             }
@@ -8241,7 +8250,6 @@ int ParseSegmentMobileH( const char *str,
             }
             pInChI[i].nNum_H = pi_nnh2;
             /* pi_nnh2_init = true; */
-            pi_nnc2 = len;
         }
         /* copy immobile H from Mobile-H layer to Fixed-H layer */
         if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
@@ -8249,11 +8257,12 @@ int ParseSegmentMobileH( const char *str,
             S_CHAR* pai_nnh = (S_CHAR*)realloc(pAltInChI[i].nNum_H, len * sizeof(pAltInChI[0].nNum_H[0]));
             if (pai_nnh)
             {
+                S_CHAR* pi_nnh1 = NULL;  /* copied from below to satisfy C syntax 2024-09-01 DT */
                 pAltInChI[i].nNum_H = pai_nnh;
                 /*if (!pi_nnh2_init)
                 {
                 */
-                S_CHAR* pi_nnh1 = (S_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nNum_H[0]));
+                pi_nnh1 = (S_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nNum_H[0]));
                 if (!pi_nnh1)
                 {
                     ret = RI_ERR_ALLOC; /* allocation error */
@@ -8299,30 +8308,30 @@ int ParseSegmentMobileH( const char *str,
     }
 
     /* Read Hydrogen info in 1 pass */
-    
-    pStart = (char  *) str + 1;
+
+    pStart = (char*)str + 1;
     iComponent = 0;
     nNumComponents = pnNumComponents[bMobileH];
 
     while (1)
     {
         /* cycle over components */
-        if (!( pEnd = strchr( pStart, ';' ) ))
+        if (!(pEnd = strchr(pStart, ';')))
         {
-            pEnd = pStart + strlen( pStart );
+            pEnd = pStart + strlen(pStart);
         }
-        if (( p = strchr( pStart, '*' ) ) && p < pEnd)
+        if ((p = strchr(pStart, '*')) && p < pEnd)
         {
-            mpy_component = (int) inchi_strtol( pStart, &q, 10 );
+            mpy_component = (int)inchi_strtol(pStart, &q, 10);
 #if ( CHECK_STRTOL_ATNUMB==1 )
-            if (mpy_component>MAX_ATOMS || mpy_component<0)
+            if (mpy_component > MAX_ATOMS || mpy_component < 0)
             {
                 ret = RI_ERR_SYNTAX;
                 goto exit_function;
-        }
+            }
 #endif
 #if ( FIX_DALKE_BUGS == 1 )
-            if (p != q || !isdigit( UCINT *pStart )) /* prevent non-positive multipliers */
+            if (p != q || !isdigit(UCINT* pStart)) /* prevent non-positive multipliers */
 #else
             if (p != q)
 #endif
@@ -8352,12 +8361,12 @@ int ParseSegmentMobileH( const char *str,
         if (p < pEnd && *pbAbc == -1)
         {
             /* check if compressed InChI */
-            *pbAbc = ( *p == ',' || isupper( UCINT *p ) ) ? 1 : 0;
+            *pbAbc = (*p == ',' || isupper(UCINT* p)) ? 1 : 0;
         }
-        base = ( *pbAbc == 1 ) ? ALPHA_BASE : 10;
+        base = (*pbAbc == 1) ? ALPHA_BASE : 10;
 
         /* immobile H */
-        t = pTaut = ( *pbAbc == 1 ) ? strchr( p, ',' ) : strchr( p, '(' ); /* locate the first tautomer group character */
+        t = pTaut = (*pbAbc == 1) ? strchr(p, ',') : strchr(p, '('); /* locate the first tautomer group character */
 
         if (t && bMobileH == TAUT_NON)
         {
@@ -8382,14 +8391,13 @@ int ParseSegmentMobileH( const char *str,
                 }
                 if (iComponent + i < pnNumComponents[nAltMobileH])
                 {
-                    len = inchi_max( pInChI[iComponent + i].nNumberOfAtoms, pAltInChI[iComponent + i].nNumberOfAtoms ) + 1;
+                    len = inchi_max(pInChI[iComponent + i].nNumberOfAtoms, pAltInChI[iComponent + i].nNumberOfAtoms) + 1;
                 }
                 else
                 {
                     len = pInChI[iComponent + i].nNumberOfAtoms + 1;
                 }
-                pInChI[iComponent + i].nNum_H_fixed = (S_CHAR *) inchi_calloc( len, sizeof( pInChI[0].nNum_H_fixed[0] ) );
-                pi_nnc3 = len;
+                pInChI[iComponent + i].nNum_H_fixed = (S_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nNum_H_fixed[0]));
                 if (!pInChI[iComponent + i].nNum_H_fixed)
                 {
                     ret = RI_ERR_ALLOC; /* allocation error */
@@ -8398,11 +8406,11 @@ int ParseSegmentMobileH( const char *str,
                 /* compare nAtom */
                 if (iComponent + i < pnNumComponents[nAltMobileH])
                 {
-                    len2 = inchi_min( pInChI[iComponent + i].nNumberOfAtoms, pAltInChI[iComponent + i].nNumberOfAtoms );
+                    len2 = inchi_min(pInChI[iComponent + i].nNumberOfAtoms, pAltInChI[iComponent + i].nNumberOfAtoms);
                     if (pInChI[iComponent + i].nAtom && len2)
                     {
                         /* check */
-                        if (memcmp( pInChI[iComponent + i].nAtom, pAltInChI[iComponent + i].nAtom, len2 * sizeof( pInChI[0].nAtom[0] ) ))
+                        if (memcmp(pInChI[iComponent + i].nAtom, pAltInChI[iComponent + i].nAtom, len2 * sizeof(pInChI[0].nAtom[0])))
                         {
                             ret = RI_ERR_SYNTAX; /* syntax error */
                             goto exit_function;
@@ -8412,8 +8420,8 @@ int ParseSegmentMobileH( const char *str,
                     if (pInChI[iComponent + i].nNumberOfAtoms < pAltInChI[iComponent + i].nNumberOfAtoms)
                     {
                         if (pInChI[iComponent + i].nAtom)
-                            inchi_free( pInChI[iComponent + i].nAtom );
-                        if (!( pInChI[iComponent + i].nAtom = (U_CHAR *) inchi_calloc( len, sizeof( pInChI[0].nAtom[0] ) ) ))
+                            inchi_free(pInChI[iComponent + i].nAtom);
+                        if (!(pInChI[iComponent + i].nAtom = (U_CHAR*)inchi_calloc(len, sizeof(pInChI[0].nAtom[0]))))
                         {
                             ret = RI_ERR_ALLOC; /* allocation error */
                             goto exit_function;
@@ -8438,7 +8446,7 @@ int ParseSegmentMobileH( const char *str,
             while (p < pTaut)
             {
                 /* syntax check: atom number */
-                if (!*p || !isupper( UCINT *p ))
+                if (!*p || !isupper(UCINT* p))
                 {
                     ret = RI_ERR_SYNTAX; /* syntax error */
                     goto exit_function;
@@ -8446,11 +8454,11 @@ int ParseSegmentMobileH( const char *str,
                 if ((curAtom = nxtAtom = (int)inchi_strtol(p, &q, base))) /* djb-rwth: addressing LLVM warning */
                 {
                     p = q;
-                    if (isupper( UCINT *p ))
+                    if (isupper(UCINT* p))
                     {
-                        nxtAtom = (int) inchi_strtol( p, &q, base );
+                        nxtAtom = (int)inchi_strtol(p, &q, base);
 #if ( CHECK_STRTOL_ATNUMB==1 )
-                        if (nxtAtom>MAX_ATOMS || nxtAtom<0)
+                        if (nxtAtom > MAX_ATOMS || nxtAtom < 0)
                         {
                             ret = RI_ERR_SYNTAX;
                             goto exit_function;
@@ -8465,7 +8473,7 @@ int ParseSegmentMobileH( const char *str,
                     goto exit_function;
                 }
                 /* number of H, may be negative */
-                if (!( num_H = (int) inchi_strtol( p, &q, 10 ) ) || q > pTaut)
+                if (!(num_H = (int)inchi_strtol(p, &q, 10)) || q > pTaut)
                 {
                     ret = RI_ERR_SYNTAX; /* syntax error */
                     goto exit_function;
@@ -8497,7 +8505,7 @@ int ParseSegmentMobileH( const char *str,
 #if ( FIX_GAF_2019_1==1 )
             {
                 char invalid;
-                const char *str1 = str + 1;
+                const char* str1 = str + 1;
                 if (bMobileH == TAUT_NON)    /* FixedH layer "/h"*/
                 {
                     invalid = str1[strspn(str1, "0123456789hDHT-,;()*")];
@@ -8516,13 +8524,13 @@ int ParseSegmentMobileH( const char *str,
             while (p < pTaut)
             {
                 /* syntax check: atom number */
-                if (!*p || !isdigit( UCINT *p ))
+                if (!*p || !isdigit(UCINT* p))
                 {
                     ret = RI_ERR_SYNTAX; /* syntax error */
                     goto exit_function;
                 }
                 /* number of H */
-                h = p + strcspn( p, "Hh" );
+                h = p + strcspn(p, "Hh");
                 /*h = strchr( p, 'H' );*/
                 if (!*h || h >= pTaut)
                 {
@@ -8533,15 +8541,15 @@ int ParseSegmentMobileH( const char *str,
                     h = NULL;
                     break; */ /* no more H found */
                 }
-                num_H = ( *h == 'H' ) ? 1 : ( *h == 'h' ) ? -1 : 0;
+                num_H = (*h == 'H') ? 1 : (*h == 'h') ? -1 : 0;
                 if (!num_H)
                 {
                     ret = RI_ERR_SYNTAX; /* syntax error */
                     goto exit_function;
                 }
-                if (h[1] && isdigit( UCINT h[1] ))
+                if (h[1] && isdigit(UCINT h[1]))
                 {
-                    num_H *= (int) inchi_strtol( h + 1, &p1, 10 );
+                    num_H *= (int)inchi_strtol(h + 1, &p1, 10);
                 }
                 else
                 {
@@ -8554,17 +8562,17 @@ int ParseSegmentMobileH( const char *str,
                 /* list of atoms that have num_H */
                 while (p < h)
                 {
-                    if (!*p || !isdigit( UCINT *p ))
+                    if (!*p || !isdigit(UCINT* p))
                     {
                         ret = RI_ERR_SYNTAX; /* syntax error */
                         goto exit_function;
                     }
-                    nxtAtom = curAtom = (int) inchi_strtol( p, &q, 10 );
+                    nxtAtom = curAtom = (int)inchi_strtol(p, &q, 10);
                     if (*q == '-')
                     {
-                        nxtAtom = (int) inchi_strtol( q + 1, &q, 10 );
+                        nxtAtom = (int)inchi_strtol(q + 1, &q, 10);
 #if ( CHECK_STRTOL_ATNUMB==1 )
-                        if (nxtAtom>MAX_ATOMS || nxtAtom<0)
+                        if (nxtAtom > MAX_ATOMS || nxtAtom < 0)
                         {
                             ret = RI_ERR_SYNTAX;
                             goto exit_function;
@@ -8573,7 +8581,7 @@ int ParseSegmentMobileH( const char *str,
                     }
                     /* consitency check */
                     if (!curAtom || curAtom > numCtAtoms ||
-                         nxtAtom < curAtom || nxtAtom > numCtAtoms)
+                        nxtAtom < curAtom || nxtAtom > numCtAtoms)
                     {
                         ret = RI_ERR_SYNTAX; /* syntax error */
                         goto exit_function;
@@ -8641,7 +8649,7 @@ int ParseSegmentMobileH( const char *str,
                 while (p < pEnd)
                 {
                     /* start t-group */
-                    if (!isdigit( UCINT *p ) || !( num_H = (int) inchi_strtol( p, &q, 10 ) ) || q > pEnd)
+                    if (!isdigit(UCINT* p) || !(num_H = (int)inchi_strtol(p, &q, 10)) || q > pEnd)
                     {
                         ret = RI_ERR_SYNTAX; /* syntax error */
                         goto exit_function;
@@ -8651,9 +8659,9 @@ int ParseSegmentMobileH( const char *str,
                     if (*p == '-')
                     {
                         p++;
-                        if (isdigit( UCINT *p ))
+                        if (isdigit(UCINT* p))
                         {
-                            num_Minus = (int) inchi_strtol( p, &q, 10 );
+                            num_Minus = (int)inchi_strtol(p, &q, 10);
                             p = q;
                         }
                         else
@@ -8690,7 +8698,7 @@ int ParseSegmentMobileH( const char *str,
                         This does not include zero termination!
 
                         */
-                        tg_alloc_len = ( ( 3 + INCHI_T_NUM_MOVABLE )*pInChI[iComponent].nNumberOfAtoms ) / 2 + 1;
+                        tg_alloc_len = ((3 + INCHI_T_NUM_MOVABLE) * pInChI[iComponent].nNumberOfAtoms) / 2 + 1;
                         for (i = 0; i < mpy_component; i++)
                         {
                             pInChI[iComponent + i].nTautomer = (AT_NUMB*)inchi_calloc((long long)tg_alloc_len + 1, sizeof(pInChI->nTautomer[0])); /* djb-rwth: cast operator added */
@@ -8718,10 +8726,10 @@ int ParseSegmentMobileH( const char *str,
                     lenTautomer = tg_pos_Tautomer + 3; /* first atom number position */
                     num_taut_H_component += num_H;
 
-                    while (p < pEnd && isupper( UCINT *p ))
+                    while (p < pEnd && isupper(UCINT* p))
                     {
                         /* read list of tautomeric atoms */
-                        val = (int) inchi_strtol( p, &q, base );
+                        val = (int)inchi_strtol(p, &q, base);
                         if (lenTautomer >= tg_alloc_len || val > numCtAtoms)
                         {
                             ret = RI_ERR_PROGR; /* wrong tautomer array length */
@@ -8761,180 +8769,181 @@ int ParseSegmentMobileH( const char *str,
                     /* t-group */
                     switch (*p)
                     {
-                        case '(': /* start t-group */
-                            switch (state)
-                            {
-                                case ')':
-                                    state = *p++;
-                                    num_H = 0;
-                                    num_Minus = 0;
-                                    continue;
-                                default:
-                                    ret = RI_ERR_SYNTAX; /* syntax error */
-                                    goto exit_function;
-                            }
-                        case ')': /* end t-group */
-                            switch (state)
-                            {
-                                case 'A': /* previuos was atom number */
-                                    if (!tg_alloc_len)
-                                    {
-                                        ret = RI_ERR_SYNTAX; /* syntax error */
-                                        goto exit_function;
-                                    }
-                                    iTGroup++;
-                                    state = *p++;
-                                    pInChI[iComponent].nTautomer[tg_pos_Tautomer] = lenTautomer - tg_pos_Tautomer - 1; /* length of the rest of the t-group */
-                                    pInChI[iComponent].lenTautomer = lenTautomer;
-                                    continue;
-                                default:
-                                    ret = RI_ERR_SYNTAX; /* syntax error */
-                                    goto exit_function;
-                            }
-                        case 'H': /* number of H */
-                            switch (state)
-                            {
-                                case '(':
-                                    state = *p++;
-                                    num_H = 1;
-                                    continue;
-                                default:
-                                    ret = RI_ERR_SYNTAX; /* syntax error */
-                                    goto exit_function;
-                            }
-                        case '-':  /* number of (-) */
-                            switch (state)
-                            {
-                                case 'N': /* previous was number of H */
-                                case 'H': /* previous was H */
-                                    state = *p++;
-                                    num_Minus = 1;
-                                    continue;
-                                default:
-                                    ret = RI_ERR_SYNTAX; /* syntax error */
-                                    goto exit_function;
-                            }
-                        case ',':
-                            switch (state)
-                            {
-                                case 'N': /* previous was number of H */
-                                case 'H': /* previous was H */
-                                case '-': /* previuos was - */
-                                case 'M': /* previous was number of (-) */
-                                          /* the next must be the first tautomeric atom number; save num_H & num_Minus */
-                                    if (num_H <= 0 && num_Minus <= 0)
-                                    {
-                                        ret = RI_ERR_SYNTAX; /* syntax error */
-                                        goto exit_function;
-                                    }
-                                    if (!tg_alloc_len)
-                                    {
-                                        /*
-                                        --- header ---
-                                        [num_t_groups]
-                                        --- one t-group: ---
-                                        [len=group length no including this value]
-                                        [num_H]
-                                        [num_(-)]
-                                        [Endpoint(1),...,Endpoint(len-2)]
-                                        --- next t-group ---
-                                        ...
-
-                                        Max. size = 1 + 3*max_num_t_groups + max_num_endpoints
-
-                                        max_num_t_groups  = num_at/2
-                                        max_num_endpoints = num_at
-
-                                        Max. size = 1 + 3*(num_at/2) + num_at = 1 + (5*num_at)/2
-                                        5 = 3 + INCHI_T_NUM_MOVABLE = 3 + num_types_of_attachments
-
-                                        This does not include zero termination!
-
-                                        */
-                                        tg_alloc_len = ( ( 3 + INCHI_T_NUM_MOVABLE )*pInChI[iComponent].nNumberOfAtoms ) / 2 + 1;
-                                        for (i = 0; i < mpy_component; i++)
-                                        {
-                                            /* djb-rwth: fixing oss-fuzz issue #68314 */
-                                            if (iComponent + i < nnumcomp_limit)
-                                            {
-                                                AT_NUMB* pinchi_icint = (AT_NUMB*)inchi_calloc((long long)tg_alloc_len + 1, sizeof(pInChI->nTautomer[0])); /* djb-rwth: cast operator added */
-                                                if (!pinchi_icint)
-                                                {
-                                                    ret = RI_ERR_ALLOC; /* allocation error */
-                                                    goto exit_function;
-                                                }
-                                                pInChI[iComponent + i].nTautomer = pinchi_icint;
-                                                pInChI[iComponent + i].lenTautomer = 0;
-                                            }
-                                            else
-                                            {
-                                                ret = RI_ERR_ALLOC; /* allocation error */
-                                                goto exit_function;
-                                            }
-                                        }
-                                        tg_pos_Tautomer = 1; /* number atoms (NumAt+2) position */
-                                    }
-                                    else
-                                    {
-                                        /* next t-group */
-                                        tg_pos_Tautomer = lenTautomer;
-                                    }
-                                    if (tg_pos_Tautomer + 3 >= tg_alloc_len)
-                                    {
-                                        ret = RI_ERR_PROGR; /* wrong tautomer array length */
-                                        goto exit_function;
-                                    }
-                                    pInChI[iComponent].nTautomer[tg_pos_Tautomer + 1] = num_H;
-                                    pInChI[iComponent].nTautomer[tg_pos_Tautomer + 2] = num_Minus;
-                                    lenTautomer = tg_pos_Tautomer + 3; /* first atom number position */
-                                    num_taut_H_component += num_H;
-                                    state = *p++;
-                                    continue;
-                                case 'A':
-                                    /* previuos was atom number */
-                                    state = *p++;
-                                    continue;
-                                default:
-                                    ret = RI_ERR_SYNTAX; /* syntax error */
-                                    goto exit_function;
-                            }
+                    case '(': /* start t-group */
+                        switch (state)
+                        {
+                        case ')':
+                            state = *p++;
+                            num_H = 0;
+                            num_Minus = 0;
+                            continue;
                         default:
-                            if (isdigit( UCINT *p ))
-                            {
-                                val = (int) inchi_strtol( p, &q, 10 );
-                                if (val <= 0)
-                                {
-                                    ret = RI_ERR_SYNTAX; /* syntax error */
-                                    goto exit_function;
-                                }
-                                p = q;
-                                switch (state)
-                                {
-                                    case 'H':
-                                        num_H = val;
-                                        state = 'N';
-                                        continue;
-                                    case '-':
-                                        num_Minus = val;
-                                        state = 'M';
-                                        continue;
-                                    case ',':
-                                        if (lenTautomer >= tg_alloc_len || val > numCtAtoms)
-                                        {
-                                            ret = RI_ERR_PROGR; /* wrong tautomer array length */
-                                            goto exit_function;
-                                        }
-                                        num_Atoms++;
-                                        pInChI[iComponent].nTautomer[lenTautomer++] = val;
-                                        state = 'A';
-                                        continue;
-                                    default:
-                                        ret = RI_ERR_SYNTAX; /* syntax error */
-                                        goto exit_function;
-                                }
-                            }
                             ret = RI_ERR_SYNTAX; /* syntax error */
                             goto exit_function;
+                        }
+                    case ')': /* end t-group */
+                        switch (state)
+                        {
+                        case 'A': /* previuos was atom number */
+                            if (!tg_alloc_len)
+                            {
+                                ret = RI_ERR_SYNTAX; /* syntax error */
+                                goto exit_function;
+                            }
+                            iTGroup++;
+                            state = *p++;
+                            pInChI[iComponent].nTautomer[tg_pos_Tautomer] = lenTautomer - tg_pos_Tautomer - 1; /* length of the rest of the t-group */
+                            pInChI[iComponent].lenTautomer = lenTautomer;
+                            continue;
+                        default:
+                            ret = RI_ERR_SYNTAX; /* syntax error */
+                            goto exit_function;
+                        }
+                    case 'H': /* number of H */
+                        switch (state)
+                        {
+                        case '(':
+                            state = *p++;
+                            num_H = 1;
+                            continue;
+                        default:
+                            ret = RI_ERR_SYNTAX; /* syntax error */
+                            goto exit_function;
+                        }
+                    case '-':  /* number of (-) */
+                        switch (state)
+                        {
+                        case 'N': /* previous was number of H */
+                        case 'H': /* previous was H */
+                            state = *p++;
+                            num_Minus = 1;
+                            continue;
+                        default:
+                            ret = RI_ERR_SYNTAX; /* syntax error */
+                            goto exit_function;
+                        }
+                    case ',':
+                        switch (state)
+                        {
+                        case 'N': /* previous was number of H */
+                        case 'H': /* previous was H */
+                        case '-': /* previuos was - */
+                        case 'M': /* previous was number of (-) */
+                            /* the next must be the first tautomeric atom number; save num_H & num_Minus */
+                            if (num_H <= 0 && num_Minus <= 0)
+                            {
+                                ret = RI_ERR_SYNTAX; /* syntax error */
+                                goto exit_function;
+                            }
+                            if (!tg_alloc_len)
+                            {
+                                /*
+                                --- header ---
+                                [num_t_groups]
+                                --- one t-group: ---
+                                [len=group length no including this value]
+                                [num_H]
+                                [num_(-)]
+                                [Endpoint(1),...,Endpoint(len-2)]
+                                --- next t-group ---
+                                ...
+
+                                Max. size = 1 + 3*max_num_t_groups + max_num_endpoints
+
+                                max_num_t_groups  = num_at/2
+                                max_num_endpoints = num_at
+
+                                Max. size = 1 + 3*(num_at/2) + num_at = 1 + (5*num_at)/2
+                                5 = 3 + INCHI_T_NUM_MOVABLE = 3 + num_types_of_attachments
+
+                                This does not include zero termination!
+
+                                */
+                                tg_alloc_len = ((3 + INCHI_T_NUM_MOVABLE) * pInChI[iComponent].nNumberOfAtoms) / 2 + 1;
+                                for (i = 0; i < mpy_component; i++)
+                                {
+                                    /* djb-rwth: fixing oss-fuzz issue #68314 */
+                                    AT_NUMB* pinchi_icint = (AT_NUMB*)inchi_calloc((long long)tg_alloc_len + 1, sizeof(pInChI->nTautomer[0])); /* djb-rwth: cast operator added */
+                                    if (!pinchi_icint)
+                                    {
+                                        ret = RI_ERR_ALLOC; /* allocation error */
+                                        goto exit_function;
+                                    }
+                                    pInChI[iComponent + i].nTautomer = pinchi_icint;
+                                    pInChI[iComponent + i].lenTautomer = 0;
+                                }
+                                tg_pos_Tautomer = 1; /* number atoms (NumAt+2) position */
+                            }
+                            else
+                            {
+                                /* next t-group */
+                                tg_pos_Tautomer = lenTautomer;
+                            }
+                            if (tg_pos_Tautomer + 3 >= tg_alloc_len)
+                            {
+                                ret = RI_ERR_PROGR; /* wrong tautomer array length */
+                                goto exit_function;
+                            }
+                            pInChI[iComponent].nTautomer[tg_pos_Tautomer + 1] = num_H;
+                            pInChI[iComponent].nTautomer[tg_pos_Tautomer + 2] = num_Minus;
+                            lenTautomer = tg_pos_Tautomer + 3; /* first atom number position */
+                            /* djb-rwth: fixing GH issue #59.1 */
+                            if (num_H >= INT_MIN && num_H <= INT_MAX)
+                            {
+                                num_taut_H_component += num_H;
+                            }
+                            else
+                            {
+                                ret = BNS_PROGRAM_ERR;
+                                goto exit_function;
+                            }
+                            state = *p++;
+                            continue;
+                        case 'A':
+                            /* previuos was atom number */
+                            state = *p++;
+                            continue;
+                        default:
+                            ret = RI_ERR_SYNTAX; /* syntax error */
+                            goto exit_function;
+                        }
+                    default:
+                        if (isdigit(UCINT* p))
+                        {
+                            val = (int)inchi_strtol(p, &q, 10);
+                            if (val <= 0)
+                            {
+                                ret = RI_ERR_SYNTAX; /* syntax error */
+                                goto exit_function;
+                            }
+                            p = q;
+                            switch (state)
+                            {
+                            case 'H':
+                                num_H = val;
+                                state = 'N';
+                                continue;
+                            case '-':
+                                num_Minus = val;
+                                state = 'M';
+                                continue;
+                            case ',':
+                                if (lenTautomer >= tg_alloc_len || val > numCtAtoms)
+                                {
+                                    ret = RI_ERR_PROGR; /* wrong tautomer array length */
+                                    goto exit_function;
+                                }
+                                num_Atoms++;
+                                pInChI[iComponent].nTautomer[lenTautomer++] = val;
+                                state = 'A';
+                                continue;
+                            default:
+                                ret = RI_ERR_SYNTAX; /* syntax error */
+                                goto exit_function;
+                            }
+                        }
+                        ret = RI_ERR_SYNTAX; /* syntax error */
+                        goto exit_function;
                     }
                 }
                 if (!iTGroup || state != ')')
@@ -8946,13 +8955,13 @@ int ParseSegmentMobileH( const char *str,
             }
         }
         /* check num_H in components; for bMobileH=TAUT_NON, pInChI->nNum_H_fixed[] has not been added to pInChI->nNum_H[] yet */
-        if (0 > ( ret2 = GetInChIFormulaNumH( pInChI + iComponent, &num_H_formula ) ) ||
-             0 > ( ret2 = GetInChINumH( pInChI + iComponent, &num_H_InChI ) ))
+        if (0 > (ret2 = GetInChIFormulaNumH(pInChI + iComponent, &num_H_formula)) ||
+            0 > (ret2 = GetInChINumH(pInChI + iComponent, &num_H_InChI)))
         {
             ret = ret2;
             goto exit_function;
         }
-        if (num_H_formula != num_H_InChI + ( bMobileH == TAUT_NON ? num_H_component : 0 ))
+        if (num_H_formula != num_H_InChI + (bMobileH == TAUT_NON ? num_H_component : 0))
         {
             ret = RI_ERR_SYNTAX; /* syntax error */
             goto exit_function;
@@ -8962,7 +8971,7 @@ int ParseSegmentMobileH( const char *str,
         for (i = 1; i < mpy_component; i++)
         {
 #if ( FIX_GAF_2019_2==1 )
-            if ((iComponent + i > nNumComponents - 1) || (iComponent + i < 0)) 
+            if ((iComponent + i > nNumComponents - 1) || (iComponent + i < 0))
             {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
@@ -8975,11 +8984,6 @@ int ParseSegmentMobileH( const char *str,
             }
 #endif
             /* djb-rwth: fixing oss-fuzz issue #69699 */
-            if ((iComponent < 0) || (iComponent > pi_nnc2))
-            {
-                ret = RI_ERR_SYNTAX; /* syntax error */
-                goto exit_function;
-            }
             if (nNum_H(iComponent)) /* djb-rwth: fixing GH issues #27/#28 */
             {
                 memcpy(nNum_H(iComponent + i), nNum_H(iComponent), pInChI[iComponent + i].nNumberOfAtoms * sizeof(nNum_H(0)[0]));
@@ -8995,13 +8999,13 @@ int ParseSegmentMobileH( const char *str,
                 pInChI[iComponent + i].lenTautomer = pInChI[iComponent].lenTautomer;
             }
             /* check num_H in components */
-            if (0 > ( ret2 = GetInChIFormulaNumH( pInChI + iComponent + i, &num_H_formula ) ) ||
-                 0 > ( ret2 = GetInChINumH( pInChI + iComponent + i, &num_H_InChI ) ))
+            if (0 > (ret2 = GetInChIFormulaNumH(pInChI + iComponent + i, &num_H_formula)) ||
+                0 > (ret2 = GetInChINumH(pInChI + iComponent + i, &num_H_InChI)))
             {
                 ret = ret2;
                 goto exit_function;
             }
-            if (num_H_formula != num_H_InChI + ( bMobileH == TAUT_NON ? num_H_component : 0 ))
+            if (num_H_formula != num_H_InChI + (bMobileH == TAUT_NON ? num_H_component : 0))
             {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
@@ -9883,7 +9887,6 @@ int ParseSegmentFormula(const char* str,
                 {
                     /* allocate InChI */
                     pInChI = (INChI*)inchi_calloc(nNumComponents, sizeof(INChI));
-                    pi_nnc1 = nNumComponents;
                     if (!(pInChI))
                     {
                         return RI_ERR_ALLOC; /* alloc failure */
@@ -9895,6 +9898,8 @@ int ParseSegmentFormula(const char* str,
                     char** piibmi_shf = (char**)inchi_malloc(nNumComponents * sizeof(char*)); */
                     for (i = 0; i < nNumComponents; i++)
                     {
+                        U_CHAR* piibmi_na = NULL;  /* copied from below to obey C syntax - 2024-09-01 DT */
+                        char* piibmi_shf = NULL;   /* copied from below to obey C syntax - 2024-09-01 DT */
                         /* copy number of atoms */
                         len = pInpInChI[bMobileH][i].nNumberOfAtoms = pInpInChI[nAltMobileH][i].nNumberOfAtoms;
                         /* copy atoms */
@@ -9903,7 +9908,7 @@ int ParseSegmentFormula(const char* str,
                         {
                             inchi_free(pInpInChI[bMobileH][i].nAtom);
                         }
-                        U_CHAR* piibmi_na = (U_CHAR*)inchi_malloc(((long long)len + 1) * sizeof(pInpInChI[0][0].nAtom[0]));
+                        piibmi_na = (U_CHAR*)inchi_malloc(((long long)len + 1) * sizeof(pInpInChI[0][0].nAtom[0]));
                         if (piibmi_na) /* djb-rwth: cast operator added; addressing LLVM warning */
                         {
                             memcpy(piibmi_na, pInpInChI[nAltMobileH][i].nAtom, len);
@@ -9920,7 +9925,7 @@ int ParseSegmentFormula(const char* str,
                         {
                             inchi_free(pInpInChI[bMobileH][i].szHillFormula);
                         }
-                        char* piibmi_shf = (char*)inchi_malloc((inchi_max(len, 2)) * sizeof(char));
+                        piibmi_shf = (char*)inchi_malloc((inchi_max(len, 2)) * sizeof(char));
                         if (piibmi_shf) /* djb-rwth: addressing LLVM warning */
                         {
                             memcpy(piibmi_shf, pInpInChI[nAltMobileH][i].szHillFormula, len);
@@ -9964,12 +9969,11 @@ int ParseSegmentFormula(const char* str,
     }
 
     /* allocate InChI */
-    if (!(pInpInChI[bMobileH] = (INChI*)inchi_calloc(nNumComponents, sizeof(INChI))))
+    if (!((sizeof(INChI) > 0) && (pInpInChI[bMobileH] = (INChI*)inchi_calloc(nNumComponents, sizeof(INChI))))) /* djb-rwth: fixing GH issue #58 */
     {
         return RI_ERR_ALLOC; /* alloc failure */
     }
     pInChI = pInpInChI[bMobileH];
-    nnumcomp_limit = nNumComponents;
 
     /* Pass 2. Count elements, save formulas and elements */
     pStart = (char*)str;
@@ -10151,12 +10155,13 @@ int ParseSegmentFormula(const char* str,
             }
             else
             {
+                U_CHAR* pci1 = NULL;  /* copied from below to obey C syntax - 2024-09-01 DT */
                 /* Copy duplicated formula */
                 strcpy(pInChI[iComponent + i].szHillFormula, pInChI[iComponent].szHillFormula);
                 /* Copy atoms in the duplicated formula */
                 pInChI[iComponent + i].nNumberOfAtoms = nNumAtoms;
                 /* djb-rwth: fixing oss-fuzz issue #43420, #34772 */
-                U_CHAR* pci1 = (U_CHAR*)inchi_malloc((long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
+                pci1 = (U_CHAR*)inchi_malloc((long long)nNumAtoms + 1); /* djb-rwth: cast operator added */
                 if (!pci1)
                 {
                     return RI_ERR_ALLOC; /* failed allocation */
@@ -10251,6 +10256,9 @@ int CopySegment(INChI* pInChITo,
                         stereoFrom->nBondAtom1 &&
                         stereoFrom->nBondAtom2)) /* djb-rwth: addressing LLVM warning */
                 {
+                    S_CHAR* pst0_bp = NULL;     /* copied from below to obey C syntax - 2024-09-01 DT */
+                    AT_NUMB* pst0_nba1 = NULL;  /* copied from below to obey C syntax - 2024-09-01 DT */
+                    AT_NUMB* pst0_nba2 = NULL;  /* copied from below to obey C syntax - 2024-09-01 DT */
 
                     len = (bIsotopicFrom < 0) ? 0 : stereoFrom->nNumberOfStereoBonds;
                     pstereoTo = bIsotopicTo ? &pInChITo->StereoIsotopic : &pInChITo->Stereo;
@@ -10273,9 +10281,9 @@ int CopySegment(INChI* pInChITo,
                     /* allocate sp2 stereo */
                     /* djb-rwth: fixing oss-fuzz issue #66985 */
                     /* djb-rwth: cast operators added */
-                    S_CHAR* pst0_bp = (S_CHAR*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->b_parity[0]));
-                    AT_NUMB* pst0_nba1 = (AT_NUMB*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->nBondAtom1[0]));
-                    AT_NUMB* pst0_nba2 = (AT_NUMB*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->nBondAtom2[0]));
+                    pst0_bp = (S_CHAR*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->b_parity[0]));
+                    pst0_nba1 = (AT_NUMB*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->nBondAtom1[0]));
+                    pst0_nba2 = (AT_NUMB*)inchi_calloc((long long)len + 1, sizeof(pstereoTo[0]->nBondAtom2[0]));
                     pstereoTo[0]->b_parity = pst0_bp;
                     pstereoTo[0]->nBondAtom1 = pst0_nba1;
                     pstereoTo[0]->nBondAtom2 = pst0_nba2;
@@ -12320,29 +12328,22 @@ static int SegmentSp3ProcessAbbreviation(int* mpy_component,
     for (i = 0; i < val; i++)
     {
         /* djb-rwth: fixing oss-fuzz issue #26540 */
-        if (iComponent + i <= nnumcomp_limit)
+        ret = CopySegment(pInChI + iComponent + i, pInChIFrom + iComponent + i, nCpyType, bIsoTo, bIsoFrom);
+        if (!ret)
         {
-            ret = CopySegment(pInChI + iComponent + i, pInChIFrom + iComponent + i, nCpyType, bIsoTo, bIsoFrom);
-            if (!ret)
-            {
-                ret = RI_ERR_SYNTAX; /* syntax error */
-            }
-            if (ret < 0)
-            {
-                return ret;
-            }
-            if (bIsoFrom >= 0)
-            {
-                INChI_Stereo* pStereoTo = bIsoTo ? pInChI[iComponent + i].StereoIsotopic : pInChI[iComponent + i].Stereo;
-                if (pStereoTo)
-                {
-                    pStereoTo->nCompInv2Abs = NO_VALUE_INT; /* in case there in no /m segment after this */
-                }
-            }
+            ret = RI_ERR_SYNTAX; /* syntax error */
         }
-        else
+        if (ret < 0)
         {
-            ret = RI_ERR_ALLOC;
+            return ret;
+        }
+        if (bIsoFrom >= 0)
+        {
+            INChI_Stereo* pStereoTo = bIsoTo ? pInChI[iComponent + i].StereoIsotopic : pInChI[iComponent + i].Stereo;
+            if (pStereoTo)
+            {
+                pStereoTo->nCompInv2Abs = NO_VALUE_INT; /* in case there in no /m segment after this */
+            }
         }
     }
 

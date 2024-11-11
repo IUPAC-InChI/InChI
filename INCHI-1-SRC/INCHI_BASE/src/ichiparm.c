@@ -2782,15 +2782,15 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
     inchi_ios_print_nodisplay(f, "  SLUUD       Make labels for unknown and undefined stereo different\n");
     inchi_ios_print_nodisplay(f, "  RecMet      Include reconnected metals results\n");
     inchi_ios_print_nodisplay(f, "  FixedH      Include Fixed H layer\n");
-    inchi_ios_print_nodisplay(f, "  KET         Account for keto-enol tautomerism (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  15T         Account for 1,5-tautomerism (experimental)\n");
 
-    inchi_ios_print_nodisplay(f, "  PT_22_00    Account for PT_22_00 tautomerism (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  PT_16_00    Account for PT_16_00 tautomerism (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  PT_06_00    Account for PT_06_00 tautomerism (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  PT_39_00    Account for PT_39_00 tautomerism (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  PT_13_00    Account for PT_13_00 tautomerism (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  PT_18_00    Account for PT_18_00 tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  KET         Consider keto-enol tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  15T         Consider for 1,5-tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_06_00    Consider 1,3 heteroatom shift (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_13_00    Consider keten-ynol exchange (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_16_00    Consider nitroso-oxime tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_18_00    Consider cyanic/iso-cyanic acids (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_22_00    Consider imine/amine tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_39_00    Consider nitrone/azoxy or Behrend rearrangement (experimental)\n");
 
 
     inchi_ios_print_nodisplay(f, "Generation\n");

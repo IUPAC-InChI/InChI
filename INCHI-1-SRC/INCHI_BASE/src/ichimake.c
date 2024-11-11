@@ -52,7 +52,6 @@
 #include "ichi_bns.h"
 
 #include "bcf_s.h"
-int sp_at_size; /* djb-rwth: required for fixing oss-fuzz issue #69656 */
 
 /*
     Local functions
@@ -3743,8 +3742,6 @@ int  Create_INChI( CANON_GLOBALS *pCG,
     int bMayHaveStereo = 0;
     int num_taut_at = 0;
 
-    sp_at_size = 0; /* djb-rwth: required for fixing oss-fuzz issue #69656 */
-
     inp_ATOM *out_at = NULL;     /*, *norm_at_fixed_bonds[TAUT_NUM]; */ /*  = {out_norm_nontaut_at, out_norm_taut_at} ; */
     INChI     *pINChI = NULL;      /* added initialization 2006-03 */
     INChI_Aux *pINChI_Aux = NULL;  /* added initialization 2006-03 */
@@ -3835,10 +3832,6 @@ int  Create_INChI( CANON_GLOBALS *pCG,
             if (!( at[i] = (sp_ATOM  *) inchi_malloc( num_inp_at * sizeof( *at[0] ) ) ))
             {
                 ret = -1;
-            }
-            else
-            {
-                sp_at_size = num_inp_at; /* djb-rwth: required for fixing oss-fuzz issue #69656 */\
             }
         }
         else

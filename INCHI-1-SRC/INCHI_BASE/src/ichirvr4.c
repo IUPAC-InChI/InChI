@@ -3219,7 +3219,6 @@ int RestoreAtomMakeBNS( INCHI_CLOCK *ic, CANON_GLOBALS *pCG,
     ALL_TC_GROUPS   TCGroups;
     ALL_TC_GROUPS *pTCGroups = &TCGroups;
     int            nAddEdges2eachAtom = 2, nAddVertices = 0;
-    /* T_GROUP_INFO* tgi_tmp_oti = &(pStruct->One_ti);  djb-rwth: required for fixing oss-fuzz issue #69602 */
 
     BFS_Q bfsq;
 

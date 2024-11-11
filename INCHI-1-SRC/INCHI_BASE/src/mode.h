@@ -44,6 +44,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "bcf_s.h"
 
 
 /*******************/
@@ -71,26 +72,27 @@
 #ifdef      RENUMBER_ATOMS_AND_RECALC_V106
 /* Comment the next line to print all renumbering changing the initial InChIKey */
 #define STOP_AFTER_FIRST_CHANGE_ON_RENUMBERING 1
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (inchi-1 executable)"
+/* djb-rwth: adding full version number in the output -- GH issue #61 */
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (inchi-1 executable)"
 /*#define APP_DESCRIPTION "InChI version 1, Software v. 1.06-PT6 (inchi-1 executable) \n*** INTERNAL TEST MODE: ATOM RENUMBERING TEST IS ACTIVE ***"*/
 #else
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (inchi-1 executable)***"
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (inchi-1 executable)***"
 /*#define APP_DESCRIPTION "InChI version 1, Software v. 1.06-PT6 (inchi-1 executable) \n*** UNOFFICIAL TEST VERSION: 6 PT TAUTO RULES AVAILABLE ***"*/
 #endif
 
 #elif defined(TARGET_API_LIB)
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (API Library)"
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (API Library)"
 
 #elif defined(TARGET_EXE_USING_API)
 #ifndef APP_DESCRIPTION
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (executable calling API Library)"
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (executable calling API Library)"
 #endif
 
 #elif defined(TARGET_LIB_FOR_WINCHI)
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (Library for wInChI GUI executable)"
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (Library for wInChI GUI executable)"
 
 #elif defined(TARGET_WINCHI)
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (wInChI GUI executable)"
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (wInChI GUI executable)"
 
 #else
 #error  No build target #defined, pls check compiler options... (TARGET_EXE_STANDALONE|TARGET_API_LIB|TARGET_EXE_USING_API|TARGET_LIB_FOR_WINCHI)

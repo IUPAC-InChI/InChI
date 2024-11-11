@@ -1080,6 +1080,13 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
     /* make a guess at the maximum length of the resulting string */
     for (lpsz = lpszFormat; *lpsz; lpsz++)
     {
+        /* moved from below for C syntax reason - 2024-09-01 DT */
+        /* djb-rwth: return values needed for va_arg; djb-rwth: ignoring LLVM warnings: function returning value */
+        int ivarg;
+        double dvarg;
+        void* ivvarg;
+        int* ipvarg;
+
          /* handle '%' character, but watch out for '%%' */
         if (*lpsz != '%' || *( ++lpsz ) == '%')
         {
@@ -1210,12 +1217,6 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
         }
 
         /* now should be on specifier */
-        
-        /* djb-rwth: return values needed for va_arg; djb-rwth: ignoring LLVM warnings: function returning value */
-        int ivarg;
-        double dvarg;
-        void* ivvarg;
-        int* ipvarg;
         
         switch (*lpsz | nModifier)
         {

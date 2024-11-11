@@ -749,13 +749,13 @@ int cmp_charge_val( const void *a1, const void *a2, void *p )
 int bMayBeACationInMobileHLayer( inp_ATOM *at, VAL_AT *pVA, int iat, int bMobileH )
 {
     int    j, neigh;
+    U_CHAR cVal;  /* moved from below 2024-09-01 DT */
     if (!bMobileH || !at[iat].num_H)
     {
         return 1;
     }
 
     /* cVal, cation valence */
-    U_CHAR cVal;
     switch ( at[iat].el_number ) {
         case EL_NUMBER_N: /* fallthrough */
         case EL_NUMBER_P:
@@ -5277,6 +5277,7 @@ int MakeOneInChIOutOfStrFromINChI( struct tagCANON_GLOBALS *pCG,
 
             /* djb-rwth: introducing variables for correct nAllocMode expression */
             int nAM1 = 0, nAM2 = 0;
+            int nAllocMode = 0;   /* copied from below 2024-09-01 DT */
 
             if (k == TAUT_YES)
                 nAM1 = REQ_MODE_TAUT;
@@ -5284,7 +5285,7 @@ int MakeOneInChIOutOfStrFromINChI( struct tagCANON_GLOBALS *pCG,
             if (bTautFlagsDone & (TG_FLAG_FOUND_ISOTOPIC_H_DONE | TG_FLAG_FOUND_ISOTOPIC_ATOM_DONE))
                 nAM2 = ip->nMode & REQ_MODE_ISO;
 
-            int nAllocMode = nAM1 | nAM2; /* djb-rwth: original sequence of bit-wise operations had to be rewritten */
+            nAllocMode = nAM1 | nAM2; /* djb-rwth: original sequence of bit-wise operations had to be rewritten */
 
             if ((k == TAUT_NON && ( ip->nMode & REQ_MODE_BASIC )) ||
                  (k == TAUT_YES && ( ip->nMode & REQ_MODE_TAUT ))) /* djb-rwth: addressing LLVM warnings */

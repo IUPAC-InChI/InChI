@@ -44,6 +44,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <sys/timeb.h>
+#include <limits.h>
 
 #include "mode.h"
 #include "ichicano.h"
@@ -129,7 +130,7 @@ static void FillMaxMinClock( INCHI_CLOCK *ic )
     if (!ic->m_MaxPositiveClock)
     {
         clock_t valPos = 0, val1 = 1;
-        while (0 < ( ( val1 <<= 1 ), ( val1 |= 1 ) ))
+        while (0 < ( ( val1 <<= 1 ), ( val1 |= 1 ) )) /* djb-rwth: ignoring GH issue #59.3 -- LLONG_MIN/LLONG_MAX not found in <limits.h> on Linux */
         {
             valPos = val1;
         }
@@ -1070,7 +1071,6 @@ int UpdateFullLinearCT( int num_atoms,
 
     int  nCTLen = 0, nCTLenAtOnly = 0;
     
-    num_neigh = 0; /* djb-rwth: num_neigh initialisation added */
 
     AT_NUMB         r_neigh;
     AT_NUMB        *LinearCT = pCS->LinearCT;
@@ -1084,6 +1084,8 @@ int UpdateFullLinearCT( int num_atoms,
 #if CT_ATOMID != CT_ATOMID_DONTINCLUDE
     AT_NUMB          r0_at_type;
 #endif
+
+    num_neigh = 0; /* Moved from above 2024-09-01 DT; djb-rwth: num_neigh initialisation added */
 
     bCompare = bFirstTime ? 0 : 1;
 

@@ -75,8 +75,6 @@
 
 #include "bcf_s.h"
 
-static int nat_global; /* djb-rwth: required for fixing oss-fuzz issue #68277 */
-
 /* Local prototypes */
 static int OrigAtData_bCheckUnusualValences( ORIG_ATOM_DATA *orig_at_data,
                                              int bAddIsoH,
@@ -84,8 +82,6 @@ static int OrigAtData_bCheckUnusualValences( ORIG_ATOM_DATA *orig_at_data,
                                              int bNoWarnings);
 
 static void OAD_PolymerUnit_RemoveLinkFromCRUChain( int at1, int at2, int *nbonds, int **bonds );
-
-
 
 /****************************************************************************
   Check inp_ATOM's for unusual valence
@@ -3498,6 +3494,7 @@ void OAD_PolymerUnit_DelistHighOrderBackboneBonds( OAD_PolymerUnit *unit,
     int at1, at2, j = 0, k, check_taut = 0, remove; /* djb-rwth: removing redundant variables/code */
 
     int *orig_num = NULL, *curr_num = NULL;
+    int bond_is_untouchable = 0, btype;  /* DT: moved from below 2024-09-01 DT */
 
     if (unit->na < 2)
     {
@@ -3537,7 +3534,7 @@ repeatj:
     }
     /*if ( border > 1 ) */
     /* djb-rwth: removing redundant code */
-    int bond_is_untouchable = 0, btype;
+    bond_is_untouchable = 0;
     if (check_taut && composite_norm_data && composite_norm_data->at && curr_num) /* djb-rwth: fixing a NULL pointer dereference */
     {
         for (k = 0; k < composite_norm_data->at[curr_num[at1]].valence; k++)
@@ -3880,7 +3877,7 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
         return;
     }
     /* djb-rwth: fixing oss-fuzz issue #68329 */
-    if ((nat <= 0) || (nat >= at_size_check1)) 
+    if (nat <= 0)
     {
         return;
     }
@@ -3889,7 +3886,6 @@ void OAD_Polymer_SmartReopenCyclizedUnits( OAD_Polymer *p,
     OAD_Polymer_DebugTrace( p );*/
 
     /* Set atom properties for sorting */
-    nat_global = nat + 1; /* djb-rwth: fixing oss-fuzz issue #68277 */
     if (!aprops || !at) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
         return;
@@ -4195,7 +4191,7 @@ int OAD_Polymer_CompareRanksOfTwoAtoms( int atom1, int atom2, OAD_AtProps *aprop
     int a2typ = CARBOAT;
 
     /* djb-rwth: fixing oss-fuzz issue #69501, #68277 */
-    if ((a1 >= nat_global) || (a2 >= nat_global) || (a1 < 0) || (a2 < 0))
+    if ((a1 < 0) || (a2 < 0))
     {
         return 0;
     }

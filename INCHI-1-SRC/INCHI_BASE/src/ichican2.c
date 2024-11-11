@@ -54,7 +54,6 @@
 #include "ichitime.h"
 
 #include "bcf_s.h"
-int na_global; /* djb-rwth: required for fixing oss-fuzz issue #69315 */
 
 #define MAX_CELLS    32766
 #define MAX_NODES    32766
@@ -1884,7 +1883,7 @@ void CtPartFill( Graph *G,
 
     /******* Well-defined (by fixed ranks) part of the connection table ************/
     /* djb-rwth: fixing oss-fuzz issue #69612 */
-    if ((startAtOrd < 0) || (startAtOrd >= na_global))
+    if (startAtOrd < 0)
     {
         return;
     }
@@ -4674,7 +4673,7 @@ int SetInitialRanks2( int num_atoms,
 
     /* djb-rwth: fixing oss-fuzz issue #69315 */
     nNumDiffRanks = 1;
-    if ((num_atoms > 0) && (num_atoms <= na_global))
+    if (num_atoms > 0)
     {
         nCurrentRank = (AT_RANK)num_atoms;
         nNewRank[nAtomNumber[num_atoms - 1]] = nCurrentRank;
@@ -5299,7 +5298,6 @@ int GetBaseCanonRanking( INCHI_CLOCK *ic,
     nRank = (AT_RANK *) inchi_calloc( num_max, sizeof( nRank[0] ) );
     nAtomNumber = (AT_NUMB *) inchi_calloc( num_max, sizeof( nAtomNumber[0] ) );
     nTempRank = (AT_RANK *) inchi_calloc( num_max, sizeof( nTempRank[0] ) );
-    na_global = num_max; /* djb-rwth: required for fixing oss-fuzz issue #69315 */
 
     if (!pAtomInvariant ||
          !nSymmRankNoH || !nCanonRankNoH || !nAtomNumberCanonNoH ||

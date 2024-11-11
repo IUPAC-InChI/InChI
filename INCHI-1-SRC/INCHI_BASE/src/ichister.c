@@ -3936,14 +3936,21 @@ int set_stereo_atom_parity( CANON_GLOBALS *pCG,
                             num_z++;
                     }
 
-                    nSbNeighOrigAtNumb[j1] = at_removed_H[next_at].orig_at_number;
-                    at_coord[j1][0] = at_removed_H[next_at].x - at[cur_at].x;
-                    at_coord[j1][1] = at_removed_H[next_at].y - at[cur_at].y;
-                    bond_len_xy[j1] = len2( at_coord[j1] );
-                    /* bond_len_xy[j1] = sqrt(at_coord[j1][0]*at_coord[j1][0]+at_coord[j1][1]*at_coord[j1][1]); */
-                    at_coord[j1][2] = ( nType == ZTYPE_3D ? z : nType == ZTYPE_UP
-                                            ? bond_len_xy[j1] : nType == ZTYPE_DOWN
-                                                ? -bond_len_xy[j1] : 0.0 );
+                    if (j1 < 4) /* djb-rwth: fixing oss-fuzz issue #71142 */
+                    {
+                        nSbNeighOrigAtNumb[j1] = at_removed_H[next_at].orig_at_number;
+                        at_coord[j1][0] = at_removed_H[next_at].x - at[cur_at].x;
+                        at_coord[j1][1] = at_removed_H[next_at].y - at[cur_at].y;
+                        bond_len_xy[j1] = len2(at_coord[j1]);
+                        /* bond_len_xy[j1] = sqrt(at_coord[j1][0]*at_coord[j1][0]+at_coord[j1][1]*at_coord[j1][1]); */
+                        at_coord[j1][2] = (nType == ZTYPE_3D ? z : nType == ZTYPE_UP
+                            ? bond_len_xy[j1] : nType == ZTYPE_DOWN
+                            ? -bond_len_xy[j1] : 0.0);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 break;
             case 1:
@@ -3964,14 +3971,21 @@ int set_stereo_atom_parity( CANON_GLOBALS *pCG,
                             num_z++;
                     }
 
-                    nSbNeighOrigAtNumb[j1] = at[next_at].orig_at_number;
-                    at_coord[j1][0] = at[next_at].x - at[cur_at].x;
-                    at_coord[j1][1] = at[next_at].y - at[cur_at].y;
-                    bond_len_xy[j1] = len2( at_coord[j1] );
-                    /* bond_len_xy[j1] = sqrt(at_coord[j1][0]*at_coord[j1][0]+at_coord[j1][1]*at_coord[j1][1]); */
-                    at_coord[j1][2] = ( nType == ZTYPE_3D ? z :
-                                            nType == ZTYPE_UP ? bond_len_xy[j1] :
-                                                nType == ZTYPE_DOWN ? -bond_len_xy[j1] : 0.0 );
+                    if (j1 < 4) /* djb-rwth: fixing oss-fuzz issue #71142 */
+                    {
+                        nSbNeighOrigAtNumb[j1] = at[next_at].orig_at_number;
+                        at_coord[j1][0] = at[next_at].x - at[cur_at].x;
+                        at_coord[j1][1] = at[next_at].y - at[cur_at].y;
+                        bond_len_xy[j1] = len2(at_coord[j1]);
+                        /* bond_len_xy[j1] = sqrt(at_coord[j1][0]*at_coord[j1][0]+at_coord[j1][1]*at_coord[j1][1]); */
+                        at_coord[j1][2] = (nType == ZTYPE_3D ? z :
+                            nType == ZTYPE_UP ? bond_len_xy[j1] :
+                            nType == ZTYPE_DOWN ? -bond_len_xy[j1] : 0.0);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 break;
         }

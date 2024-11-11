@@ -159,7 +159,7 @@ int SortedEquInfoToRanks( const AT_RANK* nSymmRank, AT_RANK* nRank, const AT_RAN
 
     i_init = num_atoms - 1;
     /* djb-rwth: fixing oss-fuzz issue #69965 */
-    if ((i_init >= 0) && (i_init < na_global))
+    if (i_init >= 0)
     {
         j = (int)nAtomNumber[i_init];
         rOld = nSymmRank[j];
@@ -406,7 +406,7 @@ int SetNewRanksFromNeighLists( CANON_GLOBALS *pCG,
 
     /* djb-rwth: fixing oss-fuzz issue #69315 */
     nNumDiffRanks = 1;
-    if ((num_atoms > 0) && (num_atoms <= na_global))
+    if (num_atoms > 0)
     {
         nCurrentRank = (AT_RANK)num_atoms;
         j = num_atoms - 1;

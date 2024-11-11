@@ -115,6 +115,7 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
     int           num_stereo_bonds2, num_stereo_centers2; /* djb-rwth: removing redundant variables */
     INChI_Stereo *pStereo = NULL, *pStereo2 = NULL;
     AT_NUMB       nCumulene[MAX_CUMULENE_LEN + 2];
+    inp_ATOM* at = NULL;  /* copied from below 2024-09-01 DT */
 
     num_atoms = pInChI->nNumberOfAtoms;
     if (num_atoms <= 0)
@@ -125,7 +126,7 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
     INCHI_HEAPCHK
 
         /* atoms */
-    inp_ATOM* at = (inp_ATOM*)inchi_calloc(num_atoms, sizeof(pStruct->at[0]));
+    at = (inp_ATOM*)inchi_calloc(num_atoms, sizeof(pStruct->at[0]));
     if (!at)
     {
         ret = RI_ERR_ALLOC;

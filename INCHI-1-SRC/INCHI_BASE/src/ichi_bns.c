@@ -5269,6 +5269,7 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
 #ifdef FIX_AROM_RADICAL        /* Added 2011-05-09 IPl */
     int i, n_arom_radicals = 0, *stored_radicals = NULL;
 #endif
+    int at_prot;  /* moved from below 2024-09-01 DT */
 
     nChanges = 0;
     bError = 0;
@@ -5278,7 +5279,6 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
     memset( pAATG, 0, sizeof( *pAATG ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     /*(@nnuk : Nauman Ullah Khan) :: Variable for checking (De)protonation status */
-    int at_prot;
     LOG_NO_ARGS("\n############# Initial state before (De)Protonation (L5373:ichi_bns.c) ###############\n");
     for (at_prot = 0; at_prot < num_atoms; at_prot++)
     {

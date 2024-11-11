@@ -4106,40 +4106,42 @@ int bin_AuxTautTrans( INCHI_SORT *pINChISort,
     is20 = pINChISort2;
 
     /* djb-rwth: rewritten to avoid memory leaks */
-    nTrans_n = (AT_NUMB*)inchi_calloc((long long)num_components + 1, sizeof(nTrans_n[0])); 
-    nTrans_s = (AT_NUMB*)inchi_calloc((long long)num_components + 1, sizeof(nTrans_s[0])); 
 
-    /* Pass 1: save new non-taut numbering */
-
+    /* Pass 1: save new non-taut numbering *
     /* For each connected component...    */
     for (i = 0; i < num_components; i++)
     {
         is = is0 + i;
         is2 = is20 + i;
-        pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
-        pINChI_Taut = ( 0 <= ( ii2 = GET_II( OUT_T1, is2 ) ) ) ? is2->pINChI[ii2] : NULL;
-        if (pINChI      && pINChI->nNumberOfAtoms > 0 &&
+        pINChI = (0 <= (ii = GET_II(bOutType, is))) ? is->pINChI[ii] : NULL;
+        pINChI_Taut = (0 <= (ii2 = GET_II(OUT_T1, is2))) ? is2->pINChI[ii2] : NULL;
+        if (pINChI && pINChI->nNumberOfAtoms > 0 &&
             pINChI_Taut && pINChI_Taut->nNumberOfAtoms > 0 &&
             /* different components save equal new ord. numbers: */
             is->ord_number != is2->ord_number)
         {
-            if ( nTrans_n && nTrans_s ) /* djb-rwth: rewritten to avoid memory leaks */
+            if (!nTrans_n || !nTrans_s)
+            {
+                nTrans_n = (AT_NUMB*)inchi_calloc(num_components + 1, sizeof(nTrans_n[0]));
+                nTrans_s = (AT_NUMB*)inchi_calloc(num_components + 1, sizeof(nTrans_s[0]));
+            }
+            if (nTrans_n && nTrans_s)
             {
                 /* new ordering number for original non-tautomeric component number is->ord_number */
-                nTrans_n[is->ord_number] = /*nTrans_t[is2->ord_number] =*/ i + 1;
+                nTrans_n[is->ord_number] = i + 1; /*nTrans_t[is2->ord_number] =*/ 
             }
         }
     }
     if (nTrans_n && nTrans_s)
     {
-        /* pass 2: get new taut numbering, retrieve new non-taut and save the transposition */
+        /* Pass 2: get new taut numbering, retrieve new non-taut and save the transposition */
         for (i = 0; i < num_components; i++)
         {
             is = is0 + i;
             is2 = is20 + i;
-            pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
-            pINChI_Taut = ( 0 <= ( ii2 = GET_II( OUT_T1, is2 ) ) ) ? is2->pINChI[ii2] : NULL;
-            if (pINChI      && pINChI->nNumberOfAtoms > 0 &&
+            pINChI = (0 <= (ii = GET_II(bOutType, is))) ? is->pINChI[ii] : NULL;
+            pINChI_Taut = (0 <= (ii2 = GET_II(OUT_T1, is2))) ? is2->pINChI[ii2] : NULL;
+            if (pINChI && pINChI->nNumberOfAtoms > 0 &&
                 pINChI_Taut && pINChI_Taut->nNumberOfAtoms > 0 &&
                 is->ord_number != is2->ord_number &&
                 nTrans_n[is2->ord_number])
@@ -4158,15 +4160,19 @@ int bin_AuxTautTrans( INCHI_SORT *pINChISort,
         *pTrans_s = nTrans_s;
         ret = 1;
     }
-    /* djb-rwth: rewritten to avoid memory leaks */
     else
     {
-        ret = -1;
+        if (nTrans_n)
+        {
+            inchi_free(nTrans_n);
+            ret = -1;
+        }
+        if (nTrans_s)
+        {
+            inchi_free(nTrans_s);
+            ret = -1;
+        }
     }
-
-    /* djb-rwth: rewritten to avoid memory leaks */
-    inchi_free( nTrans_n );
-    inchi_free( nTrans_s );
 
     return ret;
 }

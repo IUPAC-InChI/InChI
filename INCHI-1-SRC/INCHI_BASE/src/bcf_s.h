@@ -49,6 +49,8 @@
 #include <string.h>
 #include <errno.h>
 
+#define CURRENT_VER "1.07.2" /* djb-rwth: full version number in the output, required for resolving GHI #61 */
+
 #ifdef __STDC_LIB_EXT1__
 #if (__STDC_LIB_EXT1__ >= 201112L)
 #define USE_BCF_GCC 1 /* djb-rwth: use bounds-checking functions / C11 Annex K */
@@ -66,17 +68,10 @@
 #endif
 
 /* djb-rwth: control macros */
-/* #define GCC_DEBUG 0  djb-rwth: required for GCC 12+ vs GCC 11- debugging */
 #define RINCHI_TEST 0 /* djb-rwrh: RInChI testing */
 
 /* djb-rwth: custom functions */
 int max_3(int a, int b, int c);
 int memcpy_custom(char** dst, char* src, unsigned long long len);
-
-/* djb-rwth: external variables required for oss-fuzz fixes */
-extern int at_size_check1; /* djb-rwth: required for fixing oss-fuzz issue #68329 */
-extern int sminor_size; /* djb-rwth: required for fixing oss-fuzz issue #66746 */
-extern int na_global; /* djb-rwth: required for fixing oss-fuzz issues #69965, #69315 */
-extern int sp_at_size; /* djb-rwth: required for fixing oss-fuzz issue #69656 */
 
 #endif
