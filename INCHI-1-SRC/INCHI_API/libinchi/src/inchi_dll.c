@@ -2698,7 +2698,7 @@ int INCHI_DECL GetStructFromINCHIEx( inchi_InputINCHI *inpInChI,
                                 outStruct->szMessage,
                                 MAX_MSG_LEN, outStruct->WarningFlags );
 
-        if (nRet >= 0 && polymer && at && ((num_at > 0) && (num_at < at_size_check1))) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
+        if (nRet >= 0 && polymer && at && (num_at > 0)) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
         {
             OAD_Polymer_SmartReopenCyclizedUnits( polymer, at,
                                                  num_at, &num_bonds );
