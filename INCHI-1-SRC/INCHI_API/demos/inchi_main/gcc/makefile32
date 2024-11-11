@@ -116,9 +116,9 @@ endif
 # === C Compiler Options =======
 ifndef C_OPTIONS
 	ifndef CALLER_IS_MOL2INCHI
-	C_OPTIONS = -std=c11 -m32 -ansi -O2 -c -fno-strict-aliasing
+	C_OPTIONS = -std=c11 -m32 -ansi -O1 -c -fno-strict-aliasing
 	else
-	C_OPTIONS = -std=c11 -m32 -O2 -c -fno-strict-aliasing
+	C_OPTIONS = -std=c11 -m32 -O1 -c -fno-strict-aliasing
 	endif
 	ifneq ($(OS_ID),0)
 	ifndef C_SO_OPTIONS
