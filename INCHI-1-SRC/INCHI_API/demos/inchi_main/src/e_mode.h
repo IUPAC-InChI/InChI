@@ -43,6 +43,7 @@
 #define __MODE_H__
 
 #include <stdio.h>
+#include "../../../../INCHI_BASE/src/bcf_s.h"
 
 
 
@@ -189,9 +190,10 @@ MS VC compiler pragmas
 #undef APP_DESCRIPTION
 #endif
 #ifndef CREATE_INCHI_STEP_BY_STEP
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (Library call example, classic API)"
+/* djb-rwth: adding full version number in the output -- GH issue #61 */
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (Library call example, classic API)"
 #else
-#define APP_DESCRIPTION "InChI version 1, Software v. 1.07 (Library call example, modularized API)"
+#define APP_DESCRIPTION "InChI version 1, Software " CURRENT_VER " (Library call example, modularized API)"
 #endif
 
 

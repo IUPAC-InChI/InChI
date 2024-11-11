@@ -48,7 +48,7 @@
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdbool.h>
+/* #include <stdbool.h> */
 
 
 #include "e_mode.h"
@@ -329,11 +329,17 @@ int e_GetElType( inchi_Atom *at, int cur_atom )
     S_CHAR num_bonds[MAX_BOND_TYPE];
     int  i;
     int  nRadicalValence = 0;
-    bool cndt1, cndt2;
+    int cndt1 = 0, cndt2 = 0;
 
     /* djb-rwth: avoiding non-zero constant warning */
-    cndt1 = sizeof(at->num_iso_H) != sizeof(num_iso_H);
-    cndt2 = sizeof(at->num_iso_H[0]) != sizeof(num_iso_H[0]);
+    if (sizeof(at->num_iso_H) != sizeof(num_iso_H))
+    {
+        cndt1 = 1;
+    }
+    if (sizeof(at->num_iso_H[0]) != sizeof(num_iso_H[0]))
+    {
+        cndt2 = 1;
+    }
 
     if ( cndt1 || cndt2 )
     {
