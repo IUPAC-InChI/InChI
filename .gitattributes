@@ -1,10 +1,20 @@
 # This file configures how Git treats line endings.
 # This is important because we're working on both Windows and Unix machines.
-# For details see https://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/.
+# For details see https://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/
+# and https://www.aleksandrhovhannisyan.com/blog/crlf-vs-lf-normalizing-line-endings-in-git/.
 
 # Git runs CRLF to LF replacement on files marked as `text`
 # every time they are written to the object database
 # and the reverse replacement when writing to the working directory.
+
+# When spurious diffs due to EOL changes occur (e.g., after pulling remote), do the following:
+# * Inspect EOL with `git ls-files --eol`.
+# * Stage the diffs.
+# * Run `git rm --cached -r . && git reset --hard`.
+# * Run `git add --renormalize .`.
+# * Inspect EOL with `git lf-files --eol` again to verify that conversion worked.
+# * Commit the change containing the EOL conversions.
+
 *.c         text
 *.h         text
 *.py        text
@@ -16,6 +26,15 @@
 *.yml       text
 *.yaml      text
 *.sdf       text
+*.props     text
+*.ruleset   text
+*.sln       text
+*.vcxproj   text
+*.def       text
+*.map       text
+*.user      text
+makefile    text
+makefile32  text
 
 *.sqlite    binary
 *.png       binary
@@ -25,3 +44,5 @@
 *.dll       binary
 *.docx      binary
 *.pdf       binary
+*.jpg       binary
+*.lib       binary
