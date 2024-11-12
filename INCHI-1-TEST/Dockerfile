@@ -11,6 +11,7 @@ COPY .gitignore /inchi/.gitignore
 # Include only what's necessary for compiling InChI and running the tests.
 COPY INCHI-1-SRC/INCHI_BASE /inchi/INCHI-1-SRC/INCHI_BASE
 COPY INCHI-1-SRC/INCHI_API /inchi/INCHI-1-SRC/INCHI_API
+COPY INCHI-1-SRC/INCHI_EXE /inchi/INCHI-1-SRC/INCHI_EXE
 COPY INCHI-1-TEST /inchi/INCHI-1-TEST
 
 # Ignore future changes, i.e., mounted custom files.
