@@ -31,6 +31,9 @@ jobs:
       image: ${{ matrix.image || '' }} 
 
     steps:
+      - name: Install build dependencies
+        run: ${{ matrix.prebuild }}
+
       - uses: actions/checkout@v4
 
       - name: Set up Visual Studio shell
@@ -38,9 +41,6 @@ jobs:
         uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
-
-      - name: Install build dependencies
-        run: ${{ matrix.prebuild }}
 
       - name: Build InChI
         run: |
@@ -53,12 +53,10 @@ jobs:
           name: inchi-${{ matrix.slug }}-${{ github.sha }}
           path: builddir
 
-
-
       - uses: actions/setup-python@v5
+        if: matrix.slug != 'alpine'
         with:
           python-version: '3.12'
-
 
       - name: Install test dependencies
         run: |
