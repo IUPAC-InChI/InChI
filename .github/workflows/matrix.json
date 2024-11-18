@@ -22,7 +22,7 @@
         "slug": "alpine",
         "name": "Alpine Linux",
         "prebuild": "apk add bash git musl-dev gcc g++ make python3 py-pip cmake ninja",
-        "image": "alpine:edge"
+        "image": "python:3.12-alpine"
     },
     {
         "os": "ubuntu-22.04",
