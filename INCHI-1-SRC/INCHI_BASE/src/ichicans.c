@@ -331,7 +331,7 @@ int UnmarkNonStereo( CANON_GLOBALS *pCG,
     AT_RANK nNeighborNumber[MAX_NUM_STEREO_ATOM_NEIGH];
     AT_RANK nPrevAtomRank, nPrevNeighRank;
 #ifdef FIX_OLEAN_SPIRO_CHIRALITY_DETECTION_BUG
-    int num_in_same_ring_system = 1, nRingSystem, num_with_eq_neigh_in_same_ring_system = 0; /* djb-rwth: although unlikely to ever occur, uninitialised num_in_same_ring_system variable can lead to garbage value in line 449, including 0 which leads to various errors and inconsistency with 1.06 outputs -- function rewriting and discussion required */
+    int num_in_same_ring_system = 1, nRingSystem, num_with_eq_neigh_in_same_ring_system = 0; /* djb-rwth: although unlikely to ever occur, uninitialised num_in_same_ring_system variable can lead to garbage value, including 0 which leads to various errors and inconsistency with 1.06 outputs -- function rewriting and discussion required */
 #endif
 
 

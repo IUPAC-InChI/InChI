@@ -2789,7 +2789,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
     inchi_ios_print_nodisplay(f, "  PT_13_00    Consider keten-ynol exchange (experimental)\n");
     inchi_ios_print_nodisplay(f, "  PT_16_00    Consider nitroso-oxime tautomerism (experimental)\n");
     inchi_ios_print_nodisplay(f, "  PT_18_00    Consider cyanic/iso-cyanic acids (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  PT_22_00    Consider imine/amine tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  PT_22_00    Consider imine/imine tautomerism (experimental)\n");
     inchi_ios_print_nodisplay(f, "  PT_39_00    Consider nitrone/azoxy or Behrend rearrangement (experimental)\n");
 
 

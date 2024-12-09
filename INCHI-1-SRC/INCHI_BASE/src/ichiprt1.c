@@ -2773,7 +2773,7 @@ int WriteOrigBonds( CANON_GLOBALS *pCG,
                 {
                     /* both atoms belong to a stereo bond */
                     int kc;
-                    int p1=0, p2, p1NM=0, p2NM, neigh, neigh1, neigh2, bHasMetal, bWellDef; /* djb-rwth: initialising p1 and p1NM */
+                    int p1 = 0, p2, p1NM = 0, p2NM, neigh, neigh1, neigh2, bHasMetal, bWellDef; /* djb-rwth: initialising p1 and p1NM */
                     int     bNeighSwitched1, bNeighSwitched2;
 
                     /* djb-rwth: avoiding buffer overrun as picur_sb_parity_ord == -1 is possible */
