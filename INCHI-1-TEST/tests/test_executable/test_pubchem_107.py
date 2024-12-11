@@ -581,7 +581,6 @@ def test_CID_6419538(molfile_CID_6419538, run_inchi_exe):
     )
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError)
 def test_CID_53234134(molfile_CID_53234134, run_inchi_exe):
     result = run_inchi_exe(molfile_CID_53234134)
     inchi = parse_inchi_from_executable_output(result.output)
