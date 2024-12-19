@@ -2064,14 +2064,15 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
             }
             if (at->p_parity /* at->valence == MAX_NUM_STEREO_ATOM_NEIGH*/)
             {
-                for (m = 0; m < at->valence; m++)
+                /* p_orig_at_num is a fixed size array of MAX_NUM_STEREO_ATOM_NEIGH (4) elements */
+                for (m = 0; m < at->valence && m < MAX_NUM_STEREO_ATOM_NEIGH; m++)
                 {
                     if (atom[(int) at->neighbor[k]].orig_at_number == at->p_orig_at_num[m])
                     {
                         break;
                     }
                 }
-                if (m < at->valence)
+                if (m < at->valence && m < MAX_NUM_STEREO_ATOM_NEIGH)
                 {
                     at->p_orig_at_num[m] = at->orig_at_number;
                 }
@@ -2417,7 +2418,7 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
     /* move 1 H from NH4 to O- or Cl */
 
     /* find non-isotopic or the lightest isotopic H to move from N to O */
-    for (iso_diff = 0; iso_diff <= NUM_H_ISOTOPES; iso_diff++)
+    for (iso_diff = 0; iso_diff < NUM_H_ISOTOPES; iso_diff++)
     {
         if (!iso_diff)
         {
