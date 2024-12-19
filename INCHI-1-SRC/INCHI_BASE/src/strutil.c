@@ -2062,14 +2062,15 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
             }
             if (at->p_parity /* at->valence == MAX_NUM_STEREO_ATOM_NEIGH*/)
             {
-                for (m = 0; m < at->valence; m++)
+                /* p_orig_at_num is a fixed size array of MAX_NUM_STEREO_ATOM_NEIGH (4) elements */
+                for (m = 0; m < at->valence && m < MAX_NUM_STEREO_ATOM_NEIGH; m++)
                 {
                     if (atom[(int) at->neighbor[k]].orig_at_number == at->p_orig_at_num[m])
                     {
                         break;
                     }
                 }
-                if (m < at->valence)
+                if (m < at->valence && m < MAX_NUM_STEREO_ATOM_NEIGH)
                 {
                     at->p_orig_at_num[m] = at->orig_at_number;
                 }
@@ -2435,16 +2436,20 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
         else
         {
             /* find isotopic H */
-            if (at[iN].num_iso_H[iso_diff])
+            /* num_iso_H has length NUM_H_ISOTOPES; do not access out-of-bounds */
+            if (iso_diff < NUM_H_ISOTOPES && at[iN].num_iso_H[iso_diff])
             {
                 at[iN].num_iso_H[iso_diff] --; /* move implicit isotopic H, atw = 1 */
                 at[iO].num_iso_H[iso_diff] ++;
                 break;
             }
-            else if (num_explicit_H[iso_diff])
+            else
             {
-                nMove_H_iso_diff = iso_diff; /* flag: move explicit isotopic H, atw = 1 */
-                break;
+                if (num_explicit_H[iso_diff])
+                {
+                    nMove_H_iso_diff = iso_diff; /* flag: move explicit isotopic H, atw = 1 */
+                    break;
+                }
             }
         }
     }
