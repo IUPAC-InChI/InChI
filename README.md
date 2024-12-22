@@ -6,7 +6,7 @@
 [![build](https://github.com/IUPAC-InChI/InChI/actions/workflows/release.yml/badge.svg)](https://github.com/IUPAC-InChI/InChI/actions/workflows/release.yml) 
 [![GitHub contributors](https://img.shields.io/github/contributors/IUPAC-InChI/InChI.svg)](https://GitHub.com/IUPAC-InChI/InChI/graphs/contributors/)
 [![GitHub release](https://img.shields.io/github/release/IUPAC-InChI/InChI.svg)](https://github.com/IUPAC-InChI/InChI/releases/)
-[![Changelog - v1.07.1](https://img.shields.io/badge/Changelog-v1.07.1-2ea44f)](https://github.com/IUPAC-InChI/InChI/blob/v1.07.1/INCHI-1-DOC/CHANGELOG.md)
+[![Changelog - v1.07.2](https://img.shields.io/badge/Changelog-v1.07.2-2ea44f)](https://github.com/IUPAC-InChI/InChI/blob/v1.07.2/INCHI-1-DOC/CHANGELOG.md)
 [![Software Article - JChemInf](https://img.shields.io/badge/Software_Article-JChemInf-blue)](https://doi.org/10.1186/s13321-021-00517-z)
 [![Good reads](https://img.shields.io/badge/Goodreads-372213?style=flat&logo=goodreads&logoColor=white)](https://www.inchi-trust.org/inchi-overview-papers-presentations/?wpv_aux_current_post_id=4309&wpv_aux_parent_post_id=4309&wpv_view_count=4473)
 [![InChI - Web Demo](https://img.shields.io/badge/InChI-Web_Demo-2ea44f)](https://iupac-inchi.github.io/InChI-Web-Demo/)
