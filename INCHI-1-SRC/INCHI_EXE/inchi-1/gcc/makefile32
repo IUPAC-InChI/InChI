@@ -51,12 +51,20 @@ LINKER = clang++ -s
 endif
 else
 ifndef C_COMPILER
+ifeq ($(OS_ID),0)
+C_COMPILER = gcc -static-libgcc
+else
 C_COMPILER = gcc
+endif
 $(info Both GCC/G++ and Clang(++)/LLVM detected. Compiling with GCC/G++ (default) -- please edit makefile to compile with Clang(++)/LLVM.)
 $(info )
 endif
 ifndef CPP_COMPILER
+ifeq ($(OS_ID),0)
+CPP_COMPILER = g++ -static-libgcc
+else
 CPP_COMPILER = g++
+endif
 endif
 ifndef LINKER
 LINKER = g++ -s
