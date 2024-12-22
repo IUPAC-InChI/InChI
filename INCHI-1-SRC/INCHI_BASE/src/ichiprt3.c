@@ -4107,7 +4107,7 @@ int bin_AuxTautTrans( INCHI_SORT *pINChISort,
 
     /* djb-rwth: rewritten to avoid memory leaks */
 
-    /* Pass 1: save new non-taut numbering *
+    /* Pass 1: save new non-taut numbering */
     /* For each connected component...    */
     for (i = 0; i < num_components; i++)
     {

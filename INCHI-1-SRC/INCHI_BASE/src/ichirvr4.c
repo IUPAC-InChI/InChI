@@ -3866,7 +3866,7 @@ int AddRemIsoProtonsInRestrStruct(INCHI_CLOCK* ic,
                                         Process and save charge delta.
     -----------------------------------------------------------------------------------*/
 
-    for (iComp = 0; iComp < num_components && num_prot; iComp++)
+    for (iComp = 0; iComp < num_components && num_prot; iComp++) /* djb-rwth: the condition will always evaluate to true only if pProtonBalance is not NULL */
     {
         /* djb-rwth: removing redundant code */
         if (pStruct[iComp].nLink < 0 && num_componentsR > 0)
