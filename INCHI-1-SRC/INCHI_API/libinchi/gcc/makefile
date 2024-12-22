@@ -41,11 +41,15 @@ endif
 ifndef C_COMPILER
 ifeq ($(CCN),2)
 C_COMPILER = clang
-$(info Both GCC and Clang/LLVM detected. Compiling with Clang -- please edit makefile to compile with GCC.)
+$(info Both GCC and Clang/LLVM detected. Compiling with Clang(++) -- please edit makefile to compile with GCC.)
 $(info )
 else
+ifeq ($(OS_ID),0)
+C_COMPILER = gcc -static-libgcc
+else
 C_COMPILER = gcc
-$(info Both GCC and Clang/LLVM detected. Compiling with GCC (default) -- please edit makefile to compile with Clang/LLVM.)
+endif
+$(info Both GCC and Clang/LLVM detected. Compiling with GCC/G++ (default) -- please edit makefile to compile with Clang/LLVM.)
 $(info )
 endif
 endif
