@@ -45,7 +45,7 @@ $(info Both GCC and Clang/LLVM detected. Compiling with Clang(++) -- please edit
 $(info )
 else
 ifeq ($(OS_ID),0)
-C_COMPILER = gcc -static-libgcc
+C_COMPILER = gcc -static
 else
 C_COMPILER = gcc
 endif
