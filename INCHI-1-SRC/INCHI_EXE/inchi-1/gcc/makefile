@@ -57,7 +57,7 @@ endif
 else
 ifndef C_COMPILER
 ifeq ($(OS_ID),0)
-C_COMPILER = gcc -static-libgcc
+C_COMPILER = gcc -static
 else
 C_COMPILER = gcc
 endif
