@@ -288,7 +288,7 @@ Some of the experimental/engineering/hidden options featured in `InChI 1.07` whi
 
 - In command line version:
 
-  - *32-bit* <code>Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC) Win32</code> compiler-specific issue with the following options:
+  - *32-bit* <code>Microsoft<sup>&reg;</sup> Visual Studio C++ (MSVC) Win32</code> and <code>Microsoft<sup>&reg;</sup> LLVM/Clang</code> compiler-specific issues with the following options:
 
     - `AMI`         Allow multiple input files (wildcards supported)
     - `AMIOutStd`   Write output to stdout (in AMI mode)
