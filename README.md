@@ -229,7 +229,7 @@ If `makefile/makefile32` is used for compiling `libinchi` on Microsoft<sup>&reg;
 
 **Additional notes**:
 
-- [Intel® oneAPI DPC++/C++](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html) compiler support for UNIX-based OSs/MacOS<sup>&reg;</sup> will be available in `v.1.07.2`. Please note that the support will **not** be provided for [Intel® C++ Compiler Classic (icc)](https://www.intel.com/content/www/us/en/developer/articles/release-notes/oneapi-c-compiler-release-notes.html) as it has been discontinued since `oneAPI 2024.0 release`.
+- [Intel® oneAPI DPC++/C++](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html) compiler support for UNIX-based OSs/MacOS<sup>&reg;</sup> will be available starting from `InChI v.1.07.2`. Please note that the support will **not** be provided for [Intel® C++ Compiler Classic (icc)](https://www.intel.com/content/www/us/en/developer/articles/release-notes/oneapi-c-compiler-release-notes.html) as it has been discontinued since `oneAPI 2024.0 release`.
 - Compiling from source using [CMake](https://en.wikipedia.org/wiki/CMake) will be available soon. In the meantime, you can check [Gianluca Sforna's fork](https://github.com/giallu/InChI/tree/giallu/port_to_cmake).
 
 #### Known issues
