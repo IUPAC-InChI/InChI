@@ -37,13 +37,17 @@ ifeq ($(CCN),$(filter $(CCN),1 2))
 ifeq ($(GCC_DETECTED),1)
 ifeq ($(CLANG_DETECTED),1)
 # djb-rwth: Choose C compiler if both GCC and Clang are detected -- CCN = 1 for GCC, CCN = 2 for Clang/LLVM
-CCN = 1
+CCN = 2
 endif
 endif
 # === C Compiler ===============
 ifndef C_COMPILER
 ifeq ($(CCN),2)
+ifeq ($(OS_ID),0)
+C_COMPILER = clang -static
+else
 C_COMPILER = clang
+endif
 $(info Both GCC and Clang/LLVM detected. Compiling with Clang(++) -- please edit makefile to compile with GCC.)
 $(info )
 else
