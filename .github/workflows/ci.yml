@@ -15,14 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
       - name: Install test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e INCHI-1-TEST[invariance-tests]
+        run: cd INCHI-1-TEST && ./install.sh
 
       - uses: ./.github/actions/compile_inchi_exe
         id: compile_exe
