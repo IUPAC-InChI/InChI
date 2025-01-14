@@ -3971,7 +3971,7 @@ int set_stereo_atom_parity( CANON_GLOBALS *pCG,
                             num_z++;
                     }
 
-                    if (j1 < 4) /* djb-rwth: fixing oss-fuzz issue #71142 */
+                    if (j1 < MAX_NUM_STEREO_ATOM_NEIGH) /* djb-rwth: fixing oss-fuzz issue #71142 */
                     {
                         nSbNeighOrigAtNumb[j1] = at[next_at].orig_at_number;
                         at_coord[j1][0] = at[next_at].x - at[cur_at].x;
