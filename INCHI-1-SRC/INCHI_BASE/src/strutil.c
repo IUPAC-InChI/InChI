@@ -50,8 +50,6 @@
 #include "ichi_io.h"
 #include "ichimain.h"
 
-/* #include <stdbool.h> */
-
 #include "bcf_s.h"
 
 /* Added fix to remove_ion_pairs() -- 2010-03-17 DT */

@@ -40,7 +40,6 @@
 
 #include <string.h>
 #include <ctype.h>
-/* #include <stdbool.h>  djb-rwth: needed for boolean variables */
 #include <limits.h>
 
 /* #define CHECK_WIN32_VC_HEAP */

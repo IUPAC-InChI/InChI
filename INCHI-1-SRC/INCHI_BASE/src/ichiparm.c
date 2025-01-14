@@ -2784,7 +2784,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
     inchi_ios_print_nodisplay(f, "  FixedH      Include Fixed H layer\n");
 
     inchi_ios_print_nodisplay(f, "  KET         Consider keto-enol tautomerism (experimental)\n");
-    inchi_ios_print_nodisplay(f, "  15T         Consider for 1,5-tautomerism (experimental)\n");
+    inchi_ios_print_nodisplay(f, "  15T         Consider 1,5-tautomerism (experimental)\n");
     inchi_ios_print_nodisplay(f, "  PT_06_00    Consider 1,3 heteroatom shift (experimental)\n");
     inchi_ios_print_nodisplay(f, "  PT_13_00    Consider keten-ynol exchange (experimental)\n");
     inchi_ios_print_nodisplay(f, "  PT_16_00    Consider nitroso-oxime tautomerism (experimental)\n");
