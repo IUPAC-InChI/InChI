@@ -46,11 +46,7 @@ jobs:
 
   test_musl_gcc:
     runs-on: ubuntu-24.04
-    # We need Python 3.12. That's why we're using alpine:edge.
-    # Currently (May 2024) edge is the only Alpine version with Python 3.12.
-    # Once edge advances, the Alpine Python version will be bumped and `python -m pip install -e INCHI-1-TEST` will break.
-    # TODO: Find more sustainable solution.
-    container: alpine:edge
+    container: alpine:latest
 
     steps:
       - name: Install build and test environment
