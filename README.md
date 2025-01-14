@@ -132,7 +132,7 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
       <em>32-bit</em>: <code>INCHI-1-BIN/windows/32bit</code>
     </td>
     <td>
-      <code>MinGW-w64/GCC</code>
+      <code>MinGW-w64/Clang</code><sup><strong>(1)</strong></sup>
     </td>
   </tr>
   <tc>
@@ -151,7 +151,7 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
       <em>32-bit</em>: <code>INCHI-1-BIN/windows/32bit/dll</code>
     </td>
     <td>
-      <code>MinGW-w64/GCC</code>
+      <code>MinGW-w64/Clang</code><sup><strong>(1)</strong></sup>
     </td>
   </tr>
 </table>
@@ -196,8 +196,12 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
     </td>
   </tr>
 </table>
-<!--Please note that 32-bit binaries have to be compiled from the source, although the use of 64-bit versions is highly recommended.-->
 <br />
+    
+<h3 id="libgcc_32"></h3>
+<sup><strong>(1)</strong></sup> <ins>IMPORTANT NOTE</ins>: Since 32-bit binaries for <code>Microsoft<sup>&reg;</sup> Windows</code> operating system have been compiled using <code>MinGW-w64</code>, it <a href="https://github.com/IUPAC-InChI/InChI/issues/71">has been reported</a> that in certain environments a dynamic link library <code>libgcc_s_dw2-1.dll</code> has to be included in the same folder with the executables. Therefore, <code>libgcc_s_dw2-1.dll</code> has been added to <code>INCHI-1-BIN/windows/32bit</code> and <code>INCHI-1-BIN/windows/32bit/dll</code> folders (we would like to thank <a href="https://github.com/nbehrnd">nbehrnd</a> for his assistance with this matter).
+<!--Please note that 32-bit binaries have to be compiled from the source, although the use of 64-bit versions is highly recommended.-->
+<br /><br />
 Precompiled binaries for <strong>MacOS<sup>&reg;</sup></strong> (i.e. <code>.app</code> executables and <code>.dylib</code> libraries) will be provided very soon. Until then, please note that <code>InChI</code> can now be <a href="#compiling-inchi-v107-from-source">compiled from source</a> on <strong>MacOS<sup>&reg;</sup></strong> using native/default <code>Clang</code> or <code>GCC</code> (if installed).
 <br />
 
@@ -226,6 +230,8 @@ If both `GCC` and `Clang/LLVM` compilers are installed, setting `Clang/LLVM` as 
 Support for native/default MacOS<sup>&reg;</sup> `Clang` compiler is now provided with 64-bit versions of `makefile` files (we would like to thank <a href="https://github.com/johnmay/">John Mayfield</a> for his assistance with this matter).
 
 If `makefile/makefile32` is used for compiling `libinchi` on Microsoft<sup>&reg;</sup> Windows, `libinchi.dll` is now generated instead of `libinchi.so.1.07`.
+
+Please make sure to read the <a href="#libgcc_32">important note</a> regarding the required <code>libgcc_s_dw2-1.dll</code> for running 32-bit executables on <code>Microsoft<sup>&reg;</sup> Windows</code> operating system in certain environments.
 
 **Additional notes**:
 
