@@ -198,7 +198,7 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
 </table>
 <br />
     
-<h3 id="libgcc_32"></h3>
+<a id="libgcc_32"></a>
 <sup><strong>(1)</strong></sup> <ins>IMPORTANT NOTE</ins>: Since 32-bit binaries for <code>Microsoft<sup>&reg;</sup> Windows</code> operating system have been compiled using <code>MinGW-w64</code>, it <a href="https://github.com/IUPAC-InChI/InChI/issues/71">has been reported</a> that in certain environments a dynamic link library <code>libgcc_s_dw2-1.dll</code> has to be included in the same folder with the executables. Therefore, <code>libgcc_s_dw2-1.dll</code> has been added to <code>INCHI-1-BIN/windows/32bit</code> and <code>INCHI-1-BIN/windows/32bit/dll</code> folders (we would like to thank <a href="https://github.com/nbehrnd">nbehrnd</a> for his assistance with this matter).
 <!--Please note that 32-bit binaries have to be compiled from the source, although the use of 64-bit versions is highly recommended.-->
 <br /><br />
