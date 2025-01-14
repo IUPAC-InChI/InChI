@@ -48,7 +48,6 @@
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
-/* #include <stdbool.h> */
 
 
 #include "e_mode.h"
