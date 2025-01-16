@@ -162,7 +162,7 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
   </tr>
   <tr>
     <td>
-      <strong>Files</strong> (given in compressed <code>.gz</code> format)
+      <strong>Files</strong> (given in compressed `.zip` format)
     </td>
     <td>
       <strong>Location(s)</strong>
@@ -172,27 +172,41 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
     </td>
   </tr>
   <tc>
-    <td>
+    <td rowspan="2">
       <code>inchi-1</code> (ELF file)
     </td>
     <td>
-      <em>64-bit</em>: <code>INCHI-1-BIN/linux/64bit/</code><br />
-      <em>32-bit</em>: <code>INCHI-1-BIN/linux/32bit/</code>
+      <em>64-bit</em>: <code>INCHI-1-BIN/linux/64bit</code>
     </td>
     <td>
       <code>GCC</code>
     </td>
   </tr>
-  <tc>
+  <tr>
     <td>
+      <em>32-bit</em>: <code>INCHI-1-BIN/linux/32bit</code>
+    </td>
+    <td>
+      <code>Clang/LLVM</code><sup><strong>(2)</strong></sup>
+    </td>
+  </tr>
+  <tc>
+    <td rowspan="2">
       <code>libinchi.so.1.07</code><br /> + corresponding <code>inchi_main</code> (ELF file)
     </td>
     <td>
-      <em>64-bit</em>: <code>INCHI-1-BIN/linux/64bit/so/</code><br />
-      <em>32-bit</em>: <code>INCHI-1-BIN/linux/32bit/so/</code>
+      <em>64-bit</em>: <code>INCHI-1-BIN/linux/64bit/so</code>
     </td>
     <td>
       <code>GCC</code>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <em>32-bit</em>: <code>INCHI-1-BIN/linux/32bit/so</code>
+    </td>
+    <td>
+      <code>Clang/LLVM</code><sup><strong>(2)</strong></sup>
     </td>
   </tr>
 </table>
@@ -200,8 +214,10 @@ The [Images](https://github.com/IUPAC-InChI/InChI/tree/main/Images) subfolder co
     
 <a id="libgcc_32"></a>
 <sup><strong>(1)</strong></sup> <ins>IMPORTANT NOTE</ins>: Since 32-bit binaries for <code>Microsoft<sup>&reg;</sup> Windows</code> operating system have been compiled using <code>MinGW-w64</code>, it <a href="https://github.com/IUPAC-InChI/InChI/issues/71">has been reported</a> that in certain environments a dynamic link library <code>libgcc_s_dw2-1.dll</code> has to be included in the same folder with the executables. Therefore, <code>libgcc_s_dw2-1.dll</code> has been added to <code>INCHI-1-BIN/windows/32bit</code> and <code>INCHI-1-BIN/windows/32bit/dll</code> folders (we would like to thank <a href="https://github.com/nbehrnd">nbehrnd</a> for his assistance with this matter).
+<br />
+<sup><strong>(2)</strong></sup> In order to make <code>makefile32s</code> more consistent on all operating systems (see <a href="#libgcc_32">the note <sup><strong>(1)</strong></sup> above</a>), and for easier <a href="#MAKEFILE">change of the default compiler</a>, the default compiler on 32-bit <code>UNIX-based OSs</code> has been set to <code>Clang/LLVM</code>.
 <!--Please note that 32-bit binaries have to be compiled from the source, although the use of 64-bit versions is highly recommended.-->
-<br /><br />
+<br />
 Precompiled binaries for <strong>MacOS<sup>&reg;</sup></strong> (i.e. <code>.app</code> executables and <code>.dylib</code> libraries) will be provided very soon. Until then, please note that <code>InChI</code> can now be <a href="#compiling-inchi-v107-from-source">compiled from source</a> on <strong>MacOS<sup>&reg;</sup></strong> using native/default <code>Clang</code> or <code>GCC</code> (if installed).
 <br />
 
@@ -223,15 +239,18 @@ For `GCC` and `Clang/LLVM` compilers, `InChI v.1.07` can be compiled from the so
 
 <a id="MAKEFILE"></a>
 
-`makefile/makefile32` files are configured to detect OSs automatically, so it is no longer needed to specify OS explicitly or run batch/bash script(s) before compiling.
-`GCC` and `Clang/LLVM` compilers are also automatically detected by `makefile/makefile32` files, with `GCC` set as default compiler.
-If both `GCC` and `Clang/LLVM` compilers are installed, setting `Clang/LLVM` as default compiler can be done simply by changing `CCN` parameter from value `1` to `2` in `makefile/makefile32`.
+New features in `makefile/makefile32`:
+- `makefile/makefile32` files are configured to detect OSs automatically, so it is no longer needed to specify OS explicitly or run batch/bash script(s) before compiling.
+- `GCC` and `Clang/LLVM` compilers are also automatically detected by `makefile/makefile32` files with:
+  - `GCC` set as a default compiler on 64-bit platforms 
+  - `Clang/LLVM` set as a default compiler on 32-bit platforms (please refer to <a href="#libgcc_32">these notes</a> for more details).
+- If both `GCC` and `Clang/LLVM` compilers are installed, setting a default compiler can be done simply by changing `CCN` parameter in `makefile/makefile32` where:
+  - `CCN = 1` corresponds to `GCC` 
+  - `CCN = 2` corresponds to `Clang/LLVM`.
 
 Support for native/default MacOS<sup>&reg;</sup> `Clang` compiler is now provided with 64-bit versions of `makefile` files (we would like to thank <a href="https://github.com/johnmay/">John Mayfield</a> for his assistance with this matter).
 
-If `makefile/makefile32` is used for compiling `libinchi` on Microsoft<sup>&reg;</sup> Windows, `libinchi.dll` is now generated instead of `libinchi.so.1.07`.
-
-Please make sure to read the <a href="#libgcc_32">important note</a> regarding the required <code>libgcc_s_dw2-1.dll</code> for running 32-bit executables on <code>Microsoft<sup>&reg;</sup> Windows</code> operating system in certain environments.
+If `makefile/makefile32` is used for compiling `libinchi` on Microsoft<sup>&reg;</sup> Windows, `libinchi.dll` is now generated instead of `libinchi.so.1.07`. Also. please make sure to read the <a href="#libgcc_32">notes</a> regarding the required <code>libgcc_s_dw2-1.dll</code> for running 32-bit executables on <code>Microsoft<sup>&reg;</sup> Windows</code> operating system in certain environments.
 
 **Additional notes**:
 
