@@ -586,8 +586,6 @@ void EditINCHI_HidePolymerZz( INCHI_IOSTREAM *out, int n_pzz, int n_zy );
 
 /* MISCELLANEOUS */
 
-
-void SplitTime( unsigned long ulTotalTime, int *hours, int *minutes, int *seconds, int *mseconds );
 void set_line_separators( int bINChIOutputOptions, char **pLF, char **pTAB );
 void save_command_line( int argc, char *argv[], INCHI_IOSTREAM *plog );
 void emit_empty_inchi( INPUT_PARMS *ip, long num_inp,
