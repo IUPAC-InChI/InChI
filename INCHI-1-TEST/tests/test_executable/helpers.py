@@ -12,7 +12,7 @@ def parse_inchi_from_executable_output(output: str) -> str:
         print("Executable output does not contain an InChI.")
         return ""
 
-    return inchi_match.group()
+    return inchi_match.group().strip()
 
 
 def parse_aux_info_from_executable_output(output: str) -> str:
@@ -22,4 +22,4 @@ def parse_aux_info_from_executable_output(output: str) -> str:
         print("Executable output does not contain an AuxInfo.")
         return ""
 
-    return aux_info_match.group()
+    return aux_info_match.group().strip()
