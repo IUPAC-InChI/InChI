@@ -564,15 +564,6 @@ def test_CID_166625356(molfile_CID_166625356, run_inchi_exe):
 
 
 @pytest.mark.xfail(strict=True, raises=AssertionError)
-def test_CID_6419481(molfile_CID_6419481, run_inchi_exe):
-    result = run_inchi_exe(molfile_CID_6419481)
-    assert (
-        "InChI=1S/C16H17N5O2S/c1-21(20-16(17)24)10-11-8-13(9-14(23-2)15(11)22)19-18-12-6-4-3-5-7-12/h3-10,18-19H,1H2,2H3,(H2-,17,20,24)/b11-10-"
-        == parse_inchi_from_executable_output(result.output)
-    )
-
-
-@pytest.mark.xfail(strict=True, raises=AssertionError)
 def test_CID_6419538(molfile_CID_6419538, run_inchi_exe):
     result = run_inchi_exe(molfile_CID_6419538)
     assert (
