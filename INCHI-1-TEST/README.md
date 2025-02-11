@@ -1,10 +1,10 @@
-# Library tests
+# Testing the InChI
 
 ## Test environment
 
 ### Docker container
 
-Use our [Dockerfile](../Dockerfile) to run the test suite.
+Use our [Dockerfile](Dockerfile) to run the test suite.
 Build a Docker image by running the following command from the root of the repository:
 
 ```Shell
@@ -22,14 +22,57 @@ You can now run the commands that are mentioned in the remainder of this README.
 
 ### Visual Studio Code devcontainer
 
-If you prefer, run the tests in the [Visual Studio Code devcontainer](https://code.visualstudio.com/docs/devcontainers/containers)
-that's specified under [.devcontainer.json](../../.devcontainer.json).
-Note that in the devcontainer, you'll have to compile the InChI libraries yourself, see `INCHI-1-TEST/compile_inchi.sh` for details.
-The test pipeline expects the library under `INCHI-1-TEST/libs`, see for example `INCHI-1-TEST/tests/test_library/config/config.invariance.py`.
+As an alternative to the plain Docker container, you can run the tests in the [Visual Studio Code devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) that's specified under [.devcontainer.json](../.devcontainer.json).
+Note that, in contrast to the plain container, in the devcontainer, you'll have to compile the InChI libraries yourself.
+Have a look at [the compilation script](compile_inchi.sh) for details.
 
-## Datasets
+## Test data
 
-In this README, `<dataset>` refers to either `ci`
+We follow two conventions for supplying molfiles as test data.
+
+- Inline Python string in a testfile:
+
+  - Benefit of having entire test scenario on screen.
+  - Only use with small(ish) molfiles, the benefit of overview is lost quickly with molfiles that require vertical scrolling.
+
+- Compressed [SDF files](https://en.wikipedia.org/wiki/Chemical_table_file#SDF) (i.e., `testdata.sdf.gz`):
+
+  - Use when a test scenario requires many and/or large molfiles.
+  - One or multiple SDF files live in a `data` directory inside the test directories (e.g. `tests/test_executable/data`)
+  - If an SDF is only used in one place, name the SDF after testfile.
+
+Where possible, stick to the following principles:
+
+- Keep number of tests per file to a minimum.
+- When replicating a bug, reference the (GitHub) issue number in the file name (e.g., `test_github_42.py`).
+
+Have a look at the existing tests for examples on how to write a test.
+
+## Meta tests
+
+The tests under `tests/test_meta` are testing the tests (e.g., does structure permutation work properly?)
+Run with `pytest INCHI-1-TEST/tests/test_meta`.
+
+## Executable tests
+
+The tests under `tests/test_executable` test specific behaviors of the executable.
+They ensure that specific input (e.g., molfile and arguments) elicits specific output (e.g., error).
+
+Run with `pytest INCHI-1-TEST/tests/test_executable`.
+Note that by default, the tests expect the InChI executable to live at `INCHI-1-TEST/exes/inchi-1`.
+You can specify another InChI executable as argument to the `--exe-path` parameter:
+
+```shell
+pytest INCHI-1-TEST/tests/test_executable --exe-path=path/to/executable
+```
+
+## Library tests
+
+Under `tests/test_library` we run tests against the InChI API.
+
+### Datasets
+
+In the following, `<dataset>` refers to either `ci`
 (i.e, continuous integration, aka the tests running on GitHub), or a `<subset>` of PubChem.
 `<subset>` can be either `compound`, `compound3d`, or `substance`.
 The `ci` data already lives in the repository (i.e., `mcule.sdf.gz` and `inchi.sdf.gz` under `INCHI-1-TEST/tests/test_library/data/ci`).
@@ -41,7 +84,7 @@ python -m INCHI-1-TEST.tests.test_library.data.pubchem.download <subset>
 ```
 
 On completion of the download you'll find the data in `INCHI-1-TEST/tests/test_library/data/pubchem/<subset>`.
-Validate the integrity of `<subset>` (i.e., make sure the downloads aren't corrupted) by running
+Validate the integrity of `<subset>` (i.e., make sure the downloads aren't corrupted) with the hashes provided by PubChem by running
 
 ```Shell
 python -m INCHI-1-TEST.tests.test_library.data.pubchem.validate <subset>
@@ -49,20 +92,20 @@ python -m INCHI-1-TEST.tests.test_library.data.pubchem.validate <subset>
 
 Note that validation isn't available for `compound3d` (PubChem doesn't provide file hashes).
 
-## Multithreading tests
+### Multithreading tests
 
 Test the thread safety of the InChI library by running
 
 `python INCHI-1-TEST/tests/test_library/test_multithreading.py`
 
-The script triggers a segfault should the thread safety of the library be compromised.
+The script triggers a segfault in case the thread safety of the library is compromised.
 
-## Invariance tests
+### Invariance tests
 
 Invariance tests are meant to detect problems with InChI's canonicalization algorithm.
 During an invariance test, the atom indices of a structure are permuted repeatedly and each permutation is expected to result in the same InChI output.
 
-<img src="./invariance.svg" alt="schematic" width="400"/>
+<img src="tests/test_library/invariance.svg" alt="schematic" width="400"/>
 
 ```Shell
 run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.invariance.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
@@ -74,18 +117,17 @@ If not all permutations produce the same InChI output,
 a test failure is logged under `<datetime>.invariance_<dataset>.log`
 (where `<datetime>` reflects the start of the test run).
 
-## Regression tests
+### Regression tests
 
 Regression tests investigate if the output of the current development version matches the reference output of a previous release.
 In other word, regression test are meant to detect problems with the stability of the InChI across versions.
-In the image below, the 1st and 2nd run represent tests runs
-that are conducted after some alternations to the codebase.
+In the image below, the 1st and 2nd run represent tests runs that are conducted after some alternations to the codebase.
 On the first run, the output matches the reference.
 The 2nd run results in a regression, since the output no longer matches the reference.
 
-<img src="./regression.svg" alt="schematic" width="400"/>
+<img src="tests/test_library/regression.svg" alt="schematic" width="400"/>
 
-### Compute references
+#### Compute references
 
 ```Shell
 run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression_reference.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
@@ -95,7 +137,7 @@ uses `libinchi.so.<version>`, the shared library specified with `--test-config`,
 and generates an `<SDF>.regression_reference.sqlite` file for each SDF under `INCHI-1-TEST/tests/test_library/data/<dataset>`.
 The `sqlite` file contains a table with the results for each molfile.
 
-### Run tests against the references
+#### Run tests against the references
 
 ```Shell
 run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
@@ -110,7 +152,7 @@ To convince yourself that the tests fail once a regression has been introduced,
 change `INCHI_NAME` in `INCHI-1-SRC/INCHI_BASE/src/mode.h` and re-run the tests.
 The tests should now fail and indicate that the difference between the reference results and the latest test run is the change you've made.
 
-## Inspect test results
+### Inspect test results
 
 In addition to inspecting the raw logs, you can review the results by running
 
@@ -122,17 +164,17 @@ where `<test>` can be `regression` or `invariance`.
 The command generates an HTML report for each SDF under `INCHI-1-TEST/tests/test_library/data/<dataset>` that contains structures which failed the test.
 You can view the HTML report in your browser.
 
-## Inspect `.sqlite` files
+### Inspect `.sqlite` files
 
 For conveniently viewing `.sqlite` files, install the `SQLite Viewer` extension for VSCode: <https://marketplace.visualstudio.com/items?itemName=qwtel.sqlite-viewer>. Otherwise you can query the `.sqlite` files with the [sqlite command line utility](https://sqlite.org/cli.html).
 
-## Test customization
+### Test customization
 
 So far, we showed how to run the tests with our configuration against our datasets.
 Alternatively, you can run the tests against your own data and/or adapt the configuration.
 
 Before showing examples of how to customize the tests, let's look at how we're configuring them.
-Our [docker-compose.yml](../docker-compose.yml) shows how to inject the data and configuration into the [container](#docker-container)
+Our [docker-compose.yml](docker-compose.yml) shows how to inject the data and configuration into the [container](#docker-container)
 via [volumes](https://docs.docker.com/compose/compose-file/05-services/#volumes):
 
 ```yml
@@ -162,7 +204,7 @@ services:
 Make sure to adapt `context` to your directory structure. `context` needs to be the path to the `InChI` repository,
 relative from `docker-compose.custom.yml`.
 
-### Your own dataset
+#### Your own dataset
 
 You can map a single SDF file or a directory containing SDF files into the container's `/inchi` directory by specifying a volume:
 
@@ -180,7 +222,7 @@ services:
         target: /inchi/data
 ```
 
-### Your own configuration
+#### Your own configuration
 
 Next, add a volume to inject your [configuration files](#configuration-files) into the container:
 
@@ -201,32 +243,32 @@ services:
         target: /inchi/config
 ```
 
-### Configuration files
+#### Configuration files
 
 The tests can be configured with Python files (e.g., `config.py`).
 We're not using other configuration formats (e.g., `config.yaml`),
 since the configuration needs to be powerful enough to enable dynamic customization (e.g., parsing molfile ID).
-We provide two [templates](INCHI-1-TEST/tests/test_library/inchi_tests/config_models.py) under `config_models.py` that allow you to customize the configuration:
+We provide two [templates](tests/test_library/inchi_tests/config_models.py) under `config_models.py` that allow you to customize the configuration:
 
-#### `TestConfig`
+##### `TestConfig`
 
 Lets you customize the test itself, e.g.,
 configuring what to run ("regression", "regression-reference", or "invariance"),
 which InChI library to use, and which parameters to pass to the InChI API.
 For details, have a look at the comments in the `TestConfig` class.
 Your configuration file, e.g., `config/custom-regression.py` must contain an instance of `TestConfig` called `config`.
-For an example of how to instantiate a `TestConfig` object, have a look at our [regression configuration](INCHI-1-TEST/tests/test_library/config/config.regression.py).
+For an example of how to instantiate a `TestConfig` object, have a look at our [regression configuration](tests/test_library/config/config.regression.py).
 
-#### `DataConfig`
+##### `DataConfig`
 
 Lets you configure your custom data, e.g., location of the data.
 For details, have a look at the comments in the `DataConfig` class.
 Your configuration file, e.g., `config/custom-data.py` must contain an instance of `DataConfig` called `config`.
-For an example of how to instantiate a `DataConfig` object, have a look at our [CI configuration](INCHI-1-TEST/tests/test_library/config/config.ci.py).
+For an example of how to instantiate a `DataConfig` object, have a look at our [CI configuration](tests/test_library/config/config.ci.py).
 Note that the `DataConfig` object must point to data that you've [mounted into the container](#your-own-dataset).
-For an example of how to instantiate a `DataConfig` object, have a look at our the configuration of our [CI data](INCHI-1-TEST/tests/test_library/config/config.ci.py).
+For an example of how to instantiate a `DataConfig` object, have a look at our the configuration of our [CI data](tests/test_library/config/config.ci.py).
 
-### Run your custom tests
+#### Run your custom tests
 
 Once you've written the `docker-compose.custom.yml` and your [configuration files](#configuration-files), build a custom image with
 
