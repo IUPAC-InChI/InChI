@@ -1,5 +1,21 @@
 # Change log
 
+## v1.07.2 2025-01-16
+
+### Changed
+
+- GHI #71: 32-bit InChI version requiring ibgcc_s_dw2-1.dll on Windows 32-bit platforms (thanks to Norwid Behrnd) a few bugs in the code have been detected and fixed libgcc_s_dw2-1.dll added to INCHI-1-BIN folders
+- GHI #70: Update license -- Copyright (c) 2024 IUPAC and InChI Trust instead of Copyright (c) 2024 InChI Project
+- GHI #67: GetStructFromInchi() now working in v1.07.2 (thanks to Greg Landrum) all variable initializations checked and fixed which caused this issue essential part of InChI tests from now on as all bugs reported by Paul Thiessen/Evan Bolton had the same origin 
+- GHI #65:changing descriptions in default output for tautomerisms (thanks to Norwid Behrnd)
+- GHI #58 and #59: 7 bug fixes detected by AFL++ fuzzer (thanks to @skorpion89)
+- GHI #43: add changes to new version (thanks to Burt Leland) several very important bug fixes related to /InChI2InChI /FixedH /RecMet options
+- GHI #39: remove all global variables, making code reentrant and thread-safe (thanks to Greg Landrum and Jan Holst Jensen) multi-threading issues fixed three multi-threading tests now available: GitHub actions, using RDKit, using RInChI
+- Important bug fixes detected by Paul Thiessen and Evan Bolton -- see GHI #67
+- Further Google Oss-Fuzz fixes
+- Several warning fixes detected by Intel C++ Compiler
+- wInChI: GitHub repository sorted and release made (v.1.07.2) awaiting Dimitrii Tchekhovskoi's approval to go public this repository will be regularly updated with each new version of InChI
+
 ## v1.07.1 2024-08-09
 
 ### Changed
