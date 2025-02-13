@@ -9,7 +9,7 @@ from sdf_pipeline.utils import read_records_from_gzipped_sdf
 
 @pytest.fixture
 def sdf_path():
-    return Path(__file__).parent.absolute().joinpath("data/AlexClark_structures_CCDC.sdf.gz")
+    return Path(__file__).parent.absolute().joinpath("data/organometallic_structures_CCDC.sdf.gz")
 
 # code commented out is used to get statistics and insights 
 def test_organometallics_ccdc(sdf_path, run_inchi_exe):
