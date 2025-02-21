@@ -1085,12 +1085,14 @@ extern "C" {
 
 #define   inchi_malloc(s)         _malloc_dbg(s, _NORMAL_BLOCK, __FILE__, __LINE__)
 #define   inchi_calloc(c, s)      _calloc_dbg(c, s, _NORMAL_BLOCK, __FILE__, __LINE__)
+#define   inchi_realloc(d, s)     _realloc_dbg(d, s, _NORMAL_BLOCK, __FILE__, __LINE__)
 #define   inchi_free(p)           _free_dbg(p, _NORMAL_BLOCK)
 
 #ifdef TARGET_EXE_USING_API
 /* INChI_MAIN specific */
 #define e_inchi_malloc(a)   inchi_malloc(a)
 #define e_inchi_calloc(a,b) inchi_calloc(a,b)
+#define e_inchi_realloc(a,b) inchi_realloc(a,b)
 #define e_inchi_free(a)     inchi_free(a)
 #endif
 
@@ -1135,7 +1137,7 @@ do {\
 /*         */
 /***********/
 
-
+/* djb-rwth: fixing GH issue #89 */
 #ifdef TARGET_EXE_USING_API
 /* INChI_MAIN specific */
 #ifndef inchi_malloc
@@ -1143,6 +1145,9 @@ do {\
 #endif
 #ifndef inchi_calloc
 #define inchi_calloc   e_inchi_calloc
+#endif
+#ifndef inchi_realloc
+#define inchi_realloc   e_inchi_realloc
 #endif
 #ifndef inchi_free
 #define inchi_free     e_inchi_free
@@ -1153,6 +1158,9 @@ do {\
 #endif
 #ifndef e_inchi_calloc
 #define e_inchi_calloc calloc
+#endif
+#ifndef e_inchi_realloc
+#define e_inchi_realloc realloc
 #endif
 #ifndef e_inchi_free
 #define e_inchi_free(X) do{ if(X) free(X); }while(0)
@@ -1165,6 +1173,9 @@ do {\
 #endif
 #ifndef inchi_calloc
 #define inchi_calloc   calloc
+#endif
+#ifndef inchi_realloc
+#define inchi_realloc   realloc
 #endif
 #ifndef inchi_free
 #define inchi_free(X)  do{ if(X) free(X); }while(0)

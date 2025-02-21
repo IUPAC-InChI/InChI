@@ -6339,7 +6339,7 @@ int free_t_group_info( T_GROUP_INFO *t_group_info )
     {
         if (t_group_info->t_group)
         {
-            inchi_free( t_group_info->t_group );
+            inchi_free( t_group_info->t_group ); /* djb-rwth: false positive oss-fuzz issue #42534728/68286? */
         }
         if (t_group_info->nEndpointAtomNumber)
         {
@@ -6417,7 +6417,7 @@ int make_a_copy_of_t_group_info( T_GROUP_INFO *t_group_info,
         {
             /* djb-rwth: fixing oss-fuzz issue #53519 */
             AT_NUMB* tgi_niean = (AT_NUMB*)inchi_malloc(len * sizeof(t_group_info->nIsotopicEndpointAtomNumber[0]));
-            AT_NUMB* tgior_niean = (AT_NUMB*)realloc(t_group_info_orig->nIsotopicEndpointAtomNumber, len * sizeof(t_group_info_orig->nIsotopicEndpointAtomNumber[0]));
+            AT_NUMB* tgior_niean = (AT_NUMB*)inchi_realloc(t_group_info_orig->nIsotopicEndpointAtomNumber, len * sizeof(t_group_info_orig->nIsotopicEndpointAtomNumber[0]));
             if (tgi_niean && tgior_niean) /* djb-rwth: addressing LLVM warning */
             {
                 t_group_info->nIsotopicEndpointAtomNumber = tgi_niean;

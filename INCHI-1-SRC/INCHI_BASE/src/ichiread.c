@@ -8253,7 +8253,7 @@ int ParseSegmentMobileH(const char* str,
         /* copy immobile H from Mobile-H layer to Fixed-H layer */
         if (bMobileH == TAUT_NON && i < pnNumComponents[nAltMobileH])
         {
-            S_CHAR* pai_nnh = (S_CHAR*)realloc(pAltInChI[i].nNum_H, len * sizeof(pAltInChI[0].nNum_H[0]));
+            S_CHAR* pai_nnh = (S_CHAR*)inchi_realloc(pAltInChI[i].nNum_H, len * sizeof(pAltInChI[0].nNum_H[0]));
             if (pai_nnh)
             {
                 S_CHAR* pi_nnh1 = NULL;  /* copied from below to satisfy C syntax 2024-09-01 DT */
@@ -11590,7 +11590,7 @@ int DetectAndExposePolymerInternals(INCHI_IOSTREAM* is)
 {
     int  i, j, elindex, ret = 0, nheavy = 0,
         nstars = 0, zlen = 0, star0 = 0, i_last_sym,
-        slen = 0, i2 = 0, ninsert = 0, kinsert, lead_pos, nc, ntimes;
+        slen = 0, i2 = 0, ninsert = 0, kinsert, lead_pos, nc, ntimes, nc_max;
     const char* p, * pz, * pz2, * pr, * pend, * q;
     char prev_layer_symbol = '0';
     char element[3], * tmpstr = NULL, * edited_s = NULL;
@@ -11837,6 +11837,7 @@ int DetectAndExposePolymerInternals(INCHI_IOSTREAM* is)
 
     /* Edits */
     nc = 0;
+    nc_max = slen * 100 + 32 * 10 * ninsert;
     kinsert = 0;
     star0 = nheavy + 1;
     for (i = 0; i < slen; i++)
@@ -11884,7 +11885,11 @@ int DetectAndExposePolymerInternals(INCHI_IOSTREAM* is)
                 }
                 for (j = 0; j < nstars; j++)
                 {
-                    edited_s[nc++] = addon;
+                    /* djb-rwth: fixing oss-fuzz issue #384549256 */
+                    if (nc < nc_max)
+                    {
+                        edited_s[nc++] = addon;
+                    }
                 }
             }
             else if (prev_layer_symbol == 'f')

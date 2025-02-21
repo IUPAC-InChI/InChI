@@ -224,7 +224,7 @@ int CanonGraph( struct tagINCHI_CLOCK *ic,
                 int LargeMolecules );
 
 void CtPartFill( Graph *G, CANON_DATA *pCD, Partition *p,
-                 ConTable *Ct, int k, int n, int n_tg );
+                 ConTable *Ct, int k, int n, int n_tg, int n_max );
 
 void CtPartClear( ConTable *Ct, int k );
 
@@ -1852,7 +1852,9 @@ void CtPartFill( Graph *G,
                  ConTable *Ct,
                  int k,
                  int n,
-                 int n_tg )
+                 int n_tg,
+                 int n_max
+                )
 {
     /*  k = (new index in Ct->nextAtRank[] and Ct->nextCtblPos[]) + 1 */
 
@@ -1887,164 +1889,174 @@ void CtPartFill( Graph *G,
     {
         return;
     }
-    an_sao = (int)p->AtNumber[startAtOrd];
-    r = ( rank_mask_bit & p->Rank[an_sao] );
-
-    for (i = startAtOrd; i < n_tg && r == ( rank_mask_bit&p->Rank[m = (int) p->AtNumber[i]] ); i++, r++)
+    /* djb-rwth: fixing oss-fuzz issue #391043585 */
+    if (startAtOrd < n_max && Ct)
     {
-        Ct->Ctbl[startCtbl++] = r;
-        insertions_sort_NeighList_AT_NUMBERS2( G[m], p->Rank, r );
-        nn = G[m][0];   /* number of neighbors */
-        rj_prev = 0;    /* debug only */ /* djb-rwth: ignoring LLVM warning as the variable is used */
+        an_sao = (int)p->AtNumber[startAtOrd];
+        r = (rank_mask_bit & p->Rank[an_sao]);
+
+        for (i = startAtOrd; i < n_tg && r == (rank_mask_bit & p->Rank[m = (int)p->AtNumber[i]]); i++, r++)
+        {
+            Ct->Ctbl[startCtbl++] = r;
+            insertions_sort_NeighList_AT_NUMBERS2(G[m], p->Rank, r);
+            nn = G[m][0];   /* number of neighbors */
+            rj_prev = 0;    /* debug only */ /* djb-rwth: ignoring LLVM warning as the variable is used */
 
 #ifdef INCHI_CANON_USE_HASH
-        hash = add2crc32( hash, (AT_NUMB) ( r + n ) );
+            hash = add2crc32(hash, (AT_NUMB)(r + n));
 #endif
 
-        for (j = 1; j <= nn && ( rj = ( rank_mask_bit&p->Rank[(int) G[m][j]] ) ) < r; j++)
-        {
-            Ct->Ctbl[startCtbl++] = rj;
+            for (j = 1; j <= nn && (rj = (rank_mask_bit & p->Rank[(int)G[m][j]])) < r; j++)
+            {
+                Ct->Ctbl[startCtbl++] = rj;
 
 #ifdef INCHI_CANON_USE_HASH
-            hash = add2crc32( hash, rj );
+                hash = add2crc32(hash, rj);
 #endif
 
 #if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
-            /* debug only */
-            if (rj < rj_prev)
-            {
-                int stop = 1;   /* <BRKPT> */
-            }
+                /* debug only */
+                if (rj < rj_prev)
+                {
+                    int stop = 1;   /* <BRKPT> */
+                }
 #endif
 
-            rj_prev = rj; /* djb-rwth: ignoring LLVM warning as the variable is used */
+                rj_prev = rj; /* djb-rwth: ignoring LLVM warning as the variable is used */
+            }
         }
+    }
+    else
+    {
+        return;
     }
 
     INCHI_HEAPCHK
 
     /****************** Well-defined part of base hydrogen atoms *******************/
-    if (pCD->NumH && Ct->NumH)
+    if (Ct)
     {
-        nn = inchi_min( n, i );
-        for (j = startAtOrd; j < nn; j++)
+        if (pCD->NumH && Ct->NumH)
         {
-            /* atoms */
-            Ct->NumH[j] = pCD->NumH[p->AtNumber[j]];
-        }
-        for (; j < i; j++)
-        {
-            /* t-groups */
-            int data_pos = n + T_NUM_NO_ISOTOPIC * ( (int) p->AtNumber[j] - n );
-            for (m = 0; m < T_NUM_NO_ISOTOPIC; m++)
+            nn = inchi_min(n, i);
+            for (j = startAtOrd; j < nn; j++)
             {
-                Ct->NumH[nn++] = pCD->NumH[data_pos++];
+                /* atoms */
+                Ct->NumH[j] = pCD->NumH[p->AtNumber[j]];
             }
+            for (; j < i; j++)
+            {
+                /* t-groups */
+                int data_pos = n + T_NUM_NO_ISOTOPIC * ((int)p->AtNumber[j] - n);
+                for (m = 0; m < T_NUM_NO_ISOTOPIC; m++)
+                {
+                    Ct->NumH[nn++] = pCD->NumH[data_pos++];
+                }
+            }
+            Ct->lenNumH = nn;
         }
-        Ct->lenNumH = nn;
-    }
-    else
-    {
-        Ct->lenNumH = 0;
-    }
-
-    INCHI_HEAPCHK
-
-    /****************** Well-defined part of fixed hydrogen atoms *******************/
-    if (pCD->NumHfixed && Ct->NumHfixed)
-    {
-        nn = inchi_min( n, i );
-        for (j = startAtOrd; j < nn; j++)
+        else
         {
-            Ct->NumHfixed[j] = pCD->NumHfixed[p->AtNumber[j]];
-
-            INCHI_HEAPCHK
+            Ct->lenNumH = 0;
         }
-        /* Ct->lenNumHfixed = nn; */
-    }
-    else
-    {
-        ;/* Ct->lenNumHfixed = 0; */
-    }
 
-    INCHI_HEAPCHK
+        INCHI_HEAPCHK
 
-    /****************** Well-defined part of isotopic keys ***************************/
-    if (pCD->iso_sort_key && Ct->iso_sort_key)
-    {
-        for (j = startAtOrd; j < i; j++)
-        {
-            Ct->iso_sort_key[j] = pCD->iso_sort_key[p->AtNumber[j]];
-        }
-        Ct->len_iso_sort_key = i;
-    }
-    else
-    {
-        Ct->len_iso_sort_key = 0;
-    }
+            /****************** Well-defined part of fixed hydrogen atoms *******************/
+            if (pCD->NumHfixed && Ct->NumHfixed)
+            {
+                nn = inchi_min(n, i);
+                for (j = startAtOrd; j < nn; j++)
+                {
+                    Ct->NumHfixed[j] = pCD->NumHfixed[p->AtNumber[j]];
 
-    INCHI_HEAPCHK
+                    INCHI_HEAPCHK
+                }
+                /* Ct->lenNumHfixed = nn; */
+            }
+            else
+            {
+                ;/* Ct->lenNumHfixed = 0; */
+            }
 
-    /****************** Well-defined part of isotopic iso_exchg_atnos ***************************/
-    if (pCD->iso_exchg_atnos && Ct->iso_exchg_atnos)
-    {
-        for (j = startAtOrd; j < i; j++)
-        {
-            Ct->iso_exchg_atnos[j] = pCD->iso_exchg_atnos[p->AtNumber[j]];
-        }
-        Ct->len_iso_exchg_atnos = i;
-    }
-    else
-    {
-        Ct->len_iso_exchg_atnos = 0;
-    }
+        INCHI_HEAPCHK
 
-    INCHI_HEAPCHK
+            /****************** Well-defined part of isotopic keys ***************************/
+            if (pCD->iso_sort_key && Ct->iso_sort_key)
+            {
+                for (j = startAtOrd; j < i; j++)
+                {
+                    Ct->iso_sort_key[j] = pCD->iso_sort_key[p->AtNumber[j]];
+                }
+                Ct->len_iso_sort_key = i;
+            }
+            else
+            {
+                Ct->len_iso_sort_key = 0;
+            }
 
-    /******** Well-defined part of isotopic keys for fixed hydrogen atoms ************/
+        INCHI_HEAPCHK
+
+            /****************** Well-defined part of isotopic iso_exchg_atnos ***************************/
+            if (pCD->iso_exchg_atnos && Ct->iso_exchg_atnos)
+            {
+                for (j = startAtOrd; j < i; j++)
+                {
+                    Ct->iso_exchg_atnos[j] = pCD->iso_exchg_atnos[p->AtNumber[j]];
+                }
+                Ct->len_iso_exchg_atnos = i;
+            }
+            else
+            {
+                Ct->len_iso_exchg_atnos = 0;
+            }
+
+        INCHI_HEAPCHK
+
+            /******** Well-defined part of isotopic keys for fixed hydrogen atoms ************/
 #if ( USE_ISO_SORT_KEY_HFIXED == 1 )
-    if (pCD->iso_sort_key_Hfixed && Ct->iso_sort_key_Hfixed)
-    {
-        nn = inchi_min( n, i );
-        for (j = startAtOrd; j < nn; j++)
-        {
-            Ct->iso_sort_key_Hfixed[j] = pCD->iso_sort_key_Hfixed[p->AtNumber[j]];
-        }
-        Ct->len_iso_sort_key_Hfixed = nn;
-    }
-    else
-    {
-        Ct->len_iso_sort_key_Hfixed = 0;
-    }
+            if (pCD->iso_sort_key_Hfixed && Ct->iso_sort_key_Hfixed)
+            {
+                nn = inchi_min(n, i);
+                for (j = startAtOrd; j < nn; j++)
+                {
+                    Ct->iso_sort_key_Hfixed[j] = pCD->iso_sort_key_Hfixed[p->AtNumber[j]];
+                }
+                Ct->len_iso_sort_key_Hfixed = nn;
+            }
+            else
+            {
+                Ct->len_iso_sort_key_Hfixed = 0;
+            }
 #endif
 
-    INCHI_HEAPCHK
+        INCHI_HEAPCHK
 
-    Ct->lenCt = startCtbl; /* not aways increases */
-    Ct->nextCtblPos[k] = startCtbl;
-    Ct->nextAtRank[k] = r;
-    Ct->lenPos = k + 1;
+            Ct->lenCt = startCtbl; /* not aways increases */
+        Ct->nextCtblPos[k] = startCtbl;
+        Ct->nextAtRank[k] = r;
+        Ct->lenPos = k + 1;
 
-    /* The rest of the CTable */
+        /* The rest of the CTable */
 
 #ifdef INCHI_CANON_USE_HASH
-    while (i < n)
-    {
-        r = ( rank_mask_bit&p->Rank[m = (int) p->AtNumber[i]] );
-        hash = add2crc32( hash, (AT_NUMB) ( r + n ) );
-        r++;
-        insertions_sort_NeighList_AT_NUMBERS2( G[m], p->Rank, r );
-        nn = G[m][0];
-        rj_prev = 0; /* debug only */
-        for (j = 1; j <= nn && ( rj = ( rank_mask_bit&p->Rank[(int) G[m][j]] ) ) < r; j++)
+        while (i < n)
         {
-            hash = add2crc32( hash, rj );
+            r = (rank_mask_bit & p->Rank[m = (int)p->AtNumber[i]]);
+            hash = add2crc32(hash, (AT_NUMB)(r + n));
+            r++;
+            insertions_sort_NeighList_AT_NUMBERS2(G[m], p->Rank, r);
+            nn = G[m][0];
+            rj_prev = 0; /* debug only */
+            for (j = 1; j <= nn && (rj = (rank_mask_bit & p->Rank[(int)G[m][j]])) < r; j++)
+            {
+                hash = add2crc32(hash, rj);
+            }
+            i++;
         }
-        i++;
-    }
-    Ct->hash[k] = hash;
+        Ct->hash[k] = hash;
 #endif
-
+    }
     INCHI_HEAPCHK
 }
 
@@ -3875,7 +3887,7 @@ int CanonGraph( INCHI_CLOCK *ic,
     {
         /* added the following 3 lines to the original to create Ct */
         PartitionCopy( &rho, &pi[k - 1], n_tg );
-        CtPartFill( G, pCD, &pi[k - 1], pzb_rho, 1, n, n_tg );
+        CtPartFill( G, pCD, &pi[k - 1], pzb_rho, 1, n, n_tg, n_max );
         CtPartINCHI_CANON_INFINITY( pzb_rho, qzb, 2 );
         pCC->lNumTotCT++;
         /* djb-rwth: removing redundant code */
@@ -3920,7 +3932,7 @@ int CanonGraph( INCHI_CLOCK *ic,
         pCC->lNumBreakTies++;
         k++;
 
-        CtPartFill( G, pCD, &pi[k - 1], &Lambda, k - 1, n, n_tg );
+        CtPartFill( G, pCD, &pi[k - 1], &Lambda, k - 1, n, n_tg, n_max);
 
         /* return -1; *//* debug only */
         /* if(h_zeta==0)goto L5; L5: */
@@ -4014,7 +4026,7 @@ L2:
     }
     pCC->lNumBreakTies++;
     k++;
-    CtPartFill( G, pCD, &pi[k - 1], &Lambda, k - 1, n, n_tg );
+    CtPartFill( G, pCD, &pi[k - 1], &Lambda, k - 1, n, n_tg, n_max );
     e[k - 1] = 0;         /* moved  */
     v[k - 1] = INCHI_CANON_INFINITY;  /* added by DCh. */
     CellMakeEmpty( W, k ); /* DCh */

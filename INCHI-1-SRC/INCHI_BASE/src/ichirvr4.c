@@ -1352,7 +1352,7 @@ int NormalizeAndCompare(CANON_GLOBALS* pCG,
             if (strbuf->nUsedLength > len0 + 1)
             {
                 char* ctmp; /* djb-rwth: supplementary variable */
-                ctmp = (char*)realloc(pStruct->pOneINChI[iRevrInChI]->szHillFormula, (long long)strbuf->nUsedLength + 1); /* djb-rwth: cast operator added */
+                ctmp = (char*)inchi_realloc(pStruct->pOneINChI[iRevrInChI]->szHillFormula, (long long)strbuf->nUsedLength + 1); /* djb-rwth: cast operator added */
                 if (ctmp != NULL) /* djb-rwth: NULL pointer must not be assigned to pStruct->pOneINChI[iRevrInChI]->szHillFormula */
                     pStruct->pOneINChI[iRevrInChI]->szHillFormula = ctmp;
             }

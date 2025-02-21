@@ -49,7 +49,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define CURRENT_VER "1.07.2" /* djb-rwth: full version number in the output, required for fixing GHI #61 */
+#define CURRENT_VER "1.07.3" /* djb-rwth: full version number in the output, required for fixing GHI #61 */
 
 #ifdef __STDC_LIB_EXT1__
 #if (__STDC_LIB_EXT1__ >= 201112L)
