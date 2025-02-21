@@ -251,7 +251,6 @@ strutil.o	\
 util.o \
 bcf_s.o
 # === InChI Library link rule =========
-# === InChI Library link rule =========
 ifeq ($(OS_ID),0)
 # djb-rwth: creating .dll on Windows
 $(INCHI_LIB_PATHNAME).dll$(VERSION): $(INCHI_LIB_OBJS)
