@@ -598,6 +598,8 @@ int MolfileV3000ReadSGroup( MOL_FMT_CTAB* ctab,
         remove_one_lf( line );
         if (p && !strcmp( p, "END SGROUP" ))
         {
+            inchi_ios_close( &tmpin );
+
             return 0;
         }
     }
@@ -608,6 +610,8 @@ int MolfileV3000ReadSGroup( MOL_FMT_CTAB* ctab,
     }
 
 err_fin:
+
+    inchi_ios_close( &tmpin );
 
     return err;
 }
@@ -647,6 +651,8 @@ int MolfileV3000Read3DBlock( MOL_FMT_CTAB* ctab,
     goto err_fin;
 
 err_fin:
+
+    inchi_ios_close( &tmpin );
 
     return err;
 }
@@ -855,6 +861,8 @@ int MolfileV3000ReadCollections( MOL_FMT_CTAB* ctab,
     }
 
 err_fin:
+
+    inchi_ios_close( &tmpin );
 
     return err;
 }
@@ -1533,6 +1541,8 @@ int MolfileV3000ReadBondsBlock( MOL_FMT_CTAB* ctab,
     remove_one_lf( line );
 
 err_fin:
+
+    inchi_ios_close( &tmpin );
 
     return err;
 }
