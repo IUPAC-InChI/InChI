@@ -1854,6 +1854,7 @@ ret:if (nread < 0)
 int get_V3000_input_line_to_strbuf( INCHI_IOS_STRING *buf,
                                     INCHI_IOSTREAM* inp_stream )
 {
+    const int prefix_len = 7; /* "M  V30 " */
     int old_used, crlf2lf = 1, preserve_lf = 0;
 
     inchi_strbuf_reset( buf );
@@ -1867,13 +1868,13 @@ int get_V3000_input_line_to_strbuf( INCHI_IOS_STRING *buf,
         {
             return -1;
         }
-        if (strncmp( buf->pStr + old_used, "M  V30 ", 7 ))
+        if (strncmp( buf->pStr + old_used, "M  V30 ", prefix_len ))
         {
             return -1;
         }
 
-        memmove((void*)(buf->pStr + old_used), (void*)(buf->pStr + old_used + 7), (long long)buf->nUsedLength - (long long)old_used + 1); /* djb-rwth: cast operators added */
-        buf->nUsedLength -= 7;
+        memmove((void*)(buf->pStr + old_used), (void*)(buf->pStr + old_used + prefix_len), (long long)buf->nUsedLength - (long long)old_used - prefix_len + 1); /* djb-rwth: cast operators added */
+        buf->nUsedLength -= prefix_len;
 
         if (buf->pStr[buf->nUsedLength - 1] != '-')
         {
