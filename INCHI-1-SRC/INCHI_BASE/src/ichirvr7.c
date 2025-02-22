@@ -1386,6 +1386,9 @@ void FreeStrFromINChI(StrFromINChI* pStruct[INCHI_NUM][TAUT_NUM],
                     inchi_free( pStruct1[k].ti.t_group );
                 }
                 */
+                if ( pStruct1[k].One_ti.t_group ) {
+                    inchi_free( pStruct1[k].One_ti.t_group );
+                }
                 if (pStruct1[k].pXYZ)
                 {
                     inchi_free(pStruct1[k].pXYZ); /* djb-rwth: ui_rr? */
@@ -1516,7 +1519,7 @@ void FreeInpInChI(InpInChI* pOneInput)
 
                         }
                     }
-#endif                    
+#endif
 
                 }
                 inchi_free(pOneInput->pInpInChI[iINChI][j]);
