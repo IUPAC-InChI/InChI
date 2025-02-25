@@ -803,11 +803,6 @@ int DisplayInputStructure( char          *szOutputString,
                             DRAW_PARMS    *dp );
 #endif
 
-
-void PrintFileName( const char *fmt,
-                    FILE       *out_file,
-                    const char *szFname );
-
 void MySleep( unsigned long ms );
 
 int ReconcileAllCmlBondParities( inp_ATOM *at,
