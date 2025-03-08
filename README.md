@@ -267,7 +267,7 @@ More reliably, `LD_LIBRARY_PATH` can be set in several ways:
 - Temporarily:
 
   - by running a shell script `ldlp_fix.sh` (located in `/INCHI_API/bin/Linux`) with either of these two commands:
-    - `. ldlp_fix.sh`
+    - `./ldlp_fix.sh`
     - `source ldlp_fix.sh`;
 
         path to `libinchi.so.1.07` can be edited in `ldlp_fix.sh`
