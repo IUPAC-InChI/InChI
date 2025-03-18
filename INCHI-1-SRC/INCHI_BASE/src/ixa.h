@@ -287,6 +287,12 @@ extern "C" {
                                                                  IXA_MOL_HANDLE    hMolecule,
                                                                  const char*       pInChI );
 
+    EXPIMP_TEMPLATE INCHI_API void INCHI_DECL IXA_MOL_ReadAuxInfo( IXA_STATUS_HANDLE hStatus,
+                                                                   IXA_MOL_HANDLE    hMolecule,
+                                                                   const char*       pAuxInfo,
+                                                                   int               bDoNotAddH,
+                                                                   int               bDiffUnkUndfStereo );
+
     EXPIMP_TEMPLATE INCHI_API void INCHI_DECL IXA_MOL_SetChiral( IXA_STATUS_HANDLE hStatus,
                                                                  IXA_MOL_HANDLE    hMolecule,
                                                                  IXA_BOOL          vChiral );

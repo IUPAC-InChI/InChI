@@ -679,3 +679,71 @@ cleanup:
     FreeStructFromINCHIEx( &output );
 #endif
 }
+
+
+/****************************************************************************/
+void INCHI_DECL IXA_MOL_ReadAuxInfo( IXA_STATUS_HANDLE hStatus,
+                                     IXA_MOL_HANDLE    hMolecule,
+                                     const char*       pAuxInfo, 
+                                     int               bDoNotAddH,
+                                     int               bDiffUnkUndfStereo) {
+    int ret;
+    InchiInpData *inpData;
+    inchi_Input *pInp;
+
+    inpData = malloc(sizeof(*inpData));
+    memset(inpData, 0, sizeof(*inpData));
+    pInp = malloc(sizeof(*pInp));
+    memset(pInp, 0, sizeof(*pInp));
+    inpData->pInp = pInp;
+
+    ret = Get_inchi_Input_FromAuxInfo(pAuxInfo, bDoNotAddH, bDiffUnkUndfStereo, inpData);
+
+    switch(ret) {
+        case inchi_Ret_OKAY:
+        break;
+    case inchi_Ret_WARNING:
+        STATUS_PushMessage( hStatus, IXA_STATUS_WARNING, inpData->szErrMsg);
+        break;
+    case inchi_Ret_ERROR:
+    case inchi_Ret_FATAL:
+    case inchi_Ret_UNKNOWN:
+    case inchi_Ret_BUSY:
+    case inchi_Ret_EOF:
+    case inchi_Ret_SKIP:
+        STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "Get_inchi_Input_FromAuxInfo: error");
+        goto cleanup;
+    default:
+        STATUS_PushMessage( hStatus, IXA_STATUS_WARNING, "Get_inchi_Input_FromAuxInfo: Unknown return code");
+        break;
+    }
+
+    inchi_Output inchi_output;  
+    ret = GetINCHI(pInp, &inchi_output);
+    switch(ret) {
+        case inchi_Ret_OKAY:
+        break;
+    case inchi_Ret_WARNING:
+        STATUS_PushMessage( hStatus, IXA_STATUS_WARNING, (&inchi_output)->szMessage);
+        break;
+    case inchi_Ret_ERROR:
+    case inchi_Ret_FATAL:
+    case inchi_Ret_UNKNOWN:
+    case inchi_Ret_BUSY:
+    case inchi_Ret_EOF:
+    case inchi_Ret_SKIP:
+        STATUS_PushMessage( hStatus, IXA_STATUS_ERROR, "GetINCHI: error");
+        goto cleanup1;
+    default:
+        STATUS_PushMessage( hStatus, IXA_STATUS_WARNING, "GetINCHI: Unknown return code");
+        break;
+    }
+    IXA_MOL_ReadInChI(hStatus, hMolecule, (&inchi_output)->szInChI);
+
+cleanup1:
+    FreeINCHI(&inchi_output);
+cleanup:
+    Free_inchi_Input(pInp);
+    free(inpData);
+    free(pInp);
+}
