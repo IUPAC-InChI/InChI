@@ -610,6 +610,8 @@ extern "C" {
                                                                            IXA_INCHIBUILDER_HANDLE hInChIBuilder,
                                                                            IXA_MOL_HANDLE          hMolecule );
 
+    EXPIMP_TEMPLATE INCHI_API const char* INCHI_DECL IXA_INCHIBUILDER_GetInChIVersion( IXA_BOOL vFullDescription );
+
     EXPIMP_TEMPLATE INCHI_API const char* INCHI_DECL IXA_INCHIBUILDER_GetInChI( IXA_STATUS_HANDLE       hStatus,
                                                                                IXA_INCHIBUILDER_HANDLE hInChIBuilder );
 
