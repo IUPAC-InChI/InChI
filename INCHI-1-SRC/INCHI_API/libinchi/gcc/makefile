@@ -120,7 +120,7 @@ endif
 # === C Compiler Options =======
 ifndef C_OPTIONS
 	ifndef CALLER_IS_MOL2INCHI
-	C_OPTIONS = -std=c11 -ansi -O1 -c -fno-strict-aliasing
+	C_OPTIONS = -std=c11 -O1 -c -fno-strict-aliasing
 	else
 	C_OPTIONS = -std=c11 -O1 -c -fno-strict-aliasing
 	endif
