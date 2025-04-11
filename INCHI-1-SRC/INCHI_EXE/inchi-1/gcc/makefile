@@ -98,7 +98,7 @@ ifndef P_BASE
 endif
 #P_INCL = -I$(P_MAIN) -I$(P_BASE)
 P_INCL = -I$(P_MAIN) -I$(P_BASE)
-C_COMPILER_OPTIONS = $(P_INCL) -std=c11 -ansi -DCOMPILE_ANSI_ONLY -DTARGET_EXE_STANDALONE -g -O1 -c -fno-strict-aliasing
+C_COMPILER_OPTIONS = $(P_INCL) -std=c11 -DCOMPILE_ANSI_ONLY -DTARGET_EXE_STANDALONE -g -O1 -c -fno-strict-aliasing
 #C_COMPILER_OPTIONS = -c $(P_INCL) -ansi -O2 -fsigned-char -ffunction-sections -fexpensive-optimizations -fstack-check -fexceptions -Wall -pedantic -Wbad-function-cast -Wreturn-type -Wformat -Wuninitialized -Wcast-align -Wshadow -Wunused -Wunused-value -Wunused-variable -Wunused-function -Wunused-parameter -Wunused-label -Wcomment -Wcast-qual -Wconversion -Wimplicit-int -Wmissing-braces -Wmissing-declarations -Wmissing-prototypes -Wredundant-decls -Wsign-compare -Wfloat-equal -Wstrict-prototypes -Wwrite-strings -Wundef -Waggregate-return -Wchar-subscripts -Wformat-nonliteral -Wnested-externs -Wsequence-point -Wpointer-arith -mfancy-math-387 -mieee-fp -mno-soft-float
 ifeq ($(OS_ID),0)
 # no -ansi option due to reported MinGw bug

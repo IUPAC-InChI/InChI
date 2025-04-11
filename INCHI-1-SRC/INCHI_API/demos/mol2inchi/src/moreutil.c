@@ -25,8 +25,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
+*
+* The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -36,7 +36,7 @@
  *
  * info@inchi-trust.org
  *
- */
+*/
 
 #pragma warning( disable : 4996 )
 
@@ -51,6 +51,9 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+/* djb-rwth: required for timeval structure on Linux */
+#include <sys/time.h> 
+#include "time.h"
 #endif
 
 #include "moreutil.h"
@@ -469,7 +472,10 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
 {
      /*ASSERT(AfxIsValidString(lpszFormat, FALSE));*/
     const char * lpsz;
-    int nMaxLen, nWidth, nPrecision, nModifier, nItemLen;
+    int nMaxLen, nWidth, nPrecision, nModifier, nItemLen, va_arg_intval;
+    double va_arg_dblval;
+    void* va_arg_vpval;
+    int* va_arg_intpval;
 
     nMaxLen = 0;
     /* make a guess at the maximum length of the resulting string */
@@ -607,12 +613,12 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
             case 'c':
             case 'C':
                 nItemLen = 2;
-                va_arg( argList, int );
+                va_arg_intval = va_arg( argList, int ); /* djb-rwth: assigning va_arg return value */
                 break;
             case 'c' | FORCE_ANSI:
             case 'C' | FORCE_ANSI:
                 nItemLen = 2;
-                va_arg( argList, int );
+                va_arg_intval = va_arg( argList, int ); /* djb-rwth: assigning va_arg return value */
                 break;
             case 'c' | FORCE_UNICODE:
             case 'C' | FORCE_UNICODE:
@@ -663,7 +669,7 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
                 case 'x':
                 case 'X':
                 case 'o':
-                    va_arg( argList, int );
+                    va_arg_intval = va_arg( argList, int ); /* djb-rwth: assigning va_arg return value */
                     nItemLen = 32;
                     nItemLen = my_max( nItemLen, nWidth + nPrecision );
                     break;
@@ -672,20 +678,20 @@ int GetMaxPrintfLength( const char *lpszFormat, va_list argList )
                 case 'f':
                 case 'g':
                 case 'G':
-                    va_arg( argList, double );
+                    va_arg_dblval = va_arg( argList, double ); /* djb-rwth: assigning va_arg return value */
                     nItemLen = 32;
                     nItemLen = my_max( nItemLen, nWidth + nPrecision );
                     break;
 
                 case 'p':
-                    va_arg( argList, void* );
+                    va_arg_vpval = va_arg( argList, void* ); /* djb-rwth: assigning va_arg return value */
                     nItemLen = 32;
                     nItemLen = my_max( nItemLen, nWidth + nPrecision );
                     break;
 
                /* no output */
                 case 'n':
-                    va_arg( argList, int* );
+                    va_arg_intpval = va_arg( argList, int* ); /* djb-rwth: assigning va_arg return value */
                     break;
 
                 default:
@@ -763,7 +769,7 @@ unsigned int get_msec_timer( void )
     unsigned t = 0;
 
 #if ( defined(_WIN32) && defined(_MSC_VER) )
-    t = GetTickCount( );
+    t = (unsigned int)GetTickCount64( ); /* djb-rwth: using GetTickCount64() */
 #endif
 #if ( !defined(_WIN32) && defined(__linux__) )
     /* NB: not reboot/date-change safe */
