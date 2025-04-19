@@ -47,5 +47,5 @@
             ]
         }
     },
-    "postCreateCommand": "cd INCHI-1-TEST && ./install.sh"
+    "postCreateCommand": "cd INCHI-1-TEST && ./install_build_dependencies.sh && ./install_test_dependencies.sh"
 }

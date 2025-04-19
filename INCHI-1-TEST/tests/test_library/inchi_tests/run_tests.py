@@ -1,4 +1,3 @@
-import subprocess
 import logging
 from functools import partial
 from datetime import datetime
@@ -41,18 +40,8 @@ def main() -> None:
     inchi_api_parameters = test_config.inchi_api_parameters
     inchi_lib_path = test_config.inchi_library_path
 
-    gcc_version = subprocess.run(
-        "gcc -dumpversion",
-        shell=True,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-
     logging.basicConfig(filename=log_path, encoding="utf-8", level=logging.INFO)
-    logging.info(
-        f"{get_current_time()}: Using '{inchi_lib_path}' compiled with GCC {gcc_version}."
-    )
+    logging.info(f"{get_current_time()}: Using '{inchi_lib_path}'.")
     logging.info(
         f"{get_current_time()}: Starting to process {n_sdf} SDFs on {n_processes} cores."
     )

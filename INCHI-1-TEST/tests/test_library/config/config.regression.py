@@ -4,5 +4,5 @@ from pathlib import Path
 
 config = TestConfig(
     name="regression",
-    inchi_library_path=Path("INCHI-1-TEST/libs/libinchi.so.main"),
+    inchi_library_path=Path("CMake_build/libinchi_build/lib/libinchi.so"),
 )

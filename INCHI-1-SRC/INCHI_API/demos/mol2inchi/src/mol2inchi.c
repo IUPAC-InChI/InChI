@@ -25,8 +25,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
+*
+* The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -36,7 +36,7 @@
  *
  * info@inchi-trust.org
  *
- */
+*/
 
 #pragma warning( disable : 4996 )
 
@@ -79,6 +79,7 @@ int main( int argc, char *argv[] )
     int retcode = 0, ret = 0, result = 0, at_eof = 0;
     int nmol = 0, curr_task = 0, curr_worker = 0, i, worker_done = 0, workers_done = 0, nread = 0;
     unsigned int tick_start, tick_current, tick_stop;
+    long w;
     char *fname = NULL;
     FILE *f = NULL;
     THREAD_PTR *pthreads = NULL;
@@ -251,9 +252,10 @@ int main( int argc, char *argv[] )
                     /* reset pool data */
 #ifdef _WIN32
                     {
-                        for (long w = 0; w < pool.n_ready_workers; w++)
+                        for (w = 0; w < pool.n_ready_workers; w++) /* djb-rwth: avoiding for loop variable declaration to conform C99 standard */
                         {
-                            CloseHandle( pthreads[w] );
+                            if (pthreads[w]) /* djb-rwth: pthreads[w] must not be 0 */
+                                CloseHandle(pthreads[w]);
                         }
                     }
 #endif
@@ -343,11 +345,11 @@ int main( int argc, char *argv[] )
     }
     else
     {
-        fprintf( stderr, "%-d threads", wd.n_workers );
+        fprintf( stderr, "%-ld threads", wd.n_workers ); /* djb-rwth: long output format required */
     }
     if (wd.n_tasks_per_worker != 1)
     {
-        fprintf( stderr, " by %-d mols each)\n", wd.n_tasks_per_worker );
+        fprintf( stderr, " by %-ld mols each)\n", wd.n_tasks_per_worker ); /* djb-rwth: long output format required */
     }
     else
     {
@@ -405,7 +407,7 @@ int m2i_WorkPool_wait_and_print_all( m2i_WorkPool *pool, THREAD_PTR *pthreads )
 /****************************************************************************
  Run a single worker thread
 ****************************************************************************/
-M2I_THREADFUNC m2i_Worker_run( void *arg )
+M2I_THREADFUNC m2i_Worker_run( void *arg ) /* djb-rwth: ignoring LLVM warning */
 {
     int res = 0;
     long t;

@@ -14,8 +14,7 @@ from sdf_pipeline.utils import read_records_from_gzipped_sdf
 
 
 SDF_PATH = Path("INCHI-1-TEST/tests/test_library/data/ci/inchi.sdf.gz")
-INCHI_LIB_PATH = Path("INCHI-1-TEST/libs/libinchi.so.main")
-# INCHI_LIB_PATH = Path("INCHI-1-TEST/libs/libinchi.so.v1.06")
+INCHI_LIB_PATH = Path("CMake_build/libinchi_build/lib/libinchi.so")
 INCHI_LIB = ctypes.CDLL(str(INCHI_LIB_PATH))
 
 

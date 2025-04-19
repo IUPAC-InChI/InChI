@@ -9,7 +9,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--exe-path",
         action="store",
-        default="INCHI-1-TEST/exes/inchi-1",
+        default="CMake_build/cli_build/bin/inchi-1",
         help="Absolute path to the InChI executable.",
     )
 

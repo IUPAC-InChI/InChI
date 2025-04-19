@@ -1,5 +1,3 @@
-INCHI-1-TEST/exes
-INCHI-1-TEST/libs
 INCHI-1-TEST/tests/test_library/data/**/*.html
 INCHI-1-TEST/tests/test_library/data/**/*.log
 INCHI-1-TEST/tests/test_library/data/pubchem/**
@@ -16,3 +14,5 @@ __pycache__
 *.egg-info/
 # Ignore core dump files
 core.*[0-9]
+CMake_build/
+INCHI-1-SRC/INCHI_API/libinchi/src/build/

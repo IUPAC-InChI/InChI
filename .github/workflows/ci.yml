@@ -16,30 +16,33 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install test dependencies
-        run: cd INCHI-1-TEST && ./install.sh
+        run: cd INCHI-1-TEST && ./install_test_dependencies.sh
 
-      - uses: ./.github/actions/compile_inchi_exe
-        id: compile_exe
+      - name: Install build dependencies
+        run: cd INCHI-1-TEST && ./install_build_dependencies.sh
+
+      - id: build_exe
+        run: ./INCHI-1-TEST/build_with_cmake.sh exe
 
       - name: Run executable tests
-        if: ${{ !cancelled() && steps.compile_exe.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build_exe.outcome == 'success' }}
         run: pytest INCHI-1-TEST/tests/test_executable
 
-      - uses: ./.github/actions/compile_inchi_lib
-        id: compile_lib
+      - id: build_lib
+        run: ./INCHI-1-TEST/build_with_cmake.sh lib
 
       - name: Run multithreading test
-        if: ${{ !cancelled() && steps.compile_lib.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build_lib.outcome == 'success' }}
         run: python INCHI-1-TEST/tests/test_library/test_multithreading.py
         timeout-minutes: 1
 
       - uses: ./.github/actions/regression_tests
-        if: ${{ !cancelled() && steps.compile_lib.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build_lib.outcome == 'success' }}
         with:
           artifact-name: regression-test-results_glibc_gcc
 
       - uses: ./.github/actions/invariance_tests
-        if: ${{ !cancelled() && steps.compile_lib.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build_lib.outcome == 'success' }}
         with:
           artifact-name: invariance-test-results_glibc_gcc
 
@@ -51,7 +54,7 @@ jobs:
     steps:
       - name: Install build and test environment
         run: |
-          apk add bash git musl-dev gcc g++ make python3 py-pip
+          apk add bash git musl-dev gcc g++ make python3 py-pip cmake
 
       # We need to install git before checking out the repository.
       # Otherwise, the repository will be downloaded using the GitHub REST API instead of git.
@@ -74,23 +77,23 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e INCHI-1-TEST
 
-      - uses: ./.github/actions/compile_inchi_exe
-        id: compile_exe
+      - id: build_exe
+        run: ./INCHI-1-TEST/build_with_cmake.sh exe
 
       - name: Run executable tests
-        if: ${{ !cancelled() && steps.compile_exe.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build_exe.outcome == 'success' }}
         run: pytest INCHI-1-TEST/tests/test_executable
 
-      - uses: ./.github/actions/compile_inchi_lib
-        id: compile_lib
+      - id: build_lib
+        run: ./INCHI-1-TEST/build_with_cmake.sh lib
 
       - name: Run multithreading test
-        if: ${{ !cancelled() && steps.compile_lib.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build_lib.outcome == 'success' }}
         run: python INCHI-1-TEST/tests/test_library/test_multithreading.py
         timeout-minutes: 1
 
       - uses: ./.github/actions/regression_tests
-        if: ${{ !cancelled() && steps.compile_lib.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.build_lib.outcome == 'success' }}
         with:
           artifact-name: regression-test-results_musl_gcc
 

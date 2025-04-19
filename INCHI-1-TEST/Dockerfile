@@ -26,31 +26,36 @@ RUN git config user.name "inchi" && \
     git add . && \
     git commit -m "Downsize repository"
 
-# v1.03, v1.04 don't compile.
-ENV inchi_versions="v1.05 v1.06 v1.07.0 main"
-ENV lib_dir="/inchi/INCHI-1-TEST/libs"
-RUN mkdir $lib_dir && for version in $inchi_versions; do \
-    /inchi/INCHI-1-TEST/compile_inchi.sh "$version" "$lib_dir" lib || exit 1; \
-    done
+RUN cd INCHI-1-TEST && ./install_build_dependencies.sh
 
-ENV exe_dir="/inchi/INCHI-1-TEST/exes"
-RUN for version in $inchi_versions; do \
-    version_dir="${exe_dir}/${version}"; \
-    mkdir -p $version_dir; \
-    /inchi/INCHI-1-TEST/compile_inchi.sh "$version" "$version_dir" exe || exit 1; \
-    done
+ENV exe_dir='/inchi/CMake_build/cli_build'
+ENV exe_legacy_dir="${exe_dir}/bin/v1_6_0"
+ENV lib_dir='/inchi/CMake_build/libinchi_build'
+ENV lib_legacy_dir="${lib_dir}/lib/v1_6_0"
+
+# Compile current version (whatever commit is checked out).
+RUN cmake -B $exe_dir -S 'INCHI-1-SRC/INCHI_EXE/inchi-1/src'
+RUN cmake --build $exe_dir
+
+RUN cmake -B $lib_dir -S 'INCHI-1-SRC/INCHI_API/libinchi/src'
+RUN cmake --build $lib_dir
+
+# Compile previous non-minor version.
+RUN mkdir -p $exe_legacy_dir
+RUN ./INCHI-1-TEST/build_with_makefile.sh v1.06 $exe_legacy_dir exe || exit 1;
+
+RUN mkdir -p $lib_legacy_dir
+RUN ./INCHI-1-TEST/build_with_makefile.sh v1.06 $lib_legacy_dir lib || exit 1;
 
 FROM gcc:14-bookworm AS inchi_test
 
 WORKDIR /inchi
 
 # Include only what's necessary for running the tests.
+COPY --from=inchi_compilation /inchi/CMake_build /inchi/CMake_build
 COPY --from=inchi_compilation /inchi/INCHI-1-TEST/src /inchi/INCHI-1-TEST/src
-COPY --from=inchi_compilation /inchi/INCHI-1-TEST/libs /inchi/INCHI-1-TEST/libs
-COPY --from=inchi_compilation /inchi/INCHI-1-TEST/exes /inchi/INCHI-1-TEST/exes
 COPY --from=inchi_compilation /inchi/INCHI-1-TEST/tests /inchi/INCHI-1-TEST/tests
 COPY --from=inchi_compilation /inchi/INCHI-1-TEST/pyproject.toml /inchi/INCHI-1-TEST/pyproject.toml
-COPY --from=inchi_compilation /inchi/INCHI-1-TEST/install.sh /inchi/INCHI-1-TEST/install.sh
+COPY --from=inchi_compilation /inchi/INCHI-1-TEST/install_test_dependencies.sh /inchi/INCHI-1-TEST/install_test_dependencies.sh
 
-# Install test environment.
-RUN cd INCHI-1-TEST && ./install.sh
+RUN cd INCHI-1-TEST && ./install_test_dependencies.sh

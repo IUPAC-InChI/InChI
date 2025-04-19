@@ -1,4 +1,6 @@
 #!/bin/bash
+# As of version 1.07.4, InChI is build with CMake.
+# This script is meant to build earlier InChI versions with the legacy makefiles.
 
 set -e
 
@@ -52,5 +54,7 @@ if [ $checkout_successful -eq 0 ]; then
     echo "'$inchi_version' does not exist."
     exit 1
 fi
+
+mkdir -p "$inchi_dir"
 
 echo "$make_args" | xargs make -C $makefile_dir -j

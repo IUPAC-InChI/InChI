@@ -1,5 +1,5 @@
 INCHI-1-TEST/tests/test_library/config/
 INCHI-1-TEST/tests/test_library/data/
-INCHI-1-TEST/libs/
-INCHI-1-TEST/exes/
 **/__pycache__/
+CMake_build/
+INCHI-1-SRC/INCHI_API/libinchi/src/build/

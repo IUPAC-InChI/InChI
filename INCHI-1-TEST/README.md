@@ -23,8 +23,7 @@ You can now run the commands that are mentioned in the remainder of this README.
 ### Visual Studio Code devcontainer
 
 As an alternative to the plain Docker container, you can run the tests in the [Visual Studio Code devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) that's specified under [.devcontainer.json](../.devcontainer.json).
-Note that, in contrast to the plain container, in the devcontainer, you'll have to compile the InChI libraries yourself.
-Have a look at [the compilation script](compile_inchi.sh) for details.
+Note that, in contrast to the plain container, in the devcontainer, you'll have to [compile the InChI libraries yourself](../README.md#building-from-source).
 
 ## Test data
 
@@ -59,7 +58,7 @@ The tests under `tests/test_executable` test specific behaviors of the executabl
 They ensure that specific input (e.g., molfile and arguments) elicits specific output (e.g., error).
 
 Run with `pytest INCHI-1-TEST/tests/test_executable`.
-Note that by default, the tests expect the InChI executable to live at `INCHI-1-TEST/exes/inchi-1`.
+Note that by default, the tests expect the InChI executable at the location specified in `INCHI-1-TEST/tests/test_executable/conftest.py`.
 You can specify another InChI executable as argument to the `--exe-path` parameter:
 
 ```shell
@@ -111,7 +110,7 @@ During an invariance test, the atom indices of a structure are permuted repeated
 run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.invariance.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
 ```
 
-uses `libinchi.so.main`, a shared library compiled from the `main` branch,
+uses `libinchi.so`, the shared library specified with `--test-config`,
 to compute the InChI output for multiple permutations of each molfile in each SDF under `<dataset>`.
 If not all permutations produce the same InChI output,
 a test failure is logged under `<datetime>.invariance_<dataset>.log`
@@ -133,7 +132,7 @@ The 2nd run results in a regression, since the output no longer matches the refe
 run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression_reference.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
 ```
 
-uses `libinchi.so.<version>`, the shared library specified with `--test-config`,
+uses `libinchi.so`, the shared library specified with `--test-config`,
 and generates an `<SDF>.regression_reference.sqlite` file for each SDF under `INCHI-1-TEST/tests/test_library/data/<dataset>`.
 The `sqlite` file contains a table with the results for each molfile.
 
@@ -143,7 +142,7 @@ The `sqlite` file contains a table with the results for each molfile.
 run-tests --test-config=INCHI-1-TEST/tests/test_library/config/config.regression.py --data-config=INCHI-1-TEST/tests/test_library/config/config.<dataset>.py
 ```
 
-uses `libinchi.so.main`, a shared library compiled from the `main` branch,
+uses `libinchi.so`, the shared library specified with `--test-config`,
 to compute the results (e.g., InChI strings and keys) for each molfile in each SDF under `INCHI-1-TEST/tests/test_library/data/<dataset>`.
 Those results are compared with the corresponding reference.
 Failed comparisons are logged to `<datetime>.regression_<dataset>.log` (where `<datetime>` reflects the start of the test run).
