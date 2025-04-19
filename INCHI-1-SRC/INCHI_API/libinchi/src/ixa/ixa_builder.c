@@ -48,7 +48,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mode.h"
+
 
 #ifdef _WIN32
 #define OPTION_PREFIX  "/"
@@ -2002,16 +2002,20 @@ long INCHI_DECL IXA_INCHIBUILDER_GetOption_Timeout_MilliSeconds( IXA_STATUS_HAND
     return builder->option_WMnumber;
 }
 
-/****************************************************************************/
 
-EXPIMP_TEMPLATE INCHI_API const char* INCHI_DECL IXA_INCHIBUILDER_GetInChIVersion( IXA_BOOL vFullDescription )
+/****************************************************************************/
+EXPIMP_TEMPLATE INCHI_API const char* INCHI_DECL IXA_INCHIBUILDER_GetInChIVersion(IXA_BOOL vFullDescription)
 {
-   if (vFullDescription) {
-     return APP_DESCRIPTION;
-   } else {
-     return CURRENT_VER;
-   }
+    if (vFullDescription) 
+    {
+        return APP_DESCRIPTION;
+    }
+    else 
+    {
+        return CURRENT_VER;
+    }
 }
+
 
 /****************************************************************************/
 const char* INCHI_DECL IXA_INCHIBUILDER_GetInChI( IXA_STATUS_HANDLE hStatus,
