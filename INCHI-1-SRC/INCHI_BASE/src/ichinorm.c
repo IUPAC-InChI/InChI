@@ -781,16 +781,27 @@ int add_inp_ATOM( inp_ATOM *at,
 
 
 /****************************************************************************/
-int mark_arom_bonds( struct tagINCHI_CLOCK *ic, struct tagCANON_GLOBALS *pCG, inp_ATOM *at, int num_atoms )
+int mark_arom_bonds(struct tagINCHI_CLOCK *ic, struct tagCANON_GLOBALS *pCG, inp_ATOM *at, int num_atoms)
 {
     INCHI_MODE bTautFlags = 0, bTautFlagsDone = 0;
     inp_ATOM *at_fixed_bonds_out = NULL;
     T_GROUP_INFO *t_group_info = NULL;
     int ret;
 
-    ret = mark_alt_bonds_and_taut_groups( ic, pCG, at, at_fixed_bonds_out, num_atoms,
-                                          NULL,
-                                          t_group_info, &bTautFlags, &bTautFlagsDone, 0, NULL );
+    if (num_atoms <= 0 || at == NULL) {
+        return -1;
+    }
+
+    at_fixed_bonds_out = (inp_ATOM *)calloc(num_atoms, sizeof(inp_ATOM));
+    if (!at_fixed_bonds_out) {
+        return -1;
+    }
+
+    ret = mark_alt_bonds_and_taut_groups(ic, pCG, at, at_fixed_bonds_out, num_atoms,
+                                         NULL,
+                                         t_group_info, &bTautFlags, &bTautFlagsDone, 0, NULL);
+
+    free(at_fixed_bonds_out); // Clean up
 
     return ret;
 }
