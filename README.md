@@ -38,7 +38,7 @@ With its fixed length of 27 characters the **InChIKey** — the hashed version o
 
 The [InChI Trust](https://www.inchi-trust.org/) is a charity that supports the development and promotion of the InChI standard. It works in partnership with [IUPAC](https://iupac.org/) to update and release new extensions to and applications of InChI. The Trust is a membership organisation, governed by its Board of Trustees which includes representation from [IUPAC](https://iupac.org/).
 
-![InChI-Members](./INCHI-1-DOC/assets/inchi-members-30-08.jpg)
+![InChI-Members](./INCHI-1-DOC/assets/inchi_members_03_2025.jpg)
 
 The scientific design of the various tools and capabilities that comprise the InChI code are defined by the InChI Working Groups which are made up of volunteers from the InChI community with [IUPAC](https://iupac.org/) oversight. These voluntary groups are each focused on specific areas of chemistry or tools within the InChI code. See [Working Groups](https://www.inchi-trust.org/inchi-working-groups/) for details on each group and their membership.
 
