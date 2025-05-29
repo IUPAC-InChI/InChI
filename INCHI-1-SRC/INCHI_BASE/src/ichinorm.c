@@ -1817,10 +1817,10 @@ int is_DERIV_RING_DMOX_DEOX_O( inp_ATOM *at,
     ->
     --------------------------*/
     /*            #0           #1           #2           #3           #4 */
-    const static U_CHAR bond_type[OX_RING_SIZE] = { BOND_SINGLE, BOND_SINGLE, BOND_SINGLE, BOND_DOUBLE, BOND_SINGLE };
-    const static S_CHAR valence[OX_RING_SIZE] = { 2,           2,           4,           2,           3 };
-    const static S_CHAR bonds_valence[OX_RING_SIZE] = { 2,           2,           4,           3,           4 };
-    const static S_CHAR num_H[OX_RING_SIZE] = { 0,           2,           0,           0,           0 };
+    static const U_CHAR bond_type[OX_RING_SIZE] = { BOND_SINGLE, BOND_SINGLE, BOND_SINGLE, BOND_DOUBLE, BOND_SINGLE };
+    static const S_CHAR valence[OX_RING_SIZE] = { 2,           2,           4,           2,           3 };
+    static const S_CHAR bonds_valence[OX_RING_SIZE] = { 2,           2,           4,           3,           4 };
+    static const S_CHAR num_H[OX_RING_SIZE] = { 0,           2,           0,           0,           0 };
 
     AT_NUMB from, curr, next, nRingSystem, at_no[OX_RING_SIZE];
     S_CHAR  bond_no[OX_RING_SIZE];
@@ -1977,10 +1977,10 @@ int is_DERIV_RING_DMOX_DEOX_N( inp_ATOM *at,
     <-
     --------------------------*/
     /*            #0           #1           #2           #3           #4 */
-    const static U_CHAR bond_type[OX_RING_SIZE] = { BOND_SINGLE, BOND_SINGLE, BOND_SINGLE, BOND_SINGLE, BOND_DOUBLE };
-    const static S_CHAR valence[OX_RING_SIZE] = { 2,           4,           2,           2,           3 };
-    const static S_CHAR bonds_valence[OX_RING_SIZE] = { 3,           4,           2,           2,           4 };
-    const static S_CHAR num_H[OX_RING_SIZE] = { 0,           0,           2,           0,           0 };
+    static const U_CHAR bond_type[OX_RING_SIZE] = { BOND_SINGLE, BOND_SINGLE, BOND_SINGLE, BOND_SINGLE, BOND_DOUBLE };
+    static const S_CHAR valence[OX_RING_SIZE] = { 2,           4,           2,           2,           3 };
+    static const S_CHAR bonds_valence[OX_RING_SIZE] = { 3,           4,           2,           2,           4 };
+    static const S_CHAR num_H[OX_RING_SIZE] = { 0,           0,           2,           0,           0 };
 
     AT_NUMB from, curr, next, nRingSystem, at_no[OX_RING_SIZE];
     S_CHAR  bond_no[OX_RING_SIZE];

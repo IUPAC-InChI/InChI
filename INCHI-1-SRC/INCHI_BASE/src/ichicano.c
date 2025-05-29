@@ -881,8 +881,8 @@ int FillTautLinearCT2( CANON_GLOBALS *pCG,
     T_GROUP *t_group;
 
     int      i, j, len = 0, g, offset, max_len = 0, len_iso = 0; /* djb-rwth: removing redundant variable */
-    const static int max_num_num = sizeof( t_group->num ) / sizeof( t_group->num[0] );
-    const static int max_num_iso = sizeof( LinearCTIsotopicTautomer->num ) / sizeof( LinearCTIsotopicTautomer->num[0] ) + T_NUM_NO_ISOTOPIC;
+    static const int max_num_num = sizeof( t_group->num ) / sizeof( t_group->num[0] );
+    static const int max_num_iso = sizeof( LinearCTIsotopicTautomer->num ) / sizeof( LinearCTIsotopicTautomer->num[0] ) + T_NUM_NO_ISOTOPIC;
 
     /****************************************************************************
 
