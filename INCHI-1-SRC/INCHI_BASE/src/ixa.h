@@ -244,7 +244,7 @@ extern "C" {
 /****************************************************************************/
 /*              Functions handling IXA Status Objects                      */
 
-    EXPIMP_TEMPLATE INCHI_API IXA_STATUS_HANDLE INCHI_DECL IXA_STATUS_Create( );
+    EXPIMP_TEMPLATE INCHI_API IXA_STATUS_HANDLE INCHI_DECL IXA_STATUS_Create( void );
 
     EXPIMP_TEMPLATE INCHI_API void INCHI_DECL IXA_STATUS_Clear( IXA_STATUS_HANDLE hStatus );
 
