@@ -4549,8 +4549,8 @@ int set_stereo_parity( CANON_GLOBALS *pCG,
     {
         /* Create BFS data structure for finding for each stereo bond its min. ring sizes */
         q = QueueCreate( num_at + 1, sizeof( qInt ) );
-        nAtomLevel = (AT_RANK*) inchi_calloc( sizeof( nAtomLevel[0] ), num_at );
-        cSource = (S_CHAR *) inchi_calloc( sizeof( cSource[0] ), num_at );
+        nAtomLevel = (AT_RANK*) inchi_calloc( num_at, sizeof( nAtomLevel[0] ) );
+        cSource = (S_CHAR *) inchi_calloc( num_at, sizeof( cSource[0] ) );
         if (!q || !cSource || !nAtomLevel)
         {
             inchi_free(nAtomLevel); /* djb-rwth: avoiding memory leak */

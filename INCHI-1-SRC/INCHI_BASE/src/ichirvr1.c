@@ -4845,8 +4845,8 @@ int AllocBfsQueue( BFS_Q *pQ, int num_at, int min_ring_size )
                     AllocBfsQueue( pQ, BFS_Q_FREE, 0 );
                 }
                 pQ->q = QueueCreate( num_at + 1, sizeof( qInt ) );
-                pQ->nAtomLevel = (AT_RANK*) inchi_calloc( sizeof( pQ->nAtomLevel[0] ), num_at );
-                pQ->cSource = (S_CHAR *) inchi_calloc( sizeof( pQ->cSource[0] ), num_at );
+                pQ->nAtomLevel = (AT_RANK*) inchi_calloc( num_at,  sizeof( pQ->nAtomLevel[0] ) );
+                pQ->cSource = (S_CHAR *) inchi_calloc( num_at, sizeof( pQ->cSource[0] ) );
                 if (!pQ->q || !pQ->cSource || !pQ->nAtomLevel)
                 {
                     ret = RI_ERR_ALLOC;

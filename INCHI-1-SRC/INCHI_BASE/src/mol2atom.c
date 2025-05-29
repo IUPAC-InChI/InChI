@@ -1131,7 +1131,7 @@ int CreateCompAtomData( COMP_ATOM_DATA *inp_at_data,
 
     if (( inp_at_data->at = CreateInpAtom( num_atoms ) ) &&
         ( num_components <= 1 || bIntermediateTaut ||
-         ( inp_at_data->nOffsetAtAndH = (AT_NUMB*) inchi_calloc( sizeof( inp_at_data->nOffsetAtAndH[0] ), 2 * ( (long long)num_components + 1 ) ) ) )) /* djb-rwth: cast operator added */
+         ( inp_at_data->nOffsetAtAndH = (AT_NUMB*) inchi_calloc( 2 * ( (long long)num_components + 1 ), sizeof( inp_at_data->nOffsetAtAndH[0] ) ) ) )) /* djb-rwth: cast operator added */
     {
         inp_at_data->num_at = num_atoms;
         inp_at_data->num_components = ( num_components > 1 ) ? num_components : 0;
