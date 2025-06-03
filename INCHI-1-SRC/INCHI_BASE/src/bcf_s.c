@@ -126,7 +126,7 @@ static int dbl2int_f(double dblinp, int fwidth, int ndecpl, char* str)
 	dblinpabs = fabsl(dblinp);
 	intpl = (long long int)trunc(dblinpabs);
 	dec_part = dblinpabs - intpl;
-	fw_int = (int)log10((double)intpl > 0 ? (double)intpl : 1.0) + 1 + (dblinp_sign == "-");
+	fw_int = (int)log10((double)intpl > 0 ? (double)intpl : 1.0) + 1 + !strcmp(dblinp_sign, "-");
 
 	intpl_str = (char*)malloc(((long long int)fw_int + 3) * sizeof(unsigned long long int));
 
@@ -327,7 +327,7 @@ static int dbl2int_g(double dblinp, int fwidth, int ndecpl, char* str)
 		dblinpabs = fabsl(dblinp);
 		intpl = (long long int)trunc(dblinpabs);
 		dec_part = dblinpabs - intpl;
-		fw_int = (int)log10((double)intpl > 0 ? (double)intpl : 1.0) + 1 + (dblinp_signf == "-");
+		fw_int = (int)log10((double)intpl > 0 ? (double)intpl : 1.0) + 1 + !strcmp(dblinp_signf, "-");
 
 		intpl_str = (char*)malloc(((long long int)fw_int + 3) * sizeof(unsigned long long int));
 
