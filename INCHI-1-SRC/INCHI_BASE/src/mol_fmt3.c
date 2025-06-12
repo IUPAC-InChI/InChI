@@ -281,7 +281,7 @@ int MolfileV3000ReadField( void* data,
     {
         case MOL_FMT_STRING_DATA:
         {
-            if (nread)
+            if (nread && (nread <= 6)) /* djb-rwth: fixing GHI #133 */
             {
                 mystrncpy( (char *) data, field, nread + 1 );
             }
