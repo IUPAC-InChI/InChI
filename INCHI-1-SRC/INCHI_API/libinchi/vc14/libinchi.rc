@@ -7,7 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include <windows.h>
+#include "afxres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -26,7 +26,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,7,0
- PRODUCTVERSION 1,0,7,0
+ PRODUCTVERSION 1,0,7,4
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x21L
@@ -43,11 +43,11 @@ BEGIN
         BEGIN
             VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, October 2023. InChI Software  Library (API functions)"
             VALUE "FileDescription", "InChI Software  Library (API functions)"
-            VALUE "FileVersion", "1.0.7.0"
+            VALUE "FileVersion", "1.0.7.4"
             VALUE "InternalName", "libinchi.dll"
             VALUE "OriginalFilename", "libinchi.dll"
             VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, October 2023. InChI Software Library (API procedures)"
-            VALUE "ProductVersion", "1.0.7.0"
+            VALUE "ProductVersion", "1.0.7.4"
         END
     END
     BLOCK "VarFileInfo"

@@ -2300,7 +2300,7 @@ int CleanOrigCoord( MOL_COORD szCoord, int delim )
             {
                 ;
             }
-            if (i > fst)
+            if ((i > fst) && (len - fst <= LEN_COORD + 1 - i) && (len - fst <= LEN_COORD + 1 - fst)) /* djb-rwth: fixing GHI #138 */
             {
                 memmove(szVal + fst, szVal + i, (long long)len - (long long)fst); /* djb-rwth: cast operator added */
                 len -= i - fst;

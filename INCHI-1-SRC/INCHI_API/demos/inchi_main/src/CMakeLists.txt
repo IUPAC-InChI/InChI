@@ -63,6 +63,13 @@ target_sources(inchi_main PRIVATE
 	${P_VC}/resource.h
 )
 
+if(WIN32 AND MSVC)
+	target_sources(inchi_main PRIVATE
+		${P_VC}/inchi_main.rc
+		${P_VC}/inchi_main.aps
+	)
+endif()
+
 target_link_libraries(inchi_main PUBLIC libinchi)
 
 set(CMAKE_DEBUG_POSTFIX d)

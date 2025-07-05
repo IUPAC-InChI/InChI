@@ -132,6 +132,13 @@ target_sources(libinchi PRIVATE
 	${P_VC}/resource.h
 )
 
+if(WIN32 AND MSVC)
+	target_sources(libinchi PRIVATE
+		${P_VC}/libinchi.rc
+		${P_VC}/libinchi.aps
+	)
+endif()
+
 set(CMAKE_DEBUG_POSTFIX d)
 set_target_properties(libinchi PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
 
