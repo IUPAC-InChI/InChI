@@ -1,5 +1,21 @@
 # Change log
 
+## v1.07.4 2025-07-03
+
+### Features
+
+- CMake build system added (incl. documentation)
+- GH PR #106: IXA additional functions
+
+### Fixed
+
+- GH PR #133: stack buffer overflow in MolfileV3000ReadField
+- GH PR #131: fixed minor compiler warnings
+- GHI #126-#128: fixed several reported bugs nonidentical to Google oss-fuzz issues
+- GH PR #72: Fuzzer output code review (Google Patents)
+- Several Google oss-fuzz issues
+- 19 other buffer overflows/memory leaks reported by new compiler versions
+
 ## v1.07.3 2025-02-25
 
 ### Fixed
@@ -9,7 +25,7 @@
 - GHI #60: Valgrind + AFL++ fuzzer results (by @scorpion89)
 - GHI #43: Fixed MOBILE_H syntax error observed with v1.07 I/O validation (thanks to @baleland)
 - Fixed further Google Oss-Fuzz issues
-- Fixed null pointer dereferencing at several places in the code 
+- Fixed null pointer dereferencing at several places in the code
 
 ## v1.07.2 2025-01-16
 
