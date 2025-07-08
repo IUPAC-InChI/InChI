@@ -295,16 +295,25 @@ In case of building a `InChI` sub-project, the name of `<build_directory>` can b
 
 Some important notes regarding `CMake` configuration:
 
-- `CMake` automatically detects a default `C++/C` compiler or a compiler [specified in `CMakeLists.txt`](https://cmake.org/cmake/help/book/mastering-cmake/chapter/Cross%20Compiling%20With%20CMake.html). Compiler can be explicitly specified using [additional options](https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html) provided by `CMake` executable, e.g. `-DCMAKE_C_COMPILER=<name_of_C_compiler>` and/or `-DCMAKE_CXX_COMPILER=<name_of_C++_compiler>`; these additional options can be combined.
+- `CMake` automatically detects a default `C++/C` compiler or a compiler [specified in `CMakeLists.txt`](https://cmake.org/cmake/help/book/mastering-cmake/chapter/Cross%20Compiling%20With%20CMake.html). Compiler can be explicitly specified using [additional options](https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER.html) provided by `CMake` executable, e.g. `-DCMAKE_C_COMPILER=<name_of_C_compiler>` and/or `-DCMAKE_CXX_COMPILER=<name_of_C++_compiler>`; these additional options can be combined (please refer to section __Examples of building `InChI` sub-projects using `CMake` with CLI__  below).
 - In case where multiple types of `C++/C` build systems are present, a specific build system can be selected using [`CMake` generators](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html), which enable `CMake` to write the input files for a specified native build system. `CMake` generators can be specified with the `CMake` executable option:
   `-G <name_of_cmake_generator>`.
+- If single configuration generators are used (e.g. `Makefile Generators`, `Ninja`, etc.), the [build configuration](https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7) should be specified at _configure time_ using `CMAKE_BUILD_TYPE` variable, i.e. `-DCMAKE_BUILD_TYPE=<build_type>` configuration option. `CMAKE_BUILD_TYPE` variable can have [four different values](https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#default-and-custom-configurations):
+  - `Debug`
+  - `Release`
+  - `RelWithDebInfo`
+  - `MinSizeRel`.
+- Conversely, build configuration for multi-configuration generators (e.g. `Visual Studio`, `XCode`, `Ninja Multi-Config`, etc.) is selected at _build time_ (please refer to section __`CMake` build process__ below).
 
 __`CMake` build process__ can start after configuration has been completed successfully by running the following command:
 ```
 cmake --build <build_directory>
 ```
 
-- For multi-configuration generators like `Microsoft Visual Studio`, users can optionally select a target `Visual Studio` project, and/or a [build configuration](https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7) (the default is `Debug`), e.g. `--target <target_project>` and/or `--config <VS_configuration>`.
+- Build configuration for multi-configuration generators (e.g. `Microsoft Visual Studio`, `XCode`, `Ninja Multi-Config`, etc.) can be set at _build time_ using the [`CMAKE_CONFIGURATION_TYPES` variable](https://cmake.org/cmake/help/latest/variable/CMAKE_CONFIGURATION_TYPES.html). `CMAKE_CONFIGURATION_TYPES` variable should contain a subset of the four build type values (`Debug`, `Release`, `RelWithDebInfo` and `MinSizeRel`).
+- `CMAKE_CONFIGURATION_TYPES` can be overridden by the project or a user; a typical example is `--config <build_type>` option for `Microsoft Visual Studio` generator.
+- If `Microsoft Visual Studio` generator is used, a _target_ project can optionally be specified at _build time_ using `--target <target_project>` option.
+- As with `CMake` configuration options, `CMake` build options can also be combined (please refer to section __Examples of building `InChI` sub-projects using `CMake` with CLI__ below).
 
 _Please note_ that `CMake` configuration files and all build artefacts (binaries/libraries) are placed in `<build_directory>`.
 
@@ -313,13 +322,13 @@ _Please note_ that `CMake` configuration files and all build artefacts (binaries
 - Building _main_ `InChI API` sub-project using default options for configuration and build:
 
 ```shell
-# current folder is one level up from INCHI-1-SRC root
+# current folder is one level above INCHI-1-SRC root
 # 'cmake_build' can be replaced with any directory name
 cmake -B cmake_build -S INCHI-1-SRC/INCHI_API/demos/inchi_main/src
 cmake --build cmake_build
 ```
 
-- Building `InChI CLI` (`inchi-1`) sub-project using `CMake` generator for _64-bit_ `Microsoft Visual Studio`, targeting `ALL_BUILD` project with `Release` build configuration:
+- Building `InChI CLI` (`inchi-1`) sub-project using `Microsoft Visual Studio` generator for _64-bit_ platorms, targeting `ALL_BUILD` project with `Release` build configuration:
 
 ```shell
 # current folder is INCHI-1-SRC root
@@ -328,6 +337,16 @@ mkdir ../cmake_bin/vs2022 # cmake_bin directory will be located outside INCHI-1-
 cd ../cmake_bin/vs2022
 cmake -G "Visual Studio 17 2022" -A x64 ../../INCHI-1-SRC/INCHI_EXE/inchi-1/src
 cmake --build cmake_bin/vs2022 --target ALL_BUILD --config Release  # option '--target ALL_BUILD' can be omitted (default)
+```
+
+- Building `InChI CLI` (`inchi-1`) sub-project using (single configuration) `Ninja` generator, with `Release` build configuration and `Clang` compiler:
+
+```shell
+# current folder is one level above INCHI-1-SRC root
+mkdir cmake_build
+cd cmake_build # 'cmake_build' can be replaced with any directory name
+cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ../INCHI-1-SRC/INCHI_EXE/inchi-1/src
+cmake --build .
 ```
 
 ### Microsoft Visual Studio projects
