@@ -595,8 +595,8 @@ int MolfileV3000ReadSGroup( MOL_FMT_CTAB* ctab,
         else
         {
             p = line = pin->pStr;
+            remove_one_lf( line );
         }
-        remove_one_lf( line );
         if (p && !strcmp( p, "END SGROUP" ))
         {
             inchi_ios_close(&tmpin); /* ricrogz: fixing memory leak */
@@ -814,8 +814,8 @@ int MolfileV3000ReadCollections( MOL_FMT_CTAB* ctab,
         else
         {
             p = line = pin->pStr;
+            remove_one_lf( line );
         }
-        remove_one_lf( line );
     }
 
     if (failed)
@@ -832,8 +832,8 @@ int MolfileV3000ReadCollections( MOL_FMT_CTAB* ctab,
         else
         {
             p = line = pin->pStr;
+            remove_one_lf( line );
         }
-        remove_one_lf( line );
     }
 
     if (!p)
@@ -845,8 +845,10 @@ int MolfileV3000ReadCollections( MOL_FMT_CTAB* ctab,
     {
         err = 7;
         TREAT_ERR( err, 7, "Cannot interpret V3000 collection line(s)" );
-        dotify_non_printable_chars( line );
-        AddErrorMessage( pStrErr, line );
+        if (line) {
+            dotify_non_printable_chars( line );
+            AddErrorMessage( pStrErr, line );
+        }
         goto err_fin;
     }
 
@@ -1655,8 +1657,8 @@ int MolfileV3000ReadTailOfCTAB( MOL_FMT_CTAB* ctab,
         else
         {
             p = line = pin->pStr;
+            remove_one_lf( line );
         }
-        remove_one_lf( line );
     }
 
     if (p && !strcmp( p, "BEGIN OBJ3D" ))
@@ -1678,8 +1680,8 @@ int MolfileV3000ReadTailOfCTAB( MOL_FMT_CTAB* ctab,
         else
         {
             p = line = pin->pStr;
+            remove_one_lf( line );
         }
-        remove_one_lf( line );
     }
 
     while (p && !strcmp( p, "LINKNODE" ))
@@ -1696,8 +1698,8 @@ int MolfileV3000ReadTailOfCTAB( MOL_FMT_CTAB* ctab,
         else
         {
             p = line = pin->pStr;
+            remove_one_lf( line );
         }
-        remove_one_lf( line );
     }
 
     /* Collections */
@@ -1721,8 +1723,8 @@ int MolfileV3000ReadTailOfCTAB( MOL_FMT_CTAB* ctab,
         else
         {
             p = line = pin->pStr;
+            remove_one_lf( line );
         }
-        remove_one_lf( line );
     }
 
     if (!p || strcmp( p, "END CTAB" ))
