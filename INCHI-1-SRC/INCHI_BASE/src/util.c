@@ -1719,12 +1719,22 @@ int mystrncpy(char *target, const char *source, unsigned maxlen)
         return 0;
     }
 
-    if ((p = (const char*)memchr(source, 0, maxlen))) /* djb-rwth: addressing LLVM warning */
-    {    /* maxlen does not include the found zero termination */
-        len = (int) (p - source);
+    /* Find actual source length first to limit memchr search */
+    unsigned source_len = (unsigned)strlen(source);
+
+    if (source_len < maxlen)
+    {
+        /* Source is shorter than maxlen, use actual source length */
+        len = source_len;
+    }
+    else if ((p = (const char*)memchr(source, 0, maxlen)))
+    {
+        /* maxlen does not include the found zero termination */
+        len = (unsigned)(p - source);
     }
     else
-    { /*  reduced length does not include one more byte for zero termination */
+    {
+        /* reduced length does not include one more byte for zero termination */
         len = maxlen - 1;
     }
 
