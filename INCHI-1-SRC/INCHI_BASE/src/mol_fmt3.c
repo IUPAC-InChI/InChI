@@ -822,6 +822,7 @@ int MolfileV3000ReadCollections( MOL_FMT_CTAB* ctab,
     {
         /*p = inchi_fgetsLf_V3000( line, inp_file );*/
         inchi_strbuf_reset( pin );
+        line = NULL; /* Reset line pointer since buffer was freed */
 
         nc = get_V3000_input_line_to_strbuf( pin, inp_file );
 
