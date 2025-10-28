@@ -10,6 +10,10 @@ INCHI-1-SRC/INCHI_EXE/bin*
 *.o
 __pycache__
 .pytest_cache
+mol_iupac*
+uftrace.data/
+uftrace.data.old/
+trace_*.json
 .vscode/
 doxygen/
 doxygen_doc/
