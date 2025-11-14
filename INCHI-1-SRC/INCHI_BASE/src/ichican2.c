@@ -4601,7 +4601,7 @@ exit_function:
     {
         *nLenCt = pzb_rho->lenCt - 1;
     }
-    if (pCt && pzb_rho)
+    if (pCt && pzb_rho && (*nLenCt > 0))
     {
         memcpy(pCt, pzb_rho->Ctbl, *nLenCt * sizeof(pCt[0]));
     }

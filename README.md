@@ -6,6 +6,7 @@
 [![Software Article - JChemInf](https://img.shields.io/badge/Software_Article-JChemInf-blue)](https://doi.org/10.1186/s13321-021-00517-z)
 [![Good reads](https://img.shields.io/badge/Goodreads-372213?style=flat&logo=goodreads&logoColor=white)](https://www.inchi-trust.org/inchi-overview-papers-presentations/?wpv_aux_current_post_id=4309&wpv_aux_parent_post_id=4309&wpv_view_count=4473)
 [![InChI - Web Demo](https://img.shields.io/badge/InChI-Web_Demo-2ea44f)](https://iupac-inchi.github.io/InChI-Web-Demo/)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/32621/badge.svg)](https://scan.coverity.com/projects/inchi)
 
 <img src="./INCHI-1-DOC/assets/inchi-wheel.png" width="300" height="300" />
 
@@ -79,6 +80,7 @@ int MolfileReadField(void *data,
      char **line_ptr);
 ```
 
+Please write your comments in the header files where possible.
 The Doxygen documentation syntax is quite powerful: you can include formulas, tables, and diagrams.
 For details see <https://www.doxygen.nl/manual>.
 
