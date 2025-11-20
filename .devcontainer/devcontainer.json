@@ -25,8 +25,9 @@
                 },
                 "[c][cpp]": {
                     "editor.formatOnSave": true,
-                    "editor.defaultFormatter": null
+                    "editor.defaultFormatter": "EditorConfig.EditorConfig"
                 },
+                "C_Cpp.formatting": "disabled",
                 "sonarlint.pathToCompileCommands": "${workspaceFolder}/CMake_build/full_build/compile_commands.json"
             },
             "extensions": [
