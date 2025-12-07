@@ -1374,7 +1374,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                         }
                         else
                         {
-                            szValue[len++] = '.';
+                            szValue[len] = '.';
+                            len++;
                         }
                     }
                     switch (OrigInfo[k].cRadical)
@@ -1387,7 +1388,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             }
                             else
                             {
-                                szValue[len++] = 'd';
+                                szValue[len] = 'd';
+                                len++;
                             }
                             break;
                         case 2:
@@ -1398,7 +1400,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             }
                             else
                             {
-                                szValue[len++] = 't';
+                                szValue[len] = 't';
+                                len++;
                             }
                             break;
                         default:
@@ -1409,7 +1412,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             }
                             else
                             {
-                                szValue[len++] = 'u';
+                                szValue[len] = 'u';
+                                len++;
                             }
                             break;
                     }
@@ -1426,7 +1430,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                         }
                         else
                         {
-                            szValue[len++] = '.';
+                            szValue[len] = '.';
+                            len++;
                         }
                     }
                     len += MakeDecNumber( szValue + len, ( int )sizeof( szValue ) - len, NULL, OrigInfo[k].cUnusualValence );
@@ -1470,7 +1475,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             }
                             else
                             {
-                                szValue[len++] = 'd'; /* djb-rwth: GCC 14 false positive */
+                                szValue[len] = 'd'; /* djb-rwth: GCC 14 false positive */
+                                len++;
                             }
                             break;
                         case 2:
@@ -1481,7 +1487,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             }
                             else
                             {
-                                szValue[len++] = 't';
+                                szValue[len] = 't';
+                                len++;
                             }
                             break;
                         default:
@@ -1492,7 +1499,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             }
                             else
                             {
-                                szValue[len++] = 'u';
+                                szValue[len] = 'u';
+                                len++;
                             }
                             break;
                     }
@@ -1509,7 +1517,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                         }
                         else
                         {
-                            szValue[len++] = '.';
+                            szValue[len] = '.';
+                            len++;
                         }
                     }
                     len += MakeDecNumber(szValue + len, (int)sizeof(szValue) - len, NULL, OrigInfo[k].cUnusualValence);

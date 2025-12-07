@@ -651,8 +651,7 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
 {
     char field[MOL_FMT_V3000_MAXFIELDLEN];
     const int max_field_len = sizeof(field);
-    int nread, len;
-    int n_coll = 0;
+    int nread, len, n_coll = 0;
     int failed = 0;
     int nc;
     char *p = NULL, *line = NULL;

@@ -886,6 +886,11 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                     num_atoms = INCHI_INP_ERROR_RET; /* error */
                     *err = INCHI_INP_ERROR_ERR;
                     TREAT_ERR(*err, 0, "Wrong number of atoms");
+                    if (atom) /* djb-rwth: fixing coverity CID #499615 */
+                    {
+                        inchi_free(atom);
+                        atom = NULL;
+                    }
                     goto bypass_end_of_INChI_plain;
                 }
             }

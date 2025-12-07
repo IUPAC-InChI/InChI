@@ -204,7 +204,14 @@ void mystrrev(char *p);
 
 #define ALPHA_BASE 27
 
-// doxygen comments for functions defined in util.c
+/**
+ * @brief Compare two memory blocks in a case-insensitive manner.
+ *
+ * @param p1 Pointer to the first memory block.
+ * @param p2 Pointer to the second memory block.
+ * @param length Number of bytes to compare.
+ * @return int < 0 if p1 < p2, 0 if p1 == p2, > 0 if p1 > p2
+ */
 int inchi_memicmp(const void *p1, const void *p2, size_t length);
 
 /**

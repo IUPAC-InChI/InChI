@@ -25,8 +25,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
+*
+* The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -36,7 +36,7 @@
  *
  * info@inchi-trust.org
  *
- */
+*/
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -59,15 +59,13 @@
 
 */
 
+
 /****************************************************************************
  Read n chars and find where they are terminated with space or trailing 0
 ****************************************************************************/
-int MolfileStrnread(char *dest,
-                    char *source,
-                    int len,
-                    char **first_space)
+int MolfileStrnread( char* dest, char* source, int len, char **first_space )
 {
-    /* required len >= 0; dest must have at least len+1 bytes */
+/* required len >= 0; dest must have at least len+1 bytes */
 
     int i, c;
 
@@ -77,14 +75,15 @@ int MolfileStrnread(char *dest,
     }
     dest[len] = '\0';
 
-    len = (len > 0) ? (int)strlen(dest) : 0;
+    len = ( len > 0 ) ? (int) strlen( dest ) : 0;
 
     for (i = ( len - 1 ); i >= 0 && 0 != ( c = source[i] ) && isspace( UCINT c ); i--);
 
-    *first_space = dest + ((long long)i + 1); /* first blank or zero terminating byte in dest */ /* djb-rwth: cast operator added */
+    *first_space = dest + ( (long long)i + 1 ); /* first blank or zero terminating byte in dest */ /* djb-rwth: cast operator added */
 
     return len; /* number of actually processed bytes excluding zero terminator */
 }
+
 
 /****************************************************************************
  * Extract the 'data' in the mol file field at given text position 'line_ptr'
@@ -102,10 +101,10 @@ int MolfileStrnread(char *dest,
  *
  *
  ****************************************************************************/
-int MolfileReadField(void *data,
-                     int field_len,
-                     int data_type,
-                     char **line_ptr)
+int MolfileReadField( void* data,
+                      int field_len,
+                      int data_type,
+                      char** line_ptr )
 {
     char *p = *line_ptr, *q, *p_end;
     int  i, c, len, ret = 1;
@@ -131,206 +130,211 @@ int MolfileReadField(void *data,
 
     switch (data_type)
     {
-    case MOL_FMT_STRING_DATA:
-        /* pass by all leading spaces */
-        for (i = 0;
-             i < field_len && 0 != (c = p[i]) && isspace(UCINT c);
-             i++)
-        {
-            ;
-        }
+        case MOL_FMT_STRING_DATA:
+            /* pass by all leading spaces */
+            for (i = 0;
+                 i < field_len && 0 != ( c = p[i] ) && isspace( UCINT c );
+                 i++)
+            {
+                ;
+            }
 
-        len = MolfileStrnread((char *)data, &p[i], field_len - i, &q);
+            len = MolfileStrnread( (char*) data, &p[i], field_len - i, &q );
 
             ret = ( q - (char*) data );/* actual data length */
-            *q = '\0'; /* add zero termination to data if it is not there yet*/
-            *line_ptr += ( (long long)len + (long long)i ); /* ptr to the 1st byte of the next input field or to zero termination */ /* djb-rwth: cast operators added */
-        break;
+            *q = '\0';                /* add zero termination to data if it is not there yet*/
+            *line_ptr += ( (long long)len + (long long)i );     /* ptr to the 1st byte of the next input field or to zero termination */ /* djb-rwth: cast operators added */
+            break;
 
-    case MOL_FMT_CHAR_INT_DATA:
-    case MOL_FMT_SHORT_INT_DATA:
-    case MOL_FMT_LONG_INT_DATA:
-    {
-        char str[MOL_FMT_MAX_VALUE_LEN + 1];
-        ldata = 0L;
-        if (TOO_LONG_FIELD)
-        {
-            ret = -1;
-        }
-        else if (DEFINITE_LENGTH_FIELD)
-        {
-            /* fixed length */
-            *line_ptr += (len = MolfileStrnread(str, p, field_len, &q));
 
-            *q = '\0';
-            if (!len || !(q - str))
+        case MOL_FMT_CHAR_INT_DATA:
+        case MOL_FMT_SHORT_INT_DATA:
+        case MOL_FMT_LONG_INT_DATA:
+        {
+            char str[MOL_FMT_MAX_VALUE_LEN + 1];
+            ldata = 0L;
+            if (TOO_LONG_FIELD)
             {
-                ret = 0; /* empty string */
+                ret = -1;
             }
-            else
+            else if (DEFINITE_LENGTH_FIELD)
             {
-                if ((ldata = strtol(str, &p_end, 10), p_end != q))
+                /* fixed length */
+                *line_ptr += ( len = MolfileStrnread( str, p, field_len, &q ) );
+
+                *q = '\0';
+                if (!len || !( q - str ))
                 {
-                    ret = -1; /* wrong data: incompletely interpreted */
+                    ret = 0;    /* empty string */
+                }
+                else
+                {
+                    if (( ldata = strtol( str, &p_end, 10 ), p_end != q ))
+                    {
+                        ret = -1;    /* wrong data: incompletely interpreted */
+                    }
                 }
             }
-        }
-        else if (FIELD_ENDS_AT_FIRST_NON_DIGIT)
-        {
-            /* free format: field_len <= 0 */
-            ldata = strtol(p, &p_end, 10);
-            *line_ptr += (len = p_end - p);
-            if (len == 0)
+            else if (FIELD_ENDS_AT_FIRST_NON_DIGIT)
             {
-                ret = 0;
-            }
-        }
-        else
-        {
-            /* should not come here */
-            ret = -1;
-        }
-
-        switch (data_type)
-        {
-        case MOL_FMT_CHAR_INT_DATA:
-            if (SCHAR_MIN <= ldata && ldata <= SCHAR_MAX)
-            {
-                /* from || to &&: 11-19-96 */
-                *(S_CHAR *)data = (S_CHAR)ldata;
+                /* free format: field_len <= 0 */
+                ldata = strtol( p, &p_end, 10 );
+                *line_ptr += ( len = p_end - p );
+                if (len == 0)
+                {
+                    ret = 0;
+                }
             }
             else
             {
-                *(S_CHAR *)data = (S_CHAR)0;
+                /* should not come here */
                 ret = -1;
             }
-            break;
-        case MOL_FMT_SHORT_INT_DATA:
-            if (SHRT_MIN <= ldata && ldata <= SHRT_MAX)
-            {
-                *(S_SHORT *)data = (S_SHORT)ldata;
-            }
-            else
-            {
-                *(S_SHORT *)data = (S_SHORT)0;
-                ret = -1;
-            }
-            break;
-        case MOL_FMT_LONG_INT_DATA:
-            if (LONG_MIN < ldata && ldata < LONG_MAX)
-            {
-                *(long *)data = (long)ldata;
-            }
-            else
-            {
-                *(long *)data = 0L;
-                ret = -1;
-            }
-            break;
-        default:
-            ret = -1;
-        }
-    } /* MOL_FMT_CHAR_INT_DATA... */
-    break;
 
-    case MOL_FMT_DOUBLE_DATA:
-    case MOL_FMT_FLOAT_DATA:
-    {
-        char str[MOL_FMT_MAX_VALUE_LEN + 1];
+            switch (data_type)
+            {
+                case MOL_FMT_CHAR_INT_DATA:
+                    if (SCHAR_MIN <= ldata  && ldata <= SCHAR_MAX)
+                    {
+                        /* from || to &&: 11-19-96 */
+                        *(S_CHAR*) data = (S_CHAR) ldata;
+                    }
+                    else
+                    {
+                        *(S_CHAR*) data = (S_CHAR) 0;
+                        ret = -1;
+                    }
+                    break;
+                case MOL_FMT_SHORT_INT_DATA:
+                    if (SHRT_MIN <= ldata && ldata <= SHRT_MAX)
+                    {
+                        *(S_SHORT*) data = (S_SHORT) ldata;
+                    }
+                    else
+                    {
+                        *(S_SHORT*) data = (S_SHORT) 0;
+                        ret = -1;
 
-        if (TOO_LONG_FIELD)
-        {
-            ret = -1;
-            ddata = 0.0;
-        }
-        else if (DEFINITE_LENGTH_FIELD)
-        {
-            *line_ptr += (len = MolfileStrnread(str, p, field_len, &q));
-            *q = '\0';
-            if (!len || !(q - str))
-            {
-                /* empty string */
-                ddata = 0.0;
-                ret = 0;
+                    }
+                    break;
+                case MOL_FMT_LONG_INT_DATA:
+                    if (LONG_MIN < ldata && ldata < LONG_MAX)
+                    {
+                        *(long*) data = (long) ldata;
+                    }
+                    else
+                    {
+                        *(long*) data = 0L;
+                        ret = -1;
+                    }
+                    break;
+                default:
+                    ret = -1;
             }
-            else if ((ddata = strtod(str, &p_end), p_end != q))
-            {
-                /* wrong data */
-                ret = -1;
-            }
-        }
-        else if (FIELD_ENDS_AT_FIRST_NON_DIGIT)
-        {
-            /* free format */
-            ddata = strtod(p, &p_end);
-            *line_ptr += (len = p_end - p);
-            if (len == 0)
-            {
-                ret = 0;
-            }
-        }
-        else
-        {
-            /* should not come here */
-            ret = -1;
-        }
-
-        switch (data_type)
-        {
+        } /* MOL_FMT_CHAR_INT_DATA... */
+        break;
 
         case MOL_FMT_DOUBLE_DATA:
-            if (ddata != HUGE_VAL && /*ldata*/ ddata != -HUGE_VAL)
-            { /* replaced ldata with ddata 6-30-98 DCh */
-                *(double *)data = ddata;
-            }
-            else
-            {
-                *(double *)data = 0.0;
-                ret = -1;
-            }
-            break;
-
         case MOL_FMT_FLOAT_DATA:
-            if (fabs(ddata) <= (double)FLT_MIN)
+        {
+            char str[MOL_FMT_MAX_VALUE_LEN + 1];
+
+            if (TOO_LONG_FIELD)
             {
-                *(float *)data = 0.0;
-            }
-            else if (fabs(ddata) >= (double)FLT_MAX)
-            {
-                *(float *)data = 0.0;
                 ret = -1;
+                ddata = 0.0;
+            }
+            else if (DEFINITE_LENGTH_FIELD)
+            {
+                *line_ptr += ( len = MolfileStrnread( str, p, field_len, &q ) );
+                *q = '\0';
+                if (!len || !( q - str ))
+                {
+                    /* empty string */
+                    ddata = 0.0;
+                    ret = 0;
+                }
+                else if (( ddata = strtod( str, &p_end ), p_end != q ))
+                {
+                    /* wrong data */
+                    ret = -1;
+                }
+            }
+            else if (FIELD_ENDS_AT_FIRST_NON_DIGIT)
+            {
+                /* free format */
+                ddata = strtod( p, &p_end );
+                *line_ptr += ( len = p_end - p );
+                if (len == 0)
+                {
+                    ret = 0;
+                }
             }
             else
             {
-                *(float *)data = (float)ddata;
+                /* should not come here */
+                ret = -1;
             }
-            break;
+
+            switch (data_type)
+            {
+
+                case MOL_FMT_DOUBLE_DATA:
+                    if (ddata != HUGE_VAL && /*ldata*/ ddata != -HUGE_VAL)
+                    { /* replaced ldata with ddata 6-30-98 DCh */
+                        *(double*) data = ddata;
+                    }
+                    else
+                    {
+                        *(double*) data = 0.0;
+                        ret = -1;
+                    }
+                    break;
+
+                case MOL_FMT_FLOAT_DATA:
+                    if (fabs( ddata ) <= (double) FLT_MIN)
+                    {
+                        *(float*) data = 0.0;
+                    }
+                    else
+                        if (fabs( ddata ) >= (double) FLT_MAX)
+                        {
+                            *(float*) data = 0.0;
+                            ret = -1;
+                        }
+                        else
+                        {
+                            *(float*) data = (float) ddata;
+                        }
+                    break;
+            }
+        } /* MOL_FMT_DOUBLE_DATA... */
+        break;
+
+        case MOL_FMT_JUMP_TO_RIGHT:
+        {
+
+            for (i = 0; i < field_len && p[i]; i++)
+                ;
+
+            *line_ptr += i;
+            ret = i;
         }
-    } /* MOL_FMT_DOUBLE_DATA... */
-    break;
+        break;
 
-    case MOL_FMT_JUMP_TO_RIGHT:
-    {
 
-        for (i = 0; i < field_len && p[i]; i++)
-            ;
-
-        *line_ptr += i;
-        ret = i;
-    }
-    break;
-
-    default:
-        ret = -1;
+        default:
+            ret = -1;
     }
 
     return ret;
 }
 
+
 /****************************************************************************
  Read molfile number from the name line like "Structure #22"
 ****************************************************************************/
-long MolfileExtractStrucNum(MOL_FMT_HEADER_BLOCK *pHdr)
+long MolfileExtractStrucNum( MOL_FMT_HEADER_BLOCK *pHdr )
 {
     static char sStruct[] = "Structure #";
     static char sINCHI[] = INCHI_NAME;
@@ -339,14 +343,14 @@ long MolfileExtractStrucNum(MOL_FMT_HEADER_BLOCK *pHdr)
 
     if (pHdr)
     {
-        if (!inchi_memicmp(pHdr->molname, sStruct, sizeof(sStruct) - 1))
+        if (!inchi_memicmp( pHdr->molname, sStruct, sizeof( sStruct ) - 1 ))
         {
-            p = pHdr->molname + sizeof(sStruct) - 1;
-            lMolfileNumber = strtol(p, &q, 10);
+            p = pHdr->molname + sizeof( sStruct ) - 1;
+            lMolfileNumber = strtol( p, &q, 10 );
             p = pHdr->line2;
             if (!q || *q ||
-                inchi_memicmp(p, sINCHI, sizeof(sINCHI) - 1) ||
-                !strstr(p + sizeof(sINCHI) - 1, "SDfile Output"))
+                 inchi_memicmp( p, sINCHI, sizeof( sINCHI ) - 1 ) ||
+                 !strstr( p + sizeof( sINCHI ) - 1, "SDfile Output" ))
             {
                 lMolfileNumber = 0;
             }
@@ -356,10 +360,11 @@ long MolfileExtractStrucNum(MOL_FMT_HEADER_BLOCK *pHdr)
     return lMolfileNumber;
 }
 
+
 /****************************************************************************
  Check if MOL file contains no structure
 ****************************************************************************/
-int MolfileHasNoChemStruc(MOL_FMT_DATA *mfdata)
+int MolfileHasNoChemStruc( MOL_FMT_DATA* mfdata )
 {
     if (!mfdata || !mfdata->ctab.atoms)
     {
@@ -379,24 +384,26 @@ int MolfileHasNoChemStruc(MOL_FMT_DATA *mfdata)
     return 0;
 }
 
+
 /****************************************************************************
  Copy MOL-formatted data of SDF record or Molfile to another file
 ****************************************************************************/
-int MolfileSaveCopy(INCHI_IOSTREAM *inp_file,
-                    long fPtrStart,
-                    long fPtrEnd,
-                    FILE *outfile,
-                    long num)
+int MolfileSaveCopy( INCHI_IOSTREAM *inp_file,
+                     long fPtrStart,
+                     long fPtrEnd,
+                     FILE *outfile,
+                     long num )
 {
     char line[MOL_FMT_INPLINELEN], *p;
     long fPtr;
-    int ret = 1;
+    int  ret = 1;
     char szNumber[32];
+
 
     if (inp_file->type == INCHI_IOS_TYPE_FILE)
     {
 
-        FILE *infile = inp_file->f;
+        FILE* infile = inp_file->f;
 
         if (!infile)
         {
@@ -413,37 +420,40 @@ int MolfileSaveCopy(INCHI_IOSTREAM *inp_file,
             return 1;
         }
 
-        if (0 != fseek(infile, fPtrStart, SEEK_SET))
+        if (0 != fseek( infile, fPtrStart, SEEK_SET ))
         {
             return 1;
         }
 
-        while (fPtrEnd > (fPtr = ftell(infile)) && fPtr >= 0L
-                && inchi_fgetsLf(line, sizeof(line) - 1, inp_file))
+
+        while (fPtrEnd > ( fPtr = ftell( infile ) ) &&
+                 fPtr >= 0L &&
+                 inchi_fgetsLf( line, sizeof( line ) - 1, inp_file ))
         {
 
-            line[sizeof(line) - 1] = '\0'; /*  unnecessary extra precaution */
+            line[sizeof( line ) - 1] = '\0'; /*  unnecessary extra precaution */
 
             if (fPtr == fPtrStart && num)
             {
                 int len;
-                lrtrim(line, &len);
+                lrtrim( line, &len );
                 len = sprintf(szNumber, "#%ld%s", num, len ? "/" : "");
-                mystrncpy(line + len, line, sizeof(line) - len - 1);
+                mystrncpy( line + len, line, sizeof( line ) - len - 1 );
                 memcpy(line, szNumber, len);
             }
 
-            if (!strchr(line, '\n'))
+            if (!strchr( line, '\n' ))
             {
-                p = line + strlen(line);
+                p = line + strlen( line );
                 p[0] = '\n';
                 p[1] = '\0';
             }
 
-            fputs(line, outfile);
+            fputs( line, outfile );
         }
 
-        ret = fseek(infile, fPtrEnd, SEEK_SET);
+
+        ret = fseek( infile, fPtrEnd, SEEK_SET );
     }
     else if (inp_file->type == INCHI_IOS_TYPE_STRING)
     {
@@ -471,17 +481,17 @@ int MolfileSaveCopy(INCHI_IOSTREAM *inp_file,
 /****************************************************************************
  Get xyz dimensionality and normalization factors
 ****************************************************************************/
-int MolfileGetXYZDimAndNormFactors(MOL_FMT_DATA *mfdata,
-                                   int find_norm_factors,
-                                   double *x0,
-                                   double *y0,
-                                   double *z0,
-                                   double *xmin,
-                                   double *ymin,
-                                   double *zmin,
-                                   double *scaler,
-                                   int *err,
-                                   char *pStrErr)
+int MolfileGetXYZDimAndNormFactors( MOL_FMT_DATA* mfdata,
+                                    int find_norm_factors,
+                                    double *x0,
+                                    double *y0,
+                                    double *z0,
+                                    double *xmin,
+                                    double *ymin,
+                                    double *zmin,
+                                    double *scaler,
+                                    int *err,
+                                    char *pStrErr )
 
 {
     int i;
@@ -491,13 +501,14 @@ int MolfileGetXYZDimAndNormFactors(MOL_FMT_DATA *mfdata,
     double macheps = 1.0e-10, small_coeff = 0.00001;
     double x_coeff, y_coeff, z_coeff, coeff = 1.0, average_bond_length;
 
+
     *x0 = MIN_STDATA_X_COORD;
     *y0 = MIN_STDATA_Y_COORD;
     *z0 = MIN_STDATA_Z_COORD;
     *xmin = *ymin = *zmin = 0.0;
     *scaler = coeff;
 
-    if (MolfileHasNoChemStruc(mfdata))
+    if (MolfileHasNoChemStruc( mfdata ))
     {
         goto exit_function;
     }
@@ -505,12 +516,12 @@ int MolfileGetXYZDimAndNormFactors(MOL_FMT_DATA *mfdata,
     num_atoms = mfdata->ctab.n_atoms;
     for (i = 0; i < num_atoms; i++)
     {
-        max_x = inchi_max(mfdata->ctab.atoms[i].fx, max_x);
-        min_x = inchi_min(mfdata->ctab.atoms[i].fx, min_x);
-        max_y = inchi_max(mfdata->ctab.atoms[i].fy, max_y);
-        min_y = inchi_min(mfdata->ctab.atoms[i].fy, min_y);
-        max_z = inchi_max(mfdata->ctab.atoms[i].fz, max_z);
-        min_z = inchi_min(mfdata->ctab.atoms[i].fz, min_z);
+        max_x = inchi_max( mfdata->ctab.atoms[i].fx, max_x );
+        min_x = inchi_min( mfdata->ctab.atoms[i].fx, min_x );
+        max_y = inchi_max( mfdata->ctab.atoms[i].fy, max_y );
+        min_y = inchi_min( mfdata->ctab.atoms[i].fy, min_y );
+        max_z = inchi_max( mfdata->ctab.atoms[i].fz, max_z );
+        min_z = inchi_min( mfdata->ctab.atoms[i].fz, min_z );
     }
 
     num_bonds = 0;
@@ -518,15 +529,15 @@ int MolfileGetXYZDimAndNormFactors(MOL_FMT_DATA *mfdata,
     for (i = 0; i < mfdata->ctab.n_bonds; i++)
     {
         double dx, dy, dz;
-        int a1 = mfdata->ctab.bonds[i].atnum1 - 1;
-        int a2 = mfdata->ctab.bonds[i].atnum2 - 1;
+        int  a1 = mfdata->ctab.bonds[i].atnum1 - 1;
+        int  a2 = mfdata->ctab.bonds[i].atnum2 - 1;
 
         if (a1 < 0 || a1 >= num_atoms ||
-            a2 < 0 || a2 >= num_atoms ||
-            a1 == a2)
+             a2 < 0 || a2 >= num_atoms ||
+             a1 == a2)
         {
             *err |= 1; /*  bond for invalid atom number(s); ignored */
-            TREAT_ERR(*err, 0, "Bond to nonexistent atom");
+            TREAT_ERR( *err, 0, "Bond to nonexistent atom" );
             continue;
         }
 
@@ -534,38 +545,40 @@ int MolfileGetXYZDimAndNormFactors(MOL_FMT_DATA *mfdata,
         dy = mfdata->ctab.atoms[a1].fy - mfdata->ctab.atoms[a2].fy;
         dz = mfdata->ctab.atoms[a1].fz - mfdata->ctab.atoms[a2].fz;
 
-        average_bond_length += sqrt(dx*dx + dy*dy + dz*dz);
+        average_bond_length += sqrt( dx*dx + dy*dy + dz*dz );
         num_bonds++;
     }
 
-    if (max_x - min_x <= small_coeff * (fabs(max_x) + fabs(min_x)))
+
+    if (max_x - min_x <= small_coeff*( fabs( max_x ) + fabs( min_x ) ))
     {
         x_coeff = 0.0;
     }
     else
     {
-        x_coeff = (MAX_STDATA_X_COORD - MIN_STDATA_X_COORD) / (max_x - min_x);
+        x_coeff = ( MAX_STDATA_X_COORD - MIN_STDATA_X_COORD ) / ( max_x - min_x );
     }
 
-    if (max_y - min_y <= small_coeff * (fabs(max_y) + fabs(min_y)))
+    if (max_y - min_y <= small_coeff*( fabs( max_y ) + fabs( min_y ) ))
     {
         y_coeff = 0.0;
     }
     else
     {
-        y_coeff = (MAX_STDATA_Y_COORD - MIN_STDATA_Y_COORD) / (max_y - min_y);
+        y_coeff = ( MAX_STDATA_Y_COORD - MIN_STDATA_Y_COORD ) / ( max_y - min_y );
     }
 
-    if (max_z - min_z <= small_coeff * (fabs(max_z) + fabs(min_z)))
+    if (max_z - min_z <= small_coeff*( fabs( max_z ) + fabs( min_z ) ))
     {
         z_coeff = 0.0;
     }
     else
     {
-        z_coeff = (MAX_STDATA_Z_COORD - MIN_STDATA_Z_COORD) / (max_z - min_z);
+        z_coeff = ( MAX_STDATA_Z_COORD - MIN_STDATA_Z_COORD ) / ( max_z - min_z );
     }
 
-    num_dimensions = ((x_coeff > macheps || y_coeff > macheps) && fabs(z_coeff) < macheps)
+
+    num_dimensions = ( ( x_coeff > macheps || y_coeff > macheps ) && fabs( z_coeff ) < macheps )
                         ? 2
                         : ( fabs( z_coeff ) > macheps ) ? 3 : 0;
 
@@ -575,62 +588,64 @@ int MolfileGetXYZDimAndNormFactors(MOL_FMT_DATA *mfdata,
         goto exit_function;
     }
 
+
     /* Find normalization parameters */
     switch (num_dimensions)
     {
-    case 0:
-        coeff = 0.0;
-        break;
+        case 0:
+            coeff = 0.0;
+            break;
 
-    case 2:
-        /* choose the smallest stretching coefficient */
-        if (x_coeff > macheps && y_coeff > macheps)
-        {
-            coeff = inchi_min(x_coeff, y_coeff);
-        }
-        else if (x_coeff > macheps)
-        {
-            coeff = x_coeff;
-        }
-        else if (y_coeff > macheps)
-        {
-            coeff = y_coeff;
-        }
-        else
-        {
-            coeff = 1.0;
-        }
-        break;
+        case 2:
+            /* choose the smallest stretching coefficient */
+            if (x_coeff > macheps && y_coeff > macheps)
+            {
+                coeff = inchi_min( x_coeff, y_coeff );
+            }
+            else if (x_coeff > macheps)
+            {
+                coeff = x_coeff;
+            }
+            else if (y_coeff > macheps)
+            {
+                coeff = y_coeff;
+            }
+            else
+            {
+                coeff = 1.0;
+            }
+            break;
 
-    case 3:
-        /* choose the smallest stretching coefficient */
-        if (x_coeff > macheps && y_coeff > macheps)
-        {
-            coeff = inchi_min(x_coeff, y_coeff);
-            coeff = inchi_min(coeff, z_coeff);
-        }
-        else if (x_coeff > macheps)
-        {
-            coeff = inchi_min(x_coeff, z_coeff);
-        }
-        else if (y_coeff > macheps)
-        {
-            coeff = inchi_min(y_coeff, z_coeff);
-        }
-        else
-        {
-            coeff = z_coeff;
-        }
-        break;
+        case 3:
+            /* choose the smallest stretching coefficient */
+            if (x_coeff > macheps && y_coeff > macheps)
+            {
+                coeff = inchi_min( x_coeff, y_coeff );
+                coeff = inchi_min( coeff, z_coeff );
+            }
+            else if (x_coeff > macheps)
+            {
+                coeff = inchi_min( x_coeff, z_coeff );
+            }
+            else if (y_coeff > macheps)
+            {
+                coeff = inchi_min( y_coeff, z_coeff );
+            }
+            else
+            {
+                coeff = z_coeff;
+            }
+            break;
 
-    default:
-        coeff = 0.0;
+        default:
+            coeff = 0.0;
     }
+
 
     if (num_bonds > 0)
     {
 
-        average_bond_length /= (double)num_bonds;
+        average_bond_length /= (double) num_bonds;
         if (average_bond_length * coeff > MAX_STDATA_AVE_BOND_LENGTH)
         {
             coeff = MAX_STDATA_AVE_BOND_LENGTH / average_bond_length; /* avoid too long bonds */
@@ -658,38 +673,39 @@ exit_function:;
     return num_dimensions;
 }
 
+
 /****************************************************************************
  Clean up MOL-format parser data
 ****************************************************************************/
-MOL_FMT_DATA *FreeMolfileData(MOL_FMT_DATA *mfdata)
+MOL_FMT_DATA* FreeMolfileData( MOL_FMT_DATA* mfdata )
 {
     if (mfdata)
     {
 
         if (mfdata->ctab.atoms)
         {
-            inchi_free(mfdata->ctab.atoms);
+            inchi_free( mfdata->ctab.atoms );
         }
 
         if (mfdata->ctab.bonds)
         {
-            inchi_free(mfdata->ctab.bonds);
+            inchi_free( mfdata->ctab.bonds );
         }
 
         if (mfdata->ctab.coords)
         {
-            inchi_free(mfdata->ctab.coords);
+            inchi_free( mfdata->ctab.coords );
         }
 
         /*if ( 0!=mfdata->ctab.sgroups.used )*/
-        MolFmtSgroups_Free(&(mfdata->ctab.sgroups));
+        MolFmtSgroups_Free( &( mfdata->ctab.sgroups ) );
 
         if (mfdata->ctab.v3000)
         {
-            DeleteMolfileV3000Info(mfdata->ctab.v3000);
+            DeleteMolfileV3000Info( mfdata->ctab.v3000 );
         }
 
-        inchi_free(mfdata);
+        inchi_free( mfdata );
         mfdata = NULL;
     }
 
