@@ -148,79 +148,6 @@ typedef unsigned char U_CHAR;
 /*-----------------*/
 /* DATA STRUCTURES */
 /*-----------------*/
-
-/**
- * @brief Reads header lines and connection table block from input SD or MOL file, ignore STEXT block, queries, and 3D features
- * @param inp_file Input file
- * @param OnlyHeaderBlock Output header data structure, return MOL_FMT_DATA will point to it
- * @param OnlyCTab Output connection table data structure, return MOL_FMT_DATA will point to it
- * @param bGetOrigCoord Flag to get original coordinates
- * @param treat_polymers Flag to treat polymers
- * @param err Error code
- * @param pStrErr Error string
- * @param bNoWarnings Flag to show warnings
- * @return MOL_FMT_DATA* returns mol file data structure, includes e.g. header block, connection table, ...
- */
-static MOL_FMT_DATA* MolfileReadDataLines(INCHI_IOSTREAM* inp_file,
-    MOL_FMT_HEADER_BLOCK* OnlyHeaderBlock,
-    MOL_FMT_CTAB* OnlyCTab,
-    int bGetOrigCoord,
-    int treat_polymers,
-    int* err, char* pStrErr, int bNoWarnings);
-
-/**
- * @brief Reads header lines from input MOL file. A MOL file can have 3 header lines: (1) the name of the molecule, (2) details about the software used and (3) a comment line
- *
- * @param hdr Output header data structure
- * @param inp_file Input file
- * @param pStrErr Error string
- * @return * int Error code, retuns 0 - no error, 1 - error: can't read header block name, 3 - error: can't read header block 2 line, 7 - error: cant' read header block comment line
- */
-static int MolfileReadHeaderLines(MOL_FMT_HEADER_BLOCK* hdr, INCHI_IOSTREAM* inp_file, char* pStrErr);
-
-/**
- * @brief Reads counts line from input MOL file, includes information about the number of atoms, bonds, and atom lists, the chiral flag setting, and the Ctab version.
- *
- * @param ctab Connection table data structure
- * @param inp_file Input file
- * @param pStrErr Error string
- * @return int Error code, returns 0 - no error, 3 - error: can't read counts line, -1 - error: out of RAM
- */
-static int MolfileReadCountsLine(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file, char* pStrErr);
-
-/**
- * @brief Reads an atom block from input MOL file (V2000).
- * @param ctab Connection table data structure
- * @param inp_file Input file
- * @param err Error code
- * @param pStrErr Error string
- * @return int Error code, returns 0 - no error, 4 - error: can't interpret atom block, 5 - error: can't interpret second half of atom block?
- */
-static int MolfileReadAtomsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
-    int err, char* pStrErr);
-
-/**
- * @brief Reads a bond block from input MOL file (V2000)
- *
- * @param ctab Connection table data structure
- * @param inp_file Input file
- * @param err Error code
- * @param pStrErr Error string
- * @return int Error code
- */
-static int MolfileReadBondsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
-    int err, char* pStrErr);
-
-/**
- * @brief Reads a substance text block
- *
- * @param ctab Connection table data structure
- * @param inp_file Input file
- * @param err Error code
- * @param pStrErr Error string
- * @return int Error code
- */
-
 /**
  * @brief NUM_LISTS - Dynamically growing array of numeric lists
  * @param lists Pointer to the array of integer lists.
@@ -729,6 +656,78 @@ typedef struct A_MOL_FMT_DATA
 /*
     Functions
 */
+
+/**
+ * @brief Reads header lines and connection table block from input SD or MOL file, ignore STEXT block, queries, and 3D features
+ * @param inp_file Input file
+ * @param OnlyHeaderBlock Output header data structure, return MOL_FMT_DATA will point to it
+ * @param OnlyCTab Output connection table data structure, return MOL_FMT_DATA will point to it
+ * @param bGetOrigCoord Flag to get original coordinates
+ * @param treat_polymers Flag to treat polymers
+ * @param err Error code
+ * @param pStrErr Error string
+ * @param bNoWarnings Flag to show warnings
+ * @return MOL_FMT_DATA* returns mol file data structure, includes e.g. header block, connection table, ...
+ */
+static MOL_FMT_DATA* MolfileReadDataLines(INCHI_IOSTREAM* inp_file,
+    MOL_FMT_HEADER_BLOCK* OnlyHeaderBlock,
+    MOL_FMT_CTAB* OnlyCTab,
+    int bGetOrigCoord,
+    int treat_polymers,
+    int* err, char* pStrErr, int bNoWarnings);
+
+/**
+ * @brief Reads header lines from input MOL file. A MOL file can have 3 header lines: (1) the name of the molecule, (2) details about the software used and (3) a comment line
+ *
+ * @param hdr Output header data structure
+ * @param inp_file Input file
+ * @param pStrErr Error string
+ * @return * int Error code, retuns 0 - no error, 1 - error: can't read header block name, 3 - error: can't read header block 2 line, 7 - error: cant' read header block comment line
+ */
+static int MolfileReadHeaderLines(MOL_FMT_HEADER_BLOCK* hdr, INCHI_IOSTREAM* inp_file, char* pStrErr);
+
+/**
+ * @brief Reads counts line from input MOL file, includes information about the number of atoms, bonds, and atom lists, the chiral flag setting, and the Ctab version.
+ *
+ * @param ctab Connection table data structure
+ * @param inp_file Input file
+ * @param pStrErr Error string
+ * @return int Error code, returns 0 - no error, 3 - error: can't read counts line, -1 - error: out of RAM
+ */
+static int MolfileReadCountsLine(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file, char* pStrErr);
+
+/**
+ * @brief Reads an atom block from input MOL file (V2000).
+ * @param ctab Connection table data structure
+ * @param inp_file Input file
+ * @param err Error code
+ * @param pStrErr Error string
+ * @return int Error code, returns 0 - no error, 4 - error: can't interpret atom block, 5 - error: can't interpret second half of atom block?
+ */
+static int MolfileReadAtomsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
+    int err, char* pStrErr);
+
+/**
+ * @brief Reads a bond block from input MOL file (V2000)
+ *
+ * @param ctab Connection table data structure
+ * @param inp_file Input file
+ * @param err Error code
+ * @param pStrErr Error string
+ * @return int Error code
+ */
+static int MolfileReadBondsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
+    int err, char* pStrErr);
+
+/**
+ * @brief Reads a substance text block
+ *
+ * @param ctab Connection table data structure
+ * @param inp_file Input file
+ * @param err Error code
+ * @param pStrErr Error string
+ * @return int Error code
+ */
 
 /**
  * @brief Read MOL file data in to data structures.
