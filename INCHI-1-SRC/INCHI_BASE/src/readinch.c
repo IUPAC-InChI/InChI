@@ -886,11 +886,6 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                     num_atoms = INCHI_INP_ERROR_RET; /* error */
                     *err = INCHI_INP_ERROR_ERR;
                     TREAT_ERR(*err, 0, "Wrong number of atoms");
-                    if (atom) /* djb-rwth: fixing coverity CID #499615 */
-                    {
-                        inchi_free(atom);
-                        atom = NULL;
-                    }
                     goto bypass_end_of_INChI_plain;
                 }
             }
@@ -911,11 +906,6 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                 num_atoms = INCHI_INP_ERROR_RET; /* error */
                 *err = INCHI_INP_ERROR_ERR;
                 TREAT_ERR(*err, 0, "Missing bonds data");
-                if (atom) /* djb-rwth: fixing coverity CID #499615 */
-                {
-                    inchi_free(atom);
-                    atom = NULL;
-                }
                 goto bypass_end_of_INChI_plain;
             }
             else
@@ -1155,11 +1145,6 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                     num_atoms = INCHI_INP_ERROR_RET; /* error */
                     *err = INCHI_INP_ERROR_ERR;
                     TREAT_ERR(*err, 0, "Wrong number of bonds");
-                    if (atom) /* djb-rwth: fixing coverity CID #499615 */
-                    {
-                        inchi_free(atom);
-                        atom = NULL;
-                    }
                     goto bypass_end_of_INChI_plain;
                 }
         }
@@ -1285,7 +1270,6 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                         num_atoms = INCHI_INP_ERROR_RET; /* error in input data: atoms, bonds & coord must be present together */
                         *err = INCHI_INP_ERROR_ERR;
                         TREAT_ERR(*err, 0, "Wrong atom coordinates data");
-                        inchi_free(pszCoord); /* djb-rwth: avoiding memory leak */
                         goto bypass_end_of_INChI_plain;
                     }
                 }
@@ -1295,7 +1279,6 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                     num_atoms = INCHI_INP_ERROR_RET; /* error */
                     *err = INCHI_INP_ERROR_ERR;
                     TREAT_ERR(*err, 0, "Wrong number of coordinates");
-                    inchi_free(pszCoord); /* djb-rwth: avoiding memory leak */
                     goto bypass_end_of_INChI_plain;
                 }
             } /* end of coordinates */
@@ -1392,11 +1375,6 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                                                 *err = -2;  /*  Program error */
                                                 TREAT_ERR(*err, 0, "Program error interpreting InChI aux");
                                                 num_atoms = INCHI_INP_FATAL_RET;
-                                                if (pszCoord) /* djb-rwth: fixing coverity CID #499571 */
-                                                {
-                                                    inchi_free(pszCoord);
-                                                    pszCoord = NULL;
-                                                }
                                                 goto bypass_end_of_INChI_plain; /*  no structure */
                                             }
                                         }
@@ -1718,10 +1696,24 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
 
 bypass_end_of_INChI_plain:
     /* Cleanup */
-    if (atom_stereo0D && (num_atoms == INCHI_INP_ERROR_RET || num_atoms == INCHI_INP_FATAL_RET)) /* djb-rwth: avoiding memory leak */
+    if (num_atoms == INCHI_INP_ERROR_RET || num_atoms == INCHI_INP_FATAL_RET)
     {
-        FreeInchi_Stereo0D(&atom_stereo0D);
+        if (atom_stereo0D) /* djb-rwth: avoiding memory leak */
+        {
+            FreeInchi_Stereo0D(&atom_stereo0D);
+        }
+
+        if (atom) /* djb-rwth: fixing coverity CID #499615 */
+        {
+            inchi_free(atom);
+        }
+
+        if (pszCoord) /* djb-rwth: fixing coverity CID #499571 */
+        {
+            inchi_free(pszCoord);
+        }
     }
+
     while (ir.bTooLongLine &&
         0 < inchi_ios_getsTab1(szLine_i2i, sizeof(szLine_i2i) - 1, inp_file, &ir.bTooLongLine))
     {

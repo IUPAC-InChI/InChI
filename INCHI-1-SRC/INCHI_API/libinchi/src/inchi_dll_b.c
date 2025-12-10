@@ -1492,7 +1492,7 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
                                                     {
                                                         *err = -2;  /*  Program error */
                                                         TREAT_ERR( *err, 0, "Program error interpreting InChI aux" );
-                                                        num_atoms = 0;
+                                                        num_atoms = INCHI_INP_FATAL_RET;
                                                         goto bypass_end_of_INChI_plain; /*  no structure */
                                                     }
                                                 }
@@ -1792,14 +1792,29 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
     bypass_end_of_INChI_plain:
 
             /* cleanup */
-        if (num_atoms == INCHI_INP_ERROR_RET && atom_stereo0D)
+        if (num_atoms == INCHI_INP_ERROR_RET || num_atoms == INCHI_INP_FATAL_RET)
         {
-            if (stereo0D && *stereo0D == atom_stereo0D)
+            if (atom_stereo0D) /* djb-rwth: fixing coverity CID #500395 */
             {
-                *stereo0D = NULL;
-                *num_stereo0D = 0;
+                if (stereo0D && *stereo0D == atom_stereo0D)
+                {
+                    *stereo0D = NULL;
+                    *num_stereo0D = 0;
+                }
+                FreeInchi_Stereo0D(&atom_stereo0D);
             }
-            FreeInchi_Stereo0D( &atom_stereo0D );
+
+            if (atom) /* djb-rwth: fixing coverity CID #499615 */
+            {
+                inchi_free(atom);
+                atom = NULL;
+            }
+
+            if (pszCoord) /* djb-rwth: fixing coverity CID #500397 */
+            {
+                inchi_free(pszCoord);
+                pszCoord = NULL;
+            }
         }
 
         while (bTooLongLine &&
@@ -1809,20 +1824,20 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
         }
 
 
-        /* cleanup */
-        if (at && !*at) /* djb-rwth: fixing a NULL pointer dereference */
+        /* cleanup 
+        if (at && !*at)
         {
             if (atom)
             {
                 inchi_free( atom );
-                atom = NULL;
+                
             }
             if (pszCoord)
             {
                 inchi_free( pszCoord );
                 pszCoord = NULL;
             }
-        }
+        }*/
 
         return num_atoms;
     }

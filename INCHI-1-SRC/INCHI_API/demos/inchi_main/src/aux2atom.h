@@ -1488,22 +1488,41 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
         }
     bypass_end_of_INChI_plain:
             /* cleanup */
-        if (num_atoms == INCHI_INP_ERROR_RET && atom_stereo0D)
+        if (num_atoms == INCHI_INP_ERROR_RET || num_atoms == INCHI_INP_FATAL_RET)
         {
-            if (stereo0D && *stereo0D == atom_stereo0D)
+            if (atom_stereo0D) /* djb-rwth: fixing coverity CID #500395 */
             {
-                *stereo0D = NULL;
-                *num_stereo0D = 0;
+                if (stereo0D && *stereo0D == atom_stereo0D)
+                {
+                    *stereo0D = NULL;
+                    *num_stereo0D = 0;
+                }
+                FreeInchi_Stereo0D(&atom_stereo0D);
             }
-            FreeInchi_Stereo0D( &atom_stereo0D );
+
+#if ( defined(TARGET_API_LIB) || defined(TARGET_EXE_USING_API) )
+            if (atom) /* djb-rwth: fixing coverity CID #499615 */
+            {
+                inchi_free(atom);
+                atom = NULL;
+            }
+
+            if (pszCoord) /* djb-rwth: fixing coverity CID #500397 */
+            {
+                inchi_free(pszCoord);
+                pszCoord = NULL;
+            }
+#endif
         }
+
         while (bTooLongLine &&
                 0 < inchi_ios_getsTab1( szLine, sizeof( szLine ) - 1, inp_molfile, &bTooLongLine ))
         {
             ;
         }
+
 #if ( defined(TARGET_API_LIB) || defined(TARGET_EXE_USING_API) )
-        /* cleanup */
+        /* cleanup 
         if (!*at)
         {
             if (atom)
@@ -1516,7 +1535,7 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
                 inchi_free( pszCoord );
                 pszCoord = NULL;
             }
-        }
+        }*/
 #endif
 
         return num_atoms;
@@ -2709,15 +2728,31 @@ int INChITo_Atom( INCHI_IOSTREAM *inp_molfile, MOL_COORD **szCoord,
         }
     bypass_end_of_INChI:
             /* cleanup */
-        if (num_atoms == INCHI_INP_ERROR_RET && atom_stereo0D)
+        if (num_atoms == INCHI_INP_ERROR_RET || num_atoms == INCHI_INP_FATAL_RET)
         {
-            if (stereo0D && *stereo0D == atom_stereo0D)
+            if (atom_stereo0D) /* djb-rwth: fixing coverity CID #500395 */
             {
-                *stereo0D = NULL;
-                *num_stereo0D = 0;
+                if (stereo0D && *stereo0D == atom_stereo0D)
+                {
+                    *stereo0D = NULL;
+                    *num_stereo0D = 0;
+                }
+                FreeInchi_Stereo0D(&atom_stereo0D);
             }
-            FreeInchi_Stereo0D( &atom_stereo0D );
+
+            if (atom) /* djb-rwth: fixing coverity CID #499615 */
+            {
+                inchi_free(atom);
+                atom = NULL;
+            }
+
+            if (pszCoord) /* djb-rwth: fixing coverity CID #500397 */
+            {
+                inchi_free(pszCoord);
+                pszCoord = NULL;
+            }
         }
+
         if (!memcmp( szLine, sStructHdrXmlEnd, sizeof( sStructHdrXmlEnd ) - 1 ))
             num_struct--;
         if (!memcmp( szLine, sStructHdrXml, sizeof( sStructHdrXml ) - 1 ))

@@ -1370,7 +1370,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                         if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
                         {
                             len = 2047;
-                            szValue[len] = '\0';
+                            goto early_break;
+                        }
+                        else if (len < 0) /* djb-rwth: fixing coverity CID #500400 */
+                        {
+                            len = 0;
+                            goto early_break;
                         }
                         else
                         {
@@ -1378,44 +1383,34 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             len++;
                         }
                     }
-                    switch (OrigInfo[k].cRadical)
+                    if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
                     {
-                        case 1:
-                            if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
-                            {
-                                len = 2047;
-                                szValue[len] = '\0';
-                            }
-                            else
-                            {
+                        len = 2047;
+                        goto early_break;
+                    }
+                    else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                    {
+                        len = 0;
+                        goto early_break;
+                    }
+                    else
+                    {
+                        switch (OrigInfo[k].cRadical)
+                        {
+                            case 1:
+                                /* djb-rwth: fixing coverity CID #499515 -- false positive, len tested for overflow */
                                 szValue[len] = 'd';
                                 len++;
-                            }
-                            break;
-                        case 2:
-                            if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
-                            {
-                                len = 2047;
-                                szValue[len] = '\0';
-                            }
-                            else
-                            {
+                                break;
+                            case 2:
                                 szValue[len] = 't';
                                 len++;
-                            }
-                            break;
-                        default:
-                            if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
-                            {
-                                len = 2047;
-                                szValue[len] = '\0';
-                            }
-                            else
-                            {
+                                break;
+                            default:
                                 szValue[len] = 'u';
                                 len++;
-                            }
-                            break;
+                                break;
+                        }
                     }
                 }
                 /* valence */
@@ -1426,7 +1421,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                         if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
                         {
                             len = 2047;
-                            szValue[len] = '\0';
+                            goto early_break;
+                        }
+                        else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                        {
+                            len = 0;
+                            goto early_break;
                         }
                         else
                         {
@@ -1464,45 +1464,34 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                 }
                 /* radical */
                 if (OrigInfo[k].cRadical)
-                {
-                    switch (OrigInfo[k].cRadical)
+                {                            
+                    if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
                     {
-                        case 1:
-                            if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
-                            {
-                                len = 2047;
-                                szValue[len] = '\0';
-                            }
-                            else
-                            {
+                        len = 2047;
+                        goto early_break;
+                    }
+                    else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                    {
+                        len = 0;
+                        goto early_break;
+                    }
+                    else
+                    {
+                        switch (OrigInfo[k].cRadical)
+                        {
+                            case 1:
                                 szValue[len] = 'd'; /* djb-rwth: GCC 14 false positive */
                                 len++;
-                            }
-                            break;
-                        case 2:
-                            if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
-                            {
-                                len = 2047;
-                                szValue[len] = '\0';
-                            }
-                            else
-                            {
+                                break;
+                            case 2:
                                 szValue[len] = 't';
                                 len++;
-                            }
-                            break;
-                        default:
-                            if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
-                            {
-                                len = 2047;
-                                szValue[len] = '\0';
-                            }
-                            else
-                            {
+                                break;
+                            default:
                                 szValue[len] = 'u';
                                 len++;
-                            }
-                            break;
+                                break;
+                        }
                     }
                 }
                 /* valence */
@@ -1513,7 +1502,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                         if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
                         {
                             len = 2047;
-                            szValue[len] = '\0';
+                            goto early_break;
+                        }
+                        else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                        {
+                            len = 0;
+                            goto early_break;
                         }
                         else
                         {
@@ -1529,6 +1523,8 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
         {
             len = 0;
         }
+
+early_break:
         if (len)
         {
             szValue[len] = '\0';

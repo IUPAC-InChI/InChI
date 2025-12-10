@@ -211,7 +211,7 @@ void INCHI_DECL IXA_MOL_ReadInChI( IXA_STATUS_HANDLE hStatus,
     IXA_MOL_Clear( hStatus, hMolecule );
     if (IXA_STATUS_HasError( hStatus ))
     {
-        goto cleanup;
+        return; /* djb-rwth: fixing coverity CID #500398 */
     }
 
     input.szInChI = (char*) pInChI;
