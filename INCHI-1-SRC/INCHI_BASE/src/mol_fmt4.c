@@ -25,8 +25,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
+ *
+ * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -36,7 +36,7 @@
  *
  * info@inchi-trust.org
  *
-*/
+ */
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -61,159 +61,159 @@
 */
 
 #define ALIASED_AT(i) (0 < NUM_ISO_H(at, i))
-#define IS_DEUTERIUM(i) (!strcmp( at[i].elname, "D" ) || at[i].iso_atw_diff == 2 && !strcmp( at[i].elname, "H" ))
-#define IS_TRITIUM(i)   (!strcmp( at[i].elname, "T" ) || at[i].iso_atw_diff == 3 && !strcmp( at[i].elname, "H" ))
+#define IS_DEUTERIUM(i) (!strcmp(at[i].elname, "D") || at[i].iso_atw_diff == 2 && !strcmp(at[i].elname, "H"))
+#define IS_TRITIUM(i)   (!strcmp(at[i].elname, "T") || at[i].iso_atw_diff == 3 && !strcmp(at[i].elname, "H"))
 
-#define ABNORMAL_ISO(i) (at[i].iso_atw_diff == 1 || at[i].iso_atw_diff < -3 || at[i].iso_atw_diff > 5 )
+#define ABNORMAL_ISO(i) (at[i].iso_atw_diff == 1 || at[i].iso_atw_diff < -3 || at[i].iso_atw_diff > 5)
 #define ABNORMAL_CHG(i) (abs(at[i].charge) > 3)
-#define ABNORMAL_RAD(i) (RADICAL_SINGLET <= at[i].radical && at[i].radical <= RADICAL_TRIPLET )
+#define ABNORMAL_RAD(i) (RADICAL_SINGLET <= at[i].radical && at[i].radical <= RADICAL_TRIPLET)
 
 #define ANY_ISO(i, X)   ((X)? (at[i].iso_atw_diff && !IS_DEUTERIUM(i) && !IS_TRITIUM(i)) :\
                           (at[i].iso_atw_diff ||  IS_DEUTERIUM(i) ||  IS_TRITIUM(i)))
 #define ANY_CHG(i)      (0 != at[i].charge)
-#define ANY_RAD(i)      (RADICAL_SINGLET <= at[i].radical && at[i].radical <= RADICAL_TRIPLET )
+#define ANY_RAD(i)      (RADICAL_SINGLET <= at[i].radical && at[i].radical <= RADICAL_TRIPLET)
 
 #define NORMAL_ISO(i, X)   (ANY_ISO(i, X) && !ABNORMAL_ISO(i))
 
 /* needs additional M  CHG. M  RAD, M  ISO line */
 /* due to ISIS/Draw feature always include M  RAD for any radical */
-#define ABNORMAL_AT(i) ( at[i].radical || abs(at[i].charge) > 3 || \
-                     ABNORMAL_ISO(i) )
+#define ABNORMAL_AT(i) (at[i].radical || abs(at[i].charge) > 3 || \
+                        ABNORMAL_ISO(i))
 
 /* always add M  ISO, M  RAD, M  CHG; Except: (bAtomsDT && D or T) */
-#define ADD_LINE_AT(i) ( at[i].charge  || \
-                     at[i].radical || \
-                     at[i].iso_atw_diff && (bAtomsDT? (at[i].iso_atw_diff != 1 || strcmp(at[i].elname, "H")) : 1) )
+#define ADD_LINE_AT(i) (at[i].charge ||  \
+                        at[i].radical || \
+                        at[i].iso_atw_diff && (bAtomsDT ? (at[i].iso_atw_diff != 1 || strcmp(at[i].elname, "H")) : 1))
 
 /* Local */
 
 static const char sdf_data_hdr_name[] = "NAME";
 static const char sdf_data_hdr_comm[] = "COMMENT";
 
-enum { SDF_START
-    , SDF_DATA_HEADER
-    , SDF_DATA_HEADER_NAME
-    , SDF_DATA_HEADER_COMMENT
-    , SDF_DATA_HEADER_CAS
-    , SDF_DATA_HEADER_USER
-    , SDF_DATA_LINE
-    , SD_FMT_END_OF_DATA_ITEM
-    , SDF_EMPTY_LINE
-    , SD_FMT_END_OF_DATA_BLOCK
+enum
+{
+    SDF_START,
+    SDF_DATA_HEADER,
+    SDF_DATA_HEADER_NAME,
+    SDF_DATA_HEADER_COMMENT,
+    SDF_DATA_HEADER_CAS,
+    SDF_DATA_HEADER_USER,
+    SDF_DATA_LINE,
+    SD_FMT_END_OF_DATA_ITEM,
+    SDF_EMPTY_LINE,
+    SD_FMT_END_OF_DATA_BLOCK
 };
 
-int OrigAtData_WriteToSDfileHeaderAndCountThings( const ORIG_ATOM_DATA *inp_at_data,
-                                                  INCHI_IOSTREAM * fcb,
-                                                  const char* name,
-                                                  const char* comment,
-                                                  int bChiralFlag,
-                                                  int bAtomsDT,
-                                                  const char *szLabel,
-                                                  const char *szValue,
-                                                  int *nNumAliasLines,
-                                                  int *nNumChargeLines,
-                                                  int *nNumRadicalLines,
-                                                  int *nNumIsoLines,
-                                                  int *nNumAddLines,
-                                                  int *num_bonds );
-int OrigAtData_WriteToSDfileAtomsBlock( const ORIG_ATOM_DATA *inp_at_data,
-                                        INCHI_IOSTREAM * fcb,
-                                        const char* name,
-                                        const char* comment,
-                                        int bAtomsDT,
-                                        const char *szLabel,
-                                        const char *szValue );
+int OrigAtData_WriteToSDfileHeaderAndCountThings(const ORIG_ATOM_DATA *inp_at_data,
+                                                 INCHI_IOSTREAM *fcb,
+                                                 const char *name,
+                                                 const char *comment,
+                                                 int bChiralFlag,
+                                                 int bAtomsDT,
+                                                 const char *szLabel,
+                                                 const char *szValue,
+                                                 int *nNumAliasLines,
+                                                 int *nNumChargeLines,
+                                                 int *nNumRadicalLines,
+                                                 int *nNumIsoLines,
+                                                 int *nNumAddLines,
+                                                 int *num_bonds);
+int OrigAtData_WriteToSDfileAtomsBlock(const ORIG_ATOM_DATA *inp_at_data,
+                                       INCHI_IOSTREAM *fcb,
+                                       const char *name,
+                                       const char *comment,
+                                       int bAtomsDT,
+                                       const char *szLabel,
+                                       const char *szValue);
 
-int OrigAtData_WriteToSDfileBondsBlock( const ORIG_ATOM_DATA *inp_at_data,
-                                        INCHI_IOSTREAM * fcb,
-                                        const char* name,
-                                        const char* comment,
+int OrigAtData_WriteToSDfileBondsBlock(const ORIG_ATOM_DATA *inp_at_data,
+                                       INCHI_IOSTREAM *fcb,
+                                       const char *name,
+                                       const char *comment,
+                                       const char *szLabel,
+                                       const char *szValue,
+                                       INT_ARRAY *written_bond_ends);
+
+int OrigAtData_WriteToSDfileAdditionalLines(const ORIG_ATOM_DATA *inp_at_data,
+                                            INCHI_IOSTREAM *fcb,
+                                            const char *name,
+                                            const char *comment,
+                                            int bAtomsDT,
+                                            const char *szLabel,
+                                            const char *szValue,
+                                            int nNumAliasLines,
+                                            int nNumChargeLines,
+                                            int nNumRadicalLines,
+                                            int nNumIsoLines,
+                                            INT_ARRAY *written_bond_ends);
+
+int OrigAtData_WriteToSDfilePolymerData(const ORIG_ATOM_DATA *inp_at_data,
+                                        INCHI_IOSTREAM *fcb,
+                                        const char *name,
+                                        const char *comment,
                                         const char *szLabel,
                                         const char *szValue,
-                                        INT_ARRAY *written_bond_ends );
-
-int OrigAtData_WriteToSDfileAdditionalLines( const ORIG_ATOM_DATA *inp_at_data,
-                                             INCHI_IOSTREAM * fcb,
-                                             const char* name,
-                                             const char* comment,
-                                             int bAtomsDT,
-                                             const char *szLabel,
-                                             const char *szValue,
-                                             int nNumAliasLines,
-                                             int nNumChargeLines,
-                                             int nNumRadicalLines,
-                                             int nNumIsoLines,
-                                             INT_ARRAY *written_bond_ends );
-
-int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
-                                         INCHI_IOSTREAM * fcb,
-                                         const char* name,
-                                         const char* comment,
-                                         const char *szLabel,
-                                         const char *szValue,
-                                         INT_ARRAY *written_bond_ends );
-
-
+                                        INT_ARRAY *written_bond_ends);
 
 /****************************************************************************
  Skip extra data ( != Molfile) which SDF contains
 ****************************************************************************/
-int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
-                         unsigned long *CAS_num,
-                         char* comment,
-                         int lcomment,
-                         char *name,
-                         int lname,
-                         int prev_err,
-                         const char *pSdfLabel,
-                         char *pSdfValue,
-                         char *pStrErr,
-                         int bNoWarnings)
+int SDFileSkipExtraData(INCHI_IOSTREAM *inp_file,
+                        unsigned long *CAS_num,
+                        char *comment,
+                        int lcomment,
+                        char *name,
+                        int lname,
+                        int prev_err,
+                        const char *pSdfLabel,
+                        char *pSdfValue,
+                        char *pStrErr,
+                        int bNoWarnings)
 {
-    char* p = NULL;
+    char *p = NULL;
     char line[MOL_FMT_INPLINELEN];
     const int line_len = sizeof( line );
-    int   n_blank_lines = 0, n_lines = 0;
-    int   current_state = SDF_START;
-    int   err = 0;
-    int   wait_for_CAS = 0;
-    int   CAS_num_is_user = 0;
-    int   wait_for_name = name && lname > 0 && !name[0];
-    int   wait_for_comment = comment && lcomment > 0 && !comment[0];
-    int   wait_for_user = pSdfLabel && pSdfLabel[0] && pSdfValue;
+    int n_blank_lines = 0, n_lines = 0;
+    int current_state = SDF_START;
+    int err = 0;
+    int wait_for_CAS = 0;
+    int CAS_num_is_user = 0;
+    int wait_for_name = name && lname > 0 && !name[0];
+    int wait_for_comment = comment && lcomment > 0 && !comment[0];
+    int wait_for_user = pSdfLabel && pSdfLabel[0] && pSdfValue;
 
     if (CAS_num != NULL)
     {
         wait_for_CAS = 1;
         *CAS_num = 0LU;
-        CAS_num_is_user = ( wait_for_user && !inchi_memicmp( pSdfLabel, "CAS", 3 ) );
+        CAS_num_is_user = (wait_for_user && !inchi_memicmp(pSdfLabel, "CAS", 3));
     }
 
     while (!err &&
-            current_state != SD_FMT_END_OF_DATA_BLOCK &&
-            NULL != ( p = inchi_fgetsLf( line, line_len, inp_file ) ))
+           current_state != SD_FMT_END_OF_DATA_BLOCK &&
+           NULL != (p = inchi_fgetsLf(line, line_len, inp_file)))
     {
-        if (!n_lines && !memcmp( line, "M  END", 6 ))
+        if (!n_lines && !memcmp(line, "M  END", 6))
         {
             /*  allow subtle errors */
             continue;
         }
 
         n_lines++;
-        remove_trailing_spaces( line );
+        remove_trailing_spaces(line);
 
         if (line[MOL_FMT_MAXLINELEN])
         {
-            if (current_state != SDF_DATA_HEADER         &&
-                 current_state != SDF_DATA_LINE           &&
-                 current_state != SDF_DATA_HEADER_NAME    &&
-                 current_state != SDF_DATA_HEADER_USER    &&
-                 current_state != SDF_DATA_HEADER_COMMENT)
+            if (current_state != SDF_DATA_HEADER &&
+                current_state != SDF_DATA_LINE &&
+                current_state != SDF_DATA_HEADER_NAME &&
+                current_state != SDF_DATA_HEADER_USER &&
+                current_state != SDF_DATA_HEADER_COMMENT)
             {
                 line[MOL_FMT_MAXLINELEN] = '\0';
                 if (!prev_err)
                 {
-                    TREAT_ERR( err, 0, "Too long SData line truncated" );
+                    TREAT_ERR(err, 0, "Too long SData line truncated");
                 }
             }
             else
@@ -223,21 +223,21 @@ int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
             }
         }
 
-        n_blank_lines += ( *line == '\0' );
+        n_blank_lines += (*line == '\0');
 
         switch (current_state)
         {
             case SDF_START:
             case SD_FMT_END_OF_DATA_ITEM:
-            case SDF_EMPTY_LINE:              /* Added 9-25-97 DCh */
+            case SDF_EMPTY_LINE: /* Added 9-25-97 DCh */
 
-                if (!strcmp( line, SD_FMT_END_OF_DATA ))
+                if (!strcmp(line, SD_FMT_END_OF_DATA))
                 {
                     current_state = SD_FMT_END_OF_DATA_BLOCK;
                 }
                 else if ('>' == *line)
                 {
-                    current_state = ( wait_for_name || wait_for_comment || wait_for_CAS || wait_for_user ) ? SDFileIdentifyLabel( line, pSdfLabel ) : SDF_DATA_HEADER;
+                    current_state = (wait_for_name || wait_for_comment || wait_for_CAS || wait_for_user) ? SDFileIdentifyLabel( line, pSdfLabel ) : SDF_DATA_HEADER;
                 }
                 else if (*line == '\0')
                 {
@@ -247,9 +247,9 @@ int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
                 }
                 else if (!prev_err)
                 {
-                    TREAT_ERR( err, 3, "Unexpected SData header line:" );
-                    dotify_non_printable_chars( line );
-                    AddErrorMessage( pStrErr, line );
+                    TREAT_ERR(err, 3, "Unexpected SData header line:");
+                    dotify_non_printable_chars(line);
+                    AddErrorMessage(pStrErr, line);
                     /* unexpected contents of data header line */
                 }
                 else
@@ -260,43 +260,43 @@ int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
 
             case SDF_DATA_HEADER_NAME:
 
-                if (wait_for_name && 0 < normalize_string( line ))
+                if (wait_for_name && 0 < normalize_string(line))
                 {
                     wait_for_name = 0;
-                    mystrncpy( name, line, lname );
+                    mystrncpy(name, line, lname);
                 }
                 goto got_data_line;
 
             case SDF_DATA_HEADER_COMMENT:
 
-                if (wait_for_comment && 0 < normalize_string( line ))
+                if (wait_for_comment && 0 < normalize_string(line))
                 {
                     wait_for_comment = 0;
-                    mystrncpy( comment, line, lcomment );
+                    mystrncpy(comment, line, lcomment);
                 }
                 goto got_data_line;
 
             case SDF_DATA_HEADER_USER:
 
-                if (wait_for_user && 0 < normalize_string( line ))
+                if (wait_for_user && 0 < normalize_string(line))
                 {
                     wait_for_user = 0;
-                    mystrncpy( pSdfValue, line, MAX_SDF_VALUE + 1 );
+                    mystrncpy(pSdfValue, line, MAX_SDF_VALUE + 1);
 
                     if (CAS_num_is_user && wait_for_CAS)
                     {
-                        *CAS_num = SDFileExtractCASNo( line );
-                        wait_for_CAS = ( 0LU == *CAS_num );
+                        *CAS_num = SDFileExtractCASNo(line);
+                        wait_for_CAS = (0LU == *CAS_num);
                     }
                 }
                 goto got_data_line;
 
             case SDF_DATA_HEADER_CAS:
 
-                if (wait_for_CAS && 0 < normalize_string( line ))
+                if (wait_for_CAS && 0 < normalize_string(line))
                 {
-                    *CAS_num = SDFileExtractCASNo( line );
-                    wait_for_CAS = ( 0LU == *CAS_num );
+                    *CAS_num = SDFileExtractCASNo(line);
+                    wait_for_CAS = (0LU == *CAS_num);
                 }
                 goto got_data_line;
 
@@ -314,7 +314,7 @@ int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
         ; /* err = 4; */ /* unexpected end of file: missing $$$$ */
     }
 
-    else  if (err && ( n_blank_lines == n_lines && *line == '\0' ))
+    else if (err && (n_blank_lines == n_lines && *line == '\0'))
     {
         /* empty lines -- do not know when this can happen */
         err = 5;
@@ -323,8 +323,8 @@ int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
     if (err && err != 5 && current_state != SD_FMT_END_OF_DATA_BLOCK && p)
     {
         /*  bypass up to $$$$ */
-        while (( p = inchi_fgetsLf( line, line_len, inp_file ) ) &&
-                 memcmp( line, SD_FMT_END_OF_DATA, 4 ))
+        while ((p = inchi_fgetsLf(line, line_len, inp_file)) &&
+               memcmp(line, SD_FMT_END_OF_DATA, 4))
         {
             ;
         }
@@ -334,7 +334,7 @@ int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
             err = 9;
             if (!bNoWarnings)
             {
-                WarningMessage( pStrErr, "Bypassing to next structure" );
+                WarningMessage(pStrErr, "Bypassing to next structure");
             }
         }
     }
@@ -342,17 +342,16 @@ int SDFileSkipExtraData( INCHI_IOSTREAM *inp_file,
     return err;
 }
 
-
 /****************************************************************************/
-int SDFileIdentifyLabel( char* inp_line, const char *pSdfLabel )
+int SDFileIdentifyLabel(char *inp_line, const char *pSdfLabel)
 {
     char line[MOL_FMT_MAXLINELEN];
     char *p, *q;
-    int  i, j, len, tmp1 = 0, tmp2 = 0, cnd = 0;
+    int i, j, len, tmp1 = 0, tmp2 = 0, cnd = 0;
 
-    if (( p = strchr( inp_line, '<' ) ) &&
-        ( q = strchr( p, '>' ) ) &&
-        ( len = q - p - 1 ) > 0 && len < ( int )sizeof( line ))
+    if ((p = strchr(inp_line, '<')) &&
+        (q = strchr(p, '>')) &&
+        (len = q - p - 1) > 0 && len < (int)sizeof(line))
     {
         memcpy(line, p + 1, len);
         line[len] = '\0';
@@ -380,22 +379,22 @@ int SDFileIdentifyLabel( char* inp_line, const char *pSdfLabel )
         len = tmp2 - tmp1 + 1;
         p = line + tmp1;
 
-        if (pSdfLabel && pSdfLabel[0] && len == (int) strlen( pSdfLabel ) && !inchi_memicmp( p, pSdfLabel, len ))
+        if (pSdfLabel && pSdfLabel[0] && len == (int)strlen(pSdfLabel) && !inchi_memicmp(p, pSdfLabel, len))
         {
             return SDF_DATA_HEADER_USER;
         }
 
-        if (len == sizeof( sdf_data_hdr_name ) - 1 && !inchi_memicmp( p, sdf_data_hdr_name, len ))
+        if (len == sizeof(sdf_data_hdr_name) - 1 && !inchi_memicmp(p, sdf_data_hdr_name, len))
         {
             return SDF_DATA_HEADER_NAME;
         }
 
-        if (len == sizeof( sdf_data_hdr_comm ) - 1 && !inchi_memicmp( p, sdf_data_hdr_comm, len ))
+        if (len == sizeof(sdf_data_hdr_comm) - 1 && !inchi_memicmp(p, sdf_data_hdr_comm, len))
         {
             return SDF_DATA_HEADER_COMMENT;
         }
 
-        if (!inchi_memicmp( p, "CAS", 3 ))
+        if (!inchi_memicmp(p, "CAS", 3))
         {
             return SDF_DATA_HEADER_CAS;
         }
@@ -404,9 +403,8 @@ int SDFileIdentifyLabel( char* inp_line, const char *pSdfLabel )
     return SDF_DATA_HEADER;
 }
 
-
 /****************************************************************************/
-unsigned long SDFileExtractCASNo( char *line )
+unsigned long SDFileExtractCASNo(char *line)
 {
     int i, j;
 
@@ -414,7 +412,7 @@ unsigned long SDFileExtractCASNo( char *line )
 
     for (j = i; line[i]; i++)
     {
-        if (isdigit( UCINT line[i] ))
+        if (isdigit(UCINT line[i]))
         {
             line[j++] = line[i];
         }
@@ -426,18 +424,17 @@ unsigned long SDFileExtractCASNo( char *line )
 
     line[j] = '\0';
 
-    return strtoul( line, NULL, 10 );
+    return strtoul(line, NULL, 10);
 }
-
 
 /****************************************************************************
  NUM_LISTS - dynamically growing array of int lists
 ****************************************************************************/
-int NumLists_Alloc( NUM_LISTS *num_lists, int nlists )
+int NumLists_Alloc(NUM_LISTS *num_lists, int nlists)
 {
     if (num_lists)
     {
-        if ((num_lists->lists = (int **) inchi_calloc( nlists, sizeof( int* ) ))) /* djb-rwth: addressing LLVM warning */
+        if ((num_lists->lists = (int **)inchi_calloc(nlists, sizeof(int *)))) /* djb-rwth: addressing LLVM warning */
         {
             num_lists->increment =
                 num_lists->allocated = nlists;
@@ -449,7 +446,7 @@ int NumLists_Alloc( NUM_LISTS *num_lists, int nlists )
 }
 
 /****************************************************************************/
-int NumLists_ReAlloc( NUM_LISTS *num_lists )
+int NumLists_ReAlloc(NUM_LISTS *num_lists)
 {
     if (num_lists)
     {
@@ -457,10 +454,10 @@ int NumLists_ReAlloc( NUM_LISTS *num_lists )
         {
             void *p = num_lists->lists;
             if ((num_lists->lists =
-                (int **) inchi_calloc( (long long)num_lists->allocated + (long long)num_lists->increment, sizeof( int * ) ))) /* djb-rwth: cast operators added; addressing LLVM warning */
+                     (int **)inchi_calloc((long long)num_lists->allocated + (long long)num_lists->increment, sizeof(int *)))) /* djb-rwth: cast operators added; addressing LLVM warning */
             {
                 memcpy(num_lists->lists, p, num_lists->used * sizeof(num_lists->lists[0]));
-                inchi_free( p );
+                inchi_free(p);
                 num_lists->allocated += num_lists->increment;
                 return 0; /*  ok */
             }
@@ -470,16 +467,15 @@ int NumLists_ReAlloc( NUM_LISTS *num_lists )
     return -1; /*  error */
 }
 
-
 /****************************************************************************/
-int NumLists_Append( NUM_LISTS *num_lists, int *list )
+int NumLists_Append(NUM_LISTS *num_lists, int *list)
 {
     if (num_lists)
     {
         if (num_lists->used + 1 > num_lists->allocated)
         {
             /* need to expand buffer */
-            if (NumLists_ReAlloc( num_lists ))
+            if (NumLists_ReAlloc(num_lists))
             {
                 return -1; /*  error */
             }
@@ -491,20 +487,18 @@ int NumLists_Append( NUM_LISTS *num_lists, int *list )
     return -1;
 }
 
-
 /****************************************************************************/
-void NumLists_Free( NUM_LISTS *num_lists )
+void NumLists_Free(NUM_LISTS *num_lists)
 {
     if (num_lists)
     {
         int i;
         for (i = 0; i < num_lists->used; i++)
-            inchi_free( num_lists->lists[i] ); /* djb-rwth: ui_rr? -- false positive as this function just does the clean-up job */
-        inchi_free( num_lists->lists );
-        memset( num_lists, 0, sizeof( *num_lists ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+            inchi_free(num_lists->lists[i]); /* djb-rwth: ui_rr? -- false positive as this function just does the clean-up job */
+        inchi_free(num_lists->lists);
+        memset(num_lists, 0, sizeof(*num_lists)); /* djb-rwth: memset_s C11/Annex K variant? */
     }
 }
-
 
 /****************************************************************************
  INT_ARRAY - dynamically growing array of int
@@ -513,9 +507,9 @@ void NumLists_Free( NUM_LISTS *num_lists )
 /****************************************************************************
  Allocate new array, return 0 if OK, -1 otherwise
 ****************************************************************************/
-int IntArray_Alloc( INT_ARRAY *items, int nitems )
+int IntArray_Alloc(INT_ARRAY *items, int nitems)
 {
-    if ((items->item = (int *) inchi_calloc( nitems, sizeof( int ) ))) /* djb-rwth: addressing LLVM warning */
+    if ((items->item = (int *)inchi_calloc(nitems, sizeof(int)))) /* djb-rwth: addressing LLVM warning */
     {
         items->increment = items->allocated = nitems;
         items->used = 0;
@@ -525,11 +519,10 @@ int IntArray_Alloc( INT_ARRAY *items, int nitems )
     return -1;
 }
 
-
 /****************************************************************************
  Expand array, return 0 if OK, -1 otherwise
 ****************************************************************************/
-int IntArray_ReAlloc( INT_ARRAY *items )
+int IntArray_ReAlloc(INT_ARRAY *items)
 {
     if (items)
     {
@@ -537,10 +530,10 @@ int IntArray_ReAlloc( INT_ARRAY *items )
         {
             void *p = items->item;
             if ((items->item =
-                (int *) inchi_calloc( (long long)items->allocated + (long long)items->increment, sizeof( items->item[0] ) ))) /* djb-rwth: cast operators added; addressing LLVM warning */
+                     (int *)inchi_calloc((long long)items->allocated + (long long)items->increment, sizeof(items->item[0])))) /* djb-rwth: cast operators added; addressing LLVM warning */
             {
                 memcpy(items->item, p, items->used * sizeof(items->item[0]));
-                inchi_free( p );
+                inchi_free(p);
                 items->allocated += items->increment;
                 return 0;
             }
@@ -551,18 +544,17 @@ int IntArray_ReAlloc( INT_ARRAY *items )
     return -1;
 }
 
-
 /****************************************************************************
  Push new item to the end of array
 ****************************************************************************/
-int IntArray_Append( INT_ARRAY *items, int new_item )
+int IntArray_Append(INT_ARRAY *items, int new_item)
 {
     if (items)
     {
         if (items->used + 1 > items->allocated)
         {
             /* need to expand buffer */
-            if (IntArray_ReAlloc( items ))
+            if (IntArray_ReAlloc(items))
             {
                 return -1;
             }
@@ -574,11 +566,10 @@ int IntArray_Append( INT_ARRAY *items, int new_item )
     return -1;
 }
 
-
 /****************************************************************************
 Push new item to the end of array only if it is absent there
 ****************************************************************************/
-int  IntArray_AppendIfAbsent(INT_ARRAY *items, int new_item)
+int IntArray_AppendIfAbsent(INT_ARRAY *items, int new_item)
 {
     if (!is_in_the_ilist(items->item, new_item, items->used))
     {
@@ -587,9 +578,8 @@ int  IntArray_AppendIfAbsent(INT_ARRAY *items, int new_item)
     return 0;
 }
 
-
 /****************************************************************************/
-void IntArray_DebugPrint( INT_ARRAY *items )
+void IntArray_DebugPrint(INT_ARRAY *items)
 {
     if (items)
     {
@@ -598,9 +588,9 @@ void IntArray_DebugPrint( INT_ARRAY *items )
         {
             for (i = 0; i < items->used - 1; i++)
             {
-                ITRACE_( "%-d, ", items->item[i] );
+                ITRACE_("%-d, ", items->item[i]);
             }
-            ITRACE_( "%-d\n", items->item[items->used - 1] );
+            ITRACE_("%-d\n", items->item[items->used - 1]);
         }
         else
         {
@@ -609,93 +599,84 @@ void IntArray_DebugPrint( INT_ARRAY *items )
     }
 }
 
-
 /****************************************************************************/
-void IntArray_Reset( INT_ARRAY *items )
+void IntArray_Reset(INT_ARRAY *items)
 {
     items->used = 0;
     return;
 }
 
-
 /****************************************************************************/
-void IntArray_Free( INT_ARRAY *items )
+void IntArray_Free(INT_ARRAY *items)
 {
     if (items)
     {
         if (items->item)
         {
-            inchi_free( items->item );
+            inchi_free(items->item);
         }
-        memset( items, 0, sizeof( *items ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset(items, 0, sizeof(*items)); /* djb-rwth: memset_s C11/Annex K variant? */
     }
     return;
 }
-
-
 
 /****************************************************************************
     MOL_FMT_SGROUPS - dynamically growing array of pointers to SGroups
 ****************************************************************************/
 
-
 /*
     SGroup
 */
 
-
 /****************************************************************************
  Allocate new array Sgroup, return 0 if OK, -1 otherwise
 ****************************************************************************/
-int MolFmtSgroup_Create( MOL_FMT_SGROUP **sgroup, int id, int type )
+int MolFmtSgroup_Create(MOL_FMT_SGROUP **sgroup, int id, int type)
 {
-    *sgroup = (MOL_FMT_SGROUP *) inchi_calloc( 1, sizeof( MOL_FMT_SGROUP ) );
+    *sgroup = (MOL_FMT_SGROUP *)inchi_calloc(1, sizeof(MOL_FMT_SGROUP));
     if (*sgroup)
     {
-        if (IntArray_Alloc( &( ( *sgroup )->alist ), 8 ) ||
-             IntArray_Alloc( &( ( *sgroup )->blist ), 8 ))
+        if (IntArray_Alloc(&((*sgroup)->alist), 8) ||
+            IntArray_Alloc(&((*sgroup)->blist), 8))
         {
-            MolFmtSgroup_Free( *sgroup );
+            MolFmtSgroup_Free(*sgroup);
             return -1;
         }
-        ( *sgroup )->id = id;
-        ( *sgroup )->type = type;
+        (*sgroup)->id = id;
+        (*sgroup)->type = type;
 
-        ( *sgroup )->subtype = 0;
-        ( *sgroup )->conn = 0;
-        ( *sgroup )->label = 0;
+        (*sgroup)->subtype = 0;
+        (*sgroup)->conn = 0;
+        (*sgroup)->label = 0;
 
         return 0;
     }
     return -1;
 }
 
-
 /****************************************************************************/
-void MolFmtSgroup_Free( MOL_FMT_SGROUP *sgroup )
+void MolFmtSgroup_Free(MOL_FMT_SGROUP *sgroup)
 {
     if (sgroup)
     {
-        IntArray_Free( &( sgroup->alist ) );
-        IntArray_Free( &( sgroup->blist ) );
-        inchi_free( sgroup );
+        IntArray_Free(&(sgroup->alist));
+        IntArray_Free(&(sgroup->blist));
+        inchi_free(sgroup);
     }
 }
-
 
 /*
     SGroups
 */
 
-
 /****************************************************************************
  Allocate new array of Sgroups, return 0 if OK, -1 otherwise
 ****************************************************************************/
-int MolFmtSgroups_Alloc( MOL_FMT_SGROUPS *sgroups, int nsgroups )
+int MolFmtSgroups_Alloc(MOL_FMT_SGROUPS *sgroups, int nsgroups)
 {
     if (sgroups)
     {
-        if (NULL != ( sgroups->group = (MOL_FMT_SGROUP **) inchi_calloc( nsgroups, sizeof( MOL_FMT_SGROUP * ) ) ))
+        if (NULL != (sgroups->group = (MOL_FMT_SGROUP **)inchi_calloc(nsgroups, sizeof(MOL_FMT_SGROUP *))))
         {
             /* ITRACE_( "\nAllocated sgroups->group at %-p \n", sgroups->group ); */
             sgroups->increment = sgroups->allocated = nsgroups;
@@ -709,18 +690,18 @@ int MolFmtSgroups_Alloc( MOL_FMT_SGROUPS *sgroups, int nsgroups )
 /****************************************************************************
  Expand array of Sgroups, return 0 if OK, -1 otherwise
 ****************************************************************************/
-int MolFmtSgroups_ReAlloc( MOL_FMT_SGROUPS *sgroups )
+int MolFmtSgroups_ReAlloc(MOL_FMT_SGROUPS *sgroups)
 {
     if (sgroups)
     {
         if (sgroups->group && sgroups->allocated > 0 && sgroups->increment > 0)
         {
             void *p = sgroups->group;
-            if ((sgroups->group = (MOL_FMT_SGROUP **) inchi_calloc( (long long)sgroups->allocated + (long long)sgroups->increment,
+            if ((sgroups->group = (MOL_FMT_SGROUP **)inchi_calloc( (long long)sgroups->allocated + (long long)sgroups->increment,
                 sizeof( sgroups->group[0] ) ))) /* djb-rwth: cast operators added; addressing LLVM warning */
             {
                 memcpy(sgroups->group, p, sgroups->used * sizeof(sgroups->group[0]));
-                inchi_free( p );
+                inchi_free(p);
                 sgroups->allocated += sgroups->increment;
                 return 0; /*  ok */
             }
@@ -730,15 +711,14 @@ int MolFmtSgroups_ReAlloc( MOL_FMT_SGROUPS *sgroups )
     return -1;
 }
 
-
 /****************************************************************************/
-int MolFmtSgroups_Append( MOL_FMT_SGROUPS *sgroups, int id, int type )
+int MolFmtSgroups_Append(MOL_FMT_SGROUPS *sgroups, int id, int type)
 {
     if (sgroups)
     {
         /* Make new Sgroup */
         MOL_FMT_SGROUP *sgroup = NULL;
-        if (0 != MolFmtSgroup_Create( &sgroup, id, type ))
+        if (0 != MolFmtSgroup_Create(&sgroup, id, type))
         {
             return -1;
         }
@@ -749,7 +729,7 @@ int MolFmtSgroups_Append( MOL_FMT_SGROUPS *sgroups, int id, int type )
             if (MolFmtSgroups_ReAlloc(sgroups))
             {
                 MolFmtSgroup_Free(sgroup); /* djb-rwth: avoiding memory leak */
-                return -1; /*  no RAM */ 
+                return -1; /*  no RAM */
             }
         }
         sgroups->group[sgroups->used++] = sgroup;
@@ -767,28 +747,26 @@ int MolFmtSgroups_Append( MOL_FMT_SGROUPS *sgroups, int id, int type )
     return -1;
 }
 
-
 /****************************************************************************/
-void MolFmtSgroups_Free( MOL_FMT_SGROUPS *sgroups )
+void MolFmtSgroups_Free(MOL_FMT_SGROUPS *sgroups)
 {
     if (sgroups)
     {
         int i;
         for (i = 0; i < sgroups->used; i++)
         {
-            MolFmtSgroup_Free( sgroups->group[i] );
+            MolFmtSgroup_Free(sgroups->group[i]);
         }
 
         /* ITRACE_( "\nAbout to free sgroups->group at %-p\n", sgroups->group ); */
-        inchi_free( sgroups->group );
+        inchi_free(sgroups->group);
 
-        memset( sgroups, 0, sizeof( MOL_FMT_SGROUPS ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset(sgroups, 0, sizeof(MOL_FMT_SGROUPS)); /* djb-rwth: memset_s C11/Annex K variant? */
     }
 }
 
-
 /****************************************************************************/
-int MolFmtSgroups_GetIndexBySgroupId( int id, MOL_FMT_SGROUPS *sgroups )
+int MolFmtSgroups_GetIndexBySgroupId(int id, MOL_FMT_SGROUPS *sgroups)
 {
     int i;
     for (i = 0; i < sgroups->used; i++)
@@ -801,51 +779,50 @@ int MolFmtSgroups_GetIndexBySgroupId( int id, MOL_FMT_SGROUPS *sgroups )
     return -1;
 }
 
-
 /****************************************************************************/
-int OrigAtData_WriteToSDfile( const ORIG_ATOM_DATA *inp_at_data,
-                              INCHI_IOSTREAM * fcb,
-                              const char* name,
-                              const char* comment,
-                              int bChiralFlag,
-                              int bAtomsDT,
-                              const char *szLabel,
-                              const char *szValue )
+int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
+                             INCHI_IOSTREAM *fcb,
+                             const char *name,
+                             const char *comment,
+                             int bChiralFlag,
+                             int bAtomsDT,
+                             const char *szLabel,
+                             const char *szValue)
 {
     int num_bonds = 0, nNumAddLines = 0, nNumIsoLines = 0, nNumChargeLines = 0,
         nNumRadicalLines = 0, nNumAliasLines = 0, ret = 0;
     INT_ARRAY written_bond_ends;
 
-    OrigAtData_WriteToSDfileHeaderAndCountThings( (ORIG_ATOM_DATA *) inp_at_data,
-                                                  fcb, name, comment,
-                                                  bChiralFlag, bAtomsDT,
-                                                  szLabel, szValue,
-                                                  &nNumAliasLines,
-                                                  &nNumChargeLines,
-                                                  &nNumRadicalLines,
-                                                  &nNumIsoLines,
-                                                  &nNumAddLines,
-                                                  &num_bonds );
+    OrigAtData_WriteToSDfileHeaderAndCountThings((ORIG_ATOM_DATA *)inp_at_data,
+                                                 fcb, name, comment,
+                                                 bChiralFlag, bAtomsDT,
+                                                 szLabel, szValue,
+                                                 &nNumAliasLines,
+                                                 &nNumChargeLines,
+                                                 &nNumRadicalLines,
+                                                 &nNumIsoLines,
+                                                 &nNumAddLines,
+                                                 &num_bonds);
 
-    if (IntArray_Alloc( &written_bond_ends, num_bonds ? num_bonds : 255 ))
+    if (IntArray_Alloc(&written_bond_ends, num_bonds ? num_bonds : 255))
     {
         ret = _IS_ERROR;
         goto exit_function;
     }
 
-    OrigAtData_WriteToSDfileAtomsBlock( inp_at_data, fcb, name, comment,
-                                        bAtomsDT, szLabel, szValue );
+    OrigAtData_WriteToSDfileAtomsBlock(inp_at_data, fcb, name, comment,
+                                       bAtomsDT, szLabel, szValue);
 
-    OrigAtData_WriteToSDfileBondsBlock( inp_at_data, fcb, name, comment,
-                                        szLabel, szValue, &written_bond_ends );
+    OrigAtData_WriteToSDfileBondsBlock(inp_at_data, fcb, name, comment,
+                                       szLabel, szValue, &written_bond_ends);
 
     if (nNumAddLines)
     {
-        OrigAtData_WriteToSDfileAdditionalLines( inp_at_data, fcb, name, comment,
-                                                 bAtomsDT, szLabel, szValue,
-                                                 nNumAliasLines, nNumChargeLines,
-                                                 nNumRadicalLines, nNumIsoLines,
-                                                 &written_bond_ends );
+        OrigAtData_WriteToSDfileAdditionalLines(inp_at_data, fcb, name, comment,
+                                                bAtomsDT, szLabel, szValue,
+                                                nNumAliasLines, nNumChargeLines,
+                                                nNumRadicalLines, nNumIsoLines,
+                                                &written_bond_ends);
     }
 
     /* Add field with label/ID if applicable and mark the end of record */
@@ -853,40 +830,39 @@ int OrigAtData_WriteToSDfile( const ORIG_ATOM_DATA *inp_at_data,
     {
         if (szLabel && szLabel[0])
         {
-            inchi_ios_print_nodisplay( fcb, "> <%s>\n", szLabel );
+            inchi_ios_print_nodisplay(fcb, "> <%s>\n", szLabel);
         }
         else
         {
-            inchi_ios_print_nodisplay( fcb, "> <ID>\n" );
+            inchi_ios_print_nodisplay(fcb, "> <ID>\n");
         }
-        inchi_ios_print_nodisplay( fcb, " %s\n\n", szValue );
+        inchi_ios_print_nodisplay(fcb, " %s\n\n", szValue);
     }
-    inchi_ios_print_nodisplay( fcb, "$$$$\n" );
+    inchi_ios_print_nodisplay(fcb, "$$$$\n");
 
 exit_function:
-    IntArray_Free( &written_bond_ends );
+    IntArray_Free(&written_bond_ends);
 
     return ret;
 }
 
-
 /****************************************************************************
  OrigAtData : Write To SDfile : Atoms Block
 ****************************************************************************/
-int OrigAtData_WriteToSDfileHeaderAndCountThings( const ORIG_ATOM_DATA *inp_at_data,
-                                                  INCHI_IOSTREAM * fcb,
-                                                  const char* name,
-                                                  const char* comment,
-                                                  int bChiralFlag,
-                                                  int bAtomsDT,
-                                                  const char *szLabel,
-                                                  const char *szValue,
-                                                  int *nNumAliasLines,
-                                                  int *nNumChargeLines,
-                                                  int *nNumRadicalLines,
-                                                  int *nNumIsoLines,
-                                                  int *nNumAddLines,
-                                                  int *num_bonds )
+int OrigAtData_WriteToSDfileHeaderAndCountThings(const ORIG_ATOM_DATA *inp_at_data,
+                                                 INCHI_IOSTREAM *fcb,
+                                                 const char *name,
+                                                 const char *comment,
+                                                 int bChiralFlag,
+                                                 int bAtomsDT,
+                                                 const char *szLabel,
+                                                 const char *szValue,
+                                                 int *nNumAliasLines,
+                                                 int *nNumChargeLines,
+                                                 int *nNumRadicalLines,
+                                                 int *nNumIsoLines,
+                                                 int *nNumAddLines,
+                                                 int *num_bonds)
 {
     int i, ret = 0;
     int bAtomNeedsAlias,
@@ -899,12 +875,12 @@ int OrigAtData_WriteToSDfileHeaderAndCountThings( const ORIG_ATOM_DATA *inp_at_d
 
     {
         char strLocName[82];
-        memset( strLocName, 0, sizeof( strLocName ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset(strLocName, 0, sizeof(strLocName)); /* djb-rwth: memset_s C11/Annex K variant? */
         if (name && *name)
         {
             strncpy(strLocName, name, 80);
         }
-        inchi_ios_print_nodisplay( fcb, "%s\n", strLocName );
+        inchi_ios_print_nodisplay(fcb, "%s\n", strLocName);
     }
 
     /**********************************************************************/
@@ -920,43 +896,44 @@ int OrigAtData_WriteToSDfileHeaderAndCountThings( const ORIG_ATOM_DATA *inp_at_d
     /**                                                                  **/
     /**********************************************************************/
 
-/*                                    F10.5     F12.5       I6
-                 IIPPPPPPPPMMDDYYHHmmddSSssssssssssEEEEEEEEEEEERRRRRR
-inchi_ios_eprint( fcb,"NISTTRANHP09089809272D 1   1.0         0.0    %6ld\n", lEpa);*/
-/*^^^
-inchi_ios_print_nodisplay( fcb,"  %s v%s SDfile Output                       \n", INCHI_NAME, INCHI_VERSION);
+    /*                                    F10.5     F12.5       I6
+                     IIPPPPPPPPMMDDYYHHmmddSSssssssssssEEEEEEEEEEEERRRRRR
+    inchi_ios_eprint( fcb,"NISTTRANHP09089809272D 1   1.0         0.0    %6ld\n", lEpa);*/
+    /*^^^
+    inchi_ios_print_nodisplay( fcb,"  %s v%s SDfile Output                       \n", INCHI_NAME, INCHI_VERSION);
 
-Changed 01/10/2009 to conform CTFile specification (by Symyx request)*/
+    Changed 01/10/2009 to conform CTFile specification (by Symyx request)*/
 
-    inchi_ios_print_nodisplay( fcb,
-    /*   IIPPPPPPPPMMDDYYHHmmddSSssssssssssEEEEEEEEEEEERRRRRR*/
-    "  InChIV10                                     \n" );
+    inchi_ios_print_nodisplay(fcb,
+                              /*   IIPPPPPPPPMMDDYYHHmmddSSssssssssssEEEEEEEEEEEERRRRRR*/
+                              "  InChIV10                                     \n");
     /*y_fprintf(fcb, "  -CPSS-  1213981200n\n");*/
 
-    {   char strLocName[82];
-
-    memset( strLocName, 0, sizeof( strLocName ) ); /* djb-rwth: memset_s C11/Annex K variant? */
-    if (comment && *comment)
     {
-        strncpy(strLocName, comment, 80);
-    }
-    inchi_ios_print_nodisplay( fcb, "%s\n", strLocName );
+        char strLocName[82];
+
+        memset(strLocName, 0, sizeof(strLocName)); /* djb-rwth: memset_s C11/Annex K variant? */
+        if (comment && *comment)
+        {
+            strncpy(strLocName, comment, 80);
+        }
+        inchi_ios_print_nodisplay(fcb, "%s\n", strLocName);
     }
 
     *num_bonds = 0;
     for (i = 0; i < num_atoms; i++)
     {
-        ( *num_bonds ) += at[i].valence;
+        (*num_bonds) += at[i].valence;
     }
-    ( *num_bonds ) /= 2;
+    (*num_bonds) /= 2;
 
     /*find if we need "M  CHG" and "M  RAD"*/
     for (i = 0; i < num_atoms; i++)
     {
-        if ((bAtomNeedsAlias = ALIASED_AT( i ))) /* djb-rwth: addressing LLVM warning */
+        if ((bAtomNeedsAlias = ALIASED_AT(i))) /* djb-rwth: addressing LLVM warning */
         {
             /* has isotopic implicit D or T; ignoring pure 1H */
-            ( *nNumAliasLines ) += 2 * bAtomNeedsAlias;
+            (*nNumAliasLines) += 2 * bAtomNeedsAlias;
         }
         else
         {
@@ -964,18 +941,18 @@ Changed 01/10/2009 to conform CTFile specification (by Symyx request)*/
             /* nNumAddLines    += ABNORMAL_AT(i); */
             /* nNumIso         += ( 0 == strcmp( at[i].elname, "D" ) || ( 0 == strcmp( at[i].elname, "T" ) || at[i].iso_atw_diff ) ); */
             /* nNumAddIso      += at[i].iso_atw_diff && (at[i].iso_atw_diff == 1 || at[i].iso_atw_diff < -3 || at[i].iso_atw_diff > 5 ); */
-            nNumNecessaryIsoLines += ABNORMAL_ISO( i );
-            nNumNecessaryChgLines += ABNORMAL_CHG( i );
-            nNumNecessaryRadLines += ABNORMAL_RAD( i );
-            ( *nNumIsoLines ) += ANY_ISO( i, bAtomsDT );
-            ( *nNumChargeLines ) += ANY_CHG( i );
-            ( *nNumRadicalLines ) += ANY_RAD( i );
+            nNumNecessaryIsoLines += ABNORMAL_ISO(i);
+            nNumNecessaryChgLines += ABNORMAL_CHG(i);
+            nNumNecessaryRadLines += ABNORMAL_RAD(i);
+            (*nNumIsoLines) += ANY_ISO(i, bAtomsDT);
+            (*nNumChargeLines) += ANY_CHG(i);
+            (*nNumRadicalLines) += ANY_RAD(i);
         }
     }
 
-    *nNumChargeLines = ( *nNumChargeLines + 7 ) / 8;
-    *nNumRadicalLines = ( *nNumRadicalLines + 7 ) / 8;
-    *nNumIsoLines = ( *nNumIsoLines + 7 ) / 8;
+    *nNumChargeLines = (*nNumChargeLines + 7) / 8;
+    *nNumRadicalLines = (*nNumRadicalLines + 7) / 8;
+    *nNumIsoLines = (*nNumIsoLines + 7) / 8;
 
     if (!bV2000)
     {
@@ -998,25 +975,24 @@ Changed 01/10/2009 to conform CTFile specification (by Symyx request)*/
         *nNumAddLines += 1; /* add 1 for "M  END" line*/
     }
 
-/*                         aaabbblllfffcccsssxxxrrrpppiiimmmvvvvvv                                      */
+    /*                         aaabbblllfffcccsssxxxrrrpppiiimmmvvvvvv                                      */
 
-    inchi_ios_print_nodisplay( fcb, "%3d%3d  0  0%3d  0  0  0  0  0%3d%s\n",
-                          num_atoms, *num_bonds, bChiralFlag ? 1 : 0, *nNumAddLines, *nNumAddLines ? " V2000" : "" );
+    inchi_ios_print_nodisplay(fcb, "%3d%3d  0  0%3d  0  0  0  0  0%3d%s\n",
+                              num_atoms, *num_bonds, bChiralFlag ? 1 : 0, *nNumAddLines, *nNumAddLines ? " V2000" : "");
 
     return ret;
 }
 
-
 /****************************************************************************
  OrigAtData : Write To SDfile : Atoms Block
 ****************************************************************************/
-int OrigAtData_WriteToSDfileAtomsBlock( const ORIG_ATOM_DATA *inp_at_data,
+int OrigAtData_WriteToSDfileAtomsBlock(const ORIG_ATOM_DATA *inp_at_data,
                                         INCHI_IOSTREAM       *fcb,
                                         const char           *name,
                                         const char           *comment,
                                         int                  bAtomsDT,
                                         const char           *szLabel,
-                                        const char           *szValue )
+                                        const char           *szValue)
 {
     int i, ret = 0;
     int bAtomNeedsAlias;
@@ -1028,11 +1004,11 @@ int OrigAtData_WriteToSDfileAtomsBlock( const ORIG_ATOM_DATA *inp_at_data,
     for (i = 0; i < num_atoms; i++)
     {
         char elname[ATOM_EL_LEN] = "\0\0\0\0\0";
-        int  iso = 0;
-        int  charge = 0;
-        int  valence = 0;
-        int  nIsotopeH = IS_DEUTERIUM( i ) ? 1 : IS_TRITIUM( i ) ? 2 : 0;
-        int  bonds_val;
+        int iso = 0;
+        int charge = 0;
+        int valence = 0;
+        int nIsotopeH = IS_DEUTERIUM( i ) ? 1 : IS_TRITIUM( i ) ? 2 : 0;
+        int bonds_val;
         bAtomNeedsAlias = ALIASED_AT( i );
         memset( elname, 0, sizeof( elname ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
@@ -1053,25 +1029,40 @@ int OrigAtData_WriteToSDfileAtomsBlock( const ORIG_ATOM_DATA *inp_at_data,
                 strncpy(elname, at[i].elname, sizeof(elname) - 1);
                 elname[sizeof(elname) - 1] = 0; /* adding zero termination after strncpy */
             }
-            if (!ABNORMAL_CHG( i ) && !ANY_RAD( i ))
+            if (!ABNORMAL_CHG(i) && !ANY_RAD(i))
             {
                 /* charge*/
                 /* Only atoms without alias can be here*/
                 switch (at[i].charge)
                 {
-                    case  3: charge = 1; break;
-                    case  2: charge = 2; break;
-                    case  1: charge = 3; break;
-                    case -1: charge = 5; break;
-                    case -2: charge = 6; break;
-                    case -3: charge = 7; break;
-                    case  0: charge = 0; break;
-                    default: break; /* djb-rwth: removing redundant code */
+                case 3:
+                    charge = 1;
+                    break;
+                case 2:
+                    charge = 2;
+                    break;
+                case 1:
+                    charge = 3;
+                    break;
+                case -1:
+                    charge = 5;
+                    break;
+                case -2:
+                    charge = 6;
+                    break;
+                case -3:
+                    charge = 7;
+                    break;
+                case 0:
+                    charge = 0;
+                    break;
+                default:
+                    break; /* djb-rwth: removing redundant code */
                 }
             }
 
             /* radical*/
-            if (ANY_RAD( i ) && !ANY_CHG( i ))
+            if (ANY_RAD(i) && !ANY_CHG(i))
             {
                 if (at[i].radical == RADICAL_DOUBLET)
                 {
@@ -1081,7 +1072,7 @@ int OrigAtData_WriteToSDfileAtomsBlock( const ORIG_ATOM_DATA *inp_at_data,
         }
 
         /* allow isotopic shift for aliased atoms */
-        if (NORMAL_ISO( i, bAtomsDT ))
+        if (NORMAL_ISO(i, bAtomsDT))
         {
             iso = at[i].iso_atw_diff > 0 ? at[i].iso_atw_diff - 1 :
                     at[i].iso_atw_diff < 0 ? at[i].iso_atw_diff :
@@ -1093,27 +1084,27 @@ int OrigAtData_WriteToSDfileAtomsBlock( const ORIG_ATOM_DATA *inp_at_data,
         z = at[i].z;
 
         /* valence -- set only if needed */
-        bonds_val = nBondsValenceInpAt( at + i, NULL, NULL );
-        valence = needed_unusual_el_valence( at[i].el_number, at[i].charge, at[i].radical,
-                                            at[i].chem_bonds_valence, bonds_val, NUMH( at, i ), at[i].valence );
+        bonds_val = nBondsValenceInpAt(at + i, NULL, NULL);
+        valence = needed_unusual_el_valence(at[i].el_number, at[i].charge, at[i].radical,
+                                            at[i].chem_bonds_valence, bonds_val, NUMH(at, i), at[i].valence);
 
         if (valence < 0)
         {
-            valence = 15;  /* means no bonds nor H */
+            valence = 15; /* means no bonds nor H */
         }
 
         /* Convert "Zz" to "*" element symbol */
 
-        if (!strcmp( elname, "Zz" )|| !strcmp( elname, "Zy" ))
+        if (!strcmp(elname, "Zz") || !strcmp(elname, "Zy"))
         {
-            strcpy( elname, "*" );
+            strcpy(elname, "*");
         }
 
         /*inchi_ios_eprint(fcb,"%10.4f%10.4f%10.4f %-3.3s%2d%3d  0     0  0  0  0  0  0\n",*/
         /*    (float)at[i].x, (float)(-at[i].y), fzero, at[i].elname, iso, charge);*/
         /*              xxxxxxyyyyyyzzzzzz aaa____ddcccsssnnnbbbvvvrrriiimmmeee  */
-        inchi_ios_print_nodisplay( fcb, "%10.4f%10.4f%10.4f %-3.3s%2d%3d  0     0%3d  0  0  0  0\n",
-                                   x, y, z, elname, (int) iso, (int) charge, valence /* at[i].special*/ );
+        inchi_ios_print_nodisplay(fcb, "%10.4f%10.4f%10.4f %-3.3s%2d%3d  0     0%3d  0  0  0  0\n",
+                                  x, y, z, elname, (int)iso, (int)charge, valence /* at[i].special*/);
 
         /* Reflect image against x-axis;                                    */
         /* when transforming MOLfile back to STDATA in mol_to_stdata(...),  */
@@ -1124,7 +1115,6 @@ int OrigAtData_WriteToSDfileAtomsBlock( const ORIG_ATOM_DATA *inp_at_data,
 
     return ret;
 }
-
 
 /****************************************************************************
  OrigAtData : Write To SDfile : Bonds Block
@@ -1155,37 +1145,36 @@ int OrigAtData_WriteToSDfileBondsBlock( const ORIG_ATOM_DATA *inp_at_data,
                     if (k < 0)
                     {
                         /* transposition */
-                        a1 = (unsigned) ( at[i].neighbor[j] + 1 );
-                        a2 = (unsigned) ( i + 1 );
-                        inchi_ios_print_nodisplay( fcb, "%3u%3u%3u%3u  0  0  0\n",
-                                                   a1, a2, (unsigned) ( at[i].bond_type[j] ), (unsigned) abs( k ) );
+                        a1 = (unsigned)(at[i].neighbor[j] + 1);
+                        a2 = (unsigned)(i + 1);
+                        inchi_ios_print_nodisplay(fcb, "%3u%3u%3u%3u  0  0  0\n",
+                                                  a1, a2, (unsigned)(at[i].bond_type[j]), (unsigned)abs(k));
                     }
                     else
                     {
                         /* no transposition*/
-                        a1 = (unsigned) ( i + 1 );
-                        a2 = (unsigned) ( at[i].neighbor[j] + 1 );
-                        inchi_ios_print_nodisplay( fcb, "%3u%3u%3u%3u  0  0  0\n",
-                                                   a1, a2, (unsigned) ( at[i].bond_type[j] ), (unsigned) abs( k ) );
+                        a1 = (unsigned)(i + 1);
+                        a2 = (unsigned)(at[i].neighbor[j] + 1);
+                        inchi_ios_print_nodisplay(fcb, "%3u%3u%3u%3u  0  0  0\n",
+                                                  a1, a2, (unsigned)(at[i].bond_type[j]), (unsigned)abs(k));
                     }
                 }
                 else
                 {
-                    a1 = (unsigned) ( i + 1 );
-                    a2 = (unsigned) ( at[i].neighbor[j] + 1 );
-                    inchi_ios_print_nodisplay( fcb, "%3u%3u%3u  0  0  0  0\n",
-                                               a1, a2, (unsigned) ( at[i].bond_type[j] ) );
+                    a1 = (unsigned)(i + 1);
+                    a2 = (unsigned)(at[i].neighbor[j] + 1);
+                    inchi_ios_print_nodisplay(fcb, "%3u%3u%3u  0  0  0  0\n",
+                                              a1, a2, (unsigned)(at[i].bond_type[j]));
                 }
 
-                IntArray_Append( written_bond_ends, a1 );
-                IntArray_Append( written_bond_ends, a2 );
+                IntArray_Append(written_bond_ends, a1);
+                IntArray_Append(written_bond_ends, a2);
             }
         }
     }
 
     return ret;
 }
-
 
 /****************************************************************************
  OrigAtData : Write To SDfile : Additional Lines
@@ -1204,13 +1193,13 @@ int OrigAtData_WriteToSDfileAdditionalLines( const ORIG_ATOM_DATA *inp_at_data,
                                              INT_ARRAY            *written_bond_ends )
 {
     char str_m[66], entry[25];
-    int  i, num_m, k, j, ret = 0;
+    int i, num_m, k, j, ret = 0;
 
     if (inp_at_data) /* djb-rwth: fixing a NULL pointer dereference */
     {
         int num_atoms = inp_at_data->num_inp_atoms;
         int is_polymer = inp_at_data && inp_at_data->polymer && inp_at_data->polymer->n > 0 && inp_at_data->valid_polymer;
-        const inp_ATOM* at = inp_at_data->at;
+        const inp_ATOM *at = inp_at_data->at;
 
         /* Aliases. 5-3-99 DCh.*/
         if (nNumAliasLines)
@@ -1306,8 +1295,8 @@ int OrigAtData_WriteToSDfileAdditionalLines( const ORIG_ATOM_DATA *inp_at_data,
                 if (at[i].radical && !ALIASED_AT(i))
                 {
                     int radical = (at[i].radical == RADICAL_SINGLET ||
-                        at[i].radical == RADICAL_DOUBLET ||
-                        at[i].radical == RADICAL_TRIPLET) ? at[i].radical : 0;
+                                   at[i].radical == RADICAL_DOUBLET ||
+                                   at[i].radical == RADICAL_TRIPLET) ? at[i].radical : 0;
                     if (radical)
                     {
                         sprintf(entry, " %3d %3d", i + 1, radical);
@@ -1387,15 +1376,13 @@ int OrigAtData_WriteToSDfileAdditionalLines( const ORIG_ATOM_DATA *inp_at_data,
         if (is_polymer)
         {
             OrigAtData_WriteToSDfilePolymerData(inp_at_data, fcb, name, comment,
-                szLabel, szValue, written_bond_ends);
+                                                szLabel, szValue, written_bond_ends);
         }
 
         inchi_ios_print_nodisplay(fcb, "M  END\n");
-
     }
     return ret;
 }
-
 
 /****************************************************************************
 OrigAtData : Write To SDfile : Polymer Data
@@ -1409,9 +1396,9 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
                                          INT_ARRAY            *written_bond_ends )
 {
     int j, k, ju, jj, jprev, ret = 0;
-    const char *sty[] = { "NON", "SRU", "MON", "COP", "MOD", "CRO", "MER" };
-    const char *sst[] = { "NON", "ALT", "RAN", "BLO" };
-    const char *con[] = { "NON", "HT", "HH", "EU" };
+    const char *sty[] = {"NON", "SRU", "MON", "COP", "MOD", "CRO", "MER"};
+    const char *sst[] = {"NON", "ALT", "RAN", "BLO"};
+    const char *con[] = {"NON", "HT", "HH", "EU"};
     OAD_PolymerUnit *u = NULL;
 
     /* STY */
@@ -1426,16 +1413,16 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
         }
         if (jj == 8 || j == inp_at_data->polymer->n - 1)
         {
-            inchi_ios_print_nodisplay( fcb, "M  STY%3d", jj % 8 ? jj % 8 : 8 );
+            inchi_ios_print_nodisplay(fcb, "M  STY%3d", jj % 8 ? jj % 8 : 8);
             for (k = jprev + 1; k <= j; k++)
             {
                 u = inp_at_data->polymer->units[k];
                 if (u->type > 0 && u->type <= 6)
                 {
-                    inchi_ios_print_nodisplay( fcb, " %3d %3s", u->id, sty[u->type] );
+                    inchi_ios_print_nodisplay(fcb, " %3d %3s", u->id, sty[u->type]);
                 }
             }
-            inchi_ios_print_nodisplay( fcb, "\n" );
+            inchi_ios_print_nodisplay(fcb, "\n");
             jj = 0;
             jprev = j;
         }
@@ -1449,13 +1436,13 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
         if (j == 8 || j == inp_at_data->polymer->n - 1)
         {
             jj = j + 1;
-            inchi_ios_print_nodisplay( fcb, "M  SLB%3d", jj % 8 ? jj % 8 : 8 );
+            inchi_ios_print_nodisplay(fcb, "M  SLB%3d", jj % 8 ? jj % 8 : 8);
             for (k = jprev + 1; k < jj; k++)
             {
                 u = inp_at_data->polymer->units[k];
-                inchi_ios_print_nodisplay( fcb, " %3d %3d", u->id, u->label );
+                inchi_ios_print_nodisplay(fcb, " %3d %3d", u->id, u->label);
             }
-            inchi_ios_print_nodisplay( fcb, "\n" );
+            inchi_ios_print_nodisplay(fcb, "\n");
             /* djb-rwth: removing redundant code */
             jprev = j;
         }
@@ -1485,16 +1472,16 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
             }
             if (jj == 8 || j == inp_at_data->polymer->n - 1)
             {
-                inchi_ios_print_nodisplay( fcb, "M  SST%3d", jj % 8 ? jj % 8 : 8 );
+                inchi_ios_print_nodisplay(fcb, "M  SST%3d", jj % 8 ? jj % 8 : 8);
                 for (k = jprev + 1; k <= j; k++)
                 {
                     u = inp_at_data->polymer->units[k];
                     if (u->subtype == MOL_FMT_M_SST_ALT || u->subtype == MOL_FMT_M_SST_RAN || u->subtype == MOL_FMT_M_SST_BLK)
                     {
-                        inchi_ios_print_nodisplay( fcb, " %3d %3s", u->id, sst[u->subtype] );
+                        inchi_ios_print_nodisplay(fcb, " %3d %3s", u->id, sst[u->subtype]);
                     }
                 }
-                inchi_ios_print_nodisplay( fcb, "\n" );
+                inchi_ios_print_nodisplay(fcb, "\n");
                 jj = 0;
                 jprev = j;
             }
@@ -1525,16 +1512,16 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
             }
             if (jj == 8 || j == inp_at_data->polymer->n - 1)
             {
-                inchi_ios_print_nodisplay( fcb, "M  SCN%3d", jj % 8 ? jj % 8 : 8 );
+                inchi_ios_print_nodisplay(fcb, "M  SCN%3d", jj % 8 ? jj % 8 : 8);
                 for (k = jprev + 1; k <= j; k++)
                 {
                     u = inp_at_data->polymer->units[k];
                     if (u->conn == MOL_FMT_M_CONN_HT || u->conn == MOL_FMT_M_CONN_HH || u->conn == MOL_FMT_M_CONN_EU)
                     {
-                        inchi_ios_print_nodisplay( fcb, " %3d %3s", u->id, con[u->conn] );
+                        inchi_ios_print_nodisplay(fcb, " %3d %3s", u->id, con[u->conn]);
                     }
                 }
-                inchi_ios_print_nodisplay( fcb, "\n" );
+                inchi_ios_print_nodisplay(fcb, "\n");
                 jj = 0;
                 jprev = j;
             }
@@ -1551,12 +1538,12 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
             jj++;
             if (jj == 15 || j == u->na - 1)
             {
-                inchi_ios_print_nodisplay( fcb, "M  SAL %3d%3d", u->id, jj % 15 ? jj % 15 : 15 );
+                inchi_ios_print_nodisplay(fcb, "M  SAL %3d%3d", u->id, jj % 15 ? jj % 15 : 15);
                 for (k = jprev + 1; k <= j; k++)
                 {
-                    inchi_ios_print_nodisplay( fcb, " %3d", u->alist[k] );
+                    inchi_ios_print_nodisplay(fcb, " %3d", u->alist[k]);
                 }
-                inchi_ios_print_nodisplay( fcb, "\n" );
+                inchi_ios_print_nodisplay(fcb, "\n");
                 jj = 0;
                 jprev = j;
             }
@@ -1573,7 +1560,7 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
             jj++;
             if (jj == 15 || j == u->nb - 1)
             {
-                inchi_ios_print_nodisplay( fcb, "M  SBL %3d%3d", u->id, jj % 15 ? jj % 15 : 15 );
+                inchi_ios_print_nodisplay(fcb, "M  SBL %3d%3d", u->id, jj % 15 ? jj % 15 : 15);
 
                 for (k = jprev + 1; k <= j; k++)
                 {
@@ -1584,7 +1571,7 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
                     {
                         e1 = written_bond_ends->item[2 * wb];
                         e2 = written_bond_ends->item[2 * wb + 1];
-                        if (( a1 == e1&&a2 == e2 ) || ( a2 == e1&&a1 == e2 ))
+                        if ((a1 == e1 && a2 == e2) || (a2 == e1 && a1 == e2))
                         {
                             bond_num = wb + 1;
                             break;
@@ -1592,11 +1579,11 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
                     }
                     if (bond_num)
                     {
-                        inchi_ios_print_nodisplay( fcb, " %3d", bond_num );
+                        inchi_ios_print_nodisplay(fcb, " %3d", bond_num);
                     }
                 }
 
-                inchi_ios_print_nodisplay( fcb, "\n" );
+                inchi_ios_print_nodisplay(fcb, "\n");
                 jj = 0;
                 jprev = j;
             }
@@ -1608,13 +1595,13 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
     {
         /* better than nothing */
         float xmin, xmax, ymin, ymax;
-        xmin = ymin = -1.0*( (float)j + 1.0 ); /* djb-rwth: cast operator added, 1->1.0 */
-        xmax = ymax = +1.0*( (float)j + 1.0 ); /* djb-rwth: cast operator added, 1->1.0 */
+        xmin = ymin = -1.0 * ((float)j + 1.0); /* djb-rwth: cast operator added, 1->1.0 */
+        xmax = ymax = +1.0 * ((float)j + 1.0); /* djb-rwth: cast operator added, 1->1.0 */
         u = inp_at_data->polymer->units[j];
         /* u->xbr1[0], x1, y1, x2, y2 u->xbr1[1], u->xbr1[2], u->xbr1[3] */
-        inchi_ios_print_nodisplay( fcb, "M  SDI %3d%3d%10.4f%10.4f%10.4f%10.4f\n", u->id, 4, xmin, ymin, xmin, ymax );
+        inchi_ios_print_nodisplay(fcb, "M  SDI %3d%3d%10.4f%10.4f%10.4f%10.4f\n", u->id, 4, xmin, ymin, xmin, ymax);
         /* u->xbr2[0], u->xbr2[1], u->xbr2[2], u->xbr2[3] */
-        inchi_ios_print_nodisplay( fcb, "M  SDI %3d%3d%10.4f%10.4f%10.4f%10.4f\n", u->id, 4, xmax, ymax, xmax, ymin );
+        inchi_ios_print_nodisplay(fcb, "M  SDI %3d%3d%10.4f%10.4f%10.4f%10.4f\n", u->id, 4, xmax, ymax, xmax, ymin);
     }
 
     return ret;
