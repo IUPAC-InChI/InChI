@@ -83,7 +83,8 @@ TEST(inchi_dll_b_testing, test_MakeINCHIFromMolfileText)
     inchi_Output *poutput = &output;
 
     // We match any error because the test crashes with different error across runs (i.e., flaky test).
-    ASSERT_DEATH(MakeINCHIFromMolfileText(ferrocene, options, poutput), ".*");
+    // ASSERT_DEATH(MakeINCHIFromMolfileText(ferrocene, options, poutput), ".*");
+    ASSERT_EQ(MakeINCHIFromMolfileText(ferrocene, options, poutput), 0);
 
     // Works with other V3000 molfile.
     ASSERT_EQ(MakeINCHIFromMolfileText(ethanol, options, poutput), 0);
