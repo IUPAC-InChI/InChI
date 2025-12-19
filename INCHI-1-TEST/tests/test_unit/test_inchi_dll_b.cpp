@@ -46,45 +46,11 @@ TEST(inchi_dll_b_testing, test_MakeINCHIFromMolfileText)
         "M  V30 END CTAB\n"
         "M  END";
 
-    const char *ethanol =
-        "Ethanol\n"
-        " OpenBabel02172217462D\n"
-        "\n"
-        "  0  0  0     0  0            999 V3000\n"
-        "M  V30 BEGIN CTAB\n"
-        "M  V30 COUNTS 9 8 0 0 0\n"
-        "M  V30 BEGIN ATOM\n"
-        "M  V30 1 C -0.3811 1.01968 0 0\n"
-        "M  V30 2 C 0.4439 0.194681 0 0\n"
-        "M  V30 3 H -0.964464 1.60305 0 0\n"
-        "M  V30 4 H -0.065386 1.78188 0 0\n"
-        "M  V30 5 H 1.02726 -0.388681 0 0\n"
-        "M  V30 6 H 1.2061 0.510396 0 0\n"
-        "M  V30 7 H -1.2061 1.01968 0 0\n"
-        "M  V30 8 O -1.20037 -1.36938 0 0\n"
-        "M  V30 9 H -0.485901 -1.78188 0 0\n"
-        "M  V30 END ATOM\n"
-        "M  V30 BEGIN BOND\n"
-        "M  V30 1 1 1 3\n"
-        "M  V30 2 1 1 4\n"
-        "M  V30 3 1 1 2\n"
-        "M  V30 4 1 1 7\n"
-        "M  V30 5 1 2 5\n"
-        "M  V30 6 1 2 6\n"
-        "M  V30 7 1 8 2\n"
-        "M  V30 8 1 8 9\n"
-        "M  V30 END BOND\n"
-        "M  V30 END CTAB\n"
-        "M  END\n";
-
-
     char options[] = "";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    const char expected_inchi[] = "InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;/q2*-1;";
 
-    // We match any error because the test crashes with different error across runs (i.e., flaky test).
-    ASSERT_DEATH(MakeINCHIFromMolfileText(ferrocene, options, poutput), ".*");
-
-    // Works with other V3000 molfile.
-    ASSERT_EQ(MakeINCHIFromMolfileText(ethanol, options, poutput), 0);
+    ASSERT_EQ(MakeINCHIFromMolfileText(ferrocene, options, poutput), 1);
+    ASSERT_STREQ(poutput->szInChI, expected_inchi);
 }
