@@ -96,7 +96,7 @@ int Eql_INChI_Stereo( INChI_Stereo  *s1,
     else
     {
         if (( eql1 == EQL_SP3 || ( inv1 = ( eql1 == EQL_SP3_INV ) ) ) &&
-            ( len = s1->nNumberOfStereoCenters ) > ( bRelRac ? 1 : 0 ))
+            ( len = s1->nNumberOfStereoCenters ) > ( bRelRac ? 1 : 0 )) /* djb-rwth: addressing coverity ID #499484 -- bRelRac does not have to be 0 */
         {
 
             S_CHAR  *t_parity1, *t_parity2;
@@ -1367,12 +1367,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                 {
                     if (!OrigInfo[k].cCharge)
                     {
-                        if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
+                        if (len >= 2047) /* djb-rwth: fixing coverity ID #499515 */
                         {
                             len = 2047;
                             goto early_break;
                         }
-                        else if (len < 0) /* djb-rwth: fixing coverity CID #500400 */
+                        else if (len < 0) /* djb-rwth: fixing coverity ID #500400 */
                         {
                             len = 0;
                             goto early_break;
@@ -1383,12 +1383,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                             len++;
                         }
                     }
-                    if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
+                    if (len >= 2047) /* djb-rwth: fixing coverity ID #499515 */
                     {
                         len = 2047;
                         goto early_break;
                     }
-                    else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                    else if (len < 0) /* djb-rwth: fixing coverity ID #500382 */
                     {
                         len = 0;
                         goto early_break;
@@ -1398,7 +1398,7 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                         switch (OrigInfo[k].cRadical)
                         {
                             case 1:
-                                /* djb-rwth: fixing coverity CID #499515 -- false positive, len tested for overflow */
+                                /* djb-rwth: fixing coverity ID #499515 -- false positive, len tested for overflow */
                                 szValue[len] = 'd';
                                 len++;
                                 break;
@@ -1418,12 +1418,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                 {
                     if (OrigInfo[k].cCharge && !OrigInfo[k].cRadical)
                     {
-                        if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
+                        if (len >= 2047) /* djb-rwth: fixing coverity ID #499515 */
                         {
                             len = 2047;
                             goto early_break;
                         }
-                        else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                        else if (len < 0) /* djb-rwth: fixing coverity ID #500382 */
                         {
                             len = 0;
                             goto early_break;
@@ -1465,12 +1465,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                 /* radical */
                 if (OrigInfo[k].cRadical)
                 {                            
-                    if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
+                    if (len >= 2047) /* djb-rwth: fixing coverity ID #499515 */
                     {
                         len = 2047;
                         goto early_break;
                     }
-                    else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                    else if (len < 0) /* djb-rwth: fixing coverity ID #500382 */
                     {
                         len = 0;
                         goto early_break;
@@ -1499,12 +1499,12 @@ int MakeCRVString( ORIG_INFO        *OrigInfo,
                 {
                     if (!OrigInfo[k].cRadical)
                     {
-                        if (len >= 2047) /* djb-rwth: fixing coverity CID #499515 */
+                        if (len >= 2047) /* djb-rwth: fixing coverity ID #499515 */
                         {
                             len = 2047;
                             goto early_break;
                         }
-                        else if (len < 0) /* djb-rwth: fixing coverity CID #500382 */
+                        else if (len < 0) /* djb-rwth: fixing coverity ID #500382 */
                         {
                             len = 0;
                             goto early_break;

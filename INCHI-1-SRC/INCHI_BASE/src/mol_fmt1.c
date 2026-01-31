@@ -184,6 +184,7 @@ MOL_FMT_DATA * MolfileReadDataLines( INCHI_IOSTREAM *inp_file,
     }
 
     /* djb-rwth: removing redundant code */
+    /* djb-rwth: addressing coverity ID #499502 -- TREAT_ERR_AND_FIN properly used in all cases */
     *err = 0;
 
     if (should_read_all)
@@ -574,6 +575,8 @@ int MolfileReadCountsLine( MOL_FMT_CTAB* ctab,
     const int line_len = sizeof( line );
     int   err = 0, len; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
 
+    /* djb-rwth: addressing coverity ID #499502 -- TREAT_ERR properly used in all cases */
+
     p = inchi_fgetsLf( line, line_len, inp_file );
 
     if (!p)
@@ -667,6 +670,7 @@ int MolfileReadAtomsBlock( MOL_FMT_CTAB* ctab,
     S_SHORT chg;
     static const S_SHORT charge_val[] = { 0, 3, 2, 1, 'R', -1, -2, -3 };
 
+    /* djb-rwth: addressing coverity ID #499580 -- TREAT_ERR properly used in all cases */
     for (i = 0; i < ctab->n_atoms; i++)
     {
         p = inchi_fgetsLf( line, line_len, inp_file );
@@ -831,7 +835,7 @@ int MolfileReadBondsBlock( MOL_FMT_CTAB* ctab,
     }
 #endif 
 
-
+    /* djb-rwth: addressing coverity ID #499538 -- TREAT_ERR properly used in all cases */
     for (i = 0; i < ctab->n_bonds; i++)
     {
         p = inchi_fgetsLf( line, line_len, inp_file );
@@ -928,7 +932,7 @@ int MolfileReadSTextBlock( MOL_FMT_CTAB* ctab,
         {
             if (!err)
             {
-                TREAT_ERR_AND_FIN( err, 2, err_fin, "Cannot read STEXT block line" );
+                TREAT_ERR_AND_FIN( err, 2, err_fin, "Cannot read STEXT block line" ); /* djb-rwth: addressing coverity ID #499517 -- TREAT_ERR_AND_FIN properly used */
             }
             break;
             /* can't read the input file line */
@@ -998,7 +1002,7 @@ int MolfileReadPropBlock( MOL_FMT_CTAB* ctab,
               read until M END line was encountered */
 
         p = inchi_fgetsLf( line, line_len, inp_file );
-
+        /* djb-rwth: addressing coverity ID #499577 -- TREAT_ERR properly used in all cases */
         if (!p)
         {
             if (!err)
@@ -1859,6 +1863,8 @@ static int MolfileTreatPseudoElementAtoms( MOL_FMT_CTAB* ctab,
                                            char *pStrErr )
 {
     int i, nzz = 0;
+
+    /* djb-rwth: addressing coverity ID #499499 -- TREAT_ERR properly used in all cases */
 
     for (i = 0; i < ctab->n_atoms; i++)
     {

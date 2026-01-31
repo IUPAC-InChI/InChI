@@ -1582,7 +1582,7 @@ int GetNeutralRepsIfNeeded( AT_NUMB      *pri,
          cgi->num_c_groups > 0)
     {
         /* at[ri] and at[rj] belong to the same charge group, at least one is charged   */
-        for (k = 0; k < cgi->num_c_groups; k++) /* MS VC++ 2008 reports unreachable code here ??? */
+        for (k = 0; k < cgi->num_c_groups; k++) /* MS VC++ 2008 reports unreachable code here ??? */ /* djb-rwth: addressing coverity ID #499559 -- read the previous comment; can cgi->num_c_groups only have values 0 and 1? */
         {
             if (cgi->c_group[k].nGroupNumber == c_point)
             {

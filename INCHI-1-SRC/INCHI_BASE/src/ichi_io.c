@@ -1335,7 +1335,7 @@ char* inchi_sgets(char* s, int n, INCHI_IOSTREAM* ios)
     if (NULL == inp)
     {
         /* like EOF */
-        return NULL;
+        return NULL; /* djb-rwth: addressing coverity ID #499480 -- inp can be NULL */
     }
 
     p = s;

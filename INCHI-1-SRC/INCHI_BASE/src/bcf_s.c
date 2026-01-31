@@ -387,7 +387,7 @@ static int dbl2int_g(double dblinp, int fwidth, int ndecpl, char* str)
 			}
 		}
 		else
-		{
+		{	/* djb-rwth: addressing coverity ID #499558 -- currently leaving this as it is still a part of GHI #100 */
 			intpl = (long long int)round(dblinp);
 			ret = sprintf(str, "%*lld", fw_real, intpl); /* djb-rwth: ignoring LLVM warning */
 			return ret;

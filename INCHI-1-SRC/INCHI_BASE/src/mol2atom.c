@@ -1346,6 +1346,7 @@ int SetExtOrigAtDataByMolfileExtInput(MOL_FMT_DATA *mfdata,
     OAD_V3000 *pv = NULL;
     int nsgroups = mfdata->ctab.sgroups.used;
 
+    /* djb-rwth: addressing coverity ID #499476 -- TREAT_ERR properly used in all cases */
     /* Polymers */
     if (nsgroups > 0)
     {

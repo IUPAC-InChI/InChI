@@ -124,7 +124,7 @@ int inp2spATOM(inp_ATOM* inp_at, int num_inp_at, sp_ATOM* at)
 
     for (i = 0; i < num_inp_at; i++)
     {
-        elname_len = sizeof(at[0].elname) - 1; /* djb-rwth: fixing coverity CID #499609 */
+        elname_len = sizeof(at[0].elname) - 1; /* djb-rwth: fixing coverity ID #499609 */
         strncpy(at[i].elname, inp_at[i].elname, elname_len);
         at[i].elname[elname_len] = '\0';
         at[i].el_number = (U_CHAR)get_periodic_table_number(at[i].elname);
@@ -451,7 +451,7 @@ int CompINChITautVsNonTaut(const INCHI_SORT* p1,
      /*
          non-tautomeric "fixed H" specific
      */
-    if ( /*TAUT_NON == bTaut &&*/ (i2 && i2->nNum_H_fixed))
+    if ( /*TAUT_NON == bTaut && (i2 &&*/ i2->nNum_H_fixed) /* djb-rwth: fixing coverity ID #499493 */
     {
         /* first, compare non-tautomeric chem. formulas -- they may be different */
         /* secondly, compare fixed-H distribution */
@@ -2432,7 +2432,7 @@ AT_NUMB* GetDfsOrder4CT(CANON_GLOBALS* pCG,
                     nOutputString[k + 2] = cDelim;
                 }
 
-                if ((i >= 0) && (i < num_atoms)) /* djb-rwth: fixing coverity CID #499483 */
+                if ((i >= 0) && (i < num_atoms)) /* djb-rwth: fixing coverity ID #499483 */
                 {
                     cNeighNumb[i] = 0;
                 }
@@ -4048,7 +4048,7 @@ int  Create_INChI(CANON_GLOBALS* pCG,
         {
             num_at_tg = num_taut_at + t_group_info->num_t_groups;
             /*  ??? -not true- create t_group_info_orig for multiple calls with atom renumbering */
-            make_a_copy_of_t_group_info(t_group_info_orig /* dest*/, t_group_info /* source*/);
+            make_a_copy_of_t_group_info(t_group_info_orig /* dest*/, t_group_info /* source*/); /* djb-rwth: addressing coverity ID #499544 -- properly used sequence of arguments according to the comment in previous line */
             /*  mark isotopic tautomer groups: calculate t_group->iWeight */
             s[TAUT_YES].nLenLinearCTIsotopicTautomer = set_tautomer_iso_sort_keys(t_group_info);
             if (s[TAUT_YES].nLenLinearCTIsotopicTautomer < 0)

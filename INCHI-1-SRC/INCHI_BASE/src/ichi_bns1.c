@@ -2846,7 +2846,7 @@ void update_some_attype_totals(int nAtTypeTotals[], int mask, int delta, S_CHAR 
 void update_some_attype_totals(int nAtTypeTotals[], int mask, int delta, S_CHAR at_charge)
 {
     int i;
-    int32_t bit; /* djb-rwth: fixing coverity ID #499534 */
+    int32_t bit; /* djb-rwth: fixing coverity CID #499534 */
     if (nAtTypeTotals)
     {
         if (mask && !(mask & (ATBIT_Errors)))
@@ -2880,7 +2880,7 @@ int GetAtomChargeType( inp_ATOM *atom,
     inp_ATOM *at = atom + at_no;
 #if ( FIX_NORM_BUG_ADD_ION_PAIR == 1 )
     int i, neigh, mask, type, num_z, num_m, num_o, delta = bSubtract > 0 ? -1 : 1; /* 0 or -2 => add, 1 or 2 => subtract */
-    int32_t bit; /* djb-rwth: fixing coverity ID #499579 */
+    int32_t bit; /* djb-rwth: fixing coverity CID #499579 */
     int bNoAdjIon = ( bSubtract == 0 || bSubtract == 1 );
 #else
     int i, neigh, mask, bit, type, num_z, num_m, num_o, delta = bSubtract ? -1 : 1;
@@ -4406,6 +4406,10 @@ int HardRemoveAcidicProtons( CANON_GLOBALS *pCG,
 
     /* Create tautomeric group for non-acidic or negatively charged acidic O  */
     tg_H_Other = CreateTGroupInBnStruct( at, num_atoms, pBNS, AR_HARD_TYP_HN, AR_HARD_MSK_HN );
+    if (tg_H_Other) /* djb-rwth: fixing coverity CID #499503 */
+    {
+        return BNS_PROGRAM_ERR;
+    }
 
     /* Create tautomeric group for possibly acidic O */
     tg_H_Acid = CreateTGroupInBnStruct( at, num_atoms, pBNS, AR_HARD_TYP_HA, AR_HARD_MSK_HA );
@@ -4416,7 +4420,6 @@ int HardRemoveAcidicProtons( CANON_GLOBALS *pCG,
         {
             /* Remove a proton */
             nPrevNumCharges = pAATG->nAtTypeTotals[ATTOT_NUM_CHARGES];
-            /* djb-rwth: addressing coverity ID #499503 -- tg_H_Other negative values handled properly */
             ret = bExistsAltPath( pCG, pBNS, pBD, pAATG,
                                   at, num_atoms,
                                   tg_H_Other /*nVertDoubleBond*/,
@@ -4602,6 +4605,10 @@ int HardAddAcidicProtons( CANON_GLOBALS *pCG,
     nAtTypeTotals[ATTOT_NUM_N_Minus] )
     */
     cg_Minus_CO = CreateCGroupInBnStruct( at, num_atoms, pBNS, AA_HARD_TYP_CO, AA_HARD_MSK_CO, -1 );
+    if (cg_Minus_CO < 0) /* djb-rwth: fixing coverity CID #499474 */
+    {
+        return BNS_PROGRAM_ERR;
+    }
 
     cg_Minus_Other = CreateCGroupInBnStruct( at, num_atoms, pBNS, AA_HARD_TYP_NEG, AA_HARD_MSK_NEG, -1 );
 
@@ -4619,7 +4626,6 @@ int HardAddAcidicProtons( CANON_GLOBALS *pCG,
         {
             /* Add a proton */
             nPrevNumCharges = pAATG->nAtTypeTotals[ATTOT_NUM_CHARGES];
-            /* djb-rwth: addressing coverity ID #499474 -- cg_Minus_CO negative values handled properly */
             ret = bExistsAltPath( pCG, pBNS, pBD, pAATG,
                                   at, num_atoms,
                                   cg_Minus_Other /*nVertDoubleBond*/,
@@ -4828,6 +4834,10 @@ int HardRemoveHplusNP( CANON_GLOBALS *pCG,
 
     /* Create single tautomeric group */
     tg_H = CreateTGroupInBnStruct( at, num_atoms, pBNS, PR_HARD_TYP_H, PR_HARD_MSK_H );
+    if (tg_H < 0) /* djb-rwth: fixing coverity CID #499572 */
+    {
+        return BNS_PROGRAM_ERR;
+    }
 
     if (tg_H >= num_atoms && cg_Plus >= num_atoms)
     {
@@ -4882,7 +4892,6 @@ int HardRemoveHplusNP( CANON_GLOBALS *pCG,
 #if ( FIX_REM_PROTON_COUNT_BUG == 1 )
             nPrevRemovedProtons = pAATG->t_group_info->tni.nNumRemovedProtons;
 #endif
-            /* djb-rwth: addressing coverity ID #499572 -- tg_H negative values handled properly */
             ret = bExistsAltPath( pCG, pBNS, pBD, pAATG, at, num_atoms,
                                   tg_H /*nVertDoubleBond*/,
                                   cg_Plus /*nVertSingleBond*/,
@@ -5217,7 +5226,7 @@ int RemoveNPProtonsAndAcidCharges( CANON_GLOBALS *pCG,
                         goto exit_function;
                     }
                     /*t_group_info->nNumRemovedProtons  -= ret;*/
-                    t_group_info->tni.bNormalizationFlags |= FLAG_PROTON_AC_HARD_ADDED; /* djb-rwth: fixing coverity ID #499527 */
+                    t_group_info->tni.bNormalizationFlags |= FLAG_PROTON_AC_HARD_ADDED; /* djb-rwth: fixing coverity CID #499527 */
                     /* djb-rwth: removing redundant code */
                 }
             }
@@ -6939,7 +6948,7 @@ int bSetBnsToCheckAltPath( BN_STRUCT *pBNS,
             if (!bSet_v1)
             {
                 /* Add st-cap to v1 */
-                if (v1t != NO_VERTEX) /* djb-rwth: addressing coverity ID #499551 -- condition properly written */
+                if (v1t != NO_VERTEX) /* djb-rwth: addressing coverity CID #499551 -- condition properly written */
                 {
                     return BNS_BOND_ERR;
                 }
@@ -7305,7 +7314,7 @@ int bSetBnsToCheckAltPath( BN_STRUCT *pBNS,
             if (t1 != NO_VERTEX)
             {
                 /* Create new edge and vertex, connect to t1 */
-                vNew = bAddNewVertex( pBNS, t1, 1/*cap*/, 0/*flow*/, 1/*max_adj_edges*/, nDots ); /* djb-rwth: addressing coverity ID #499581 -- condition works as expected for t1 == -2 */
+                vNew = bAddNewVertex( pBNS, t1, 1/*cap*/, 0/*flow*/, 1/*max_adj_edges*/, nDots );
                 if (IS_BNS_ERROR( vNew ))
                 {
                     return vNew;
@@ -7332,7 +7341,7 @@ int bSetBnsToCheckAltPath( BN_STRUCT *pBNS,
             if (t1 == NO_VERTEX)
             {
                 /* Add st-cap to v1 */
-                n = bAddStCapToAVertex(pBNS, v1, (Vertex)(t2 == NO_VERTEX ? v2 : t2), apc->nOldCapsVert[iapc], nDots, 0); /* djb-rwth: addressing coverity ID #499501 -- condition works as expected for t2 == -2 */
+                n = bAddStCapToAVertex( pBNS, v1, (Vertex) ( t2 == NO_VERTEX ? v2 : t2 ), apc->nOldCapsVert[iapc], nDots, 0 ); /* djb-rwth: addressing coverity CID #499501 -- condition works as expected for t2 == -2 */
                 apc->bSetOldCapsVert[iapc] = n;
                 apc->vOldVert[iapc] = v1;
                 iapc++;
@@ -10965,7 +10974,11 @@ int BalancedNetworkSearch( BN_STRUCT* pBNS, BN_DATA *pBD, int bChangeFlow )
                     /* There is now a valid sv-path via u avoiding b_v (unless v==b_v)
                     => u, v, u', and v' now all become part of the same connected component of M[C] */
 
-                    /* djb-rwth: addressing coverity ID #499578 -- negative values of b_u handled properly */
+                    if (b_u < 0) /* djb-rwth: fixing coverity CID #499578 */
+                    {
+                        return BNS_WRONG_PARMS;
+                    }
+
                     w = MakeBlossom( pBNS, ScanQ, &QSize, Pu, Pv, max_len_Pu_Pv, SwitchEdge, BasePtr, u, v, iuv, b_u, b_v, Tree );
                     /* this constructed the new blossom and returned its base */
 

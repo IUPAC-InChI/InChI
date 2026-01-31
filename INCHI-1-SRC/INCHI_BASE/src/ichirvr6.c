@@ -204,7 +204,7 @@ int FixRestoredStructureStereo( struct tagCANON_GLOBALS *pCG,
                 if (( pe->forbidden & forbidden_stereo_edge_mask ) &&
                     ( ret = AddToEdgeList( &FixedStereoEdges, e, INC_ADD_EDGE ) )) /* djb-rwth: ignoring LLVM warning as there should be no memory leak */
                 {
-                    /* djb-rwth: fixing coverity CID #499482 */
+                    /* djb-rwth: fixing coverity ID #499482 */
                     goto exit_function;
                 }
             }

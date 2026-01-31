@@ -958,10 +958,7 @@ total_restart:
                             }
                             if (RETURNED_ERROR( ret2 ))
                             {
-                                if (ret2 == CT_TIMEOUT_ERR)
-                                    return ret2;
-                                else
-                                    return ret2; /*  program error */
+                                return ret2; /*  program error */ /* djb-rwth: fixing coverity ID #499569 */
                             }
                             if (ret2 > 0)
                             {
@@ -1547,14 +1544,7 @@ bypass_next_canon_rank_check:
 
                     if (RETURNED_ERROR( ret ))
                     {
-                        if (ret == CT_TIMEOUT_ERR)
-                        {
-                            return ret;
-                        }
-                        else
-                        {
-                            return ret; /*  program error */
-                        }
+                        return ret; /*  program error */ /* djb-rwth: fixing coverity ID #499567 */
                     }
 
                     if (ret > 0)

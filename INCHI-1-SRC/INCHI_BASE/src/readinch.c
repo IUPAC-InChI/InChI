@@ -1703,12 +1703,12 @@ bypass_end_of_INChI_plain:
             FreeInchi_Stereo0D(&atom_stereo0D);
         }
 
-        if (atom) /* djb-rwth: fixing coverity CID #499615 */
+        if (atom) /* djb-rwth: fixing coverity ID #499615 */
         {
             inchi_free(atom);
         }
 
-        if (pszCoord) /* djb-rwth: fixing coverity CID #499571 */
+        if (pszCoord) /* djb-rwth: fixing coverity ID #499571 */
         {
             inchi_free(pszCoord);
         }

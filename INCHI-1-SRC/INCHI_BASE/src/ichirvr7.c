@@ -509,7 +509,7 @@ int MergeStructureComponents(ICHICONST INPUT_PARMS* ip,
         pStruct1 = pStruct[iInchiRec][iMobileH][k].num_atoms ? pStruct[iInchiRec][iMobileH] + k :
             iAlternH >= 0 &&
             pStruct[iInchiRec][iAlternH][k].num_atoms ? pStruct[iInchiRec][iAlternH] + k : NULL;
-        if ((len = nAtomOffs[k + 1] - nAtomOffs[k]) && pStruct1) /* djb-rwth: addressing LLVM warning; fixing coverity CID #499555 */ 
+        if ((len = nAtomOffs[k + 1] - nAtomOffs[k]) && pStruct1) /* djb-rwth: addressing LLVM warning; fixing coverity ID #499555 */ 
         {
             memcpy(at + nAtomOffs[k], pStruct1->at2, len * sizeof(at[0]));
             if ((len2 = nDelHOffs[k + 1] - nDelHOffs[k])) /* djb-rwth: addressing LLVM warning */
@@ -548,7 +548,7 @@ int MergeStructureComponents(ICHICONST INPUT_PARMS* ip,
             a->nBlockSystem = 0;
             a->nNumAtInRingSystem = 0;
             a->nRingSystem = 0;
-            /* djb-rwth: addressing coverity CID #499524 -- initialisation with at */
+            /* djb-rwth: addressing coverity ID #499524 -- initialisation with at */
 
             for (j = 0; j < a->valence; j++)
             {
@@ -2249,7 +2249,7 @@ int CompareOneOrigInchiToRevInChI(StrFromINChI* pStruct,
     int ret, err = 0;
     INCHI_MODE cmp;
 
-    if (pStruct) /* djb-rwth: fixing coverity CID #499601 */
+    if (pStruct) /* djb-rwth: fixing coverity ID #499601 */
     {
         ret = pStruct->RevInChI.nRetVal;
     }

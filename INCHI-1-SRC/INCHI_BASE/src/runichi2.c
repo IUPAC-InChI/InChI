@@ -793,7 +793,7 @@ int TreatErrorsInReadTheStructure( STRUCT_DATA      *sd,
 #if ( bRELEASE_VERSION == 1 || EXTR_FLAGS == 0 )
         if (prb_file && prb_file->f && 0L <= sd->fPtrStart && sd->fPtrStart < sd->fPtrEnd && !ip->bSaveAllGoodStructsAsProblem)
         {
-            MolfileSaveCopy( inp_file, sd->fPtrStart, sd->fPtrEnd, prb_file->f, *num_inp );
+            MolfileSaveCopy( inp_file, sd->fPtrStart, sd->fPtrEnd, prb_file->f, *num_inp ); /* djb-rwth: addressing coverity ID #499477 -- return values handled properly */
         }
 #endif
     }
@@ -2040,7 +2040,7 @@ exit_function:
     if (err)
     {
         DiylFrag_Free(pfrag);
-        inchi_free(pfrag); /* djb-rwth: addressing coverity CID #499507 */
+        inchi_free(pfrag); /* djb-rwth: addressing coverity ID #499507 */
         return NULL;
     }
     return pfrag;
@@ -2168,7 +2168,7 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
     OAD_PolymerUnit *u = orig_at_data->polymer->units[iunit];
     ITRACE_("\n\n%-s\t\t%-s:%-d", "analyze_CRU_folding()", __FILE__,__LINE__);
 
-    pStrErr[0] = '\0'; /* djb-rwth: fixing coverity CID #499611; pStrErr is a dummy parameter in this function and is never used */
+    pStrErr[0] = '\0'; /* djb-rwth: fixing coverity ID #499611; pStrErr is a dummy parameter in this function and is never used */
 
     /* Reserve space for frag-specific xclass counts */
     frag_xc_counts = (int *)inchi_calloc((long long)nxclasses + 1, sizeof(int)); /* djb-rwth: cast operator added */

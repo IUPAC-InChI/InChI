@@ -925,13 +925,13 @@ NEIGH_LIST *CreateNeighList( int num_atoms,
         }
         else
         {
-            inchi_free(pAtList); /* djb-rwth: fixing coverity CID #499598 */
+            inchi_free(pAtList); /* djb-rwth: fixing coverity ID #499598 */
             inchi_free( pp );
             return NULL;
         }
     } /* djb-rwth: ignoring LLVM warning */
 
-    /* djb-rwth: fixing coverity CID #499598 -- pp uses pAtList values */
+    /* djb-rwth: fixing coverity ID #499598 -- pp uses pAtList values */
 
     return pp; /* djb-rwth: ignoring LLVM warning: since a pointer is returned, memory should be freed in a function which calls *CreateNeighList */
 }

@@ -1015,7 +1015,7 @@ double triple_prod_and_min_abs_sine2( double at_coord[][3],
         ? ( max_edge_len_NoExplNeigh < MAX_EDGE_RATIO * min_edge_len_NoExplNeigh )
         : ( max_edge_len < MAX_EDGE_RATIO * min_edge_len );
 
-    if (sine_value > vMinSine && ( min_sine || bAmbiguous ))
+    if (sine_value > vMinSine && ( min_sine || bAmbiguous )) /* djb-rwth: fixing coverity ID #499548 -- ui_rr */
     {
         if (min_sine)
         {
@@ -1737,8 +1737,8 @@ int GetHalfStereobond0DParity( inp_ATOM *at,
     {
         icur2nxt = icur2neigh = -1; /* ordering number of neighbors in nSbNeighOrigAtNumb[] */
         cur_parity = 0;             /* parity for mth stereobond incident to the cur_at */
+        nxt_at = at[cur_at].neighbor[(int)at[cur_at].sb_ord[m]]; /* djb-rwth: fixing coverity ID #499549 */
         if (0 <= at[cur_at].sb_ord[m] && at[cur_at].sb_ord[m] < at[cur_at].valence &&
-             0 <= ( nxt_at = at[cur_at].neighbor[(int) at[cur_at].sb_ord[m]] ) &&
              at[nxt_at].valence <= MAX_NUM_STEREO_BONDS && /* make sure it is a valid stereobond */
              ( nNextSbAtOrigNumb = at[nxt_at].orig_at_number ))
         {
@@ -4561,7 +4561,7 @@ int set_stereo_parity( CANON_GLOBALS *pCG,
         cSource = (S_CHAR *) inchi_calloc( num_at, sizeof( cSource[0] ) );
         if (!q || !cSource || !nAtomLevel)
         {
-            q = QueueDelete(q); /* djb-rwth: fixing coverity CID #499562 */
+            q = QueueDelete(q); /* djb-rwth: fixing coverity ID #499562 */
             inchi_free(nAtomLevel); /* djb-rwth: avoiding memory leak */
             inchi_free(cSource); /* djb-rwth: avoiding memory leak */
             num_3D_stereo_atoms = CT_OUT_OF_RAM;

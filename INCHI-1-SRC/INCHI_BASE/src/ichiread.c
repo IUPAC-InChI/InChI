@@ -2965,7 +2965,7 @@ int InChILine2Data(INCHI_IOSTREAM* pInp,
                                                 /* create two zero/NULL-initialized isotopic stereo if they do not exist */
                                                 if ((!pInChI->StereoIsotopic && 0 > (ret2 = CopySegment(pInChI, pAltInChI, CPY_SP3_M, 1, -1)))
                                                     /* -- the following will be created later, in TAUT_YES part of the code -- */
-                                                    || (!pAltInChI->StereoIsotopic && 0 > (ret2 = CopySegment(pAltInChI, pAltInChI, CPY_SP3_M, 1, -1)))) /* djb-rwth: addressing LLVM warnings */
+                                                    || (!pAltInChI->StereoIsotopic && 0 > (ret2 = CopySegment(pAltInChI, pAltInChI, CPY_SP3_M, 1, -1)))) /* djb-rwth: addressing LLVM warnings */ /* djb-rwth: addressing coverity ID #499533 -- ui_rr */
                                                 {
                                                     goto exit_function;
                                                 }
@@ -4036,7 +4036,7 @@ int ParseAuxSegmentNumbers(const char* str,               /* AuxInfo string     
             {
                 for (k = 0; k < val; k++)
                 {
-                    CopyAtomNumbers(pInChI + k, bIso, pInChI_From + k, bIso_From);
+                    CopyAtomNumbers(pInChI + k, bIso, pInChI_From + k, bIso_From); /* djb-rwth: addressing coverity ID #499525 -- return values handled properly */
                 }
             }
             mpy_component = val;
@@ -4987,7 +4987,14 @@ int ReadInChICoord(INCHI_IOSTREAM* pInp,
         }
     } while (c >= 0);
 
-    ret = AddAuxSegmentCoord(ret, pXYZ, nLenXYZ, pInpInChI, nNumComponents);
+    if (pXYZ) /* djb-rwth: fixing coverity ID #499576 */
+    {
+        ret = AddAuxSegmentCoord(ret, pXYZ, nLenXYZ, pInpInChI, nNumComponents);
+    }
+    else
+    {
+        ret = RI_ERR_ALLOC;
+    }
 
 exit_error:
     if (pXYZ)
@@ -5805,7 +5812,7 @@ int ParseSegmentIsoAtoms(const char* str,
 {
     int i, mpy_component, val;
     int nNumComponents, iComponent, len = 0, iAtom;
-    AT_NUMB nAtom1;
+    int nAtom1; /* djb-rwth: fixing coverity ID #499573 */
     const char* p, * q, * t, * pStart, * pEnd, * r;
     int  ret = 0;
     INChI* pInChI = pInpInChI[bMobileH];
@@ -6433,7 +6440,7 @@ int ParseSegmentSp3m(const char* str,
                 }
             }
         }
-        if (bMobileHFrom < 0 || bIsoFrom < 0)
+        if (bMobileHFrom < 0 || bIsoFrom < 0) /* djb-rwth: addressing coverity ID #499556 -- check necessary due to initialisation values */
         {
             return RI_ERR_PROGR;
         }
@@ -8234,7 +8241,7 @@ int ParseSegmentMobileH(const char* str,
     int num_H_component, num_H_formula, num_taut_H_component, num_H_InChI, ret2;
     int nNumComponents, iComponent, lenTautomer, tg_pos_Tautomer, iTGroup; /* djb-rwth: removing redundant variables */
     const char* p, * q, * h, * t, * p1, * pTaut, * pStart, * pEnd;
-    AT_NUMB curAtom, nxtAtom;
+    int curAtom, nxtAtom; /* djb-rwth: fixing coverity ID #499563 */
     int  state, ret, nAltMobileH = ALT_TAUT(bMobileH); /* djb-rwth: removing redundant variables */
     INChI* pInChI = pInpInChI[bMobileH];
     INChI* pAltInChI = pInpInChI[nAltMobileH];
@@ -8913,7 +8920,7 @@ int ParseSegmentMobileH(const char* str,
                             pInChI[iComponent].nTautomer[tg_pos_Tautomer + 2] = num_Minus;
                             lenTautomer = tg_pos_Tautomer + 3; /* first atom number position */
                             /* djb-rwth: fixing GH issue #59.1 */
-                            if (num_H >= INT_MIN && num_H <= INT_MAX)
+                            if (num_H >= INT_MIN && num_H <= INT_MAX) /* djb-rwth: addressing coverity ID #499582 -- boundary check is required */
                             {
                                 num_taut_H_component += num_H;
                             }
@@ -10662,7 +10669,7 @@ exit_function:
 
     INCHI_HEAPCHK
 
-        return c;
+        return c; /* djb-rwth: addressing coverity ID #499500 -- c = getInChIChar(pInp) cannot be tainted */
 }
 
 /****************************************************************************/
@@ -10790,6 +10797,7 @@ void PrepareSaveOptBits(INPUT_PARMS* ip,
     else
     {
         /* Analyze existing and prepare new SaveOpt appendix */
+        /* djb-rwth: addressing coverity ID #499490 -- these are variable initialisers setting values to 0 */
         int input_save_opt_has_recmet = input_save_opt_bits & SAVE_OPT_RECMET;
         int input_save_opt_has_fixedh = input_save_opt_bits & SAVE_OPT_FIXEDH;
         int input_save_opt_has_suu = input_save_opt_bits & SAVE_OPT_SUU;
@@ -11671,6 +11679,10 @@ int DetectAndExposePolymerInternals(INCHI_IOSTREAM* is)
 
     /* Check formula */
     p = strchr(p, '/');
+    if (!p) /* djb-rwth: fixing coverity ID #499505 */
+    {
+        goto endf;
+    }
     p++;
     pend = strchr(p, '/');
     ntimes = 1;
@@ -12302,7 +12314,7 @@ static int SegmentSp3ProcessAbbreviation(int* mpy_component,
                 if (*q == 'e')
                 {
                     /* copy from mobile H to isotopic mobile H */
-                    pInChIFrom = pInChI;
+                    pInChIFrom = pInChI; /* djb-rwth: addressing coverity ID #499498 -- definitely not a copy-paste error */
                     bIsoTo = 1;
                     bIsoFrom = -1; /* empty */
                 }

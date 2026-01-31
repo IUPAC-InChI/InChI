@@ -311,7 +311,7 @@ int MolfileV3000ReadField(void *data,
         }
         else if (data_type == MOL_FMT_INT_DATA)
         {
-            if (INT_MIN <= ldata && ldata <= INT_MAX)
+            if (INT_MIN <= ldata && ldata <= INT_MAX) /* djb-rwth: addressing coverity ID #499496/499553 -- ldata check seems to be necessary */
             {
                 *(int *)data = (int)ldata;
             }
@@ -391,7 +391,7 @@ int MolfileV3000ReadField(void *data,
         }
         else
         {
-            *(float *)data = (float)ddata;
+            *(float *)data = (float)ddata; /* djb-rwth: addressing coverity ID #499519 -- probably never reached */
         }
     }
     break; /* REAL's */
@@ -833,7 +833,7 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
     if (failed)
     {
         err = 7;
-        TREAT_ERR(err, 7, "Cannot interpret V3000 collection line(s)");
+        TREAT_ERR(err, 7, "Cannot interpret V3000 collection line(s)"); /* djb-rwth: addressing coverity ID #499531 -- TREAT_ERR properly used */
         if (line)
         {
             dotify_non_printable_chars(line);
@@ -985,7 +985,7 @@ int MolfileV3000ReadAtomsBlock(MOL_FMT_CTAB *ctab,
             {
 
                 err = 4;
-                TREAT_ERR(err, 4, "Cannot interpret V3000 atom block line:");
+                TREAT_ERR(err, 4, "Cannot interpret V3000 atom block line:"); /* djb-rwth: addressing coverity ID #499547 -- TREAT_ERR properly used */
                 dotify_non_printable_chars(line);
                 AddErrorMessage(pStrErr, line);
 
@@ -1320,7 +1320,7 @@ int MolfileV3000ReadBondsBlock(MOL_FMT_CTAB *ctab,
         {
             if (!err)
             {
-                TREAT_ERR(err, 2, "Cannot read V3000 bond block line");
+                TREAT_ERR(err, 2, "Cannot read V3000 bond block line"); /* djb-rwth: addressing coverity ID #499565 -- TREAT_ERR properly used */
             }
             break;
         }
@@ -1493,7 +1493,7 @@ int MolfileV3000ReadBondsBlock(MOL_FMT_CTAB *ctab,
                             }
                         }
                     }
-                    /* djb-rwth: addressing coverity CID #499489 -- false positive as num_atoms allocated in MolfileV3000ReadHapticBond and returns a value in this block */
+                    /* djb-rwth: addressing coverity ID #499489 -- false positive as num_atoms allocated in MolfileV3000ReadHapticBond and returns a value in this block */
                 }
                 else if (!strcmp(field, "DISP"))
                 {

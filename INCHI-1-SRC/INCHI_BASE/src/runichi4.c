@@ -1495,7 +1495,7 @@ int TreatCreateINChIWarning( STRUCT_DATA    *sd,
         /*  save the structure as a problem structure if requested */
         if (ip->bSaveWarningStructsAsProblem && !ip->bSaveAllGoodStructsAsProblem &&
              prb_file->f && 0L <= sd->fPtrStart && sd->fPtrStart < sd->fPtrEnd)
-        {
+        {   /* djb-rwth: addressing coverity ID #499545 -- return values handled properly */
             MolfileSaveCopy( inp_file,
                              sd->fPtrStart,
                              sd->fPtrEnd,

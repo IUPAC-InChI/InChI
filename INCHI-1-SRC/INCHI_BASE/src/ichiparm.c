@@ -1344,7 +1344,7 @@ int ReadCommandLineParms(int argc,
                     timeout_value = strtol(pArg + 2, (char**)&q, 10);
                     if (timeout_value && q > pArg + 2 && *q == '\0')
                     {
-                        if (errno == ERANGE || timeout_value < 0.0 || timeout_value>LONG_MAX)
+                        if (errno == ERANGE || timeout_value < 0.0 || timeout_value>LONG_MAX) /* djb-rwth: addressing coverity ID #499550 -- the condition takes into account all possible overflows/errors */
                         {
                             timeout_value = 0;
                             timeout_set_warning = 1;

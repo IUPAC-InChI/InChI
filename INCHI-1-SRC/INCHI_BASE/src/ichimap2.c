@@ -1075,7 +1075,7 @@ int parity_of_mapped_half_bond( int from_at,
     }
     if (j != 2)
     {
-        return 0; /*  program error: j can be only 0, 1, or 2 */ /*   <BRKPT> */
+        return 0; /*  program error: j can be only 0, 1, or 2 */ /*   <BRKPT> */ /* djb-rwth: addressing coverity ID #499526 -- refer to the first comment in this line */
     }
 
     if (r_to[0] == r_to[1])

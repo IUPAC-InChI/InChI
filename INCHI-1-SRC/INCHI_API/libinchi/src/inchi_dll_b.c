@@ -1794,7 +1794,7 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
             /* cleanup */
         if (num_atoms == INCHI_INP_ERROR_RET || num_atoms == INCHI_INP_FATAL_RET)
         {
-            if (atom_stereo0D) /* djb-rwth: fixing coverity CID #500395 */
+            if (atom_stereo0D) /* djb-rwth: fixing coverity ID #500395 */
             {
                 if (stereo0D && *stereo0D == atom_stereo0D)
                 {
@@ -1804,13 +1804,13 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
                 FreeInchi_Stereo0D(&atom_stereo0D);
             }
 
-            if (atom) /* djb-rwth: fixing coverity CID #499615 */
+            if (atom) /* djb-rwth: fixing coverity ID #499615 */
             {
                 inchi_free(atom);
                 atom = NULL;
             }
 
-            if (pszCoord) /* djb-rwth: fixing coverity CID #500397 */
+            if (pszCoord) /* djb-rwth: fixing coverity ID #500397 */
             {
                 inchi_free(pszCoord);
                 pszCoord = NULL;

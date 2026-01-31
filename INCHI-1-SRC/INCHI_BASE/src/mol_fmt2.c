@@ -272,7 +272,7 @@ int MolfileReadField(void *data,
         else
         {
             /* should not come here */
-            ret = -1;
+            ret = -1; /* djb-rwth: addressing coverity ID #499478 -- see the original comment above */
         }
 
         switch (data_type)

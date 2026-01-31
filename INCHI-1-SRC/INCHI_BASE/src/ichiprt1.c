@@ -2112,7 +2112,7 @@ char *szGetTag( const INCHI_TAG *Tag,
             dstsz = max_3(stl1, stl2, 5);
             strcpy_s( szTag, dstsz, nTag == 1 ? Tag[j].szXmlLabel : nTag == 2 ? Tag[j].szPlainLabel : "???" ); /* djb-rwth: function replaced with its safe C11 variant */
 #else
-            strcpy(szTag, nTag == 1 ? Tag[j].szXmlLabel : nTag == 2 ? Tag[j].szPlainLabel : "???");
+            strcpy(szTag, nTag == 1 ? Tag[j].szXmlLabel : nTag == 2 ? Tag[j].szPlainLabel : "???"); /* djb-rwth: addressing coverity ID #499488 -- when nTag == 2, the "???" is avoided, which is correct */
 #endif
             if (nTag != 2)
             {
@@ -2315,7 +2315,7 @@ int CleanOrigCoord( MOL_COORD szCoord, int delim )
             szBuf[len_buf++] = delim;
 #pragma warning (pop)
         }
-        if (len_buf >= (int)sizeof(MOL_COORD)) /* djb-rwth: fixing coverity CID #499520 */
+        if (len_buf >= (int)sizeof(MOL_COORD)) /* djb-rwth: fixing coverity ID #499520 */
         {
             len_buf = (int)sizeof(MOL_COORD) - 1;
             len = 0;
@@ -4045,7 +4045,7 @@ static int OutputINCHI_PolymerLayer( CANON_GLOBALS *pCG,
         {
             /* For each unit u ... */
             u = units2[unum[i]];
-
+            /* djb-rwth: addressing coverity ID #499574 -- all NULL checks already done above */
             err = OutputINCHI_PolymerLayer_SingleUnit(u,
                 io->bPolymers,
                 pOrigStruct->polymer->n_pzz,

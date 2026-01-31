@@ -330,7 +330,7 @@ int MakeHillFormula( U_CHAR *nAtom,
     mult = 0;
     bOvfl = 0;
     nPrevAtom = (U_CHAR) -2; /*  non-existent number */
-    memset(szElement, '\0', sizeof(szElement)); /* djb-rwth: fixing coverity CID #499542 */
+    memset(szElement, '\0', sizeof(szElement)); /* djb-rwth: fixing coverity ID #499542 */
 
     if (num_C)
     {

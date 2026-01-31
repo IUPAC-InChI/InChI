@@ -247,7 +247,7 @@ int SDFileSkipExtraData(INCHI_IOSTREAM *inp_file,
                 }
                 else if (!prev_err)
                 {
-                    TREAT_ERR(err, 3, "Unexpected SData header line:");
+                    TREAT_ERR(err, 3, "Unexpected SData header line:"); /* djb-rwth: addressing coverity ID #499557 -- TREAT_ERR properly used */
                     dotify_non_printable_chars(line);
                     AddErrorMessage(pStrErr, line);
                     /* unexpected contents of data header line */
