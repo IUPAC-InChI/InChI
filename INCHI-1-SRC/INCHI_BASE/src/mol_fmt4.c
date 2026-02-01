@@ -494,7 +494,7 @@ void NumLists_Free(NUM_LISTS *num_lists)
     {
         int i;
         for (i = 0; i < num_lists->used; i++)
-            inchi_free(num_lists->lists[i]); /* djb-rwth: ui_rr? -- false positive as this function just does the clean-up job */
+            inchi_free(num_lists->lists[i]); /* djb-rwth: unresolved issue -- revision required? -- false positive as this function just does the clean-up job */
         inchi_free(num_lists->lists);
         memset(num_lists, 0, sizeof(*num_lists)); /* djb-rwth: memset_s C11/Annex K variant? */
     }

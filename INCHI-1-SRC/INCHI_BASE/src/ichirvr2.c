@@ -416,7 +416,7 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
         if (nNumDeletedH)
         {
             /* add explicit H */
-#if ( FIX_GAF_2019_2==1 )
+#if ( FIX_GAF_2019_2==1 )           
             inp_ATOM *at2 = (inp_ATOM *)inchi_calloc(nNumDeletedH>0 ? num_atoms + nNumDeletedH : num_atoms,
                 sizeof(at2[0]));
 #else
@@ -437,7 +437,7 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
             inchi_free( at );
             pStruct->at = at = at2;
             /* fill out deleted H atom info */
-            for (i = num_atoms; i < num_atoms + nNumDeletedH; i++) /* djb-rwth: ui_rr? -- buffer overrun cannot happen, loop not executed for nNumDeletedH <= 0 */
+            for (i = num_atoms; i < num_atoms + nNumDeletedH; i++) /* djb-rwth: unresolved issue -- revision required? -- buffer overrun cannot happen, loop not executed for nNumDeletedH <= 0 */
             {
                 strcpy( at[i].elname, "H" );
                 at[i].el_number = EL_NUMBER_H;
@@ -4776,7 +4776,7 @@ int RestoreIsoCyanoGroup( BN_STRUCT *pBNS,
              at2[j].num_H == 0 &&
              at2[j].radical == 0 &&
              pVA[j].cNumValenceElectrons == 5 &&
-             ( eNPlusEdge1 = pVA[j].nCPlusGroupEdge - 1 ) >= 0 &&
+             ( eNPlusEdge1 = pVA[j].nCPlusGroupEdge - 1 ) >= 0 && 
              pBNS->edge[eNPlusEdge].flow == 0) /* djb-rwth: ignoring LLVM warning: variable used */
         {     /* -N(+)- */
 
@@ -5083,7 +5083,7 @@ int FixMetal_Nminus_Ominus( BN_STRUCT *pBNS,
 
             if (ret == 1 && ( (vPathEnd == v1 && vPathStart == v2) ||
                 (vPathEnd == v2 && vPathStart == v1) ) /*&& nDeltaCharge == nDeltaChargeMax*/) /* djb-rwth: addressing LLVM warnings */
-            {
+            { 
                 ret = RunBnsRestoreOnce( pBNS, pBD, pVA, pTCGroups );
                 ( *pnNumRunBNS )++;
                 *pnTotalDelta += ret;

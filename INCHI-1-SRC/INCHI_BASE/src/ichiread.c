@@ -2965,7 +2965,7 @@ int InChILine2Data(INCHI_IOSTREAM* pInp,
                                                 /* create two zero/NULL-initialized isotopic stereo if they do not exist */
                                                 if ((!pInChI->StereoIsotopic && 0 > (ret2 = CopySegment(pInChI, pAltInChI, CPY_SP3_M, 1, -1)))
                                                     /* -- the following will be created later, in TAUT_YES part of the code -- */
-                                                    || (!pAltInChI->StereoIsotopic && 0 > (ret2 = CopySegment(pAltInChI, pAltInChI, CPY_SP3_M, 1, -1)))) /* djb-rwth: addressing LLVM warnings */ /* djb-rwth: addressing coverity ID #499533 -- ui_rr */
+                                                    || (!pAltInChI->StereoIsotopic && 0 > (ret2 = CopySegment(pAltInChI, pAltInChI, CPY_SP3_M, 1, -1)))) /* djb-rwth: addressing LLVM warnings */ /* djb-rwth: addressing coverity ID #499533 -- unresolved issue -- revision required */
                                                 {
                                                     goto exit_function;
                                                 }
@@ -10195,7 +10195,7 @@ int ParseSegmentFormula(const char* str,
             {
                 U_CHAR* pci1 = NULL;  /* copied from below to obey C syntax - 2024-09-01 DT */
                 /* Copy duplicated formula */
-                strcpy(pInChI[iComponent + i].szHillFormula, pInChI[iComponent].szHillFormula); /* djb-rwth: ui_rr? */
+                strcpy(pInChI[iComponent + i].szHillFormula, pInChI[iComponent].szHillFormula); /* djb-rwth: unresolved issue -- revision required? */
                 /* Copy atoms in the duplicated formula */
                 pInChI[iComponent + i].nNumberOfAtoms = nNumAtoms;
                 /* djb-rwth: fixing oss-fuzz issue #43420, #34772 */

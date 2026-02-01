@@ -4008,7 +4008,7 @@ static int OutputINCHI_PolymerLayer( CANON_GLOBALS *pCG,
         for (i = 0; i < p->n; i++)
         {
             units2[i] = OAD_PolymerUnit_CreateCopy(p->units[i]);
-            if (NULL == units2[i]) /* djb-rwth: ui_rr? -- units2 properly allocated, and loop index well defined */
+            if (NULL == units2[i]) /* djb-rwth: unresolved issue -- revision required? -- units2 properly allocated, and loop index well defined */
             {
                 err = 4;
                 goto exit_function;

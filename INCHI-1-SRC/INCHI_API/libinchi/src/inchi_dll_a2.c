@@ -2557,7 +2557,7 @@ int FillOutINChIReducedWarn( INChI *pINChI,
             /*  Num(H), Num(-) */
             for (j = 0; j < INCHI_T_NUM_MOVABLE; j++) /* djb-rwth: removing redundant code */
                 pINChI->nTautomer[len++] = t_group->num[j];
-            for (j = T_NUM_NO_ISOTOPIC; j < INCHI_T_NUM_MOVABLE; j++) /* djb-rwth: redundant code as the loop is never executed -- discussion required */ /* djb-rwth: ui_rr */
+            for (j = T_NUM_NO_ISOTOPIC; j < INCHI_T_NUM_MOVABLE; j++) /* djb-rwth: redundant code as the loop is never executed -- discussion required */ /* djb-rwth: unresolved issue -- revision required */
                 pINChI->nTautomer[len++] = 0; /* should not happen */
             /* tautomeric group endpoint canonical numbers, pre-sorted in ascending order */
             for (j = (int) t_group->nFirstEndpointAtNoPos,

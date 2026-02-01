@@ -2747,7 +2747,7 @@ int bIsMetalToDisconnect( inp_ATOM *at, int i, int bCheckMetalValence )
 
         for (i = 0; i < 2 && ( i & type ); i++)
         {
-            if (at_valence == get_el_valence( at[i].el_number, at[i].charge, i )) /* djb-rwth: fixing coverity ID #499532 -- ui_rr */
+            if (at_valence == get_el_valence( at[i].el_number, at[i].charge, i )) /* djb-rwth: fixing coverity ID #499532 -- unresolved issue -- revision required */
             {
                 return 2; /* atom has normal valence */
             }
@@ -5040,7 +5040,7 @@ void imat_free( int m, int **a )
     {
         for (i = 0; i < m; i++)
         {
-            if (NULL != a[i]) /* djb-rwth: ui_rr? -- false positive as this function just does the clean-up job */
+            if (NULL != a[i]) /* djb-rwth: unresolved issue -- revision required? -- false positive as this function just does the clean-up job */
             {
                 inchi_free( a[i] );
             }
@@ -5175,7 +5175,7 @@ void subgraf_free( subgraf *sg )
     {
         for (i = 0; i < sg->nnodes; i++)
         {
-            if (sg->adj[i]) /* djb-rwth: ui_rr? -- false positive as this function just does the clean-up job */
+            if (sg->adj[i]) /* djb-rwth: unresolved issue -- revision required? -- false positive as this function just does the clean-up job */
             {
                 inchi_free( sg->adj[i] );
             }

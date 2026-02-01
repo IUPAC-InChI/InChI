@@ -2261,7 +2261,7 @@ int is_DERIV_RING2_PRRLDD_PPRDN( inp_ATOM *at,
                 k = ( ord[1] < ord[0] );
                 da1->ord[0] = ord[k];  /* smaller */
                 da1->ord[1] = ord[!k]; /* greater */
-                /*da1->num[0] = */da1->num[0] = i - 1; /* djb-rwth: ui_rr? / da1->num[1] = i-1? */
+                /*da1->num[0] = */da1->num[0] = i - 1; /* djb-rwth: unresolved issue -- revision required? / da1->num[1] = i-1? */
             }
             return i;
         }

@@ -1015,7 +1015,7 @@ double triple_prod_and_min_abs_sine2( double at_coord[][3],
         ? ( max_edge_len_NoExplNeigh < MAX_EDGE_RATIO * min_edge_len_NoExplNeigh )
         : ( max_edge_len < MAX_EDGE_RATIO * min_edge_len );
 
-    if (sine_value > vMinSine && ( min_sine || bAmbiguous )) /* djb-rwth: fixing coverity ID #499548 -- ui_rr */
+    if (sine_value > vMinSine && ( min_sine || bAmbiguous )) /* djb-rwth: fixing coverity ID #499548 -- unresolved issue -- revision required */
     {
         if (min_sine)
         {
