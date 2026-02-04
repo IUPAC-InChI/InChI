@@ -1,5 +1,16 @@
 # Change log
 
+## v1.07.5 2026-02-04
+
+### Fixed
+
+- 127 `Coverity Scan` high and medium impact bugs fixed or addressed
+- GHI #189: Exception in libinchi.dll when converting some specific polymer structure
+- GHI #165, #164, #161, #160, PR #163, #162 -- initial `Coverity Scan` detections
+- `.rc` files to `CMake` build system for metadata
+- PR #138: stack buffer overflow in `CleanOrigCoord`
+- Several _Google oss-fuzz_ issues
+
 ## v1.07.4 2025-07-03
 
 ### Features
@@ -33,7 +44,7 @@
 
 - GHI #71: 32-bit InChI version requiring ibgcc_s_dw2-1.dll on Windows 32-bit platforms (thanks to Norwid Behrnd) a few bugs in the code have been detected and fixed libgcc_s_dw2-1.dll added to INCHI-1-BIN folders
 - GHI #70: Update license -- Copyright (c) 2024 IUPAC and InChI Trust instead of Copyright (c) 2024 InChI Project
-- GHI #67: GetStructFromInchi() now working in v1.07.2 (thanks to Greg Landrum) all variable initializations checked and fixed which caused this issue essential part of InChI tests from now on as all bugs reported by Paul Thiessen/Evan Bolton had the same origin 
+- GHI #67: GetStructFromInchi() now working in v1.07.2 (thanks to Greg Landrum) all variable initializations checked and fixed which caused this issue essential part of InChI tests from now on as all bugs reported by Paul Thiessen/Evan Bolton had the same origin
 - GHI #65:changing descriptions in default output for tautomerisms (thanks to Norwid Behrnd)
 - GHI #58 and #59: 7 bug fixes detected by AFL++ fuzzer (thanks to @skorpion89)
 - GHI #43: add changes to new version (thanks to Burt Leland) several very important bug fixes related to /InChI2InChI /FixedH /RecMet options
@@ -78,7 +89,7 @@
 - 33 buffer overflow issues due to use of large array dimensions
 - 157 security bugs related to improper `NULL` pointer dereferencing which might cause crashes or exits
 - 71 memory leaks
-- 530 potential applications of optional [bounds checking functions](/README.md#BCF)  
+- 530 potential applications of optional [bounds checking functions](/README.md#BCF)
 
 Additionally, 29 potential security issues have been marked for further revision.
 
