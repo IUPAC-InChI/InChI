@@ -78,8 +78,6 @@ extern "C" {
     const char* base26_dublet_for_bits_28_to_36( unsigned char *a );
     /*    Get dublet (bits 56..64)    */
     const char* base26_dublet_for_bits_56_to_64( unsigned char *a );
-    /*    Calculate check character for the string.    */
-    const char base26_checksum( const char *str );
     /*    Get hash extension in hexadecimal representation for the major block.
         Len(extension) = 256 - 65 = 191 bit.                                */
     void get_xtra_hash_major_hex( const unsigned char *a, char* szXtra );
