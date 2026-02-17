@@ -66,6 +66,7 @@
 #include "../../../INCHI_BASE/src/ichicant.h"
 #include "../../../INCHI_BASE/src/readinch.h"
 #include "../../../INCHI_BASE/src/bcf_s.h"
+#include "../../../INCHI_BASE/src/permutation_util.h"
 
 #include "inchi_dll.h"
 #include "inchi_dll_b.h"
@@ -464,6 +465,9 @@ extern "C" {
 int cdecl_MakeINCHIFromMolfileText( const char *moltext,
                                     char *szOptions,
                                     inchi_Output *out );
+int cdecl_PermuteMolfileText( const char *moltext,
+                              char *permuted_moltext,
+                              size_t permuted_moltext_len );
 #ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
 }
@@ -482,6 +486,17 @@ int cdecl_MakeINCHIFromMolfileText( const char *moltext,
         MakeINCHIFromMolfileText( moltext,
                                   options,
                                   out );
+}
+
+/****************************************************************************/
+int cdecl_PermuteMolfileText( const char *moltext,
+                              char *permuted_moltext,
+                              size_t permuted_moltext_len )
+{
+    return
+        PermuteMolfileText( moltext,
+                            permuted_moltext,
+                            permuted_moltext_len );
 }
 
 #endif

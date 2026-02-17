@@ -34,6 +34,7 @@ EXPORTS
      STDINCHIGEN_Reset                = cdecl_STDINCHIGEN_Reset           @31
      STDINCHIGEN_Setup                = cdecl_STDINCHIGEN_Setup           @32
      MakeINCHIFromMolfileText         = cdecl_MakeINCHIFromMolfileText    @33
+     PermuteMolfileText               = cdecl_PermuteMolfileText          @34
 ;    dll_exported names(stdcall)
 ;   _CheckINCHI@8                     = _CheckINCHI@8                     @33
 ;   _CheckINCHIKey@4                  = _CheckINCHIKey@4                  @34

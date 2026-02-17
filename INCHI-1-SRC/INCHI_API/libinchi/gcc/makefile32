@@ -246,6 +246,7 @@ runichi3.o	\
 runichi4.o	\
 sha2.o	\
 strutil.o	\
+permutation_util.o	\
 util.o	\
 bcf_s.o
 # === InChI Library link rule =========

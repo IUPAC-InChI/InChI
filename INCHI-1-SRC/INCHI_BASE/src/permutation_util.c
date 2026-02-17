@@ -60,23 +60,21 @@
 #ifdef _WIN32
 #include <crtdbg.h>
 #endif
-#include "ichimain.h"
-#ifdef TARGET_EXE_STANDALONE
-#include "inchi_api.h"
-#endif
 
+#include "ichimain.h"
+#include "inchi_api.h"
 #include "bcf_s.h"
+#include "ichi_io.h"
+#include "inpdef.h"
 #include "permutation_util.h"
 
-#ifdef RENUMBER_ATOMS_AND_RECALC_V106
 
-/*****************************************************************************/
 int rrand(int m)
 {
     return
         (int)((double)m * (rand() / (RAND_MAX + 1.0)));
 }
-/*****************************************************************************/
+
 void shuffle(void* obj, size_t nmemb, size_t size)
 {
     void* temp = inchi_malloc(size);
@@ -209,4 +207,90 @@ void OrigAtData_Permute(ORIG_ATOM_DATA* permuted, ORIG_ATOM_DATA* saved, int* nu
     return;
 }
 
-#endif
+EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
+    const char *moltext,
+    char *permuted_moltext,
+    size_t permuted_moltext_len)
+{
+    int status = -1;
+    if (!moltext || !permuted_moltext || permuted_moltext_len == 0) return status;
+
+    int *permutation_mapping = NULL;
+    ORIG_ATOM_DATA atom_data;
+    ORIG_ATOM_DATA permuted_atom_data;
+    memset(&atom_data, 0, sizeof(atom_data));
+    memset(&permuted_atom_data, 0, sizeof(permuted_atom_data));
+
+    INCHI_IOSTREAM input_stream;
+    inchi_ios_init(&input_stream, INCHI_IOS_TYPE_STRING, NULL);
+
+    INCHI_IOSTREAM output_stream;
+    inchi_ios_init(&output_stream, INCHI_IOS_TYPE_STRING, NULL);
+
+    if (inchi_ios_print_nodisplay(&input_stream, "%s", moltext) <= 0)
+        goto exit;
+
+    INCHI_MODE input_atom_flags = 0;
+    int struct_read_error = 0;
+    int num_atoms = CreateOrigInpDataFromMolfile(
+        &input_stream,
+        &atom_data,
+        0, 1, 1, 0, 0, NULL, NULL, NULL, NULL,
+        &input_atom_flags,
+        &struct_read_error,
+        NULL, 0
+    );
+
+    if (num_atoms <= 0)
+        goto exit;
+
+    if (struct_read_error != 0)
+        goto exit;
+
+    if (OrigAtData_Duplicate(&permuted_atom_data, &atom_data) != 0)
+        goto exit;
+
+    permutation_mapping = malloc(num_atoms * sizeof(int));
+    if (!permutation_mapping)
+        goto exit;
+
+    /* Enforce different permutation for molecules with more than one atom. */
+    int is_identity;
+    do {
+        for (int i = 0; i < num_atoms; ++i)
+            permutation_mapping[i] = i;
+        shuffle(permutation_mapping, num_atoms, sizeof(int));
+        is_identity = 1;
+        for (int i = 0; i < num_atoms; ++i) {
+            if (permutation_mapping[i] != i) {
+                is_identity = 0;
+                break;
+            }
+        }
+    } while (num_atoms > 1 && is_identity);
+
+    OrigAtData_Permute(&permuted_atom_data, &atom_data, permutation_mapping);
+
+    if (OrigAtData_WriteToSDfile(
+            &permuted_atom_data,
+            &output_stream,
+            NULL, NULL, 0, 0, NULL, NULL) != 0)
+        goto exit;
+
+    size_t out_len = output_stream.s.nUsedLength;
+    if (out_len + 1 > permuted_moltext_len)
+        goto exit;
+
+    memcpy(permuted_moltext, output_stream.s.pStr, out_len);
+    permuted_moltext[out_len] = '\0';
+    status = 0;
+
+exit:
+    inchi_ios_close(&input_stream);
+    inchi_ios_close(&output_stream);
+    free(permutation_mapping);
+    FreeOrigAtData(&permuted_atom_data);
+    FreeOrigAtData(&atom_data);
+
+    return status;
+}
