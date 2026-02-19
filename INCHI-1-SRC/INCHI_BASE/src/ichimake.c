@@ -3901,6 +3901,18 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     /*fix_odd_things( num_atoms, out_at );*/
 #if ( FIND_RING_SYSTEMS == 1 )
     MarkRingSystemsInp(out_at, num_atoms, 0);
+
+    if (ip->Atropisomers) {
+        for (i = 0; i < num_atoms; i++) {
+            if (out_at[i].nRingSystem > 0) {
+                orig_inp_data->at[i].nRingSystem = out_at[i].nRingSystem;
+            }
+            if (out_at[i].nNumAtInRingSystem > 0) {
+                orig_inp_data->at[i].nNumAtInRingSystem = out_at[i].nNumAtInRingSystem;
+            }
+        }
+    }
+
 #endif
     /*  duplicate the preprocessed structure so that all supplied out_norm_data[]->at buffers are filled */
     if (out_at != out_norm_data[TAUT_YES]->at && out_norm_data[TAUT_YES]->at)

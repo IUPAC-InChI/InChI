@@ -4472,7 +4472,53 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
                                 const INChI *inchi,
                                 const INChI_Aux *aux)
 {
+    int ret = 0;
 
+    if (orig_inp_data == NULL)
+    {
+        return 1;
+    }
+
+    if (inchi == NULL || aux == NULL)
+    {
+        return 1;
+    }
+
+    if (aux->nOrigAtNosInCanonOrd == NULL ||
+        aux->nNumberOfAtoms <= 0) {
+        return 1;
+    }
+
+    for (int i = 0; i < orig_inp_data->num_inp_atoms; i++) {
+        // Canonical atom number: i (0-based)
+        // Access atom properties, e.g.:
+        int num_neighbors = orig_inp_data->at[i].valence;
+        AT_NUMB *neighbors = orig_inp_data->at[i].neighbor; // array of neighbor indices
+        int is_in_ring_1 = orig_inp_data->at[i].nRingSystem; // ring membership flag
+        int is_in_ring_2 = orig_inp_data->at[i].nNumAtInRingSystem; // ring membership flag
+        // int is_in_ring_3 = orig_inp_data->at[i].ring
+
+        // Example: print neighbors
+        printf("Atom %d (ring %d %d) neighbors:", i + 1, is_in_ring_1, is_in_ring_2); // 1-based for display
+        if (is_in_ring_2 > 1) {
+            for (int j = 0; j < num_neighbors; j++) {
+                if (orig_inp_data->at[neighbors[j]].nNumAtInRingSystem > 1 &&
+                    orig_inp_data->at[neighbors[j]].nRingSystem != orig_inp_data->at[i].nRingSystem) {
+                    printf(" %d %d", neighbors[j] + 1, orig_inp_data->at[i].bond_stereo);
+                }
+
+            }
+        }
+
+        printf("\n");
+
+        // Example: print ring membership
+        // if (is_in_ring) {
+        //     printf("Atom %d is in a ring\n", i + 1);
+        // }
+    }
+
+    return ret;
 }
 
 /****************************************************************************
