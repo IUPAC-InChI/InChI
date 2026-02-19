@@ -4460,6 +4460,21 @@ int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
     return ret;
 }
 
+/**
+ * @brief Set t- and m-layers object for atropisomer stereochemistry
+ *
+ * @param orig_inp_data Pointer to original input atom data
+ * @param inchi Pointer to INChI structure
+ * @param aux Pointer to INChI auxiliary data
+ * @return int
+ */
+int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+                                const INChI *inchi,
+                                const INChI_Aux *aux)
+{
+
+}
+
 /****************************************************************************
 Set the (disconnected) component numbers in ORIG_ATOM_DATA 'at[*].component'
 NB: components are (stable) sorted by number of heavy atoms

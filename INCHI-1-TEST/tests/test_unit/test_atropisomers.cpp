@@ -7,7 +7,7 @@ extern "C"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mode.h"
 }
 
-TEST(test_atropisomers, test_Atropisomers_molfile_v2)
+TEST(test_atropisomers, test_dummy)
 {
     const char *molblock =
         "test_mol_2																  \n"
@@ -41,7 +41,7 @@ TEST(test_atropisomers, test_Atropisomers_molfile_v2)
         " 12 13  1  0     0  0                                                    \n"
         "M  END                                                                   \n";
 
-    char options[] = "-EnhancedStereochemistry";
+    char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
     const char expected_inchi[] = "InChI=1B/C13H28/c1-5-9-12(8-4)13(10-6-2)11-7-3/h12-13H,5-11H2,1-4H3";

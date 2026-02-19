@@ -187,7 +187,8 @@ typedef struct tagInputParms {
     int             bNoWarnings;            /* v. 1.06+ suppress warning messages                                   */
     int             bHideInChI;             /* v. 1.06+ Do not print InChI itself                                   */
 
-    int             bEnhancedStereo;
+    int             bEnhancedStereo;        /* v. 1.0?+ enable enhanced stereochemistry                             */
+    int             Atropisomers;           /* v. 1.0?+ enable atropisomeric stereochemistry                        */
 
     /* */
     INCHI_MODE      bTautFlags;

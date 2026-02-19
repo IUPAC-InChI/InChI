@@ -1642,6 +1642,11 @@ int OutputINChI1( CANON_GLOBALS *pCG,
                 {
                     set_EnhancedStereo_t_m_layers(orig_inp_data, pINChI, pINChI_Aux);
                 }
+
+                if (ip->Atropisomers)
+                {
+                    set_Atropisomer_t_m_layers(orig_inp_data, pINChI, pINChI_Aux);
+                }
             }
         }
         if (bCompExists)
@@ -1729,6 +1734,10 @@ int OutputINChI1( CANON_GLOBALS *pCG,
             is_beta = 1;
         }
         else if (ip->bEnhancedStereo)
+        {
+            is_beta = 1;
+        }
+        else if (ip->Atropisomers)
         {
             is_beta = 1;
         }
