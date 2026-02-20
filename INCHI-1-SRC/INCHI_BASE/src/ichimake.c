@@ -3910,6 +3910,16 @@ int  Create_INChI(CANON_GLOBALS* pCG,
             if (out_at[i].nNumAtInRingSystem > 0) {
                 orig_inp_data->at[i].nNumAtInRingSystem = out_at[i].nNumAtInRingSystem;
             }
+            if (out_at[i].nBlockSystem > 0) {
+                orig_inp_data->at[i].nBlockSystem = out_at[i].nBlockSystem;
+            }
+            for (int j = 0; j < out_at[i].valence; j++) {
+                if (out_at[i].bond_stereo[j] > 0) {
+                    orig_inp_data->at[i].bond_stereo[j] = out_at[i].bond_stereo[j];
+                    // printf("%d %d\n", i, out_at[i].bond_stereo[j]);
+                }
+
+            }
         }
     }
 

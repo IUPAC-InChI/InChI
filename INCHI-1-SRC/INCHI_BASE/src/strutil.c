@@ -4489,34 +4489,77 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
         return 1;
     }
 
+    printf("-------------------\n");
+
     for (int i = 0; i < orig_inp_data->num_inp_atoms; i++) {
-        // Canonical atom number: i (0-based)
-        // Access atom properties, e.g.:
-        int num_neighbors = orig_inp_data->at[i].valence;
-        AT_NUMB *neighbors = orig_inp_data->at[i].neighbor; // array of neighbor indices
-        int is_in_ring_1 = orig_inp_data->at[i].nRingSystem; // ring membership flag
-        int is_in_ring_2 = orig_inp_data->at[i].nNumAtInRingSystem; // ring membership flag
-        // int is_in_ring_3 = orig_inp_data->at[i].ring
 
-        // Example: print neighbors
-        printf("Atom %d (ring %d %d) neighbors:", i + 1, is_in_ring_1, is_in_ring_2); // 1-based for display
-        if (is_in_ring_2 > 1) {
-            for (int j = 0; j < num_neighbors; j++) {
-                if (orig_inp_data->at[neighbors[j]].nNumAtInRingSystem > 1 &&
-                    orig_inp_data->at[neighbors[j]].nRingSystem != orig_inp_data->at[i].nRingSystem) {
-                    printf(" %d %d", neighbors[j] + 1, orig_inp_data->at[i].bond_stereo);
+        const inp_ATOM atom_i = orig_inp_data->at[i];
+
+        int num_neighbors_i = atom_i.valence;
+        const AT_NUMB *neighbors = atom_i.neighbor;
+        // printf("Atom %d with %d neighbors; ring system id %d; num atoms in ring %d\n", i + 1, num_neighbors, orig_inp_data->at[i].nRingSystem, orig_inp_data->at[i].nNumAtInRingSystem);
+        if (num_neighbors_i == 3) {
+            for (int j = 0; j < num_neighbors_i; j++) {
+                const inp_ATOM atom_j = orig_inp_data->at[neighbors[j]];
+                int num_neighbors_j = atom_j.valence;
+
+                if (num_neighbors_j == 3 &&
+                    atom_i.bond_stereo[j] == 0 &&
+                    atom_i.bond_type[j] == 1) {
+
+                    if (atom_i.nNumAtInRingSystem > 1 ||
+                        atom_j.nNumAtInRingSystem > 1) {
+
+                        int nof_wedge_bonds_i = 0;
+                        int has_double_bond_i = 0;
+                        for (int k = 0; k < num_neighbors_i; k++) {
+                            if (atom_i.bond_stereo[k] == 1 ||
+                                atom_i.bond_stereo[k] == 4 ||
+                                atom_i.bond_stereo[k] == 6) {
+                                nof_wedge_bonds_i++;
+                            }
+                            if (atom_i.bond_type[k] == 2) {
+                                has_double_bond_i = 1;
+                            }
+                        }
+                        int nof_wedge_bonds_j = 0;
+                        int has_double_bond_j = 0;
+                        for (int k = 0; k < num_neighbors_j; k++) {
+                            if (atom_j.bond_stereo[k] == 1 ||
+                                atom_j.bond_stereo[k] == 4 ||
+                                atom_j.bond_stereo[k] == 6) {
+                                nof_wedge_bonds_j++;
+                            }
+                            if (atom_j.bond_type[k] == 2) {
+                                has_double_bond_j = 1;
+                            }
+                        }
+
+                        if (nof_wedge_bonds_i > 0 ||
+                            nof_wedge_bonds_j > 0) {
+
+                            // if(atom_i.nRingSystem != atom_j.nRingSystem) {
+                            //     printf("Atropisomer candidate: Atom %d with neighbor %d\n", i + 1, neighbors[j] + 1);
+                            // } else {
+                            if (has_double_bond_i || has_double_bond_j) {
+                                printf("Atropisomer candidate: atom %d with atom %d; bond type %d; bond stereo %d\n",
+                                        i + 1, neighbors[j] + 1, atom_i.bond_type[j], atom_i.bond_stereo[j]);
+                                printf("atom type %d %d\n", atom_i.el_number, atom_j.el_number);
+                                printf("has double bond %d %d\n", has_double_bond_i, has_double_bond_j);
+                                printf("ring info #atoms in rings %d %d\n", atom_i.nNumAtInRingSystem, atom_j.nNumAtInRingSystem);
+                                printf("ring info ring ids        %d %d\n", atom_i.nRingSystem, atom_j.nRingSystem);
+                                printf("ring info block ids       %d %d\n", atom_i.nBlockSystem, atom_j.nBlockSystem);
+                            }
+                            // }
+                        }
+                    }
+
                 }
-
             }
         }
-
-        printf("\n");
-
-        // Example: print ring membership
-        // if (is_in_ring) {
-        //     printf("Atom %d is in a ring\n", i + 1);
-        // }
     }
+
+
 
     return ret;
 }
