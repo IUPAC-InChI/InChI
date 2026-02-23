@@ -373,7 +373,110 @@ TEST(test_atropisomers, test_dummy_5_no_wedge_bonds)
     FreeINCHI(poutput);
 }
 
-TEST(test_atropisomers, test_dummy_6_no_atropisomer_1)
+TEST(test_atropisomers, test_dummy_6_two_atropisomer_bonds)
+{
+    const char *molblock =
+        "test mol atropisomer                          \n"
+        "  -INDIGO-02232612272D                        \n"
+        "                                              \n"
+        "  0  0  0  0  0  0  0  0  0  0  0 V3000       \n"
+        "M  V30 BEGIN CTAB                             \n"
+        "M  V30 COUNTS 35 38 0 0 0                     \n"
+        "M  V30 BEGIN ATOM                             \n"
+        "M  V30 1 C 7.64682 -5.78999 0.0 0             \n"
+        "M  V30 2 C 9.47015 -5.85956 0.0 0             \n"
+        "M  V30 3 C 8.58333 -5.30104 0.0 0             \n"
+        "M  V30 4 C 9.42738 -6.91249 0.0 0             \n"
+        "M  V30 5 C 7.60313 -6.84054 0.0 0             \n"
+        "M  V30 6 C 8.49613 -7.40423 0.0 0             \n"
+        "M  V30 7 C 7.83065 -2.75985 0.0 0             \n"
+        "M  V30 8 C 9.58077 -2.8408 0.0 0              \n"
+        "M  V30 9 C 8.73115 -2.29671 0.0 0             \n"
+        "M  V30 10 C 9.53681 -3.85648 0.0 0            \n"
+        "M  V30 11 C 7.7836 -3.77279 0.0 0             \n"
+        "M  V30 12 C 8.64006 -4.32505 0.0 0            \n"
+        "M  V30 13 Br 6.90205 -7.15024 0.0 0           \n"
+        "M  V30 14 Br 10.3254 -7.4481 0.0 0            \n"
+        "M  V30 15 Br 6.93185 -4.22329 0.0 0           \n"
+        "M  V30 16 Br 10.4302 -4.38621 0.0 0           \n"
+        "M  V30 17 Cl 10.4134 -5.37898 0.0 0           \n"
+        "M  V30 18 Cl 6.83923 -5.25149 0.0 0           \n"
+        "M  V30 19 C 8.55343 -8.50701 0.0 0            \n"
+        "M  V30 20 C 7.7261 -9.10432 0.0 0             \n"
+        "M  V30 21 C 7.02177 -10.6261 0.0 0            \n"
+        "M  V30 22 C 7.81179 -10.0708 0.0 0            \n"
+        "M  V30 23 C 6.13959 -10.2141 0.0 0            \n"
+        "M  V30 24 C 6.84915 -8.69665 0.0 0            \n"
+        "M  V30 25 C 6.05278 -9.25201 0.0 0            \n"
+        "M  V30 26 C 5.14001 -8.79074 0.0 0            \n"
+        "M  V30 27 C 3.39085 -8.89047 0.0 0            \n"
+        "M  V30 28 C 4.29687 -9.34501 0.0 0            \n"
+        "M  V30 29 C 3.33353 -7.88488 0.0 0            \n"
+        "M  V30 30 C 5.08172 -7.77981 0.0 0            \n"
+        "M  V30 31 C 4.18147 -7.33019 0.0 0            \n"
+        "M  V30 32 Br 5.94146 -7.18944 0.0 0           \n"
+        "M  V30 33 Br 4.36521 -10.2925 0.0 0           \n"
+        "M  V30 34 Cl 5.34468 -10.7571 0.0 0           \n"
+        "M  V30 35 Cl 6.77442 -7.90166 0.0 0           \n"
+        "M  V30 END ATOM                               \n"
+        "M  V30 BEGIN BOND                             \n"
+        "M  V30 1 1 3 1 CFG=1                          \n"
+        "M  V30 2 2 1 5                                \n"
+        "M  V30 3 1 5 6                                \n"
+        "M  V30 4 2 6 4                                \n"
+        "M  V30 5 1 4 2                                \n"
+        "M  V30 6 2 2 3                                \n"
+        "M  V30 7 2 9 7                                \n"
+        "M  V30 8 1 7 11                               \n"
+        "M  V30 9 2 11 12                              \n"
+        "M  V30 10 1 12 10 CFG=1                       \n"
+        "M  V30 11 2 10 8                              \n"
+        "M  V30 12 1 8 9                               \n"
+        "M  V30 13 1 12 3                              \n"
+        "M  V30 14 1 5 13                              \n"
+        "M  V30 15 1 4 14                              \n"
+        "M  V30 16 1 11 15                             \n"
+        "M  V30 17 1 10 16                             \n"
+        "M  V30 18 1 2 17                              \n"
+        "M  V30 19 1 1 18                              \n"
+        "M  V30 20 1 6 19                              \n"
+        "M  V30 21 1 19 20                             \n"
+        "M  V30 22 2 22 20                             \n"
+        "M  V30 23 1 20 24                             \n"
+        "M  V30 24 2 24 25                             \n"
+        "M  V30 25 1 25 23 CFG=1                       \n"
+        "M  V30 26 2 23 21                             \n"
+        "M  V30 27 1 21 22                             \n"
+        "M  V30 28 1 25 26                             \n"
+        "M  V30 29 2 28 26                             \n"
+        "M  V30 30 1 26 30 CFG=1                       \n"
+        "M  V30 31 2 30 31                             \n"
+        "M  V30 32 1 31 29                             \n"
+        "M  V30 33 2 29 27                             \n"
+        "M  V30 34 1 27 28                             \n"
+        "M  V30 35 1 30 32                             \n"
+        "M  V30 36 1 28 33                             \n"
+        "M  V30 37 1 23 34                             \n"
+        "M  V30 38 1 24 35                             \n"
+        "M  V30 END BOND                               \n"
+        "M  V30 BEGIN COLLECTION                       \n"
+        "M  V30 MDLV30/STEABS ATOMS=(4 3 12 25 26)     \n"
+        "M  V30 END COLLECTION                         \n"
+        "M  V30 END CTAB                               \n"
+        "M  END                                        \n";
+
+    char options[] = "-Atropisomers";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    const char expected_inchi[] = "InChI=1B";
+
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    FreeINCHI(poutput);
+}
+
+TEST(test_atropisomers, test_dummy_7_no_atropisomer_1)
 {
     const char *molblock =
         "non-atropisomer test mol                                                 \n"
@@ -421,4 +524,5 @@ TEST(test_atropisomers, test_dummy_6_no_atropisomer_1)
 
     FreeINCHI(poutput);
 }
+
 

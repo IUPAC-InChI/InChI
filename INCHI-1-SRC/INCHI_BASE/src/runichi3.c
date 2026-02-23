@@ -245,7 +245,7 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
 
 
 
-        new_orig_atom->szCoord = NULL; 
+        new_orig_atom->szCoord = NULL;
         if (orig_atom->szCoord)
         {
             new_orig_atom->szCoord = (MOL_COORD *) inchi_calloc(orig_nat, sizeof(new_orig_atom->szCoord[0]));
@@ -255,10 +255,10 @@ int OrigAtData_Duplicate( ORIG_ATOM_DATA *new_orig_atom,
             }
             memcpy(new_orig_atom->szCoord, orig_atom->szCoord, orig_nat * sizeof(new_orig_atom->szCoord[0]));
         }
-        
+
 
         /* Arrays that are not to be copied */
-        
+
         new_orig_atom->nEquLabels = NULL;
         new_orig_atom->nSortedOrder = NULL;
 
@@ -1238,10 +1238,10 @@ OAD_PolymerUnit* OAD_PolymerUnit_New( int       maxatoms,
                 u2->blist[k]	= blist->item[k];
             }
         }
-        
+
     }
     u2->bkbonds = NULL;
-    
+
 exit_function:
 
     if (err)
@@ -1528,7 +1528,7 @@ int OAD_ValidatePolymerAndPseudoElementData( ORIG_ATOM_DATA *orig_at_data,
 
     /* Assign polymer type and subunits type and check polymer data for consistency */
     /* djb-rwth: addressing coverity ID #499497 -- TREAT_ERR properly used in all cases */
-    
+
     orig_at_data->valid_polymer = 0;
     if (treat_polymers && pd)
     {
@@ -1595,29 +1595,29 @@ int OAD_ValidatePolymerAndPseudoElementData( ORIG_ATOM_DATA *orig_at_data,
 
         OAD_PolymerUnit_SetEndsAndCaps( u, orig_at_data, &err, pStrErr );
             /*	Reveal and store CRU caps and ends('stars and partners')
-                Also set `unit->cap1_is_undef`, `unit->cap2_is_undef`, `unit->cyclizable` 
+                Also set `unit->cap1_is_undef`, `unit->cap2_is_undef`, `unit->cyclizable`
             */
         if (err)
         {
             goto exit_function;
         }
 
-        
+
         /* Set possibly missing unit parameters */
         u->nbkbonds = 0;
         u->cyclizable = CLOSING_SRU_NOT_APPLICABLE;
         u->cyclized = 0;
     }
-    
+
 
     OAD_ValidateAndSortOutPseudoElementAtoms( orig_at_data, treat_polymers, bNPZz, &err, pStrErr );
     /* Here we:
                 Make more polymer and pseudoatom data checks
                 Convert both "*" and "Zz" temporarily to "Zy" (polymer-unrelated interal pseudoatoms)
-                If applicable, check each CRU and back-convert "Zy" to "Zz" (polymer-related 
+                If applicable, check each CRU and back-convert "Zy" to "Zz" (polymer-related
                 pseudoelement atoms) if they are for valid bi-undef-end CRU
     */
-    
+
     if (err)
     {
         /* already treated TREAT_ERR( err, 9040, "Improper pseudoelement atoms" ); */
@@ -1995,7 +1995,7 @@ int OAD_Polymer_CyclizeCloseableUnits( ORIG_ATOM_DATA *orig_at_data,
         /* Find stars and their partners */
         OAD_PolymerUnit_SetEndsAndCaps( unit, orig_at_data, &err, pStrErr );
             /*	Reveal and store CRU caps and ends('stars and partners')
-                Also set `unit->cap1_is_undef`, `unit->cap2_is_undef`, `unit->cyclizable` 
+                Also set `unit->cap1_is_undef`, `unit->cap2_is_undef`, `unit->cyclizable`
             */
         if (err)
         {
@@ -2157,7 +2157,7 @@ void OAD_PolymerUnit_UnlinkCapsAndConnectEndAtoms( OAD_PolymerUnit *unit,
     {
         unit->cyclized = 1;
     }
-    
+
     return;
 }
 
@@ -2258,8 +2258,8 @@ void OAD_PolymerUnit_FindEndsAndCaps( OAD_PolymerUnit *unit,
     *err = 0;
     return;
 }
-    
-    
+
+
 /****************************************************************************
  Reveal and store CRU caps and ends ('stars and partners')
 ****************************************************************************/
@@ -2486,7 +2486,7 @@ int OAD_Polymer_PrepareWorkingSet( OAD_Polymer     *p,
 
     }
 
-    /* Sort all units in modified alist's lexicographic order 
+    /* Sort all units in modified alist's lexicographic order
     (modification is: longer list always go first )			*/
     for (i = 0; i < p->n; i++)
     {
@@ -2582,7 +2582,7 @@ int  OrigAtData_RemoveBond( int      this_atom,
                             int      *num_inp_bonds )
 {
     int del = 0;
-    
+
     if (at && (this_atom >= 0) && (other_atom >= 0)) /* djb-rwth: fixing oss-fuzz issue #68329, #68286 */
     {
         del = OrigAtData_RemoveHalfBond(this_atom, other_atom, at, bond_type, bond_stereo);
@@ -2844,14 +2844,14 @@ void OAD_CollectFragmentBondsAndAtoms(	ORIG_ATOM_DATA  *orig_at_data,
         goto exit_function;
     }
 
-    spf->seen[0] = spf->start; 
+    spf->seen[0] = spf->start;
     spf->nseen = 1;
     *n_fragbonds = 0;
     *n_fragatoms = 0;
 
-    subgraf_pathfinder_run(	spf, 
+    subgraf_pathfinder_run(	spf,
                             nforbidden, forbidden_orig, /* this corrects cinnectivity of subgraf... */
-                            n_fragbonds, fragbonds, 
+                            n_fragbonds, fragbonds,
                             n_fragatoms, fragatoms);
 
 
@@ -2884,7 +2884,7 @@ void OAD_Polymer_FindBackbones( ORIG_ATOM_DATA *at_data,
             continue;
         }
 
-        OAD_CollectBackboneBonds( at_data, 
+        OAD_CollectBackboneBonds( at_data,
                                   at_data->polymer->units[i]->na,
                                   at_data->polymer->units[i]->alist,
                                   at_data->polymer->units[i]->end_atom1,
@@ -2991,10 +2991,10 @@ void OAD_CollectBackboneAtoms(ORIG_ATOM_DATA  *at_data,
         goto exit_function;
     }
 
-    spf->seen[0] = spf->start; spf->nseen = 1;    
+    spf->seen[0] = spf->start; spf->nseen = 1;
     nbkbonds = 0;
     *nbkatoms = 0;
-    
+
     subgraf_pathfinder_run(spf, 0, NULL, &nbkbonds, bkbonds, nbkatoms, bkatoms);
 
     subgraf_free(sg);
@@ -3007,7 +3007,7 @@ exit_function:
     {
         imat_free(maxbkbonds, bkbonds);
         bkbonds = NULL;
-    }	
+    }
 
     return;
 }
@@ -3097,7 +3097,7 @@ exit_function:
     {
         inchi_free(atnums);
     }
-    
+
     return ret;
 }
 
@@ -3107,7 +3107,7 @@ exit_function:
  (for polymer CRU, these are the bonds potentially involved in frame shift)
 ****************************************************************************/
 void OAD_CollectBackboneBonds(ORIG_ATOM_DATA  *at_data,
-                              int na, 
+                              int na,
                               int *alist,
                               int end_atom1,
                               int end_atom2,
@@ -3128,7 +3128,7 @@ void OAD_CollectBackboneBonds(ORIG_ATOM_DATA  *at_data,
         /* unit->cyclizable = CLOSING_SRU_NOT_APPLICABLE; */
         return;
     }
-    start = sg->orig2node[end_atom1]; 
+    start = sg->orig2node[end_atom1];
     end = sg->orig2node[end_atom2];
 #if 0
     if (start > end)
@@ -3145,8 +3145,8 @@ void OAD_CollectBackboneBonds(ORIG_ATOM_DATA  *at_data,
         /*unit->cyclizable = CLOSING_SRU_NOT_APPLICABLE;*/
         return;
     }
-    spf->seen[0] = spf->start; 
-    spf->nseen = 1;    
+    spf->seen[0] = spf->start;
+    spf->nseen = 1;
     *nbkbonds = 0;
     subgraf_pathfinder_run( spf, 0, NULL,
                             nbkbonds,
@@ -3745,7 +3745,7 @@ void OAD_PolymerUnit_DebugTrace( OAD_PolymerUnit *u )
             ITRACE_("}\n");
         }
     }
-    
+
 
     return;
 }
@@ -4423,7 +4423,7 @@ void OAD_ValidateAndSortOutPseudoElementAtoms( ORIG_ATOM_DATA *orig_at_data,
             TREAT_ERR(*err, (70 + 5), "Invalid element(s):");
             TREAT_ERR(*err, (70 + 5), orig_at_data->at[k].elname);
             continue;
-#endif 
+#endif
         }
         is_star = !strcmp( orig_at_data->at[k].elname, "*" );
         if (!is_star)
