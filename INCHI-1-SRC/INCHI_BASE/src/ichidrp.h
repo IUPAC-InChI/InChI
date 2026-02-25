@@ -186,6 +186,8 @@ typedef struct tagInputParms {
     int             bMergeHash;             /* v. 1.06+ Combine InChIKey with extra hash(es) if present             */
     int             bNoWarnings;            /* v. 1.06+ suppress warning messages                                   */
     int             bHideInChI;             /* v. 1.06+ Do not print InChI itself                                   */
+    int             bMolecularInorganics;       /* (@nnuk : Nauman Ullah Khan) :: Varaible for Molecular Inorganics parameter */
+    int             bMolecularInorganicsReconnectedInChI;  /* (@nnuk : Nauman Ullah Khan) :: Custom flag to indicate reconnected InChI requirement */
 
     int             bEnhancedStereo;        /* v. 1.0?+ enable enhanced stereochemistry                             */
     int             Atropisomers;           /* v. 1.0?+ enable atropisomeric stereochemistry                        */

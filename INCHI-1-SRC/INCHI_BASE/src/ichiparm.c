@@ -38,7 +38,7 @@
  *
 */
 
- /* djb-rwth: used for strdup function */
+/* djb-rwth: used for strdup function */
 #ifndef _WIN32
 #if defined(__STDC_ALLOC_LIB__)
 #define __STDC_WANT_LIB_EXT2__ 1
@@ -123,8 +123,8 @@ int set_common_options_by_parg(const char* pArg,
     int* pbNoWarnings,
     int* pbMergeHash,
     int* pbHideInChI,
-    int* pbEnhancedStereochemistry,
-    int* pbAtropisomers);
+    int* pbMolecularInorganics,     /* @nnuk */
+    int* pbEnhancedStereochemistry);
 
 
 /****************************************************************************
@@ -168,32 +168,32 @@ int set_common_options_by_parg(const char* pArg,
     int* pbNoWarnings,
     int* pbMergeHash,
     int* pbHideInChI,
-    int* pbEnhancedStereochemistry,
-    int* pbAtropisomers
+    int* pbMolecularInorganics,     /*@nnuk*/
+    int* pbEnhancedStereochemistry
 )
 {
     int got = 0;
 
     /* Input */
-    if (!inchi_stricmp(pArg, "INPAUX"))
+    if ( !inchi_stricmp(pArg, "INPAUX") )
     {
-        if (INPUT_NONE == ip->nInputType)
+        if ( INPUT_NONE == ip->nInputType )
         {
             ip->nInputType = INPUT_INCHI_PLAIN;
         }
         got = 1;
     }
-    else if (!inchi_memicmp(pArg, "START:", 6))
+    else if ( !inchi_memicmp(pArg, "START:", 6) )
     {
         ip->first_struct_number = strtol(pArg + 6, NULL, 10);
         got = 1;
     }
-    else if (!inchi_memicmp(pArg, "END:", 4))
+    else if ( !inchi_memicmp(pArg, "END:", 4) )
     {
         ip->last_struct_number = strtol(pArg + 4, NULL, 10);
         got = 1;
     }
-    else if (!inchi_memicmp(pArg, "RECORD:", 7))
+    else if ( !inchi_memicmp(pArg, "RECORD:", 7) )
     {
         long num = strtol(pArg + 7, NULL, 10);
         /* djb-rwth: removing redundant code */
@@ -201,71 +201,71 @@ int set_common_options_by_parg(const char* pArg,
         ip->last_struct_number = num;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "NOLABELS"))
+    else if ( !inchi_stricmp(pArg, "NOLABELS") )
     {
         *pbNoStructLabels = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "SAVEOPT"))
+    else if ( !inchi_stricmp(pArg, "SAVEOPT") )
     {
         (*pbINChIOutputOptions) |= INCHI_OUT_SAVEOPT;
         got = 1;
     }
     /* Generation */
-    else if (!inchi_stricmp(pArg, "AUXNONE"))
+    else if ( !inchi_stricmp(pArg, "AUXNONE") )
     {
         /* no aux. info */
         (*pbINChIOutputOptions) |= INCHI_OUT_NO_AUX_INFO;  /* no aux info */
         (*pbINChIOutputOptions) &= ~INCHI_OUT_SHORT_AUX_INFO;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "MISMATCHISERROR"))
+    else if ( !inchi_stricmp(pArg, "MISMATCHISERROR") )
     {
         /* Consider InChI conversion "problem/mismatch" as error */
         (*pbINChIOutputOptions2) |= INCHI_OUT_MISMATCH_AS_ERROR;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "OUTERRINCHI"))
+    else if ( !inchi_stricmp(pArg, "OUTERRINCHI") )
     {
         /* Signify InChI error generation on InChI strings output, not only report to log file */
         (*pbINChIOutputOptions2) |= INCHI_OUT_INCHI_GEN_ERROR;
         got = 1;
     }
     /* InChIKey/InChI hash */
-    else if (!inchi_stricmp(pArg, "Key"))
+    else if ( !inchi_stricmp(pArg, "Key") )
     {
         *pbHashKey = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "XHash1"))
+    else if ( !inchi_stricmp(pArg, "XHash1") )
     {
         *pbHashXtra1 = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "XHash2"))
+    else if ( !inchi_stricmp(pArg, "XHash2") )
     {
         *pbHashXtra2 = 1;
         got = 1;
     }
     /* All modes (std and non-std InChI) structure perception options */
     /* These options DO NOT TURN OFF Std flag                         */
-    else if (!inchi_stricmp(pArg, "SNON"))
+    else if ( !inchi_stricmp(pArg, "SNON") )
     {
         (*pbVer1DefaultMode) &= ~REQ_MODE_STEREO; /* no stereo */
         (*pnMode) &= ~(REQ_MODE_RACEMIC_STEREO | REQ_MODE_RELATIVE_STEREO | REQ_MODE_CHIR_FLG_STEREO);
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "NEWPSOFF"))
+    else if ( !inchi_stricmp(pArg, "NEWPSOFF") )
     {
         *pbPointedEdgeStereo = 0;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "DONOTADDH"))
+    else if ( !inchi_stricmp(pArg, "DONOTADDH") )
     {
         *pbDoNotAddH = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "LooseTSACheck"))
+    else if ( !inchi_stricmp(pArg, "LooseTSACheck") )
     {
         (*pbLooseTSACheck) = 1;
         got = 1;
@@ -283,13 +283,13 @@ int set_common_options_by_parg(const char* pArg,
 
 #ifndef USE_STDINCHI_API
     /* These options DO TURN OFF Std flag   */
-    else if (!inchi_stricmp(pArg, "SREL"))
+    else if ( !inchi_stricmp(pArg, "SREL") )
     {
-        if ((*pnMode) & REQ_MODE_RACEMIC_STEREO)
+        if ( (*pnMode) & REQ_MODE_RACEMIC_STEREO )
         {
             (*pnMode) ^= REQ_MODE_RACEMIC_STEREO;
         }
-        if ((*pnMode) & REQ_MODE_CHIR_FLG_STEREO)
+        if ( (*pnMode) & REQ_MODE_CHIR_FLG_STEREO )
         {
             (*pnMode) ^= REQ_MODE_CHIR_FLG_STEREO;
         }
@@ -298,13 +298,13 @@ int set_common_options_by_parg(const char* pArg,
         *pbStdFormat = 0;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "SRAC"))
+    else if ( !inchi_stricmp(pArg, "SRAC") )
     {
-        if ((*pnMode) & REQ_MODE_RELATIVE_STEREO)
+        if ( (*pnMode) & REQ_MODE_RELATIVE_STEREO )
         {
             (*pnMode) ^= REQ_MODE_RELATIVE_STEREO;
         }
-        if ((*pnMode) & REQ_MODE_CHIR_FLG_STEREO)
+        if ( (*pnMode) & REQ_MODE_CHIR_FLG_STEREO )
         {
             (*pnMode) ^= REQ_MODE_CHIR_FLG_STEREO;
         }
@@ -313,13 +313,13 @@ int set_common_options_by_parg(const char* pArg,
         *pbStdFormat = 0;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "SUCF"))
+    else if ( !inchi_stricmp(pArg, "SUCF") )
     {
-        if ((*pnMode) & REQ_MODE_RELATIVE_STEREO)
+        if ( (*pnMode) & REQ_MODE_RELATIVE_STEREO )
         {
             (*pnMode) ^= REQ_MODE_RELATIVE_STEREO;
         }
-        if ((*pnMode) & REQ_MODE_RACEMIC_STEREO)
+        if ( (*pnMode) & REQ_MODE_RACEMIC_STEREO )
         {
             (*pnMode) ^= REQ_MODE_RACEMIC_STEREO;
         }
@@ -328,7 +328,7 @@ int set_common_options_by_parg(const char* pArg,
         *pbStdFormat = 0;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "ChiralFlagON"))
+    else if ( !inchi_stricmp(pArg, "ChiralFlagON") )
     {
         /* used only with /SUCF */
         /* NB: do not toggle off bStdFormat! (if necessary SUCF will do) */
@@ -336,7 +336,7 @@ int set_common_options_by_parg(const char* pArg,
         (*pbForcedChiralFlag) |= FLAG_SET_INP_AT_CHIRAL;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "ChiralFlagOFF"))
+    else if ( !inchi_stricmp(pArg, "ChiralFlagOFF") )
     {
         /* used only with /SUCF */
         /* NB: do not toggle off bStdFormat! (if necessary SUCF will do) */
@@ -347,14 +347,24 @@ int set_common_options_by_parg(const char* pArg,
 
     /*--- Non-std InChI creation options ---*/
     /* These options DO TURN OFF Std flag       */
-    else if (!inchi_stricmp(pArg, "SUU"))
+    else if ( !inchi_stricmp(pArg, "SUU") )
     {
         /* include omitted undef/unknown stereo */
         (*pbVer1DefaultMode) &= ~(REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU);
         *pbStdFormat = 0;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "SLUUD"))
+    /* (@nnuk :: NaumanUllahKhan)
+    * Parameter option that deals with Molecular Inorganics
+    */
+    else if ( !inchi_stricmp(pArg, "MolecularInorganics") )
+    {
+        *pbMolecularInorganics = 1;
+        *pbNPZz = 1;
+        *pbStdFormat = 0;
+        got = 1;
+    }
+    else if ( !inchi_stricmp(pArg, "SLUUD") )
     {
         /* make labels for unknown and undefined stereo different */
         (*pbVer1DefaultMode) |= REQ_MODE_DIFF_UU_STEREO;
@@ -362,14 +372,14 @@ int set_common_options_by_parg(const char* pArg,
         got = 1;
     }
     /* FixedH */
-    else if (!inchi_stricmp(pArg, "FIXEDH"))
+    else if ( !inchi_stricmp(pArg, "FIXEDH") )
     {
         (*pbVer1DefaultMode) |= REQ_MODE_BASIC;  /* tautomeric */
         *pbStdFormat = 0;
         got = 1;
     }
     /* RecMet */
-    else if (!inchi_stricmp(pArg, "RECMET"))
+    else if ( !inchi_stricmp(pArg, "RECMET") )
     {
         /* reconnect metals */
         *pbReconnectCoord = 1;
@@ -377,7 +387,7 @@ int set_common_options_by_parg(const char* pArg,
         got = 1;
     }
 #if ( KETO_ENOL_TAUT == 1 )
-    else if (!inchi_stricmp(pArg, "KET"))
+    else if ( !inchi_stricmp(pArg, "KET") )
     {
         *pbKetoEnolTaut = 1;
         *pbStdFormat = 0;
@@ -385,7 +395,7 @@ int set_common_options_by_parg(const char* pArg,
     }
 #endif
 #if ( TAUT_15_NON_RING == 1 )
-    else if (!inchi_stricmp(pArg, "15T"))
+    else if ( !inchi_stricmp(pArg, "15T") )
     {
         *pb15TautNonRing = 1;
         *pbStdFormat = 0;
@@ -394,7 +404,7 @@ int set_common_options_by_parg(const char* pArg,
 #endif
 
 #if ( TAUT_PT_22_00  == 1 )
-    else if (!inchi_stricmp(pArg, "PT_22_00"))
+    else if ( !inchi_stricmp(pArg, "PT_22_00") )
     {
         *pbPT_22_00_Taut = 1;
         *pbStdFormat = 0;
@@ -402,7 +412,7 @@ int set_common_options_by_parg(const char* pArg,
 #endif
 
 #if ( TAUT_PT_16_00  == 1 )
-    else if (!inchi_stricmp(pArg, "PT_16_00"))
+    else if ( !inchi_stricmp(pArg, "PT_16_00") )
     {
         *pbPT_16_00_Taut = 1;
         *pbStdFormat = 0;
@@ -410,7 +420,7 @@ int set_common_options_by_parg(const char* pArg,
 #endif
 
 #if ( TAUT_PT_06_00  == 1 )
-    else if (!inchi_stricmp(pArg, "PT_06_00"))
+    else if ( !inchi_stricmp(pArg, "PT_06_00") )
     {
         *pbPT_06_00_Taut = 1;
         *pbStdFormat = 0;
@@ -418,7 +428,7 @@ int set_common_options_by_parg(const char* pArg,
 #endif
 
 #if ( TAUT_PT_39_00  == 1 )
-    else if (!inchi_stricmp(pArg, "PT_39_00"))
+    else if ( !inchi_stricmp(pArg, "PT_39_00") )
     {
         *pbPT_39_00_Taut = 1;
         *pbStdFormat = 0;
@@ -426,7 +436,7 @@ int set_common_options_by_parg(const char* pArg,
 #endif
 
 #if ( TAUT_PT_13_00  == 1 )
-    else if (!inchi_stricmp(pArg, "PT_13_00"))
+    else if ( !inchi_stricmp(pArg, "PT_13_00") )
     {
         *pbPT_13_00_Taut = 1;
         *pbStdFormat = 0;
@@ -434,80 +444,81 @@ int set_common_options_by_parg(const char* pArg,
 #endif
 
 #if ( TAUT_PT_18_00  == 1 )
-    else if (!inchi_stricmp(pArg, "PT_18_00"))
+    else if ( !inchi_stricmp(pArg, "PT_18_00") )
     {
         *pbPT_18_00_Taut = 1;
         *pbStdFormat = 0;
     }
 #endif
 
-    else if (!inchi_stricmp(pArg, "LargeMolecules"))
+    else if ( !inchi_stricmp(pArg, "LargeMolecules") )
     {
         *pbLargeMolecules = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "Polymers"))
+    else if ( !inchi_stricmp(pArg, "Polymers") )
     {
         *pbPolymers = POLYMERS_MODERN;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "Polymers105"))
+    else if ( !inchi_stricmp(pArg, "Polymers105") )
     {
         *pbPolymers = POLYMERS_LEGACY;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "NPZz"))
+    else if ( !inchi_stricmp(pArg, "NPZz") )
     {
         *pbNPZz = 1;
+        *pbMolecularInorganics = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "NoWarnings"))
+    else if ( !inchi_stricmp(pArg, "NoWarnings") )
     {
         *pbNoWarnings = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "MergeHash"))
+    else if ( !inchi_stricmp(pArg, "MergeHash") )
     {
         *pbMergeHash = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "NoInChI") || !inchi_stricmp(pArg, "HideInChI"))
+    else if ( !inchi_stricmp(pArg, "NoInChI") || !inchi_stricmp(pArg, "HideInChI") )
     {
         *pbHideInChI = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "FoldCRU")) /* v. 1.06 */
+    else if ( !inchi_stricmp(pArg, "FoldCRU") ) /* v. 1.06 */
     {
         *pbFoldPolymerSRU = 1;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "FoldSRU")) /* v. 1.06 */
+    else if ( !inchi_stricmp(pArg, "FoldSRU") ) /* v. 1.06 */
     {
         *pbFoldPolymerSRU = 1;
         got = 1;
     }
-    else if (!inchi_memicmp(pArg, "FrameShift:", 11))
+    else if ( !inchi_memicmp(pArg, "FrameShift:", 11) )
     {
         int k;
         char wrd[256];
         k = 0;
         mystrncpy(wrd, pArg + 11, 256);
         lrtrim(wrd, &k);
-        if (k)
+        if ( k )
         {
-            if (!inchi_stricmp(wrd, "None"))
+            if ( !inchi_stricmp(wrd, "None") )
             {
                 *pbFrameShiftScheme = FSS_NONE;
             }
-            else if (!inchi_stricmp(wrd, "Cyclize"))
+            else if ( !inchi_stricmp(wrd, "Cyclize") )
             {
                 *pbFrameShiftScheme = FSS_STARS_CYCLED;
             }
-            else if (!inchi_stricmp(wrd, "MoveStars"))
+            else if ( !inchi_stricmp(wrd, "MoveStars") )
             {
                 *pbFrameShiftScheme = FSS_STARS_OPENED;
             }
-            else if (!inchi_stricmp(wrd, "MoveBrackets"))
+            else if ( !inchi_stricmp(wrd, "MoveBrackets") )
             {
                 *pbFrameShiftScheme = FSS_STARS_ENDS_OPENED;
             }
@@ -518,18 +529,18 @@ int set_common_options_by_parg(const char* pArg,
         }
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "NoFrameShift"))
+    else if ( !inchi_stricmp(pArg, "NoFrameShift") )
     {
         *pbFrameShiftScheme = FSS_NONE;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "NoEdits"))
+    else if ( !inchi_stricmp(pArg, "NoEdits") )
     {
         *pbFoldPolymerSRU = 0;
         *pbFrameShiftScheme = FSS_NONE;
         got = 1;
     }
-    else if (!inchi_stricmp(pArg, "SATZZ"))
+    else if ( !inchi_stricmp(pArg, "SATZZ") )
     {
         *pbStereoAtZz = 1;
         got = 1;
@@ -538,65 +549,65 @@ int set_common_options_by_parg(const char* pArg,
 
 #endif /* ifndef USE_STDINCHI_API */
 
-    if (!got && developer_options)
+    if ( !got && developer_options )
     {
 
-        if (!inchi_stricmp(pArg, "PGO"))
+        if ( !inchi_stricmp(pArg, "PGO") )
         {
             /* PGO : extract all good MOLfiles into the problem file */
             ip->bSaveAllGoodStructsAsProblem = 1;
             got = 1;
         }
 #if ( ALLOW_SUBSTRUCTURE_FILTERING== 1 )
-        else if (!inchi_stricmp(pArg, "FilterSS"))
+        else if ( !inchi_stricmp(pArg, "FilterSS") )
         {
             ip->bFilterSS = 1;
             got = 1;
         }
-        else if (!inchi_stricmp(pArg, "InvFilterSS"))
+        else if ( !inchi_stricmp(pArg, "InvFilterSS") )
         {
             ip->bFilterSS = -1;
             got = 1;
         }
 #endif
         /* Options below DO TURN OFF Std flag   */
-        if (!inchi_stricmp(pArg, "FNUDOFF"))
+        if ( !inchi_stricmp(pArg, "FNUDOFF") )
         {
             ip->bFixNonUniformDraw = 0;
             *pbStdFormat = 0;
             got = 1;
         }
-        else if (!inchi_stricmp(pArg, "FixSp3bugOFF"))
+        else if ( !inchi_stricmp(pArg, "FixSp3bugOFF") )
         {
             *pbFixSp3bug = 0;
             *pbStdFormat = 0;
             got = 1;
         }
-        else if (!inchi_stricmp(pArg, "FBOFF"))
+        else if ( !inchi_stricmp(pArg, "FBOFF") )
         {
             *pbFixSp3bug = 0;
             *pbStdFormat = 0;
             got = 1;
         }
-        else if (!inchi_stricmp(pArg, "FB2OFF"))
+        else if ( !inchi_stricmp(pArg, "FB2OFF") )
         {
             *pbFixFB2 = 0;
             *pbStdFormat = 0;
             got = 1;
         }
-        else if (!inchi_stricmp(pArg, "SPXYZOFF"))
+        else if ( !inchi_stricmp(pArg, "SPXYZOFF") )
         {
             *pbAddPhosphineStereo = 0;
             *pbStdFormat = 0;
             got = 1;
         }
-        else if (!inchi_stricmp(pArg, "SASXYZOFF"))
+        else if ( !inchi_stricmp(pArg, "SASXYZOFF") )
         {
             *pbAddArsineStereo = 0;
             *pbStdFormat = 0;
             got = 1;
         }
-        else if (!inchi_stricmp(pArg, "Polymers105+"))
+        else if ( !inchi_stricmp(pArg, "Polymers105+") )
         {
             *pbPolymers = POLYMERS_LEGACY_PLUS;
             *pbStdFormat = 0;
@@ -699,7 +710,7 @@ int ReadCommandLineParms(int argc,
     int bNoWarnings = 0;
     int bMergeHash = 0;
     int bHideInChI = 0;
-
+    int bMolecularInorganics = 0;                   /* @nnuk */
     int bOutputStyle = INCHI_OUT_PLAIN_TEXT;
     int bDisplay = 0;
     int bNoStructLabels = 0;
@@ -766,7 +777,7 @@ int ReadCommandLineParms(int argc,
 #endif
     * ulDisplTime = 0;
 
-    if (bReleaseVersion)
+    if ( bReleaseVersion )
     {
         /*  normal */
         ip->bAbcNumbers = 0;
@@ -776,7 +787,7 @@ int ReadCommandLineParms(int argc,
     {
         nReleaseMode = 0;
     }
-    if (bVer1Options)
+    if ( bVer1Options )
     {
         bNameSuffix = 1;
         szNameSuffix[0] = '\0';
@@ -789,10 +800,10 @@ int ReadCommandLineParms(int argc,
 
 
     /* Analyze command line switches */
-    for (i = 1; i < argc; i++)
+    for ( i = 1; i < argc; i++ )
     {
 
-        if (is_gui && INCHI_OPTION_PREFX == argv[i][0] && INCHI_OPTION_PREFX != argv[i][1])
+        if ( is_gui && INCHI_OPTION_PREFX == argv[i][0] && INCHI_OPTION_PREFX != argv[i][1] )
         {
             /* Parsing TARGET_LIB_FOR_WINCHI GUI options (and v. 0.9xx Beta as well)  */
             pArg = argv[i] + 1;
@@ -811,20 +822,19 @@ int ReadCommandLineParms(int argc,
                 &bLargeMolecules, &bPolymers,
                 &bFoldPolymerSRU, &bFrameShiftScheme,
                 &bStereoAtZz, &bNPZz,
-                &bNoWarnings, &bMergeHash, &bHideInChI,
-                &bEnhancedStereochemistry, &bAtropisomers);
+                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry);
             if (got)
             {
                 ;
             }
-            else if (INPUT_NONE == ip->nInputType &&
+            else if ( INPUT_NONE == ip->nInputType &&
                 (!inchi_memicmp(pArg, "SDF", 3)) &&
-                (pArg[3] == ':'))
+                (pArg[3] == ':') )
             {
                 k = 0;
                 mystrncpy(ip->szSdfDataHeader, pArg + 4, MAX_SDF_HEADER + 1);
                 lrtrim(ip->szSdfDataHeader, &k);
-                if (k)
+                if ( k )
                 {
                     ip->pSdfLabel = ip->szSdfDataHeader;
                     ip->pSdfValue = szSdfDataValue;
@@ -837,17 +847,17 @@ int ReadCommandLineParms(int argc,
                     ip->nInputType = INPUT_MOLFILE;
                 }
             }
-            else if (INPUT_NONE == ip->nInputType && !inchi_stricmp(pArg, "MOL"))
+            else if ( INPUT_NONE == ip->nInputType && !inchi_stricmp(pArg, "MOL") )
             {
                 ip->nInputType = INPUT_MOLFILE;
             }
-            else if (INPUT_NONE == ip->nInputType && !inchi_stricmp(pArg, "SDF"))
+            else if ( INPUT_NONE == ip->nInputType && !inchi_stricmp(pArg, "SDF") )
             {
                 ip->nInputType = INPUT_MOLFILE;
             }
             /*--- Output options ---*/
 #if ( !defined(TARGET_API_LIB) && !defined(TARGET_LIB_FOR_WINCHI) )
-            else if (!inchi_stricmp(pArg, "Tabbed") || !inchi_stricmp(pArg, "Tab"))
+            else if ( !inchi_stricmp(pArg, "Tabbed") || !inchi_stricmp(pArg, "Tab") )
             {
                 bOutputStyle |= INCHI_OUT_TABBED_OUTPUT;
             }
@@ -859,31 +869,31 @@ int ReadCommandLineParms(int argc,
                 'if ( is_gui && ...)' and is_gui==1 means TARGET_LIB_FOR_WINCHI
             */
             /* #if ( defined(BUILD_WITH_ENG_OPTIONS) || defined(TARGET_LIB_FOR_WINCHI) )  */
-            else if (!inchi_stricmp(pArg, "SDFID"))
+            else if ( !inchi_stricmp(pArg, "SDFID") )
             {
                 ip->bGetSdfileId = 1;
             }
-            else if (!inchi_stricmp(pArg, "PLAIN"))
+            else if ( !inchi_stricmp(pArg, "PLAIN") )
             {
                 bOutputStyle |= INCHI_OUT_PLAIN_TEXT;
             }
-            else if (!inchi_stricmp(pArg, "ANNPLAIN"))
+            else if ( !inchi_stricmp(pArg, "ANNPLAIN") )
             {
                 bOutputStyle |= INCHI_OUT_PLAIN_TEXT_COMMENTS;
             }
-            else if (!inchi_memicmp(pArg, "AUXINFO:", 8) && isdigit(UCINT pArg[8]))
+            else if ( !inchi_memicmp(pArg, "AUXINFO:", 8) && isdigit(UCINT pArg[8]) )
             {
                 k = strtol(pArg + 8, NULL, 10);
-                if (k == 0)
+                if ( k == 0 )
                 {
                     bINChIOutputOptions |= INCHI_OUT_NO_AUX_INFO;  /* no aux info */
                     bINChIOutputOptions &= ~INCHI_OUT_SHORT_AUX_INFO;
                 }
-                else if (k == 1)
+                else if ( k == 1 )
                 {
                     bINChIOutputOptions &= ~(INCHI_OUT_NO_AUX_INFO | INCHI_OUT_SHORT_AUX_INFO); /* include full aux info */
                 }
-                else if (k == 2)
+                else if ( k == 2 )
                 {
                     bINChIOutputOptions &= ~INCHI_OUT_NO_AUX_INFO; /* include short aux info */
                     bINChIOutputOptions |= INCHI_OUT_SHORT_AUX_INFO;
@@ -893,46 +903,46 @@ int ReadCommandLineParms(int argc,
                     bINChIOutputOptions = k;  /* override everything */
                 }
             }
-            else if (!inchi_stricmp(pArg, "MERGE"))
+            else if ( !inchi_stricmp(pArg, "MERGE") )
             {
                 bMergeAllInputStructures = 1;
             }
 
-            else if (!inchi_stricmp(pArg, "PGO"))
+            else if ( !inchi_stricmp(pArg, "PGO") )
             {
                 ip->bSaveAllGoodStructsAsProblem = 1;
             }
-            else if (!inchi_stricmp(pArg, "DCR"))
+            else if ( !inchi_stricmp(pArg, "DCR") )
             {
                 bDisplayCompositeResults = 1;
             }
 
-            else if (!inchi_stricmp(pArg, "DSB"))
+            else if ( !inchi_stricmp(pArg, "DSB") )
             {
                 nMode |= REQ_MODE_NO_ALT_SBONDS;
             }
-            else if (!inchi_stricmp(pArg, "NOHDR"))
+            else if ( !inchi_stricmp(pArg, "NOHDR") )
             {
                 bNoStructLabels = 1;
             }
-            else if (!inchi_stricmp(pArg, "NoVarH"))
+            else if ( !inchi_stricmp(pArg, "NoVarH") )
             {
                 bTgFlagVariableProtons = 0;
             }
             /*--- (hidden) Old structure-perception and InChI creation options ---*/
             /*--- (engineering) Old structure-perception and InChI creation options ---*/
-            else if (!inchi_stricmp(pArg, "NOUUSB"))
+            else if ( !inchi_stricmp(pArg, "NOUUSB") )
             {
                 nMode |= REQ_MODE_SB_IGN_ALL_UU;
                 bStdFormat = 0;
             }
-            else if (!inchi_stricmp(pArg, "NOUUSC"))
+            else if ( !inchi_stricmp(pArg, "NOUUSC") )
             {
                 nMode |= REQ_MODE_SC_IGN_ALL_UU;
                 bStdFormat = 0;
             }
 #if ( FIX_ADJ_RAD == 1 )
-            else if (!inchi_stricmp(pArg, "FixRad"))
+            else if ( !inchi_stricmp(pArg, "FixRad") )
             {
                 bFixAdjacentRad = 1;
                 bStdFormat = 0;
@@ -940,20 +950,20 @@ int ReadCommandLineParms(int argc,
 #endif
 
 #if ( RENUMBER_ATOMS_AND_RECALC_V106 == 1 )
-            else if (!inchi_stricmp(pArg, "TestRenum") && developer_options)
+            else if ( !inchi_stricmp(pArg, "TestRenum") && developer_options )
             {
                 ip->bRenumber = 1;
             }
 #endif
 
 #if ( UNDERIVATIZE == 1 )
-            else if (!inchi_stricmp(pArg, "DoDRV"))
+            else if ( !inchi_stricmp(pArg, "DoDRV") )
             {
                 ip->bUnderivatize = 1;
                 bStdFormat = 0;
             }
 #if( UNDERIVATIZE_REPORT == 1 )
-            else if (!inchi_stricmp(pArg, "DoDrvReport"))
+            else if ( !inchi_stricmp(pArg, "DoDrvReport") )
             {
                 ip->bUnderivatize = 3;
                 bStdFormat = 0;
@@ -961,136 +971,136 @@ int ReadCommandLineParms(int argc,
 #endif
 #endif
 #if ( RING2CHAIN == 1 )
-            else if (!inchi_stricmp(pArg, "DoR2C"))
+            else if ( !inchi_stricmp(pArg, "DoR2C") )
             {
                 ip->bRing2Chain = 1;
                 bStdFormat = 0;
             }
 #endif
 #if ( RING2CHAIN == 1 || UNDERIVATIZE == 1 )
-            else if (!inchi_stricmp(pArg, "DoneOnly"))
+            else if ( !inchi_stricmp(pArg, "DoneOnly") )
             {
                 ip->bIgnoreUnchanged = 1;
                 bStdFormat = 0;
             }
 #endif
-            else if (!inchi_stricmp(pArg, "NoADP"))
+            else if ( !inchi_stricmp(pArg, "NoADP") )
             {
                 bTgFlagHardAddRenProtons = 0;
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "DISCONSALT:", 11))
+            else if ( !inchi_memicmp(pArg, "DISCONSALT:", 11) )
             {
                 bDisconnectSalts = (0 != strtol(pArg + 11, NULL, 10));
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "DISCONMETAL:", 12))
+            else if ( !inchi_memicmp(pArg, "DISCONMETAL:", 12) )
             {
                 bDisconnectCoord = (0 != strtol(pArg + 12, NULL, 10));
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "RECONMETAL:", 11))
+            else if ( !inchi_memicmp(pArg, "RECONMETAL:", 11) )
             {
                 bReconnectCoord = (0 != strtol(pArg + 11, NULL, 10));
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "DISCONMETALCHKVAL:", 18))
+            else if ( !inchi_memicmp(pArg, "DISCONMETALCHKVAL:", 18) )
             {
                 bDisconnectCoordChkVal = (0 != strtol(pArg + 18, NULL, 10));
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "MOVEPOS:", 8))
+            else if ( !inchi_memicmp(pArg, "MOVEPOS:", 8) )
             {
                 bMovePositiveCharges = (0 != strtol(pArg + 8, NULL, 10));
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "MERGESALTTG:", 12))
+            else if ( !inchi_memicmp(pArg, "MERGESALTTG:", 12) )
             {
                 bMergeSaltTGroups = (0 != strtol(pArg + 12, NULL, 10));
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "UNCHARGEDACIDS:", 15))
+            else if ( !inchi_memicmp(pArg, "UNCHARGEDACIDS:", 15) )
             {
                 bUnchargedAcidTaut = (0 != strtol(pArg + 15, NULL, 16));
                 bStdFormat = 0;
             }
-            else if (!inchi_memicmp(pArg, "ACIDTAUT:", 9))
+            else if ( !inchi_memicmp(pArg, "ACIDTAUT:", 9) )
             {
                 bAcidTautomerism = c = (int)strtol(pArg + 9, NULL, 10);
-                if (0 <= c && c <= 2)  bAcidTautomerism = c;
+                if ( 0 <= c && c <= 2 )  bAcidTautomerism = c;
                 /*else bNotRecognized = 2*bReleaseVersion;*/
                 bStdFormat = 0;
             }
             /*--- (hidden) Old output and other options ---*/
-            else if (!inchi_memicmp(pArg, "O:", 2))
+            else if ( !inchi_memicmp(pArg, "O:", 2) )
             {
                 bNameSuffix = 1;
                 strncpy(szNameSuffix, pArg + 2, sizeof(szNameSuffix) - 1);
             }
-            else if (!inchi_memicmp(pArg, "OP:", 3))
+            else if ( !inchi_memicmp(pArg, "OP:", 3) )
             {
                 bOutputPath = 1;
                 strncpy(szOutputPath, pArg + 3, sizeof(szOutputPath) - 1);
-                }
-            else if (!inchi_stricmp(pArg, "ALT"))
+            }
+            else if ( !inchi_stricmp(pArg, "ALT") )
             {
                 ip->bAbcNumbers = 1;
                 bStdFormat = 0;
             }
-            else if (!inchi_stricmp(pArg, "SCT"))
+            else if ( !inchi_stricmp(pArg, "SCT") )
             {
                 ip->bCtPredecessors = 1;
                 bStdFormat = 0;
             }
-            else if (!inchi_stricmp(pArg, "CMP"))
+            else if ( !inchi_stricmp(pArg, "CMP") )
             {
                 bCompareComponents = CMP_COMPONENTS;
             }
-            else if (!inchi_stricmp(pArg, "CMPNONISO"))
+            else if ( !inchi_stricmp(pArg, "CMPNONISO") )
             {
                 bCompareComponents = CMP_COMPONENTS | CMP_COMPONENTS_NONISO;
             }
-            else if (!inchi_stricmp(pArg, "PW"))
+            else if ( !inchi_stricmp(pArg, "PW") )
             {
                 ip->bSaveWarningStructsAsProblem = 1;
             }
 
-            else if (!inchi_memicmp(pArg, "RSB:", 4) && developer_options)
+            else if ( !inchi_memicmp(pArg, "RSB:", 4) && developer_options )
             {
                 mdbr = (int)strtol(pArg + 4, NULL, 10);
             }
-            else if (!inchi_memicmp(pArg, "DISCONSALT:", 11) && developer_options)
+            else if ( !inchi_memicmp(pArg, "DISCONSALT:", 11) && developer_options )
             {
                 bDisconnectSalts = (0 != strtol(pArg + 11, NULL, 10));
             }
-            else if (!inchi_memicmp(pArg, "DISCONMETAL:", 12) && developer_options)
+            else if ( !inchi_memicmp(pArg, "DISCONMETAL:", 12) && developer_options )
             {
                 bDisconnectCoord = (0 != strtol(pArg + 12, NULL, 10));
             }
-            else if (!inchi_memicmp(pArg, "RECONMETAL:", 11) && developer_options)
+            else if ( !inchi_memicmp(pArg, "RECONMETAL:", 11) && developer_options )
             {
                 bReconnectCoord = (0 != strtol(pArg + 11, NULL, 10));
             }
-            else if (!inchi_memicmp(pArg, "DISCONMETALCHKVAL:", 18) && developer_options)
+            else if ( !inchi_memicmp(pArg, "DISCONMETALCHKVAL:", 18) && developer_options )
             {
                 bDisconnectCoordChkVal = (0 != strtol(pArg + 18, NULL, 10));
             }
-            else if (!inchi_memicmp(pArg, "MOVEPOS:", 8) && developer_options)
+            else if ( !inchi_memicmp(pArg, "MOVEPOS:", 8) && developer_options )
             {
                 bMovePositiveCharges = (0 != strtol(pArg + 8, NULL, 10));
             }
-            else if (!inchi_memicmp(pArg, "MERGESALTTG:", 12) && developer_options)
+            else if ( !inchi_memicmp(pArg, "MERGESALTTG:", 12) && developer_options )
             {
                 bMergeSaltTGroups = (0 != strtol(pArg + 12, NULL, 10));
             }
-            else if (!inchi_memicmp(pArg, "UNCHARGEDACIDS:", 15) && developer_options)
+            else if ( !inchi_memicmp(pArg, "UNCHARGEDACIDS:", 15) && developer_options )
             {
                 bUnchargedAcidTaut = (0 != strtol(pArg + 15, NULL, 16));;
             }
-            else if (!inchi_memicmp(pArg, "ACIDTAUT:", 9) && developer_options)
+            else if ( !inchi_memicmp(pArg, "ACIDTAUT:", 9) && developer_options )
             {
                 bAcidTautomerism = c = (int)strtol(pArg + 9, NULL, 10);
-                if (0 <= c && c <= 2)
+                if ( 0 <= c && c <= 2 )
                 {
                     bAcidTautomerism = c;
                 }
@@ -1104,30 +1114,30 @@ int ReadCommandLineParms(int argc,
                 c = pArg[k]; /* prohibit multiple option concatenations, strict syntax check 2008-11-05 DT  */
                 {
                     c = toupper(c);
-                    switch (c)
+                    switch ( c )
                     {
                     case 'D':
                         bDisplay |= 1;
-                        if ((pArg[k + 1] == 'C' || pArg[k + 1] == 'c') && !pArg[k + 2])
+                        if ( (pArg[k + 1] == 'C' || pArg[k + 1] == 'c') && !pArg[k + 2] )
                         {
                             bDisplay |= 1;
                             k++;
                             ip->bDisplayEachComponentINChI = 1;
                         }
-                        else if (!pArg[k + 1])
+                        else if ( !pArg[k + 1] )
                         {
                             bDisplay |= 1;
                         }
                         break;
                     case 'W':
-                        if (pArg[k + 1] == 'D')
+                        if ( pArg[k + 1] == 'D' )
                         {
                             /* restore Display Time functionality */
                             c = 'D';
                             k++;
                         }
                         t = strtod(pArg + k + 1, (char**)&q); /*  cast deliberately discards 'const' qualifier */
-                        if ((q > pArg + k + 1 && errno == ERANGE) || t < 0.0 || t * 1000.0 >(double)ULONG_MAX) /* djb-rwth: addressing LLVM warning */
+                        if ( (q > pArg + k + 1 && errno == ERANGE) || t < 0.0 || t * 1000.0 >(double)ULONG_MAX ) /* djb-rwth: addressing LLVM warning */
                         {
                             ul = 0;
                         }
@@ -1135,10 +1145,10 @@ int ReadCommandLineParms(int argc,
                         {
                             ul = (unsigned long)(t * 1000.0);
                         }
-                        if ( /*q > pArg+k &&*/ !*q)
+                        if ( /*q > pArg+k &&*/ !*q )
                         {
                             k = q - pArg - 1; /* k will be incremented by the for() cycle */
-                            switch (c)
+                            switch ( c )
                             {
                             case 'D':
                                 *ulDisplTime = ul;
@@ -1151,19 +1161,19 @@ int ReadCommandLineParms(int argc,
                         break;
                     case 'F':
                         c = (int)strtol(pArg + k + 1, (char**)&q, 10); /*  cast deliberately discards 'const' qualifier */
-                        if (q > pArg + k && !*q)
+                        if ( q > pArg + k && !*q )
                         {
                             k = q - pArg - 1;
-                            if (abs(c) > 5)
+                            if ( abs(c) > 5 )
                             {
                                 nFontSize = -c;  /* font size 5 or less is too small */
                             }
                         }
                         break;
                     default:
-                        if (!pArg[k + 1])
+                        if ( !pArg[k + 1] )
                         {
-                            switch (c)
+                            switch ( c )
                             {
                             case 'B':
                                 nMode |= REQ_MODE_BASIC;
@@ -1193,7 +1203,7 @@ int ReadCommandLineParms(int argc,
                                 /*bNotRecognized = bReleaseVersion;*/
                                 break;
                             case 'E':
-                                if (nReleaseMode & REQ_MODE_STEREO)
+                                if ( nReleaseMode & REQ_MODE_STEREO )
                                 {
                                     nReleaseMode ^= REQ_MODE_STEREO;
                                     bStdFormat = 0;
@@ -1235,7 +1245,7 @@ int ReadCommandLineParms(int argc,
 
         } /* eof Parsing TARGET_LIB_FOR_WINCHI GUI options (and v. 0.9xx Beta as well)  */
 
-        else if ((bVer1Options & 1) && INCHI_OPTION_PREFX == argv[i][0] && argv[i][1])
+        else if ( (bVer1Options & 1) && INCHI_OPTION_PREFX == argv[i][0] && argv[i][1] )
         {
             /* Parsing stand-alone executable/libinchi options */
 
@@ -1260,30 +1270,29 @@ int ReadCommandLineParms(int argc,
                 &bLargeMolecules, &bPolymers,
                 &bFoldPolymerSRU, &bFrameShiftScheme,
                 &bStereoAtZz, &bNPZz,
-                &bNoWarnings, &bMergeHash, &bHideInChI,
-                &bEnhancedStereochemistry, &bAtropisomers);
+                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry);
 
-            if (got)
+            if ( got )
             {
                 ;
             }
             /* Input */
-            else if (!inchi_stricmp(pArg, "STDIO"))
+            else if ( !inchi_stricmp(pArg, "STDIO") )
             {
                 bNameSuffix = 0;
             }
             else if ( /* INPUT_NONE == ip->nInputType &&*/
-                !inchi_memicmp(pArg, "SDF:", 4))
+                !inchi_memicmp(pArg, "SDF:", 4) )
             {
                 /* SDfile label */
                 k = 0;
                 mystrncpy(ip->szSdfDataHeader, pArg + 4, MAX_SDF_HEADER + 1);
                 lrtrim(ip->szSdfDataHeader, &k);
-                if (k)
+                if ( k )
                 {
                     ip->pSdfLabel = ip->szSdfDataHeader;
                     ip->pSdfValue = szSdfDataValue;
-                    if (INPUT_NONE == ip->nInputType)
+                    if ( INPUT_NONE == ip->nInputType )
                     {
                         ip->nInputType = INPUT_SDFILE;
                     }
@@ -1292,75 +1301,75 @@ int ReadCommandLineParms(int argc,
                 {
                     ip->pSdfLabel = NULL;
                     ip->pSdfValue = NULL;
-                    if (INPUT_NONE == ip->nInputType)
+                    if ( INPUT_NONE == ip->nInputType )
                     {
                         ip->nInputType = INPUT_MOLFILE;
                     }
                 }
             }
 
-            else if (!inchi_memicmp(pArg, "RSB:", 4) && developer_options)
+            else if ( !inchi_memicmp(pArg, "RSB:", 4) && developer_options )
             {
                 mdbr = (int)strtol(pArg + 4, NULL, 10);
             }
 
             /* Output */
 #if ( !defined(TARGET_API_LIB) && !defined(TARGET_LIB_FOR_WINCHI) )
-            else if (!inchi_stricmp(pArg, "Tabbed") || !inchi_stricmp(pArg, "Tab"))
+            else if ( !inchi_stricmp(pArg, "Tabbed") || !inchi_stricmp(pArg, "Tab") )
             {
                 bOutputStyle |= INCHI_OUT_TABBED_OUTPUT;
             }
 #endif
-            else if (!inchi_stricmp(pArg, "OUTPUTSDF"))
+            else if ( !inchi_stricmp(pArg, "OUTPUTSDF") )
             {
                 /* output SDfile */
                 bOutputMolfileOnly = 1;
             }
-            else if (!inchi_stricmp(pArg, "SdfAtomsDT"))
+            else if ( !inchi_stricmp(pArg, "SdfAtomsDT") )
             {
                 /* output isotopes H as D and T in SDfile */
                 bOutputMolfileDT = 1;
             }
-            else if (!inchi_stricmp(pArg, "D"))
+            else if ( !inchi_stricmp(pArg, "D") )
             {
                 /* display the structures */
                 bDisplay |= 1;
             }
-            else if (!inchi_memicmp(pArg, "F", 1) && (c = (int)strtol(pArg + 1, (char**)&q, 10), q > pArg + 1))
+            else if ( !inchi_memicmp(pArg, "F", 1) && (c = (int)strtol(pArg + 1, (char**)&q, 10), q > pArg + 1) )
             {
                 nFontSize = -c;                      /* struct. display font size */
             }
-            else if (!inchi_stricmp(pArg, "EQU"))
+            else if ( !inchi_stricmp(pArg, "EQU") )
             {
                 bCompareComponents = CMP_COMPONENTS;
             }
 #if( OUTPUT_FILE_EXT == 1 )
-            else if (pArg[0] == '.' && numOutNameExt < (int)(sizeof(szOutNameExt) / sizeof(szOutNameExt[0])))
+            else if ( pArg[0] == '.' && numOutNameExt < (int)(sizeof(szOutNameExt) / sizeof(szOutNameExt[0])) )
             {
                 strncpy(szOutNameExt[numOutNameExt], pArg, sizeof(szOutNameExt[0]) - 1);
                 numOutNameExt++;
-                if (ip->path[numOutNameExt])
+                if ( ip->path[numOutNameExt] )
                 {
                     ip->path[numOutNameExt] = ""; /*strcpy( ip->path[numOutNameExt], "");*/
                 }
             }
 #endif
             /* djb-rwth: avoiding Error 98 for empty .mol files -- GH issue #25, thanks to @wijnand1 */
-            else if (!inchi_stricmp(pArg, "WarnOnEmptyStructure"))
+            else if ( !inchi_stricmp(pArg, "WarnOnEmptyStructure") )
             {
                 ip->bAllowEmptyStructure = 1;
             }
 
             /* Generation options */
-            else if (!inchi_memicmp(pArg, "W", 1))
+            else if ( !inchi_memicmp(pArg, "W", 1) )
             {
                 long timeout_value;
                 const char c1 = *(pArg + 1);
-                if (c1 && (c1 == 'M' || c1 == 'm'))
+                if ( c1 && (c1 == 'M' || c1 == 'm') )
                 {
                     /* "WMnumber", milliseconds */
                     timeout_value = strtol(pArg + 2, (char**)&q, 10);
-                    if (timeout_value && q > pArg + 2 && *q == '\0')
+                    if ( timeout_value && q > pArg + 2 && *q == '\0' )
                     {
                         if (errno == ERANGE || timeout_value < 0.0 || timeout_value>LONG_MAX) /* djb-rwth: addressing coverity ID #499550 -- the condition takes into account all possible overflows/errors */
                         {
@@ -1378,13 +1387,13 @@ int ReadCommandLineParms(int argc,
                 {
                     /* expect "Wnumber", seconds */
                     t = strtod(pArg + 1, (char**)&q);
-                    if (t && q > pArg + 1)
+                    if ( t && q > pArg + 1 )
                     {
-                        if (*q != '\0')
+                        if ( *q != '\0' )
                         {
                             timeout_set_warning = 1;
                         }
-                        if (errno == ERANGE || t < 0.0 || t * 1000.0 >(double)LONG_MAX)
+                        if ( errno == ERANGE || t < 0.0 || t * 1000.0 >(double)LONG_MAX )
                         {
                             timeout_value = 0;
                             timeout_set_warning = 1;
@@ -1400,7 +1409,7 @@ int ReadCommandLineParms(int argc,
                         timeout_set_error = 1;
                     }
                 }
-                if (timeout_set_error == 0)
+                if ( timeout_set_error == 0 )
                 {
                     ip->msec_MaxTime = timeout_value;
                 }
@@ -1410,7 +1419,7 @@ int ReadCommandLineParms(int argc,
 #if ( READ_INCHI_STRING == 1 )
 
 /*#if (BUILD_WITH_ENG_OPTIONS==1)*/
-            else if (!inchi_stricmp(pArg, "InChI2InChI"))
+            else if ( !inchi_stricmp(pArg, "InChI2InChI") )
             {
                 /* Read InChI Identifiers and output InChI Identifiers */
                 ip->nInputType = INPUT_INCHI;
@@ -1419,7 +1428,7 @@ int ReadCommandLineParms(int argc,
             }
             /*#endif*/
 
-            else if (!inchi_stricmp(pArg, "InChI2Struct"))
+            else if ( !inchi_stricmp(pArg, "InChI2Struct") )
             {
                 /* Split InChI Identifiers into components */
                 ip->bReadInChIOptions |= READ_INCHI_TO_STRUCTURE;
@@ -1427,7 +1436,7 @@ int ReadCommandLineParms(int argc,
                 ip->nInputType = INPUT_INCHI;
             }
 
-            else if (!inchi_stricmp(pArg, "KeepBalanceP") && developer_options)
+            else if ( !inchi_stricmp(pArg, "KeepBalanceP") && developer_options )
             {
                 /* When spliting InChI Identifiers into components: */
                 /* If MobileH output then add p to each component;  */
@@ -1442,7 +1451,7 @@ int ReadCommandLineParms(int argc,
 
             /* (developer_options) Old structure-perception and InChI creation options */
 #if ( FIX_ADJ_RAD == 1 )
-            else if (!inchi_stricmp(pArg, "FixRad") && developer_options)
+            else if ( !inchi_stricmp(pArg, "FixRad") && developer_options )
             {
                 bFixAdjacentRad = 1;
                 bStdFormat = 0;
@@ -1451,20 +1460,20 @@ int ReadCommandLineParms(int argc,
 
 
 #if ( RENUMBER_ATOMS_AND_RECALC_V106 == 1 )
-            else if (!inchi_stricmp(pArg, "TestRenum") && developer_options)
+            else if ( !inchi_stricmp(pArg, "TestRenum") && developer_options )
             {
                 ip->bRenumber = 1;
             }
 #endif
 
 #if ( UNDERIVATIZE == 1 )
-            else if (!inchi_stricmp(pArg, "DoDRV") && developer_options)
+            else if ( !inchi_stricmp(pArg, "DoDRV") && developer_options )
             {
                 ip->bUnderivatize = 1;
                 bStdFormat = 0;
             }
 #if( UNDERIVATIZE_REPORT == 1 )
-            else if (!inchi_stricmp(pArg, "DoDrvReport"))
+            else if ( !inchi_stricmp(pArg, "DoDrvReport") )
             {
                 ip->bUnderivatize = 3;
                 bStdFormat = 0;
@@ -1472,60 +1481,60 @@ int ReadCommandLineParms(int argc,
 #endif
 #endif
 #if ( RING2CHAIN == 1 )
-            else if (!inchi_stricmp(pArg, "DoR2C") && developer_options)
+            else if ( !inchi_stricmp(pArg, "DoR2C") && developer_options )
             {
                 ip->bRing2Chain = 1;
                 bStdFormat = 0;
             }
 #endif
 #if ( RING2CHAIN == 1 || UNDERIVATIZE == 1 )
-            else if (!inchi_stricmp(pArg, "DoneOnly") && developer_options)
+            else if ( !inchi_stricmp(pArg, "DoneOnly") && developer_options )
             {
                 ip->bIgnoreUnchanged = 1;
                 bStdFormat = 0;
             }
 #endif
-            else if (!inchi_memicmp(pArg, "MOVEPOS:", 8) && developer_options)
+            else if ( !inchi_memicmp(pArg, "MOVEPOS:", 8) && developer_options )
             {
                 bMovePositiveCharges = (0 != strtol(pArg + 8, NULL, 10));
                 bStdFormat = 0;
             }
 
-            else if (!inchi_stricmp(pArg, "NoADP") && developer_options)
+            else if ( !inchi_stricmp(pArg, "NoADP") && developer_options )
             {
                 bTgFlagHardAddRenProtons = 0;
                 bStdFormat = 0;
             }
             /* Tautomer perception off */
-            else if (!inchi_stricmp(pArg, "EXACT") && developer_options)
+            else if ( !inchi_stricmp(pArg, "EXACT") && developer_options )
             {
                 bVer1DefaultMode |= REQ_MODE_BASIC;
                 bStdFormat = 0;
             }
-            else if (!inchi_stricmp(pArg, "ONLYRECSALT") && developer_options)
+            else if ( !inchi_stricmp(pArg, "ONLYRECSALT") && developer_options )
             {
                 /* do not disconnect salts */
                 bDisconnectSalts = 0;
                 bStdFormat = 0;
             }
-            else if ((!inchi_stricmp(pArg, "ONLYEXACT") || !inchi_stricmp(pArg, "ONLYFIXEDH")) && developer_options)
+            else if ( (!inchi_stricmp(pArg, "ONLYEXACT") || !inchi_stricmp(pArg, "ONLYFIXEDH")) && developer_options )
             {
                 bVer1DefaultMode |= REQ_MODE_BASIC;
                 bVer1DefaultMode &= ~REQ_MODE_TAUT;
                 bStdFormat = 0;
             }
-            else if (!inchi_stricmp(pArg, "ONLYNONISO") && developer_options)
+            else if ( !inchi_stricmp(pArg, "ONLYNONISO") && developer_options )
             {
                 bVer1DefaultMode |= REQ_MODE_NON_ISO;
                 bVer1DefaultMode &= ~REQ_MODE_ISO;
                 bStdFormat = 0;
             }
-            else if (!inchi_stricmp(pArg, "TAUT") && developer_options)
+            else if ( !inchi_stricmp(pArg, "TAUT") && developer_options )
             {
                 bVer1DefaultMode &= ~REQ_MODE_BASIC;
                 bVer1DefaultMode |= REQ_MODE_TAUT;
             }
-            else if (!inchi_stricmp(pArg, "ONLYRECMET") && developer_options)
+            else if ( !inchi_stricmp(pArg, "ONLYRECMET") && developer_options )
             {
                 /* do not disconnect metals */
                 bDisconnectCoord = 0;
@@ -1534,21 +1543,21 @@ int ReadCommandLineParms(int argc,
 
             /*--- (hidden) Old output and other options ---*/
 
-            else if (!inchi_stricmp(pArg, "SdfSplit") && developer_options)
+            else if ( !inchi_stricmp(pArg, "SdfSplit") && developer_options )
             {
                 /* Split single Molfiles into disconnected components */
                 bOutputMolfileSplit = 1;
             }
-            else if (!inchi_stricmp(pArg, "DCR") && developer_options)
+            else if ( !inchi_stricmp(pArg, "DCR") && developer_options )
             {
                 bDisplayCompositeResults = 1;
             }
-            else if ((!inchi_stricmp(pArg, "AUXFULL") || !inchi_stricmp(pArg, "AUXMAX")) && developer_options)
+            else if ( (!inchi_stricmp(pArg, "AUXFULL") || !inchi_stricmp(pArg, "AUXMAX")) && developer_options )
             {
                 /* full aux info */
                 bINChIOutputOptions &= ~(INCHI_OUT_NO_AUX_INFO | INCHI_OUT_SHORT_AUX_INFO); /* include short aux info */
             }
-            else if (!inchi_stricmp(pArg, "AUXMIN") && developer_options)
+            else if ( !inchi_stricmp(pArg, "AUXMIN") && developer_options )
             {
                 /* minimal aux info */
                 bINChIOutputOptions &= ~INCHI_OUT_NO_AUX_INFO; /* include short aux info */
@@ -1556,17 +1565,17 @@ int ReadCommandLineParms(int argc,
             }
 
 #if ( READ_INCHI_STRING == 1 )
-            else if (!inchi_stricmp(pArg, "DDSRC") && developer_options)
+            else if ( !inchi_stricmp(pArg, "DDSRC") && developer_options )
             {
                 bDisplayIfRestoreWarnings = 1;  /* InChI->Structure debugging: Display Debug Structure Restore Components */
             }
 #endif
 
-            else if (!inchi_stricmp(pArg, "NoVarH") && developer_options)
+            else if ( !inchi_stricmp(pArg, "NoVarH") && developer_options )
             {
                 bTgFlagVariableProtons = 0;
             }
-            else if (!inchi_stricmp(pArg, "FULL") && developer_options)
+            else if ( !inchi_stricmp(pArg, "FULL") && developer_options )
             {
                 bVer1DefaultMode = VER103_DEFAULT_MODE;
                 nMode = 0;
@@ -1576,7 +1585,7 @@ int ReadCommandLineParms(int argc,
                 ip->bAbcNumbers = 0;
                 bOutputStyle |= INCHI_OUT_PLAIN_TEXT | INCHI_OUT_PLAIN_TEXT_COMMENTS;
             }
-            else if (!inchi_stricmp(pArg, "MIN") && developer_options)
+            else if ( !inchi_stricmp(pArg, "MIN") && developer_options )
             {
                 bVer1DefaultMode = VER103_DEFAULT_MODE;
                 nMode = 0;
@@ -1586,14 +1595,14 @@ int ReadCommandLineParms(int argc,
                 ip->bAbcNumbers = 1;
                 bOutputStyle |= INCHI_OUT_PLAIN_TEXT | INCHI_OUT_PLAIN_TEXT_COMMENTS;
             }
-            else if (!inchi_stricmp(pArg, "COMPRESS") && developer_options)
+            else if ( !inchi_stricmp(pArg, "COMPRESS") && developer_options )
             {
                 ip->bAbcNumbers = 1;
                 ip->bCtPredecessors = 1;             /* compressed output */
             }
 
 #if ( READ_INCHI_STRING == 1 )
-            else if (!inchi_stricmp(pArg, "InChI2InChI")) /*&& developer_options)*/
+            else if ( !inchi_stricmp(pArg, "InChI2InChI") ) /*&& developer_options)*/
             {
                 /* Read InChI Identifiers and output InChI Identifiers */
                 ip->nInputType = INPUT_INCHI;
@@ -1601,66 +1610,66 @@ int ReadCommandLineParms(int argc,
                 ip->bReadInChIOptions &= ~READ_INCHI_TO_STRUCTURE;
             }
 
-            else if (!inchi_stricmp(pArg, "SplitInChI") && developer_options)
+            else if ( !inchi_stricmp(pArg, "SplitInChI") && developer_options )
             {
                 /* Split InChI Identifiers into components */
                 ip->bReadInChIOptions |= READ_INCHI_SPLIT_OUTPUT;
             }
 #endif
 
-            else if (!inchi_stricmp(pArg, "MOLFILENUMBER") && developer_options)
+            else if ( !inchi_stricmp(pArg, "MOLFILENUMBER") && developer_options )
             {
                 ip->bGetMolfileNumber |= 1;
             }
-            else if (!inchi_stricmp(pArg, "OutputPLAIN") && developer_options)
+            else if ( !inchi_stricmp(pArg, "OutputPLAIN") && developer_options )
             {
                 bOutputStyle |= INCHI_OUT_PLAIN_TEXT;
             }
-            else if (!inchi_stricmp(pArg, "OutputANNPLAIN") && developer_options)
+            else if ( !inchi_stricmp(pArg, "OutputANNPLAIN") && developer_options )
             {
                 bOutputStyle |= INCHI_OUT_PLAIN_TEXT_COMMENTS;
                 bOutputStyle |= INCHI_OUT_WINCHI_WINDOW; /* debug */
             }
-            else if ((!inchi_stricmp(pArg, "ONLYEXACT") || !inchi_stricmp(pArg, "ONLYFIXEDH")) && developer_options)
+            else if ( (!inchi_stricmp(pArg, "ONLYEXACT") || !inchi_stricmp(pArg, "ONLYFIXEDH")) && developer_options )
             {
                 bVer1DefaultMode |= REQ_MODE_BASIC;
                 bVer1DefaultMode &= ~REQ_MODE_TAUT;
             }
-            else if (!inchi_stricmp(pArg, "ONLYNONISO") && developer_options)
+            else if ( !inchi_stricmp(pArg, "ONLYNONISO") && developer_options )
             {
                 bVer1DefaultMode |= REQ_MODE_NON_ISO;
                 bVer1DefaultMode &= ~REQ_MODE_ISO;
             }
-            else if (!inchi_stricmp(pArg, "TAUT") && developer_options)
+            else if ( !inchi_stricmp(pArg, "TAUT") && developer_options )
             {
                 bVer1DefaultMode &= ~REQ_MODE_BASIC;
                 bVer1DefaultMode |= REQ_MODE_TAUT;
             }
-            else if (!inchi_stricmp(pArg, "ONLYRECMET") && developer_options)
+            else if ( !inchi_stricmp(pArg, "ONLYRECMET") && developer_options )
             {  /* do not disconnect metals */
                 bDisconnectCoord = 0;
             }
-            else if (!inchi_stricmp(pArg, "ONLYRECSALT") && developer_options)
+            else if ( !inchi_stricmp(pArg, "ONLYRECSALT") && developer_options )
             {  /* do not disconnect salts */
                 bDisconnectSalts = 0;
             }
-            else if (!inchi_memicmp(pArg, "MOVEPOS:", 8) && developer_options)
+            else if ( !inchi_memicmp(pArg, "MOVEPOS:", 8) && developer_options )
             {   /* added -- 2010-03-01 DT */
                 bMovePositiveCharges = (0 != strtol(pArg + 8, NULL, 10));
             }
-            else if (!inchi_memicmp(pArg, "RSB:", 4) && developer_options)
+            else if ( !inchi_memicmp(pArg, "RSB:", 4) && developer_options )
             {
                 mdbr = (int)strtol(pArg + 4, NULL, 10);
             }
-            else if (!inchi_stricmp(pArg, "EQU") && developer_options)
+            else if ( !inchi_stricmp(pArg, "EQU") && developer_options )
             {
                 bCompareComponents = CMP_COMPONENTS;
             }
-            else if (!inchi_stricmp(pArg, "EQUNONISO") && developer_options)
+            else if ( !inchi_stricmp(pArg, "EQUNONISO") && developer_options )
             {
                 bCompareComponents = CMP_COMPONENTS | CMP_COMPONENTS_NONISO;
             }
-            else if (!inchi_memicmp(pArg, "OP:", 3) && developer_options)
+            else if ( !inchi_memicmp(pArg, "OP:", 3) && developer_options )
             {
                 bOutputPath = 1;
                 strncpy(szOutputPath, pArg + 3, sizeof(szOutputPath) - 1);
@@ -1680,16 +1689,16 @@ int ReadCommandLineParms(int argc,
 
         } /* eof Parsing stand-alone executable/libinchi options */
 
-        else if (ip->num_paths < MAX_NUM_PATHS)
+        else if ( ip->num_paths < MAX_NUM_PATHS )
         {
             char* sz;
 #if( ALLOW_EMPTY_PATHS == 1 )
-            if (argv[i])
+            if ( argv[i] )
 #else
-            if (argv[i] && argv[i][0])
+            if ( argv[i] && argv[i][0] )
 #endif
             {
-                if ((sz = (char*)inchi_malloc((strlen(argv[i]) + 1) * sizeof(sz[0])))) /* djb-rwth: addressing LLVM warning */
+                if ( (sz = (char*)inchi_malloc((strlen(argv[i]) + 1) * sizeof(sz[0]))) ) /* djb-rwth: addressing LLVM warning */
                 {
                     strcpy(sz, argv[i]);
                 }
@@ -1703,21 +1712,21 @@ int ReadCommandLineParms(int argc,
     /* Print messages and set controil variables according to just parsed options */
 
     /* Timeout option(s) */
-    if (timeout_set_warning)
+    if ( timeout_set_warning )
     {
         inchi_ios_eprint(log_file, "Warning: timeout value may have been modified (truncated?) due to number formatting issues;\n");
     }
-    if (timeout_set_error)
+    if ( timeout_set_error )
     {
         inchi_ios_eprint(log_file, "Warning: specified timeout value was ignored due to invalid number format, using the default;\n");
     }
 
     /* InChIKey option(s) */
-    if (bHashKey != 0)
+    if ( bHashKey != 0 )
     {
         /* Suppress InChIKey calculation if:                */
         /* compressed output OR Inchi2Struct OR Inchi2Inchi */
-        if ((ip->bAbcNumbers == 1) && (ip->bCtPredecessors == 1))
+        if ( (ip->bAbcNumbers == 1) && (ip->bCtPredecessors == 1) )
         {
             bHashKey = 0;
 #ifndef TARGET_LIB_FOR_WINCHI
@@ -1725,7 +1734,7 @@ int ReadCommandLineParms(int argc,
             return -1;
 #endif
         }
-        if (ip->nInputType == INPUT_INCHI)
+        if ( ip->nInputType == INPUT_INCHI )
         {
             bHashKey = 0;
 #ifndef TARGET_LIB_FOR_WINCHI
@@ -1735,7 +1744,7 @@ int ReadCommandLineParms(int argc,
         }
         else
         {
-            if (bOutputMolfileOnly == 1)
+            if ( bOutputMolfileOnly == 1 )
             {
                 bHashKey = 0;
 #ifndef TARGET_LIB_FOR_WINCHI
@@ -1746,7 +1755,7 @@ int ReadCommandLineParms(int argc,
         }
     }
 
-    if (bNameSuffix || bOutputPath)
+    if ( bNameSuffix || bOutputPath )
     {
         const char szNUL[] = "NUL";
         /* fix for AMD processor: use const char[] instead of just "NUL" constant 2008-11-5 DT */
@@ -1756,31 +1765,31 @@ int ReadCommandLineParms(int argc,
         char* sz;
         int len;
         /*  find the 1st path */
-        for (i = 0; i < MAX_NUM_PATHS; i++)
+        for ( i = 0; i < MAX_NUM_PATHS; i++ )
         {
-            if (!p && ip->path[i] && ip->path[i][0])
+            if ( !p && ip->path[i] && ip->path[i][0] )
             {
                 p = ip->path[i];
                 break;
             }
         }
         /* fix output path */
-        if (bOutputPath && szOutputPath[0] && p)
+        if ( bOutputPath && szOutputPath[0] && p )
         {
             /* remove last slash */
             len = (int)strlen(szOutputPath);
-            if (len > 0 && szOutputPath[len - 1] != INCHI_PATH_DELIM)
+            if ( len > 0 && szOutputPath[len - 1] != INCHI_PATH_DELIM )
             {
                 szOutputPath[len++] = INCHI_PATH_DELIM;
                 szOutputPath[len] = '\0';
             }
-            if (len > 0 && (r = (char*)strrchr(p, INCHI_PATH_DELIM)) && r[1])
+            if ( len > 0 && (r = (char*)strrchr(p, INCHI_PATH_DELIM)) && r[1] )
             {
                 strcat(szOutputPath, r + 1);
                 p = szOutputPath;
             }
         }
-/* djb-rwth: copying the value of p */
+        /* djb-rwth: copying the value of p */
 #ifdef _WIN32
         p_prev = _strdup(p);
 #else
@@ -1788,15 +1797,15 @@ int ReadCommandLineParms(int argc,
 #endif
         /*  add missing paths */
         /* djb-rwth: this whole block had to be rewritten to avoid use of memory after it is freed */
-        for (i = 0; p_prev && i < MAX_NUM_PATHS; i++)
+        for ( i = 0; p_prev && i < MAX_NUM_PATHS; i++ )
         {
             /* fix for AMD processor: changed order 2008-11-5 DT */
-            if (!ip->path[i] || !ip->path[i][0])
+            if ( !ip->path[i] || !ip->path[i][0] )
             {
 #if ( BUILD_WITH_AMI == 1 ) && ( OUTPUT_FILE_EXT == 1 )
                 char* pLastExt = (i && numOutNameExt >= i) ? strrchr((char*)p_prev, '.') : 0;
                 char* pLastSlash = (i && numOutNameExt >= i) ? strrchr((char*)p_prev, INCHI_PATH_DELIM) : 0;
-                if (pLastExt && pLastSlash && pLastSlash > pLastExt)
+                if ( pLastExt && pLastSlash && pLastSlash > pLastExt )
                     pLastExt = NULL;
 #else
                 char* pLastExt = NULL;
@@ -1806,23 +1815,23 @@ int ReadCommandLineParms(int argc,
                 {
                     strcpy(sz, p_prev); /* djb-rwth: fix for use of memory after being freed */
 #if ( BUILD_WITH_AMI == 1 ) && ( OUTPUT_FILE_EXT == 1 )
-                    if (pLastExt)
+                    if ( pLastExt )
                     {
                         strcpy(sz + (pLastExt - p), szOutNameExt[i - 1]);
                     }
 #endif
                     strcat(sz, szNameSuffix);
-                    if (!pLastExt)
+                    if ( !pLastExt )
                         strcat(sz, ext[i]);
                     ip->num_paths++;
-                    if (ip->path[i])
+                    if ( ip->path[i] )
                     {
                         inchi_free((char*)ip->path[i]); /* eliminate memory leak 2013-12-18 DCh */
                     }
                     ip->path[i] = sz;
                 }
             }
-            else if (!inchi_stricmp(ip->path[i], szNUL))
+            else if ( !inchi_stricmp(ip->path[i], szNUL) )
             {
                 inchi_free((char*)ip->path[i]); /* cast deliberately const qualifier */
                 ip->path[i] = NULL;
@@ -1833,12 +1842,12 @@ int ReadCommandLineParms(int argc,
 
     /* inchi2inchi and inchi2struct option(s) */
 #if ( READ_INCHI_STRING == 1 )
-    if (INPUT_INCHI == ip->nInputType)
+    if ( INPUT_INCHI == ip->nInputType )
     {
         bCompareComponents = 0;
         /*bDisplayCompositeResults = 0;*/
 #if ( I2S_MODIFY_OUTPUT == 1 )
-        if (!(ip->bReadInChIOptions & READ_INCHI_TO_STRUCTURE))
+        if ( !(ip->bReadInChIOptions & READ_INCHI_TO_STRUCTURE) )
 #endif
         {
             bOutputMolfileOnly = 0;
@@ -1848,7 +1857,7 @@ int ReadCommandLineParms(int argc,
             /* bNoStructLabels   = 1; */
         }
         ip->bDisplayIfRestoreWarnings = bDisplayIfRestoreWarnings;
-        if (!(bINChIOutputOptions &
+        if ( !(bINChIOutputOptions &
             (INCHI_OUT_SDFILE_ONLY |       /* not in bINChIOutputOptions yet */
                 INCHI_OUT_PLAIN_TEXT |        /* not in bINChIOutputOptions yet */
                 INCHI_OUT_PLAIN_TEXT_COMMENTS /* not in bINChIOutputOptions yet */
@@ -1865,17 +1874,17 @@ int ReadCommandLineParms(int argc,
     }
 #endif
 
-    if (bVer1Options)
+    if ( bVer1Options )
     {
         nMode |= bVer1DefaultMode;
     }
-    else if (bReleaseVersion)
+    else if ( bReleaseVersion )
     {
         nMode |= nReleaseMode;
     }
 
 #if ( defined(COMPILE_ANSI_ONLY) || defined(TARGET_LIB_FOR_WINCHI) )
-    if (bCompareComponents && !(bDisplay & 1))
+    if ( bCompareComponents && !(bDisplay & 1) )
     {
         bCompareComponents = 0;
     }
@@ -1901,30 +1910,30 @@ int ReadCommandLineParms(int argc,
     ip->bDoNotAddH = bDoNotAddH;
 
     /*  Set default options */
-    if (!nMode || nMode == REQ_MODE_STEREO)
+    if ( !nMode || nMode == REQ_MODE_STEREO )
     {
         /*  requested all output */
         nMode |= (REQ_MODE_BASIC | REQ_MODE_TAUT | REQ_MODE_ISO | REQ_MODE_NON_ISO | REQ_MODE_STEREO);
     }
     else
     {
-        if (!(nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)))
+        if ( !(nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)) )
         {
             nMode |= (REQ_MODE_BASIC | REQ_MODE_TAUT);
         }
-        if ((nMode & REQ_MODE_STEREO) && !(nMode & (REQ_MODE_ISO | REQ_MODE_NON_ISO)))
+        if ( (nMode & REQ_MODE_STEREO) && !(nMode & (REQ_MODE_ISO | REQ_MODE_NON_ISO)) )
         {
             nMode |= (REQ_MODE_ISO | REQ_MODE_NON_ISO);
         }
     }
     /*  if the user requested isotopic then unconditionally add non-isotopic output. */
-    if (nMode & REQ_MODE_ISO)
+    if ( nMode & REQ_MODE_ISO )
     {
         nMode |= REQ_MODE_NON_ISO;
     }
 
 #if ( MIN_SB_RING_SIZE > 0 )
-    if (mdbr)
+    if ( mdbr )
     {
         nMinDbRinSize = mdbr;
     }
@@ -1932,20 +1941,20 @@ int ReadCommandLineParms(int argc,
 #endif
 
     /* Input file */
-    if (ip->nInputType == INPUT_NONE && ip->num_paths > 0)
+    if ( ip->nInputType == INPUT_NONE && ip->num_paths > 0 )
     {
         ip->nInputType = INPUT_MOLFILE; /*  default */
     }
     ip->nMode = nMode;
     /* Compare components */
-    if ((bCompareComponents & CMP_COMPONENTS) && (nMode & REQ_MODE_BASIC))
+    if ( (bCompareComponents & CMP_COMPONENTS) && (nMode & REQ_MODE_BASIC) )
     {
         bCompareComponents |= CMP_COMPONENTS_NONTAUT; /* compare non-tautomeric */
     }
     ip->bCompareComponents = bCompareComponents;
     /* Output */
     ip->bINChIOutputOptions = bINChIOutputOptions | (bOutputMolfileOnly ? INCHI_OUT_SDFILE_ONLY : 0);
-    if (bOutputMolfileOnly)
+    if ( bOutputMolfileOnly )
     {
         bOutputStyle &= ~(INCHI_OUT_PLAIN_TEXT |
             INCHI_OUT_PLAIN_TEXT_COMMENTS |
@@ -1956,7 +1965,7 @@ int ReadCommandLineParms(int argc,
 #endif
     }
 #ifdef TARGET_LIB_FOR_WINCHI
-    if (!(bDisplay & 1))
+    if ( !(bDisplay & 1) )
     {
         bOutputStyle &= ~(INCHI_OUT_PLAIN_TEXT_COMMENTS); /* do not ouput comments in wINChI text file results */
     }
@@ -1969,7 +1978,7 @@ int ReadCommandLineParms(int argc,
     ip->bNoStructLabels = bNoStructLabels;
 
     /* Processing options */
-    if (bForcedChiralFlag)
+    if ( bForcedChiralFlag )
     {
         ip->bChiralFlag = bForcedChiralFlag;
     }
@@ -2033,7 +2042,7 @@ int ReadCommandLineParms(int argc,
     ip->bTautFlags |= bFixSp3bug ? TG_FLAG_FIX_SP3_BUG : 0;
 
     /* Bug fixes */
-    if (bFixFB2)
+    if ( bFixFB2 )
     {
 #if ( FIX_ISO_FIXEDH_BUG == 1 )
         ip->bTautFlags |= TG_FLAG_FIX_ISO_FIXEDH_BUG; /* accomodate FIX_ISO_FIXEDH_BUG */
@@ -2048,26 +2057,26 @@ int ReadCommandLineParms(int argc,
 #endif
     }
 
-    if (!ip->nInputType)
+    if ( !ip->nInputType )
     {
         ip->nInputType = INPUT_MOLFILE;
     }
 
     /* Check if /SNon requested turn OFF SUU/SLUUD */
-    if (!(ip->nMode & REQ_MODE_STEREO))
+    if ( !(ip->nMode & REQ_MODE_STEREO) )
     {
         ip->nMode &= ~REQ_MODE_DIFF_UU_STEREO;
         ip->nMode &= ~(REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU);
     }
 
     /* Standard InChI ? */
-    if (bStdFormat)
+    if ( bStdFormat )
     {
         ip->bINChIOutputOptions |= INCHI_OUT_STDINCHI;
     }
 
     /* InChIKey ? */
-    if (!bHashKey)
+    if ( !bHashKey )
     {
         ip->bCalcInChIHash = INCHIHASH_NONE;
     }
@@ -2076,18 +2085,18 @@ int ReadCommandLineParms(int argc,
         ip->bCalcInChIHash = INCHIHASH_KEY;
     }
     /* Extension(s) to hash (in non-std mode only) ? */
-    if (!bHashKey)
+    if ( !bHashKey )
     {
-        if ((bHashXtra1 != 0) || (bHashXtra2 != 0))
+        if ( (bHashXtra1 != 0) || (bHashXtra2 != 0) )
         {
             inchi_ios_eprint(log_file, "Hash extension(s) not generated: InChIKey not requested");
         }
     }
     else
     {
-        if (bHashXtra1)
+        if ( bHashXtra1 )
         {
-            if (bHashXtra2)
+            if ( bHashXtra2 )
             {
                 ip->bCalcInChIHash = INCHIHASH_KEY_XTRA1_XTRA2;
             }
@@ -2096,7 +2105,7 @@ int ReadCommandLineParms(int argc,
                 ip->bCalcInChIHash = INCHIHASH_KEY_XTRA1;
             }
         }
-        else if (bHashXtra2)
+        else if ( bHashXtra2 )
         {
             ip->bCalcInChIHash = INCHIHASH_KEY_XTRA2;
         }
@@ -2107,7 +2116,7 @@ int ReadCommandLineParms(int argc,
 
     ip->bNPZz = bNPZz;
     ip->bStereoAtZz = bStereoAtZz;  /*STEREO_AT_ZZ;*/
-
+    ip->bMolecularInorganics = bMolecularInorganics;              /* @nnuk */
     ip->bNoWarnings = bNoWarnings;
     ip->bMergeHash = bMergeHash;
     ip->bHideInChI = bHideInChI;
@@ -2125,7 +2134,7 @@ int ReadCommandLineParms(int argc,
 
 #if ( UNDERIVATIZE == 1 )
     ip->bUnderivatize = 1;
-    if (ip->bUnderivatize)
+    if ( ip->bUnderivatize )
     {
         ip->bINChIOutputOptions &= ~INCHI_OUT_STDINCHI;
     }
@@ -2170,12 +2179,12 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
     int first = 1;
 
 
-    if (!(ip->bINChIOutputOptions & INCHI_OUT_STDINCHI))
+    if ( !(ip->bINChIOutputOptions & INCHI_OUT_STDINCHI) )
     {
         bStdFormat = 0;
     }
     /* Some stereo */
-    if (!(nMode & REQ_MODE_STEREO))
+    if ( !(nMode & REQ_MODE_STEREO) )
     {
         inchi_ios_eprint(log_file, "Using specific structure perception features:\n");
         first = 0;
@@ -2183,9 +2192,9 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
     }
     else
     {
-        if (!(TG_FLAG_POINTED_EDGE_STEREO & ip->bTautFlags))
+        if ( !(TG_FLAG_POINTED_EDGE_STEREO & ip->bTautFlags) )
         {
-            if (first)
+            if ( first )
             {
                 inchi_ios_eprint(log_file, "Using specific structure perception features:\n");
                 first = 0;
@@ -2193,9 +2202,9 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             inchi_ios_eprint(log_file, "  Both ends of wedge point to stereocenters\n");
         }
     }
-    if (ip->bDoNotAddH)
+    if ( ip->bDoNotAddH )
     {
-        if (first)
+        if ( first )
         {
             inchi_ios_eprint(log_file, "Using specific structure perception features:\n");
         }
@@ -2204,18 +2213,18 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
 
 
 #if ( RENUMBER_ATOMS_AND_RECALC_V106 == 1 )
-    if (ip->bRenumber == 1)
+    if ( ip->bRenumber == 1 )
     {
         inchi_ios_eprint(log_file, "\nGenerate InChI upon random atom renumbering\n\n");
     }
 #endif
 
 #if ( UNDERIVATIZE == 1 )
-    if (ip->bUnderivatize == 1)
+    if ( ip->bUnderivatize == 1 )
     {
         inchi_ios_eprint(log_file, "\nConvert input structure to derivative precursor before InChI calculation\n\n");
     }
-    else if (ip->bUnderivatize == 3)
+    else if ( ip->bUnderivatize == 3 )
     {
         inchi_ios_eprint(log_file, "\nOutputs derivative information for the input structure\n\n");
     }
@@ -2224,16 +2233,16 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
 
 
     /*  Generation/conversion indicator */
-    if (bStdFormat)
+    if ( bStdFormat )
     {
-        if (!(ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY) && !bInChI2Struct)
+        if ( !(ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY) && !bInChI2Struct )
         {
             inchi_ios_eprint(log_file, "Generating standard InChI\n");
         }
 
 #if ( !defined(TARGET_API_LIB) && !defined(TARGET_LIB_FOR_WINCHI) && !defined(TARGET_EXE_USING_API) )
         /* effective only in command line program InChI or stdInChI */
-        else if (bInChI2Struct)
+        else if ( bInChI2Struct )
         {
             inchi_ios_eprint(log_file, "Converting InChI(s) to structure(s) in %s\n",
                 (ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY) ?
@@ -2247,7 +2256,7 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
     }
 
     /* SDfile output */
-    if (ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY)
+    if ( ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY )
     {
         inchi_ios_eprint(log_file,
             "Output SDfile only without stereochemical information and atom coordinates%s\n",
@@ -2256,17 +2265,17 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
     }
 
     /* Fixed/Mobile H */
-    if (!bStdFormat)
+    if ( !bStdFormat )
     {
-        if ((nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)) == (REQ_MODE_BASIC | REQ_MODE_TAUT))
+        if ( (nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)) == (REQ_MODE_BASIC | REQ_MODE_TAUT) )
         {
             inchi_ios_eprint(log_file, "  Mobile H Perception OFF (include FixedH layer)\n");
         }
-        else if ((nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)) == (REQ_MODE_TAUT))
+        else if ( (nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)) == (REQ_MODE_TAUT) )
         {
             inchi_ios_eprint(log_file, "  Mobile H Perception ON  (omit FixedH layer)\n");
         }
-        else if ((nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)) == (REQ_MODE_BASIC))
+        else if ( (nMode & (REQ_MODE_BASIC | REQ_MODE_TAUT)) == (REQ_MODE_BASIC) )
         {
             inchi_ios_eprint(log_file, "  Mobile H ignored\n");
         }
@@ -2275,9 +2284,9 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             inchi_ios_eprint(log_file, "  Undefined Mobile H mode\n");
         }
 
-        if ((ip->bTautFlags & TG_FLAG_VARIABLE_PROTONS))
+        if ( (ip->bTautFlags & TG_FLAG_VARIABLE_PROTONS) )
         {
-            if (!(ip->bTautFlags & TG_FLAG_HARD_ADD_REM_PROTONS))
+            if ( !(ip->bTautFlags & TG_FLAG_HARD_ADD_REM_PROTONS) )
             {
                 inchi_ios_eprint(log_file, "  Disabled Aggressive (De)protonation\n");
             }
@@ -2288,9 +2297,9 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
 #endif
 
         /* RecMet */
-        if (ip->bTautFlags & TG_FLAG_DISCONNECT_COORD)
+        if ( ip->bTautFlags & TG_FLAG_DISCONNECT_COORD )
         {
-            if (ip->bTautFlags & TG_FLAG_RECONNECT_COORD)
+            if ( ip->bTautFlags & TG_FLAG_RECONNECT_COORD )
             {
                 inchi_ios_eprint(log_file, "  Include bonds to metals\n");
             }
@@ -2313,14 +2322,14 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         */
 
 #if ( FIX_ADJ_RAD == 1 )
-        if (ip->bTautFlags & TG_FLAG_FIX_ADJ_RADICALS)
+        if ( ip->bTautFlags & TG_FLAG_FIX_ADJ_RADICALS )
         {
             inchi_ios_eprint(log_file, "Fix Adjacent Radicals\n");
         }
 #endif
 
         /* Stereo */
-        if (nMode & REQ_MODE_STEREO)
+        if ( nMode & REQ_MODE_STEREO )
         {
             inchi_ios_eprint(log_file, "  %s%s%s%sStereo ON\n",
                 (nMode & REQ_MODE_NOEQ_STEREO) ? "Slow " : "",
@@ -2331,15 +2340,15 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
                 (nMode & REQ_MODE_RELATIVE_STEREO) ? "Relative " :
                 (nMode & REQ_MODE_CHIR_FLG_STEREO) ? "Chiral Flag " : "Absolute ");
 
-            if (0 == (nMode & (REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU)))
+            if ( 0 == (nMode & (REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU)) )
             {
                 inchi_ios_eprint(log_file, "  Include undefined/unknown stereogenic centers and bonds\n");
             }
-            else if (REQ_MODE_SC_IGN_ALL_UU == (nMode & (REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU)))
+            else if ( REQ_MODE_SC_IGN_ALL_UU == (nMode & (REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU)) )
             {
                 inchi_ios_eprint(log_file, "  Omit undefined/unknown stereogenic centers\n");
             }
-            else if (REQ_MODE_SB_IGN_ALL_UU == (nMode & (REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU)))
+            else if ( REQ_MODE_SB_IGN_ALL_UU == (nMode & (REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU)) )
             {
                 inchi_ios_eprint(log_file, "  Omit undefined/unknown stereogenic bonds\n");
             }
@@ -2348,16 +2357,16 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
                 /*case REQ_MODE_SB_IGN_ALL_UU | REQ_MODE_SC_IGN_ALL_UU*/
                 inchi_ios_eprint(log_file, "  Omit undefined/unknown stereogenic centers and bonds\n");
             }
-            if (0 != (nMode & REQ_MODE_DIFF_UU_STEREO))
+            if ( 0 != (nMode & REQ_MODE_DIFF_UU_STEREO) )
             {
                 inchi_ios_eprint(log_file, "  Make labels for unknown and undefined stereo different\n");
             }
 
 #if ( defined(MIN_SB_RING_SIZE) && MIN_SB_RING_SIZE > 0 )
             k = (ip->nMode & REQ_MODE_MIN_SB_RING_MASK) >> REQ_MODE_MIN_SB_RING_SHFT;
-            if (bRELEASE_VERSION != 1 || k != MIN_SB_RING_SIZE)
+            if ( bRELEASE_VERSION != 1 || k != MIN_SB_RING_SIZE )
             {
-                if (k >= 3)
+                if ( k >= 3 )
                 {
                     inchi_ios_eprint(log_file, "  Min. stereobond ring size: %d\n", k);
                 }
@@ -2370,9 +2379,9 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         }   /* Stereo */
     }   /* !bStdFormat */
 
-    if (!bStdFormat)
+    if ( !bStdFormat )
     {
-        if (TG_FLAG_KETO_ENOL_TAUT & ip->bTautFlags)
+        if ( TG_FLAG_KETO_ENOL_TAUT & ip->bTautFlags )
         {
             inchi_ios_eprint(log_file, "  Account for keto-enol tautomerism\n");
         }
@@ -2380,7 +2389,7 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         {
             inchi_ios_eprint(log_file, "  Do not account for keto-enol tautomerism\n");
         }
-        if (TG_FLAG_1_5_TAUT & ip->bTautFlags)
+        if ( TG_FLAG_1_5_TAUT & ip->bTautFlags )
         {
             inchi_ios_eprint(log_file, "  Account for 1,5-tautomerism\n");
         }
@@ -2389,34 +2398,34 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             inchi_ios_eprint(log_file, "  Do not account for 1,5-tautomerism\n");
         }
 
-        if (TG_FLAG_PT_22_00 & ip->bTautFlags)
+        if ( TG_FLAG_PT_22_00 & ip->bTautFlags )
             inchi_ios_eprint(log_file, "  Account for PT_22_00 tautomerism\n");
         else
             inchi_ios_eprint(log_file, "  Do not account for PT_22_00 tautomerism\n");
-        if (TG_FLAG_PT_16_00 & ip->bTautFlags)
+        if ( TG_FLAG_PT_16_00 & ip->bTautFlags )
             inchi_ios_eprint(log_file, "  Account for PT_16_00 tautomerism\n");
         else
             inchi_ios_eprint(log_file, "  Do not account for PT_16_00 tautomerism\n");
-        if (TG_FLAG_PT_06_00 & ip->bTautFlags)
+        if ( TG_FLAG_PT_06_00 & ip->bTautFlags )
             inchi_ios_eprint(log_file, "  Account for PT_06_00 tautomerism\n");
         else
             inchi_ios_eprint(log_file, "  Do not account for PT_06_00 tautomerism\n");
-        if (TG_FLAG_PT_39_00 & ip->bTautFlags)
+        if ( TG_FLAG_PT_39_00 & ip->bTautFlags )
             inchi_ios_eprint(log_file, "  Account for PT_39_00 tautomerism\n");
         else
             inchi_ios_eprint(log_file, "  Do not account for PT_39_00 tautomerism\n");
-        if (TG_FLAG_PT_13_00 & ip->bTautFlags)
+        if ( TG_FLAG_PT_13_00 & ip->bTautFlags )
             inchi_ios_eprint(log_file, "  Account for PT_13_00 tautomerism\n");
         else
             inchi_ios_eprint(log_file, "  Do not account for PT_13_00 tautomerism\n");
-        if (TG_FLAG_PT_18_00 & ip->bTautFlags)
+        if ( TG_FLAG_PT_18_00 & ip->bTautFlags )
             inchi_ios_eprint(log_file, "  Account for PT_18_00 tautomerism\n");
         else
             inchi_ios_eprint(log_file, "  Do not account for PT_18_00 tautomerism\n");
 
-        if (developer_options)
+        if ( developer_options )
         {
-            if (TG_FLAG_PHOSPHINE_STEREO & ip->bTautFlags)
+            if ( TG_FLAG_PHOSPHINE_STEREO & ip->bTautFlags )
             {
                 inchi_ios_eprint(log_file, "  Include phosphine stereochemistry\n");
             }
@@ -2424,7 +2433,7 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             {
                 inchi_ios_eprint(log_file, "  Do not include phosphine stereochemistry\n");
             }
-            if (TG_FLAG_ARSINE_STEREO & ip->bTautFlags)
+            if ( TG_FLAG_ARSINE_STEREO & ip->bTautFlags )
             {
                 inchi_ios_eprint(log_file, "  Include arsine stereochemistry\n");
             }
@@ -2432,19 +2441,19 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             {
                 inchi_ios_eprint(log_file, "  Do not include arsine stereochemistry\n");
             }
-            if (!(TG_FLAG_FIX_SP3_BUG & ip->bTautFlags))
+            if ( !(TG_FLAG_FIX_SP3_BUG & ip->bTautFlags) )
             {
                 inchi_ios_eprint(log_file, "  Turned OFF fix of bug leading to missing or undefined sp3 parity\n");
             }
-            if (!(TG_FLAG_FIX_ISO_FIXEDH_BUG & ip->bTautFlags))
+            if ( !(TG_FLAG_FIX_ISO_FIXEDH_BUG & ip->bTautFlags) )
             {
                 inchi_ios_eprint(log_file, "  Turned OFF bug-fixes found after v.1.02b release\n");
             }
-            if (!(ip->bFixNonUniformDraw))
+            if ( !(ip->bFixNonUniformDraw) )
             {
                 inchi_ios_eprint(log_file, "  Turned OFF fixes of non-uniform drawing issues\n");
             }
-            if (!(TG_FLAG_MOVE_POS_CHARGES & ip->bTautFlags))
+            if ( !(TG_FLAG_MOVE_POS_CHARGES & ip->bTautFlags) )
             {
                 inchi_ios_eprint(log_file, "  MovePos turned OFF\n");
             }
@@ -2452,9 +2461,9 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
 
     } /* !bStdFormat */
 
-    if (ip->bCalcInChIHash != INCHIHASH_NONE)
+    if ( ip->bCalcInChIHash != INCHIHASH_NONE )
     {
-        if (bStdFormat)
+        if ( bStdFormat )
         {
             inchi_ios_eprint(log_file, "Generating standard InChIKey\n");
         }
@@ -2462,24 +2471,24 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         {
             inchi_ios_eprint(log_file, "Generating InChIKey\n");
         }
-        if (ip->bCalcInChIHash == INCHIHASH_KEY_XTRA1)
+        if ( ip->bCalcInChIHash == INCHIHASH_KEY_XTRA1 )
         {
             inchi_ios_eprint(log_file, "Generating hash extension (1st block)\n");
         }
-        else if (ip->bCalcInChIHash == INCHIHASH_KEY_XTRA2)
+        else if ( ip->bCalcInChIHash == INCHIHASH_KEY_XTRA2 )
         {
             inchi_ios_eprint(log_file, "Generating hash extension (2nd block)\n");
         }
-        else if (ip->bCalcInChIHash == INCHIHASH_KEY_XTRA1_XTRA2)
+        else if ( ip->bCalcInChIHash == INCHIHASH_KEY_XTRA1_XTRA2 )
         {
             inchi_ios_eprint(log_file, "Generating hash extension (two blocks)\n");
         }
     }
 
-    if (ip->bINChIOutputOptions & INCHI_OUT_SAVEOPT)
+    if ( ip->bINChIOutputOptions & INCHI_OUT_SAVEOPT )
     {
         inchi_ios_eprint(log_file, "Saving InChI creation options");
-        if (bStdFormat)
+        if ( bStdFormat )
         {
             inchi_ios_eprint(log_file, " suppressed for standard InChI");
             /* NB: actual suppression takes place on InChI serialization */
@@ -2489,13 +2498,13 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         inchi_ios_eprint(log_file, "\n");
     }
 
-    if (ip->bAllowEmptyStructure)
+    if ( ip->bAllowEmptyStructure )
     {
         inchi_ios_eprint(log_file, "Issue warning on empty structure\n");
     }
 
     /* Input */
-    if (ip->nInputType)
+    if ( ip->nInputType )
     {
         inchi_ios_eprint(log_file, "Input format: %s",
             ip->nInputType == INPUT_MOLFILE ? "MOLfile" :
@@ -2504,15 +2513,15 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             ip->nInputType == INPUT_INCHI ? "InChI (plain identifier)" :
 #endif
             ip->nInputType == INPUT_INCHI_PLAIN ? "InChI AuxInfo (plain)" : "Unknown");
-        if ((ip->nInputType == INPUT_MOLFILE || ip->nInputType == INPUT_SDFILE) &&
-            ip->bGetMolfileNumber)
+        if ( (ip->nInputType == INPUT_MOLFILE || ip->nInputType == INPUT_SDFILE) &&
+            ip->bGetMolfileNumber )
         {
             inchi_ios_eprint(log_file, "  (attempting to read Molfile number)");
         }
         inchi_ios_eprint(log_file, "\n");
     }
 
-    if (ip->szSdfDataHeader[0] && ip->nInputType != INPUT_SDFILE)
+    if ( ip->szSdfDataHeader[0] && ip->nInputType != INPUT_SDFILE )
     {
         inchi_ios_eprint(log_file, "  SDfile data header: \"%s\"\n", ip->szSdfDataHeader);
     }
@@ -2528,9 +2537,9 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             (ip->bINChIOutputOptions & INCHI_OUT_TABBED_OUTPUT)) ? ", tabbed" : "");
 
 #if ( bRELEASE_VERSION == 1 )
-    if (ip->bCtPredecessors || ip->bAbcNumbers)
+    if ( ip->bCtPredecessors || ip->bAbcNumbers )
     {
-        if (ip->bCtPredecessors && ip->bAbcNumbers)
+        if ( ip->bCtPredecessors && ip->bAbcNumbers )
         {
             inchi_ios_eprint(log_file, "Representation: Compressed\n");
         }
@@ -2542,7 +2551,7 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         }
     }
 #else
-    if ((bRELEASE_VERSION != 1) || ip->bCtPredecessors || ip->bAbcNumbers)
+    if ( (bRELEASE_VERSION != 1) || ip->bCtPredecessors || ip->bAbcNumbers )
     {
         inchi_ios_eprint(log_file, "Connection table: %s, %s\n",
             ip->bCtPredecessors ? "Predecessor_numbers(closures)" : "Canon_numbers(branching, ring closures)",
@@ -2554,29 +2563,29 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
     }
 #endif
 
-    if (ip->bNoWarnings)
+    if ( ip->bNoWarnings )
     {
         inchi_ios_eprint(log_file, "Warnings suppressed\n");
     }
 
-    if (ip->bHideInChI)
+    if ( ip->bHideInChI )
     {
         inchi_ios_eprint(log_file, "Printing InChI string itself suppressed\n");
     }
-    if (ip->bMergeHash)
+    if ( ip->bMergeHash )
     {
         inchi_ios_eprint(log_file, "InChIKey combined with extra hash(es)\n");
     }
 
 
 
-    if (!(ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY))
+    if ( !(ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY) )
     {
-        if (ip->bINChIOutputOptions & INCHI_OUT_NO_AUX_INFO)
+        if ( ip->bINChIOutputOptions & INCHI_OUT_NO_AUX_INFO )
         {
             inchi_ios_eprint(log_file, "Aux. info suppressed\n");
         }
-        else if (ip->bINChIOutputOptions & INCHI_OUT_SHORT_AUX_INFO)
+        else if ( ip->bINChIOutputOptions & INCHI_OUT_SHORT_AUX_INFO )
         {
             inchi_ios_eprint(log_file, "Minimal Aux. info\n");
         }
@@ -2585,32 +2594,32 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
             inchi_ios_eprint(log_file, "Full Aux. info\n");
         }
     }
-    if (ip->first_struct_number > 1)
+    if ( ip->first_struct_number > 1 )
     {
         inchi_ios_eprint(log_file, "Skipping %ld structure%s\n", ip->first_struct_number - 1, ip->first_struct_number == 2 ? "" : "s");
     }
-    if (ip->last_struct_number > 0)
+    if ( ip->last_struct_number > 0 )
     {
         inchi_ios_eprint(log_file, "Terminate after structure #%ld\n", ip->last_struct_number);
     }
-    if (ip->bSaveWarningStructsAsProblem && ip->path[3] && ip->path[3][0])
+    if ( ip->bSaveWarningStructsAsProblem && ip->path[3] && ip->path[3][0] )
     {
         inchi_ios_eprint(log_file, "Saving warning structures into the problem file\n");
     }
-    if (ip->bSaveAllGoodStructsAsProblem && ip->path[3] && ip->path[3][0])
+    if ( ip->bSaveAllGoodStructsAsProblem && ip->path[3] && ip->path[3][0] )
     {
         inchi_ios_eprint(log_file, "Saving only all good structures into the problem file\n");
     }
 
-    if (ip->bINChIOutputOptions2 & INCHI_OUT_INCHI_GEN_ERROR)
+    if ( ip->bINChIOutputOptions2 & INCHI_OUT_INCHI_GEN_ERROR )
     {
         inchi_ios_eprint(log_file, "Print empty InChI if generation fails\n");
     }
-    if (ip->bINChIOutputOptions2 & INCHI_OUT_MISMATCH_AS_ERROR)
+    if ( ip->bINChIOutputOptions2 & INCHI_OUT_MISMATCH_AS_ERROR )
     {
         inchi_ios_eprint(log_file, "Consider problem/mismatch on InChI conversion as error\n");
     }
-    if (ip->msec_MaxTime)
+    if ( ip->msec_MaxTime )
     {
         inchi_ios_eprint(log_file, "Timeout per structure: %ld msec\n", ip->msec_MaxTime);
         /*
@@ -2625,14 +2634,14 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         inchi_ios_eprint(log_file, "No timeout\n");
     }
 
-    if (ip->bLooseTSACheck)
+    if ( ip->bLooseTSACheck )
     {
         inchi_ios_eprint(log_file, "Relax criteria of ambiguous drawing for in-ring stereo centers\n");
     }
 
     {
         int maxna = NORMALLY_ALLOWED_INP_MAX_ATOMS;
-        if (ip->bLargeMolecules)
+        if ( ip->bLargeMolecules )
         {
             inchi_ios_eprint(log_file, "Experimental mode: ");
             maxna = MAX_ATOMS;
@@ -2640,36 +2649,41 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
         inchi_ios_eprint(log_file, "Up to %d atoms per structure\n", maxna);
     }
 
-    if (ip->bPolymers != POLYMERS_NO)
+    if ( ip->bPolymers != POLYMERS_NO )
     {
         inchi_ios_eprint(log_file, "Experimental mode: Treating polymers");
 
-        if (ip->bPolymers == POLYMERS_MODERN)
+        if ( ip->bPolymers == POLYMERS_MODERN )
         {
             ;
         }
-        else if (ip->bPolymers == POLYMERS_LEGACY)
+        else if ( ip->bPolymers == POLYMERS_LEGACY )
         {
             inchi_ios_eprint(log_file, " (v. 1.05 legacy mode)");
         }
-        else if (ip->bPolymers == POLYMERS_LEGACY_PLUS)
+        else if ( ip->bPolymers == POLYMERS_LEGACY_PLUS )
         {
             inchi_ios_eprint(log_file, " (v. 1.05 legacy mode with senior link placed at start)");
         }
-        if (ip->bFoldPolymerSRU)
+        if ( ip->bFoldPolymerSRU )
         {
             inchi_ios_eprint(log_file, "; CRU folding enabled");
         }
     }
     inchi_ios_eprint(log_file, "\n");
 
-    if (ip->bNPZz == 1)
+    if ( ip->bNPZz == 1 )
     {
         inchi_ios_eprint(log_file, "Allowing non-polymer Zz pseudo atoms\n");
     }
-    if (ip->bStereoAtZz == 1)
+    if ( ip->bStereoAtZz == 1 )
     {
         inchi_ios_eprint(log_file, "Allowing stereo at atoms connected to Zz\n");
+    }
+    /* @nnuk */
+    if (ip->bMolecularInorganics == 1)
+    {
+        inchi_ios_eprint(log_file, "Molecular Inorganics mode enabled\n");
     }
 
     /*  Report debug modes */
@@ -2695,7 +2709,7 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
     inchi_ios_eprint(log_file, "Only chain attachments to tautomeric rings=%s\n", TAUT_RINGS_ATTACH_CHAIN == 1 ? "Y" : "N");
 #endif
 
-    if (ip->bGetSdfileId)
+    if ( ip->bGetSdfileId )
     {
         inchi_ios_eprint(log_file, "Extracting SDfile IDs\n");
     }
@@ -2721,7 +2735,7 @@ int PrintInputParms(INCHI_IOSTREAM* log_file,
 /****************************************************************************/
 void HelpCommandLineParms(INCHI_IOSTREAM* f)
 {
-    if (!f)
+    if ( !f )
     {
         return;
     }
@@ -2739,7 +2753,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
         APP_DESCRIPTION, INCHI_SRC_REV,
         INCHI_BUILD_PLATFORM, INCHI_BUILD_COMPILER, INCHI_BUILD_DEBUG, __DATE__, __TIME__,
         RELEASE_IS_FINAL ? "" : " *** pre-release, for evaluation only ***",
-        INCHI_OPTION_PREFX, INCHI_OPTION_PREFX );
+        INCHI_OPTION_PREFX, INCHI_OPTION_PREFX);
 
 #if ( BUILD_WITH_AMI == 1 )
     inchi_ios_print_nodisplay(f,
@@ -2789,6 +2803,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
 #endif
 
     inchi_ios_print_nodisplay(f, "Structure perception\n");
+    inchi_ios_print_nodisplay(f, "  MolecularInorganics      Parameter deals with Molecular Inorganics (initial testing phase)\n");              /*(@nnuk : Nauman Ullah Khan) :: Parameter for Molecular Inorganics added*/
     inchi_ios_print_nodisplay(f, "  SNon        Exclude stereo (default: include absolute stereo)\n");
     inchi_ios_print_nodisplay(f, "  NEWPSOFF    Both ends of wedge point to stereocenters (default: a narrow end)\n");
     inchi_ios_print_nodisplay(f, "  LooseTSACheck   Relax criteria of ambiguous drawing for in-ring tetrahedral stereo\n");
@@ -2916,7 +2931,7 @@ int OpenFiles(FILE** inp_file,
     */
 
     /*  Logfile (open as early as possible) */
-    if (!ip->path[2] || !ip->path[2][0])
+    if ( !ip->path[2] || !ip->path[2][0] )
     {
         fprintf2(stderr, "%s %-s\n%-s Build (%-s%-s) of %s %s %-s\n\n",
             APP_DESCRIPTION, INCHI_SRC_REV,
@@ -2925,7 +2940,7 @@ int OpenFiles(FILE** inp_file,
         fprintf2(stderr, "Log file not specified. Using standard error output.\n");
         *log_file = stderr;
     }
-    else if (!(*log_file = fopen(ip->path[2], "w")))
+    else if ( !(*log_file = fopen(ip->path[2], "w")) )
     {
         fprintf2(stderr, "%s %-s\n%-s Build (%-s%-s) of %s %s%-s\n\n",
             APP_DESCRIPTION, INCHI_SRC_REV,
@@ -2944,17 +2959,17 @@ int OpenFiles(FILE** inp_file,
     }
 
     /* Input file */
-    if ((ip->nInputType == INPUT_MOLFILE || ip->nInputType == INPUT_SDFILE ||
+    if ( (ip->nInputType == INPUT_MOLFILE || ip->nInputType == INPUT_SDFILE ||
         ip->nInputType == INPUT_INCHI || ip->nInputType == INPUT_INCHI_PLAIN)
         &&
-        ip->num_paths > 0)
+        ip->num_paths > 0 )
     {
         const char* fmode = NULL;
 
 #if ( defined(_MSC_VER)&&defined(_WIN32) || defined(__BORLANDC__)&&defined(__WIN32__) || defined(__GNUC__)&&defined(__MINGW32__)&&defined(_WIN32) )
         /* compilers that definitely allow fopen "rb" (binary read) mode */
         fmode = "rb";
-        if (!ip->path[0] || !ip->path[0][0] || !(*inp_file = fopen(ip->path[0], "rb")))
+        if ( !ip->path[0] || !ip->path[0][0] || !(*inp_file = fopen(ip->path[0], "rb")) )
         {
             fprintf2(*log_file, "Cannot open input file '%s'. Terminating.\n", ip->path[0] ? ip->path[0] : "<No name>");
             goto exit_function;
@@ -2966,7 +2981,7 @@ int OpenFiles(FILE** inp_file,
 
 #else
 
-        if (!ip->path[0] || !ip->path[0][0] || !(*inp_file = fopen(ip->path[0], "r")))
+        if ( !ip->path[0] || !ip->path[0][0] || !(*inp_file = fopen(ip->path[0], "r")) )
         {
             fprintf2(*log_file, "Cannot open input file '%s'. Terminating.\n", ip->path[0] ? ip->path[0] : "<No Name>");
             goto exit_function;
@@ -2981,11 +2996,11 @@ int OpenFiles(FILE** inp_file,
         DetectInputINChIFileType(inp_file, ip, fmode);
     }
 
-    else if ((ip->nInputType != INPUT_MOLFILE &&
+    else if ( (ip->nInputType != INPUT_MOLFILE &&
         ip->nInputType != INPUT_SDFILE &&
         ip->nInputType != INPUT_INCHI &&
         /* post-1.02b */
-        ip->nInputType != INPUT_INCHI_PLAIN))
+        ip->nInputType != INPUT_INCHI_PLAIN) )
     {
         fprintf2(*log_file, "Input file type not specified. Terminating.\n");
         goto exit_function;
@@ -2997,14 +3012,14 @@ int OpenFiles(FILE** inp_file,
     }
 
     /*  Output file */
-    if (!ip->path[1] || !ip->path[1][0])
+    if ( !ip->path[1] || !ip->path[1][0] )
     {
         fprintf2(*log_file, "Output file not specified. Using standard output.\n");
         *out_file = stdout;
     }
     else
     {
-        if (!(*out_file = fopen(ip->path[1], "w")))
+        if ( !(*out_file = fopen(ip->path[1], "w")) )
         {
             fprintf2(*log_file, "Cannot open output file '%s'. Terminating.\n", ip->path[1]);
             goto exit_function;
@@ -3012,11 +3027,11 @@ int OpenFiles(FILE** inp_file,
         else
         {
             fprintf2(*log_file, "Opened output file '%s'\n", ip->path[1]);
-            if ((ip->bINChIOutputOptions & (INCHI_OUT_PLAIN_TEXT)) &&
+            if ( (ip->bINChIOutputOptions & (INCHI_OUT_PLAIN_TEXT)) &&
                 *inp_file != stdin &&
                 !(ip->bINChIOutputOptions & INCHI_OUT_SDFILE_ONLY) &&
                 !ip->bNoStructLabels &&
-                !(ip->bINChIOutputOptions & INCHI_OUT_TABBED_OUTPUT))
+                !(ip->bINChIOutputOptions & INCHI_OUT_TABBED_OUTPUT) )
             {
                 PrintFileName("* Input_File: \"%s\"\n", *out_file, ip->path[0]);
             }
@@ -3024,7 +3039,7 @@ int OpenFiles(FILE** inp_file,
     }
 
     /*  Problem file */
-    if (ip->path[3] && ip->path[3][0])
+    if ( ip->path[3] && ip->path[3][0] )
     {
         const char* fmode = "w";
 
@@ -3032,7 +3047,7 @@ int OpenFiles(FILE** inp_file,
         fmode = "wb";
 #endif
 
-        if (!(*prb_file = fopen(ip->path[3], fmode)))
+        if ( !(*prb_file = fopen(ip->path[3], fmode)) )
         {
             fprintf2(*log_file, "Cannot open problem file '%s'. Terminating.\n", ip->path[3]);
             goto exit_function;
@@ -3068,10 +3083,10 @@ static int bMatchOnePrefix(int len, char* str,
     int numPrefix)
 {
     int i;
-    for (i = 0; i < numPrefix; i++)
+    for ( i = 0; i < numPrefix; i++ )
     {
-        if (len >= lenPrefix[i] &&
-            !memcmp(str, strPrefix[i], lenPrefix[i]))
+        if ( len >= lenPrefix[i] &&
+            !memcmp(str, strPrefix[i], lenPrefix[i]) )
         {
             return 1;
         }
@@ -3094,12 +3109,12 @@ int DetectInputINChIFileType(FILE** inp_file,
     int  bINChI_plain = 0, len, i;
 
 
-    if (ip->nInputType == INPUT_INCHI_PLAIN || ip->nInputType == INPUT_INCHI)
+    if ( ip->nInputType == INPUT_INCHI_PLAIN || ip->nInputType == INPUT_INCHI )
     {
         return 1;
     }
 
-    if (!bInitialized)
+    if ( !bInitialized )
     {
         lenPlnVersion[0] = sprintf(szPlnVersion[0], "%s=%s/", INCHI_NAME, INCHI_VERSION);
         lenPlnVersion[1] = sprintf(szPlnVersion[1], "INChI=1.12Beta/");
@@ -3120,21 +3135,21 @@ int DetectInputINChIFileType(FILE** inp_file,
 #endif
     }
 
-    for (i = 0; i < 4; i++)
+    for ( i = 0; i < 4; i++ )
     {
         len = inchi_fgetsLfTab(szLine, sizeof(szLine) - 1, *inp_file);
-        if (len < 0)
+        if ( len < 0 )
         {
             break;
         }
-        if (bMatchOnePrefix(len, szLine, lenPlnVersion, szPlnVersion, NUM_VERSIONS) ||
-            bMatchOnePrefix(len, szLine, lenPlnAuxVer, szPlnAuxVer, NUM_VERSIONS))
+        if ( bMatchOnePrefix(len, szLine, lenPlnVersion, szPlnVersion, NUM_VERSIONS) ||
+            bMatchOnePrefix(len, szLine, lenPlnAuxVer, szPlnAuxVer, NUM_VERSIONS) )
         {
             bINChI_plain++;
         }
     }
 
-    if (bINChI_plain >= 2)
+    if ( bINChI_plain >= 2 )
     {
         ip->nInputType = INPUT_INCHI_PLAIN;
         ret = 1;

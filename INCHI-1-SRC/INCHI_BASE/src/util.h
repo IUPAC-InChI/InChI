@@ -603,6 +603,36 @@ int get_endpoint_valence(U_CHAR el_number);
 int get_endpoint_valence_KET(U_CHAR el_number);
 #endif
 
+#define MIN_ATOM_CHARGE        (-2)
+#define MAX_ATOM_CHARGE         2
+#define NEUTRAL_STATE          (-MIN_ATOM_CHARGE)
+#define NUM_ATOM_CHARGES       (MAX_ATOM_CHARGE - MIN_ATOM_CHARGE + 1)
+#define MAX_NUM_VALENCES        5                /* max. number + 1 to provide zero termination */
+
+/*    CHEMICAL ELEMENTS & ATOMIC VALENCE MODEL
+      FOR VARIOUS OXIDATION STATES
+*/
+typedef struct tagElData
+{
+    /*    Element chemical symbol */
+    const char* szElName;
+    /*    Average atomic mass from the Periodic Chart of the Elements
+        (Fisher cat. no. 05-702-10) */
+    int     nAtMass;
+    /*    (not used currently) Atomic mass of the most abundant isotope */
+    int     nNormAtMass;
+    /*    (not used currently) Exact mw of the most abundant isotope (not used)    */
+    double  dAtMass;
+    /*    METAL or METAL2 */
+    int     nType;
+    /*    (not used currently) Pauling electronegativity x 10; 0 means unknown    */
+    int     nElNegPauling10;
+    /*    InChI does not add implicit H to atoms that have non-zero bSkipAddingH */
+    /*    NB: was called bDoNotAddH, renamed to avoid confusion with other procedures */
+    int     bSkipAddingH;
+    S_CHAR  cValence[NUM_ATOM_CHARGES][MAX_NUM_VALENCES];
+} ELDATA;
+
 /* Forward declaration */
 struct tagCANON_GLOBALS;
 

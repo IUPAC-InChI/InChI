@@ -71,17 +71,17 @@ typedef union tagSplitLong {
 #define U_LONG_LEN  2
 
 #ifndef defined_NEIGH_LIST
-typedef AT_RANK  *NEIGH_LIST;
+typedef AT_RANK* NEIGH_LIST;
 #define defined_NEIGH_LIST
 #endif
 
 typedef struct tagEQUIV_INFO {
     int nNumSets;
-    int *nCutVertexAtom; /* cut-vertex atom for the set of equivalent atoms */
-    int *nFirstInSet;    /* first of equivalent atoms in the connected to the cut-vertex atom parts of the structure */
-    int *nNumInSet;      /* number of the equivalent atoms connected to the cut-vertex atom */
-    int *nAtomNo;        /* eqivalent atom number */
-    int *nAddToRank;     /* number to add to the rank to normalize */
+    int* nCutVertexAtom; /* cut-vertex atom for the set of equivalent atoms */
+    int* nFirstInSet;    /* first of equivalent atoms in the connected to the cut-vertex atom parts of the structure */
+    int* nNumInSet;      /* number of the equivalent atoms connected to the cut-vertex atom */
+    int* nAtomNo;        /* eqivalent atom number */
+    int* nAddToRank;     /* number to add to the rank to normalize */
 } EQUIV_INFO;
 
 #define MOL_PART_MASK  (~0x0U ^ 0x07U)
@@ -92,7 +92,7 @@ typedef struct tagAtData_dch {
 }AT_DATA;
 
 
-#define MAXVAL 20       /* maximum valence */
+#define MAXVAL 50       /* maximum valence */ /* @nnuk : Changed from 20 -> 50 for testing purposes, to account for some structures with one atom having more than 20 bonds */
 
 #define ATOM_EL_LEN 6
 
@@ -141,8 +141,8 @@ typedef struct tagAtomInvariant2 {
 
 /******************* Partition **********************************/
 typedef struct tagPartition {
-    AT_RANK *Rank;
-    AT_NUMB *AtNumber;
+    AT_RANK* Rank;
+    AT_NUMB* AtNumber;
 } Partition;
 
 /********************* BFCN *************************************/
@@ -151,49 +151,49 @@ typedef struct tagFixHOrTautCanonNumbering {
     int             num_at_tg;  /* = num_atoms for non-taut */
     int             num_atoms;
     int             nCanonFlags;
-    NEIGH_LIST     *NeighList;  /* length = num_at_tg */
+    NEIGH_LIST* NeighList;  /* length = num_at_tg */
     /****************************/
     /*     base structure       */
     /****************************/
-    AT_RANK        *LinearCt;      /* connection table atoms (+taut. groups, directed graph)*/
+    AT_RANK* LinearCt;      /* connection table atoms (+taut. groups, directed graph)*/
     int             nLenLinearCtAtOnly;
     int             nLenLinearCt;
     int             nMaxLenLinearCt;
 
     Partition       PartitionCt;  /* canonical numbering */
-    AT_RANK        *nSymmRankCt;  /* orbits */
+    AT_RANK* nSymmRankCt;  /* orbits */
 
     /* orig. fixed by tautomerism H positions */
-    NUM_H          *nNumHOrig;  /* original  H atoms positions + taut. info, excluding tautomeric H */
-    NUM_H          *nNumH;      /* canonical H atoms positions + taut. info, excluding tautomeric H */
+    NUM_H* nNumHOrig;  /* original  H atoms positions + taut. info, excluding tautomeric H */
+    NUM_H* nNumH;      /* canonical H atoms positions + taut. info, excluding tautomeric H */
     int             nLenNumH;   /* length = num_atoms + 2*num_taut_groups */
 
     /* fixed H: original positions of tautomeric H; exists obly for tautomeric structures */
-    NUM_H          *nNumHOrigFixH;  /* original fixed positions of tautomeric H */
-    NUM_H          *nNumHFixH;      /* canonical fixed positions of tautomeric H */
+    NUM_H* nNumHOrigFixH;  /* original fixed positions of tautomeric H */
+    NUM_H* nNumHFixH;      /* canonical fixed positions of tautomeric H */
     int             nLenNumHFixH;   /* length = num_atoms */
 
     /*******************************************************************************/
     /* the following exists only if isotopic and isotopic results requested        */
     /*******************************************************************************/
     Partition       PartitionCtIso;     /* canonical numbering of isotopic base structure, defined later */
-    AT_RANK        *nSymmRankCtIso;     /* orbits of isotopic structure */
-    AT_ISO_SORT_KEY *iso_sort_keys;     /* original isotopic sort keys for atoms and taut groups */
-    AT_ISO_SORT_KEY *iso_sort_keysOrig; /* canonical isotopic sort keys for atoms and taut groups */
+    AT_RANK* nSymmRankCtIso;     /* orbits of isotopic structure */
+    AT_ISO_SORT_KEY* iso_sort_keys;     /* original isotopic sort keys for atoms and taut groups */
+    AT_ISO_SORT_KEY* iso_sort_keysOrig; /* canonical isotopic sort keys for atoms and taut groups */
     int              len_iso_sort_keys;
-    S_CHAR          *iso_exchg_atnos;     /* canonical: 0=> tautomeric or may have isotopic H exchanged */
-    S_CHAR          *iso_exchg_atnosOrig; /* original: 0=> tautomeric or may have isotopic H exchanged */
+    S_CHAR* iso_exchg_atnos;     /* canonical: 0=> tautomeric or may have isotopic H exchanged */
+    S_CHAR* iso_exchg_atnosOrig; /* original: 0=> tautomeric or may have isotopic H exchanged */
 } FTCN;
 
 /******************** BCN *************************************/
 typedef struct tagBaseCanonNumbering {
 
-    AT_RANK            **pRankStack;
+    AT_RANK** pRankStack;
     int                  nMaxLenRankStack;
     int                  num_max;        /* allocated nRank[] arrays lengths in pRankStack */
     int                  num_at_tg;  /* all of the following arrays have this length */
     int                  num_atoms;
-    struct tagInchiTime *ulTimeOutTime;
+    struct tagInchiTime* ulTimeOutTime;
     FTCN                 ftcn[TAUT_NUM];
 } BCN;
 
@@ -209,7 +209,7 @@ typedef struct tagCanonStat {
     long                 lNumDecreasedCT;
     long                 lNumRejectedCT;
     long                 lNumEqualCT;
-    struct tagInchiTime *ulTimeOutTime;
+    struct tagInchiTime* ulTimeOutTime;
     long                 lTotalTime;
 
     /* control */
@@ -221,22 +221,22 @@ typedef struct tagCanonStat {
 
     /* data : */
 
-    AT_NUMB          *LinearCT;        /* connection table only */
-    AT_ISOTOPIC      *LinearCTIsotopic;
-    AT_ISO_TGROUP    *LinearCTIsotopicTautomer;
-    AT_STEREO_DBLE   *LinearCTStereoDble;
-    AT_STEREO_CARB   *LinearCTStereoCarb;
-    AT_STEREO_DBLE   *LinearCTStereoDbleInv;
-    AT_STEREO_CARB   *LinearCTStereoCarbInv;
-    AT_STEREO_DBLE   *LinearCTIsotopicStereoDble;
-    AT_STEREO_CARB   *LinearCTIsotopicStereoCarb;
-    AT_STEREO_DBLE   *LinearCTIsotopicStereoDbleInv;
-    AT_STEREO_CARB   *LinearCTIsotopicStereoCarbInv;
-    AT_TAUTOMER      *LinearCTTautomer;  /*  minimal */
+    AT_NUMB* LinearCT;        /* connection table only */
+    AT_ISOTOPIC* LinearCTIsotopic;
+    AT_ISO_TGROUP* LinearCTIsotopicTautomer;
+    AT_STEREO_DBLE* LinearCTStereoDble;
+    AT_STEREO_CARB* LinearCTStereoCarb;
+    AT_STEREO_DBLE* LinearCTStereoDbleInv;
+    AT_STEREO_CARB* LinearCTStereoCarbInv;
+    AT_STEREO_DBLE* LinearCTIsotopicStereoDble;
+    AT_STEREO_CARB* LinearCTIsotopicStereoCarb;
+    AT_STEREO_DBLE* LinearCTIsotopicStereoDbleInv;
+    AT_STEREO_CARB* LinearCTIsotopicStereoCarbInv;
+    AT_TAUTOMER* LinearCTTautomer;  /*  minimal */
 
-/* second copies of line notation arrays */
+    /* second copies of line notation arrays */
 
-    AT_NUMB          *LinearCT2;   /* to save non-isotopic CT */
+    AT_NUMB* LinearCT2;   /* to save non-isotopic CT */
 
     int               nLenLinearCTStereoDble;
     int               nLenLinearCTStereoDbleInv;
@@ -278,32 +278,32 @@ typedef struct tagCanonStat {
     int               nLenLinearCTIsotopicStereoCarb; /*  new */
     int               nLenLinearCTIsotopicStereoCarbInv; /*  new */
     int               nMaxLenLinearCTIsotopicStereoCarb;
-    S_CHAR           *bRankUsedForStereo;  /* canon. rank used for stereo mapping */
-    S_CHAR           *bAtomUsedForStereo;  /* 0 if not a stereo atom or during a canon. rank being mapped on this atom; */
-                                           /* STEREO_AT_MARK if an unpapped stereogenic atom */
-                                           /* or a number of stereogenic bonds adjacent to an atom */
+    S_CHAR* bRankUsedForStereo;  /* canon. rank used for stereo mapping */
+    S_CHAR* bAtomUsedForStereo;  /* 0 if not a stereo atom or during a canon. rank being mapped on this atom; */
+    /* STEREO_AT_MARK if an unpapped stereogenic atom */
+    /* or a number of stereogenic bonds adjacent to an atom */
 
-    AT_RANK          *nPrevAtomNumber;
+    AT_RANK* nPrevAtomNumber;
 
-    AT_RANK          *nCanonOrd;       /* atom numbers in order of increasing canon. ranks  */
-    AT_RANK          *nSymmRank;       /* symmetry numbers in order of atoms  */
-    AT_RANK          *nCanonOrdTaut;   /* t-group numbers numbers in order of increasing canon. ranks  */
-    AT_RANK          *nSymmRankTaut;   /* t-group symmetry numbers in order of t-groups  */
+    AT_RANK* nCanonOrd;       /* atom numbers in order of increasing canon. ranks  */
+    AT_RANK* nSymmRank;       /* symmetry numbers in order of atoms  */
+    AT_RANK* nCanonOrdTaut;   /* t-group numbers numbers in order of increasing canon. ranks  */
+    AT_RANK* nSymmRankTaut;   /* t-group symmetry numbers in order of t-groups  */
 
-    AT_RANK          *nCanonOrdStereo;     /* atom numbers in order of increasing canon. ranks */
-    AT_RANK          *nCanonOrdStereoInv;     /* atom numbers in order of increasing canon. ranks */
-    AT_RANK          *nCanonOrdStereoTaut; /* t-group numbers in order of increasing canon. ranks */
+    AT_RANK* nCanonOrdStereo;     /* atom numbers in order of increasing canon. ranks */
+    AT_RANK* nCanonOrdStereoInv;     /* atom numbers in order of increasing canon. ranks */
+    AT_RANK* nCanonOrdStereoTaut; /* t-group numbers in order of increasing canon. ranks */
 
-    AT_RANK          *nSymmRankIsotopic;
-    AT_RANK          *nCanonOrdIsotopic;        /* atom numbers in order of increasing canon. ranks */
-    AT_RANK          *nSymmRankIsotopicTaut;    /* !!! */
-    AT_RANK          *nCanonOrdIsotopicTaut;    /*/ t-group numbers in order of increasing canon. ranks */
+    AT_RANK* nSymmRankIsotopic;
+    AT_RANK* nCanonOrdIsotopic;        /* atom numbers in order of increasing canon. ranks */
+    AT_RANK* nSymmRankIsotopicTaut;    /* !!! */
+    AT_RANK* nCanonOrdIsotopicTaut;    /*/ t-group numbers in order of increasing canon. ranks */
 
-    AT_RANK          *nCanonOrdIsotopicStereo;
-    AT_RANK          *nCanonOrdIsotopicStereoInv;
-    AT_RANK          *nCanonOrdIsotopicStereoTaut;    /*  !!! */
+    AT_RANK* nCanonOrdIsotopicStereo;
+    AT_RANK* nCanonOrdIsotopicStereoInv;
+    AT_RANK* nCanonOrdIsotopicStereoTaut;    /*  !!! */
 
-                      /* actual lengths if successfully calculated */
+    /* actual lengths if successfully calculated */
 
     int               nLenCanonOrd;               /* Superceded by any of the following > 0 */
     int               nLenCanonOrdTaut;           /* !!! Superceded by any of the following > 0 */
@@ -314,21 +314,21 @@ typedef struct tagCanonStat {
     int               nLenCanonOrdIsotopicStereo;
     int               nLenCanonOrdIsotopicStereoTaut; /* !!! */
 
-                      /*  other */
+    /*  other */
 
     int               bHasIsotopicInTautomerGroups;
-    T_GROUP_INFO     *t_group_info;
+    T_GROUP_INFO* t_group_info;
     int               bIgnoreIsotopic;
     int               bDoubleBondSquare; /* 0 or 2 */
     INCHI_MODE         nMode;
 #if ( bRELEASE_VERSION == 0 )
     int               bExtract;          /* for debug only */
 #endif
-    NEIGH_LIST       *NeighList;
-    BCN              *pBCN;
-    S_CHAR    *nNum_H;      /* number of terminal hydrogen atoms on each atom except tautomeric [num_atoms], in order of canonical numbers */
-    S_CHAR    *nNum_H_fixed;/* number of terminal hydrogen atoms on tautomeric atoms (for non-atautomeric representation) [num_atoms] */
-    S_CHAR    *nExchgIsoH;
+    NEIGH_LIST* NeighList;
+    BCN* pBCN;
+    S_CHAR* nNum_H;      /* number of terminal hydrogen atoms on each atom except tautomeric [num_atoms], in order of canonical numbers */
+    S_CHAR* nNum_H_fixed;/* number of terminal hydrogen atoms on tautomeric atoms (for non-atautomeric representation) [num_atoms] */
+    S_CHAR* nExchgIsoH;
 } CANON_STAT;
 
 
@@ -336,20 +336,20 @@ typedef struct tagCanonStat {
 
 typedef struct tagCANON_GLOBALS
 {
-    const NEIGH_LIST      *m_pNeighList_RankForSort;
-    const ATOM_INVARIANT2 *m_pAtomInvariant2ForSort;
-    const AT_NUMB         *m_pNeighborsForSort;
-    const AT_RANK         *m_pn_RankForSort;
+    const NEIGH_LIST* m_pNeighList_RankForSort;
+    const ATOM_INVARIANT2* m_pAtomInvariant2ForSort;
+    const AT_NUMB* m_pNeighborsForSort;
+    const AT_RANK* m_pn_RankForSort;
     AT_RANK m_nMaxAtNeighRankForSort;
     int m_nNumCompNeighborsRanksCountEql;
-    bitWord *m_bBit;
+    bitWord* m_bBit;
     int m_bBitInitialized;
     int m_num_bit;
 } CANON_GLOBALS;
 
-int  SetBitCreate( struct tagCANON_GLOBALS *pCG );
+int  SetBitCreate(struct tagCANON_GLOBALS* pCG);
 
-void inchi_qsort( void *pParam, void *base, size_t num, size_t width, int( *comp )( const void *, const void *, void * ) );
+void inchi_qsort(void* pParam, void* base, size_t num, size_t width, int(*comp)(const void*, const void*, void*));
 
 
 
@@ -360,7 +360,7 @@ typedef struct tagCanonData {
 
     /* same names/types as in ConTable; here the order is from original numbering */
 
-    AT_NUMB *LinearCT;  /* output ?? */
+    AT_NUMB* LinearCT;  /* output ?? */
 
     int      nMaxLenLinearCT;
     int      nLenLinearCT;
@@ -368,36 +368,36 @@ typedef struct tagCanonData {
     int      nCanonFlags;
     /* hydrogen atoms fixed in tautomeric representation:
        compare before diff sign inversion: (+) <=> Ct1->() > Ct2->() */
-    NUM_H          *NumH;
+    NUM_H* NumH;
     int             lenNumH;    /* used length */
     int             maxlenNumH; /*  n + T_NUM_NO_ISOTOPIC*(n_tg-n) + 1 */
 
     /* hydrogen atoms fixed in non-tautomeric representation only:
        compare before diff sign inversion: (+) <=> Ct1->() > Ct2->() */
-    NUM_H           *NumHfixed;
+    NUM_H* NumHfixed;
     int              lenNumHfixed;       /* used length */
     int              maxlenNumHfixed;    /* max length = n+1  */
 
     /* isotopic atoms (without tautomeric H) and isotopic tautomeric groups */
     /* note: AT_ISO_SORT_KEY and T_GROUP_ISOWT are identical types: long    */
-    AT_ISO_SORT_KEY *iso_sort_key;
+    AT_ISO_SORT_KEY* iso_sort_key;
     int              len_iso_sort_key;    /* used length */
     int              maxlen_iso_sort_key; /* max length = n_tg+1 */
-    S_CHAR          *iso_exchg_atnos;
+    S_CHAR* iso_exchg_atnos;
     int              len_iso_exchg_atnos;    /* used length */
     int              maxlen_iso_exchg_atnos;
 
     /* isotopic hydrogen atoms fixed in non-tautomeric representation only */
 #if ( USE_ISO_SORT_KEY_HFIXED == 1 )
-    AT_ISO_SORT_KEY *iso_sort_key_Hfixed;
+    AT_ISO_SORT_KEY* iso_sort_key_Hfixed;
     int              len_iso_sort_key_Hfixed;    /* used length */
     int              maxlen_iso_sort_key_Hfixed; /* max length = n+1  */
 #endif
     /* auxiliary ranking */
 
-    AT_RANK  *nAuxRank;
+    AT_RANK* nAuxRank;
 
-    struct tagInchiTime *ulTimeOutTime;  /* timeout */
+    struct tagInchiTime* ulTimeOutTime;  /* timeout */
 } CANON_DATA;
 /**************************************************/
 
@@ -422,7 +422,7 @@ typedef struct tagCanonCounts {
 */
 
 typedef struct tagCurTree {
-    AT_NUMB   *tree;
+    AT_NUMB* tree;
     int       max_len;  /* allocated length of tree in sizeof(tree[0]) units */
     int       cur_len;  /* currently used length */
     int       incr_len; /* reallocation increment */

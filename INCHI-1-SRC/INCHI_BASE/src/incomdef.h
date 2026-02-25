@@ -55,7 +55,7 @@
 /* size resrictions */
 #define ATOM_EL_LEN           6  /* length of atom name string including zero termination */
 #define ATOM_INFO_LEN         36 /* inf_ATOM output string ^123Al^+2H12..(+)/999/999/999/999: 32 chars */
-#define MAXVAL                20 /* max number of bonds per atom */
+#define MAXVAL                50 /* max number of bonds per atom */ /* @nnuk : Changed from 20 -> 50 for testing purposes, to account for some structures with one atom having more than 20 bonds */
 #define MAX_STEREO_BONDS      3  /* max number of stereogenic bonds per atom */
 #define NUM_H_ISOTOPES        3  /* number of hydrogen isotopes: protium, deuterium, tritium */
 #define ATW_H                 1  /* hydrogen atomic weight */
@@ -141,27 +141,27 @@ extern "C" {
 #endif
 
 
-/* allocator */
+    /* allocator */
 #ifndef inchi_malloc
-    void *inchi_malloc( size_t c );
+    void* inchi_malloc(size_t c);
 #endif
 #ifndef inchi_calloc
-    void *inchi_calloc( size_t c, size_t n );
+    void* inchi_calloc(size_t c, size_t n);
 #endif
 #ifndef inchi_free
-    void inchi_free( void *p );
+    void inchi_free(void* p);
 #endif
 
 
 
-/* sorting etc */
+    /* sorting etc */
 
-    void inchi_swap( char *a, char *b, size_t width );
+    void inchi_swap(char* a, char* b, size_t width);
 
-    int insertions_sort( void *pCG,
-                         void *base, size_t num, size_t width, int( *compare )( const void *e1, const void *e2, void * ) );
-    int insertions_sort_AT_NUMBERS( void *pCG,
-                                    AT_NUMB *base, int num, int( *compare )( const void *e1, const void *e2, void * ) );
+    int insertions_sort(void* pCG,
+        void* base, size_t num, size_t width, int(*compare)(const void* e1, const void* e2, void*));
+    int insertions_sort_AT_NUMBERS(void* pCG,
+        AT_NUMB* base, int num, int(*compare)(const void* e1, const void* e2, void*));
     /*
     int insertions_sort( void *base, size_t num, size_t width, int ( *compare )(const void *e1, const void *e2 ) );
     int insertions_sort_AT_NUMBERS( AT_NUMB *base, int num, int ( *compare )(const void *e1, const void *e2 ) );

@@ -296,6 +296,8 @@ extern "C" {
 
 #define DISPLAY_ZZ_AS_STAR 1
 
+#define COORDINATIVE_BOND 9             /* (@nnuk) introduction of bond_type = 9 (Coordinative Bond) */
+
 
 /* BUG FIXES */
 

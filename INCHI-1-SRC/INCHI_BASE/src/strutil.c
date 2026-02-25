@@ -25,8 +25,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
+ *
+ * The InChI library and programs are free software developed under the
  * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
  * Originally developed at NIST.
  * Modifications and additions by IUPAC and the InChI Trust.
@@ -36,20 +36,22 @@
  *
  * info@inchi-trust.org
  *
-*/
+ */
 
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdbool.h>
 #include <limits.h>
 
 #include "mode.h"
-
+#include "ichinorm.h"               /* @nnuk */
 #include "strutil.h"
 #include "ichister.h"
 #include "ichi_io.h"
 #include "ichimain.h"
+#include "ichidrp.h"                /* @nnuk */
 
 #include "bcf_s.h"
 
@@ -58,12 +60,13 @@
 
 #ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 #endif
 
     /* Defined in ichisort.c, prototype in ichicomn.h */
-int insertions_sort_AT_RANK( AT_RANK *base, int num );
+    int insertions_sort_AT_RANK(AT_RANK *base, int num);
 
 #ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
@@ -71,116 +74,113 @@ int insertions_sort_AT_RANK( AT_RANK *base, int num );
 #endif
 #endif
 
-
-typedef struct tagTreeAtom {
-    AT_NUMB    neighbor[MAXVAL];        /* positions (from 0) of the neighbors in the inp_ATOM array */
-    S_CHAR     valence;                 /* number of bonds = number of neighbors */
-    AT_NUMB    nRingSystem;
-    AT_NUMB    nBlockSystem;
-    S_CHAR     bCutVertex;
+typedef struct tagTreeAtom
+{
+    AT_NUMB neighbor[MAXVAL]; /* positions (from 0) of the neighbors in the inp_ATOM array */
+    S_CHAR valence;           /* number of bonds = number of neighbors */
+    AT_NUMB nRingSystem;
+    AT_NUMB nBlockSystem;
+    S_CHAR bCutVertex;
 } tre_ATOM;
-
 
 /* Local prototypes */
 
-int cmp_iso_atw_diff_component_no( const void *a1, const void *a2 );
-int cmp_components( const void *a1, const void *a2 );
+int cmp_iso_atw_diff_component_no(const void *a1, const void *a2);
+int cmp_components(const void *a1, const void *a2);
 /* int mark_one_struct_component( inp_ATOM* at,
 int j,
 AT_NUMB *mark,
 AT_NUMB num_disconnected_components );
 */
-INChI_Stereo *Alloc_INChI_Stereo( int num_at, int num_bonds );
-int RemoveInpAtBond( inp_ATOM *at, int iat, int k );
-int DisconnectInpAtBond( inp_ATOM *at,
-                         AT_NUMB *nOldCompNumber,
-                         int iat,
-                         int neigh_ord );
-int move_explicit_Hcation( inp_ATOM *at,
-                           int num_at,
-                           int iat,
-                           int iat_H,
-                           int bInAllComponents );
-int DisconnectOneLigand( inp_ATOM *at,
-                         AT_NUMB *nOldCompNumber,
-                         S_CHAR *bMetal,
-                         char *elnumber_Heteroat,
-                         int num_halogens,
-                         int num_atoms,
-                         int iMetal,
-                         int jLigand,
-                         INCHI_MODE *bTautFlagsDone );
-int bIsAmmoniumSalt( inp_ATOM *at,
-                     int i,
-                     int *piO,
-                     int *pk,
-                     S_CHAR *num_explicit_H );
-int DisconnectAmmoniumSalt( inp_ATOM *at,
-                            int i,
-                            int iO,
-                            int k,
-                            S_CHAR *num_explicit_H );
+INChI_Stereo *Alloc_INChI_Stereo(int num_at, int num_bonds);
+static int is_only_HDT_neighbors(const inp_ATOM* at, int num_atoms, int metal_idx);
+int RemoveInpAtBond(inp_ATOM *at, int iat, int k);
+int DisconnectInpAtBond(inp_ATOM *at,
+                        AT_NUMB *nOldCompNumber,
+                        int iat,
+                        int neigh_ord);
+int move_explicit_Hcation(inp_ATOM *at,
+                          int num_at,
+                          int iat,
+                          int iat_H,
+                          int bInAllComponents);
+int DisconnectOneLigand(inp_ATOM *at,
+                        AT_NUMB *nOldCompNumber,
+                        S_CHAR *bMetal,
+                        char *elnumber_Heteroat,
+                        int num_halogens,
+                        int num_atoms,
+                        int iMetal,
+                        int jLigand,
+                        INCHI_MODE *bTautFlagsDone);
+int bIsAmmoniumSalt(inp_ATOM *at,
+                    int i,
+                    int *piO,
+                    int *pk,
+                    S_CHAR *num_explicit_H);
+int DisconnectAmmoniumSalt(inp_ATOM *at,
+                           int i,
+                           int iO,
+                           int k,
+                           S_CHAR *num_explicit_H);
 /*int bIsMetalSalt( inp_ATOM *at, int i ); - moved to strutil,h */
-int DisconnectMetalSalt( inp_ATOM *at, int i );
-int bIsMetalToDisconnect( inp_ATOM *at, int i, int bCheckMetalValence );
-int get_iat_number( int el_number );
-int tot_unsat( int unsat[] );
-int max_unsat( int unsat[] );
-double dist3D( inp_ATOM *at1, inp_ATOM *at2 );
-double dist2D( inp_ATOM *at1, inp_ATOM *at2 );
-double dist_from_segm( double x, double y,
-                       double x1, double y1,
-                       double x2, double y2 );
-int segments_intersect( double x11, double y11,
-                        double x12, double y12, /* segment #1 */
-                        double x21, double y21,
-                        double x22, double y22 );
-double GetMinDistDistribution( inp_ATOM *at,
-                               int num_at,
-                               int iat,
-                               int iat_H,
-                               int bInAllComponents,
-                               double min_dist[],
-                               int num_segm );
-int nFindOneOM( inp_ATOM *at,
-                int at_no,
-                int ord_OM[],
-                int num_OM );
-int the_only_doublet_neigh( inp_ATOM *at, int i1, int *ineigh1, int *ineigh2 );
-int fix_non_uniform_drawn_oxoanions( int num_atoms, inp_ATOM *at, int *num_changes );
-int fix_non_uniform_drawn_amidiniums( int num_atoms, inp_ATOM *at, int *num_changes );
+int DisconnectMetalSalt(inp_ATOM *at, int i);
+int bIsMetalToDisconnect(inp_ATOM *at, int i, int bCheckMetalValence);
+int get_iat_number(int el_number);
+int tot_unsat(int unsat[]);
+int max_unsat(int unsat[]);
+double dist3D(inp_ATOM *at1, inp_ATOM *at2);
+double dist2D(inp_ATOM *at1, inp_ATOM *at2);
+double dist_from_segm(double x, double y,
+                      double x1, double y1,
+                      double x2, double y2);
+int segments_intersect(double x11, double y11,
+                       double x12, double y12, /* segment #1 */
+                       double x21, double y21,
+                       double x22, double y22);
+double GetMinDistDistribution(inp_ATOM *at,
+                              int num_at,
+                              int iat,
+                              int iat_H,
+                              int bInAllComponents,
+                              double min_dist[],
+                              int num_segm);
+int nFindOneOM(inp_ATOM *at,
+               int at_no,
+               int ord_OM[],
+               int num_OM);
+int the_only_doublet_neigh(inp_ATOM *at, int i1, int *ineigh1, int *ineigh2);
+int fix_non_uniform_drawn_oxoanions(int num_atoms, inp_ATOM *at, int *num_changes);
+int fix_non_uniform_drawn_amidiniums(int num_atoms, inp_ATOM *at, int *num_changes);
 
-
-void add_bond_if_unseen( subgraf_pathfinder *spf,
-                         int node0, int node,
-                         int *nbonds, int **bonds );
+void add_bond_if_unseen(subgraf_pathfinder *spf,
+                        int node0, int node,
+                        int *nbonds, int **bonds);
 
 /****************************************************************************/
 #ifndef NUMH
-#define NUM_ISO_H(AT,N) (AT[N].num_iso_H[0]+AT[N].num_iso_H[1]+AT[N].num_iso_H[2])
-#define NUMH(AT,N)     (AT[N].num_H+NUM_ISO_H(AT,N))
+#define NUM_ISO_H(AT, N) (AT[N].num_iso_H[0] + AT[N].num_iso_H[1] + AT[N].num_iso_H[2])
+#define NUMH(AT, N) (AT[N].num_H + NUM_ISO_H(AT, N))
 #endif
 /****************************************************************************/
 
-
 /****************************************************************************/
-int cmp_iso_atw_diff_component_no( const void *a1, const void *a2 )
+int cmp_iso_atw_diff_component_no(const void *a1, const void *a2)
 {
-    int ret = (int) ( (const inp_ATOM*) a1 )->iso_atw_diff - (int) ( (const inp_ATOM*) a2 )->iso_atw_diff;
+    int ret = (int)((const inp_ATOM *)a1)->iso_atw_diff - (int)((const inp_ATOM *)a2)->iso_atw_diff;
     if (!ret) /*  make the sort stable */
     {
-        ret = (int) ( (const inp_ATOM*) a1 )->component - (int) ( (const inp_ATOM*) a2 )->component;
+        ret = (int)((const inp_ATOM *)a1)->component - (int)((const inp_ATOM *)a2)->component;
     }
 
     return ret;
 }
 
-
 /****************************************************************************/
-int the_only_doublet_neigh( inp_ATOM *at,
-                            int i1,
-                            int *ineigh1,
-                            int *ineigh2 )
+int the_only_doublet_neigh(inp_ATOM *at,
+                           int i1,
+                           int *ineigh1,
+                           int *ineigh2)
 {
     int i, neigh1, num_rad1 = 0, num_rad2 = 0;
 
@@ -191,7 +191,7 @@ int the_only_doublet_neigh( inp_ATOM *at,
     }
     for (i = 0; i < a->valence; i++)
     {
-        b = at + ( (int) a->neighbor[i] ); /* djb-rwth: removing redundant code */
+        b = at + ((int)a->neighbor[i]); /* djb-rwth: removing redundant code */
         if (RADICAL_DOUBLET == b->radical)
         {
             num_rad1++;
@@ -201,10 +201,10 @@ int the_only_doublet_neigh( inp_ATOM *at,
 
     if (1 == num_rad1)
     {
-        a = at + ( neigh1 = (int) a->neighbor[*ineigh1] );
+        a = at + (neigh1 = (int)a->neighbor[*ineigh1]);
         for (i = 0; i < a->valence; i++)
         {
-            b = at + (int) a->neighbor[i];
+            b = at + (int)a->neighbor[i];
             if (RADICAL_DOUBLET == b->radical)
             {
                 num_rad2++;
@@ -221,13 +221,12 @@ int the_only_doublet_neigh( inp_ATOM *at,
     return -1;
 }
 
-
 /****************************************************************************
 Correct non-uniformly drawn oxoanions
 ****************************************************************************/
-int fix_non_uniform_drawn_oxoanions( int num_atoms,
-                                     inp_ATOM *at,
-                                     int *num_changes )
+int fix_non_uniform_drawn_oxoanions(int num_atoms,
+                                    inp_ATOM *at,
+                                    int *num_changes)
 {
     /* For central halogen, apply the following
     correction rules:
@@ -319,16 +318,25 @@ int fix_non_uniform_drawn_oxoanions( int num_atoms,
 
     */
 
-
     /* constants for element numbers */
     enum elems
     {
-        dNone, dCl = 17, dBr = 35, dI = 53, dAt = 85, dO = 8,
-        dS = 16, dSe = 34, dTe = 52, dP = 15, dC = 6, dN = 7
+        dNone,
+        dCl = 17,
+        dBr = 35,
+        dI = 53,
+        dAt = 85,
+        dO = 8,
+        dS = 16,
+        dSe = 34,
+        dTe = 52,
+        dP = 15,
+        dC = 6,
+        dN = 7
     };
 
-    static U_CHAR  allowed_elnums_center_halogen[] = { dCl, dBr, dI, dAt };
-    static U_CHAR  allowed_elnums_center_halcogen[] = { dS, dSe, dTe };
+    static U_CHAR allowed_elnums_center_halogen[] = {dCl, dBr, dI, dAt};
+    static U_CHAR allowed_elnums_center_halcogen[] = {dS, dSe, dTe};
 
     int en_center;
     int i, j, k;
@@ -344,10 +352,10 @@ int fix_non_uniform_drawn_oxoanions( int num_atoms,
         }
         en_center = at[i].el_number;
         /*  from eligible element list ... */
-        if (!memchr( allowed_elnums_center_halogen, en_center, sizeof( allowed_elnums_center_halogen ) ))
+        if (!memchr(allowed_elnums_center_halogen, en_center, sizeof(allowed_elnums_center_halogen)))
         {
             /* central atom is not not halogen; check if it is halcogen */
-            if (memchr( allowed_elnums_center_halcogen, en_center, sizeof( allowed_elnums_center_halcogen ) ))
+            if (memchr(allowed_elnums_center_halcogen, en_center, sizeof(allowed_elnums_center_halcogen)))
             {
                 if (at[i].chem_bonds_valence < 7)
                 {
@@ -364,7 +372,7 @@ int fix_non_uniform_drawn_oxoanions( int num_atoms,
         /* OK, found central halogen or eligible central halcogen. */
 
         /* non-radical... */
-        if (at[i].radical && ( at[i].radical != RADICAL_SINGLET ))
+        if (at[i].radical && (at[i].radical != RADICAL_SINGLET))
         {
             continue;
         }
@@ -395,7 +403,7 @@ int fix_non_uniform_drawn_oxoanions( int num_atoms,
                     continue;
                 }
                 /* non-radical */
-                if (at[j].radical && ( at[j].radical != RADICAL_SINGLET ))
+                if (at[j].radical && (at[j].radical != RADICAL_SINGLET))
                 {
                     continue;
                 }
@@ -403,17 +411,30 @@ int fix_non_uniform_drawn_oxoanions( int num_atoms,
                 en_term = at[j].el_number;
                 switch (en_term)
                 {
-                    case dO:    break;
-                    case dS:    if (( en_center == dSe ) || ( en_center == dAt ) || ( en_center == dTe )) break;  continue;
-                    case dSe:   if (( en_center == dAt ) || ( en_center == dTe )) break;  continue;
-                    case dTe:   if (en_center == dAt) break; continue;
-                    default:    continue;
+                case dO:
+                    break;
+                case dS:
+                    if ((en_center == dSe) || (en_center == dAt) || (en_center == dTe))
+                        break;
+                    continue;
+                case dSe:
+                    if ((en_center == dAt) || (en_center == dTe))
+                        break;
+                    continue;
+                case dTe:
+                    if (en_center == dAt)
+                        break;
+                    continue;
+                default:
+                    continue;
                 }
 
                 /* From several candidates, select one with less el. number (==more electronegative). */
                 if (en_term < min_en)
                 {
-                    min_en = en_term; kk = k; jj = j;
+                    min_en = en_term;
+                    kk = k;
+                    jj = j;
                     min_iso = at[j].iso_atw_diff > 0 ? at[i].iso_atw_diff - 1 : at[i].iso_atw_diff;
                     continue;
                 }
@@ -423,12 +444,15 @@ int fix_non_uniform_drawn_oxoanions( int num_atoms,
                     iso = at[j].iso_atw_diff > 0 ? at[i].iso_atw_diff - 1 : at[i].iso_atw_diff;
                     if (iso < min_iso)
                     {
-                        min_iso = iso; kk = k; jj = j; continue;
+                        min_iso = iso;
+                        kk = k;
+                        jj = j;
+                        continue;
                     }
                 }
             } /* end of checking nbrs. */
 
-              /* If OK, apply changes. */
+            /* If OK, apply changes. */
             if (jj >= 0)
             {
                 at[i].charge = 0;
@@ -438,21 +462,20 @@ int fix_non_uniform_drawn_oxoanions( int num_atoms,
                 at[i].bond_stereo[kk] = at[jj].bond_stereo[0] = 0;
                 at[i].chem_bonds_valence--;
                 at[jj].chem_bonds_valence--;
-                ( *num_changes )++;
+                (*num_changes)++;
             }
         }
-    }  /* end of search for candidate centers. */
+    } /* end of search for candidate centers. */
 
     return 0;
 }
 
-
 /****************************************************************************
 Correct non-uniformly drawn amidinium cations.
 ****************************************************************************/
-int fix_non_uniform_drawn_amidiniums( int num_atoms,
-                                      inp_ATOM *at,
-                                      int *num_changes )
+int fix_non_uniform_drawn_amidiniums(int num_atoms,
+                                     inp_ATOM *at,
+                                     int *num_changes)
 
 {
     /* Amidines include carboxamidines RC(=NR)NR2,
@@ -482,11 +505,21 @@ int fix_non_uniform_drawn_amidiniums( int num_atoms,
     /* constants for element numbers */
     enum elems
     {
-        dNone, dCl = 17, dBr = 35, dI = 53, dAt = 85, dO = 8,
-        dS = 16, dSe = 34, dTe = 52, dP = 15, dC = 6, dN = 7
+        dNone,
+        dCl = 17,
+        dBr = 35,
+        dI = 53,
+        dAt = 85,
+        dO = 8,
+        dS = 16,
+        dSe = 34,
+        dTe = 52,
+        dP = 15,
+        dC = 6,
+        dN = 7
     };
 
-    static U_CHAR  allowed_elnums_center[] = { dC, dS, dP };
+    static U_CHAR allowed_elnums_center[] = {dC, dS, dP};
     int en_center;
     int i, j, k, jj, kk, k1;
     int mismatch = 0, nuH = 0, nuN = 0, nitrogens[MAXVAL];
@@ -502,7 +535,7 @@ int fix_non_uniform_drawn_amidiniums( int num_atoms,
         }
         en_center = at[i].el_number;
         /*  from eligible element list ... */
-        if (!memchr( allowed_elnums_center, en_center, sizeof( allowed_elnums_center ) ))
+        if (!memchr(allowed_elnums_center, en_center, sizeof(allowed_elnums_center)))
         {
             continue;
         }
@@ -517,14 +550,14 @@ int fix_non_uniform_drawn_amidiniums( int num_atoms,
         }
 
         /* non-radical. */
-        if (at[i].radical && ( at[i].radical != RADICAL_SINGLET ))
+        if (at[i].radical && (at[i].radical != RADICAL_SINGLET))
         {
             continue;
         }
 
         /* NB: center must have neutral neighbours, two of them are aliphatic N's of which at least one bears H. */
-        mismatch = nuH = nuN = kk = 0; /* djb-rwth: removing redundant code */
-        memset( nitrogens, 0, sizeof( nitrogens ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        mismatch = nuH = nuN = kk = 0;           /* djb-rwth: removing redundant code */
+        memset(nitrogens, 0, sizeof(nitrogens)); /* djb-rwth: memset_s C11/Annex K variant? */
         jj = -1;
         for (k = 0; k < at[i].valence; k++)
         {
@@ -537,12 +570,12 @@ int fix_non_uniform_drawn_amidiniums( int num_atoms,
             }
             if (at[j].el_number == dN)
             {
-                if (( at[j].valence > 3 ) || ( at[j].chem_bonds_valence > 3 ))
+                if ((at[j].valence > 3) || (at[j].chem_bonds_valence > 3))
                 {
                     mismatch = 1;
                     break;
                 }
-                nuH += NUMH( at, j );
+                nuH += NUMH(at, j);
                 nuN++;
                 if (jj < 0)
                 {
@@ -577,13 +610,12 @@ int fix_non_uniform_drawn_amidiniums( int num_atoms,
             at[jj].chem_bonds_valence++;
             /* NB: do nothing with wedge stereo bonds (retain wedge) */
 
-            ( *num_changes )++;
+            (*num_changes)++;
         }
-    }  /* end of search for candidate centers. */
+    } /* end of search for candidate centers. */
 
     return 0;
 }
-
 
 /****************************************************************************
 Not used --
@@ -599,12 +631,11 @@ return 0;
 }
 ****************************************************************************/
 
-
 /****************************************************************************/
-int fix_odd_things( int num_atoms,
-                    inp_ATOM *at,
-                    int bFixBug,
-                    int bFixNonUniformDraw )
+int fix_odd_things(int num_atoms,
+                   inp_ATOM *at,
+                   int bFixBug,
+                   int bFixNonUniformDraw)
 {
     /* N;P;As;Sb;O;S;Se;Te;C;Si */
     static const U_CHAR en[] = {
@@ -615,32 +646,31 @@ int fix_odd_things( int num_atoms,
         EL_NUMBER_O,
         EL_NUMBER_S,
         EL_NUMBER_SE,
-        EL_NUMBER_TE
-    };
-    static int ne = sizeof(en)/sizeof(en[0]);
+        EL_NUMBER_TE};
+    static int ne = sizeof(en) / sizeof(en[0]);
 
-#define FIRST_NEIGHB2  4
-#define FIRST_CENTER2  5
+#define FIRST_NEIGHB2 4
+#define FIRST_CENTER2 5
 
     int i1, i2, k1, k2, c = -1, num_changes = 0;
     /* djb-rwth: removing redundant variables */
 
     if (bFixNonUniformDraw)
     {
-        int ret1; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
-        ret1 = fix_non_uniform_drawn_oxoanions( num_atoms, at, &num_changes ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
-        ret1 = fix_non_uniform_drawn_amidiniums( num_atoms, at, &num_changes ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
+        int ret1;                                                             /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
+        ret1 = fix_non_uniform_drawn_oxoanions(num_atoms, at, &num_changes);  /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
+        ret1 = fix_non_uniform_drawn_amidiniums(num_atoms, at, &num_changes); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     }
 
     /* H(-)-X  -> H-X(-);  H(+)-X  -> H-X(+) */
     for (i1 = 0; i1 < num_atoms; i1++)
     {
         if (1 == at[i1].valence &&
-             1 == abs( at[i1].charge ) &&
-             ( 0 == at[i1].radical || RADICAL_SINGLET == at[i1].radical ) &&
-             BOND_TYPE_SINGLE == at[i1].bond_type[0] &&
-             EL_NUMBER_H == at[i1].el_number && EL_NUMBER_H != at[i2 = (int) at[i1].neighbor[0]].el_number &&
-             !NUMH( at, i1 ) && !NUMH( at, i2 ))
+            1 == abs(at[i1].charge) &&
+            (0 == at[i1].radical || RADICAL_SINGLET == at[i1].radical) &&
+            BOND_TYPE_SINGLE == at[i1].bond_type[0] &&
+            EL_NUMBER_H == at[i1].el_number && EL_NUMBER_H != at[i2 = (int)at[i1].neighbor[0]].el_number &&
+            !NUMH(at, i1) && !NUMH(at, i2))
         {
             at[i2].charge += at[i1].charge;
             at[i1].charge = 0;
@@ -651,29 +681,29 @@ int fix_odd_things( int num_atoms,
     for (i1 = 0; i1 < num_atoms; i1++)
     {
         if (1 != at[i1].charge ||
-             (at[i1].radical && RADICAL_SINGLET != at[i1].radical) ||
-             at[i1].chem_bonds_valence == at[i1].valence ||
-             !memchr( en, at[i1].el_number, ne ) ||
-             get_el_valence( at[i1].el_number, at[i1].charge, 0 ) != at[i1].chem_bonds_valence + NUMH( at, i1 )) /* djb-rwth: addressing LLVM warning */
+            (at[i1].radical && RADICAL_SINGLET != at[i1].radical) ||
+            at[i1].chem_bonds_valence == at[i1].valence ||
+            !memchr(en, at[i1].el_number, ne) ||
+            get_el_valence(at[i1].el_number, at[i1].charge, 0) != at[i1].chem_bonds_valence + NUMH(at, i1)) /* djb-rwth: addressing LLVM warning */
         {
             continue;
         }
 
         /* found a candidate at[i1] for X in XHn(+) */
         if (1 == at[i1].valence &&
-             BOND_TYPE_DOUBLE == at[i1].bond_type[0])
+            BOND_TYPE_DOUBLE == at[i1].bond_type[0])
         {
-            c = (int) at[i1].neighbor[0];
+            c = (int)at[i1].neighbor[0];
             for (k2 = 0; k2 < at[c].valence; k2++)
             {
                 i2 = at[c].neighbor[k2];
                 if (1 == at[i2].valence &&
-                     -1 == at[i2].charge  &&
-                     at[i2].el_number == at[i1].el_number && /* exact match */
-                     ( 0 == at[i2].radical || RADICAL_SINGLET == at[i2].radical ) &&
-                     BOND_TYPE_SINGLE == at[i2].bond_type[0] &&
-                     /*memchr(en, at[i2].el_number, ne) &&*/
-                     get_el_valence( at[i2].el_number, at[i2].charge, 0 ) == at[i2].chem_bonds_valence + NUMH( at, i2 ))
+                    -1 == at[i2].charge &&
+                    at[i2].el_number == at[i1].el_number && /* exact match */
+                    (0 == at[i2].radical || RADICAL_SINGLET == at[i2].radical) &&
+                    BOND_TYPE_SINGLE == at[i2].bond_type[0] &&
+                    /*memchr(en, at[i2].el_number, ne) &&*/
+                    get_el_valence(at[i2].el_number, at[i2].charge, 0) == at[i2].chem_bonds_valence + NUMH(at, i2))
                 {
                     /* found both X(-) and X(+); change bonds and remove charges */
                     for (k1 = 0; k1 < at[c].valence && i1 != at[c].neighbor[k1]; k1++)
@@ -698,13 +728,13 @@ int fix_odd_things( int num_atoms,
                 if (at[neigh].el_number == EL_NUMBER_H)
                 {
                     if (at[neigh].chem_bonds_valence == 1 &&
-                        ( 0 == at[neigh].radical || RADICAL_SINGLET == at[neigh].radical ))
+                        (0 == at[neigh].radical || RADICAL_SINGLET == at[neigh].radical))
                     {
                         num_H_i1++; /* found H-neighbor */
                     }
                     else
                     {
-                        break;  /* wrong neighbor */
+                        break; /* wrong neighbor */
                     }
                 }
                 else if (at[i1].bond_type[ineigh] == BOND_TYPE_DOUBLE)
@@ -721,10 +751,10 @@ int fix_odd_things( int num_atoms,
             for (k2 = 0; k2 < at[c].valence; k2++)
             {
                 i2 = at[c].neighbor[k2];
-                if (-1 == at[i2].charge  &&
-                     at[i2].el_number == at[i1].el_number && /* exact match */
-                     ( 0 == at[i2].radical || RADICAL_SINGLET == at[i2].radical ) &&
-                     get_el_valence( at[i2].el_number, at[i2].charge, 0 ) == at[i2].chem_bonds_valence + NUMH( at, i2 ))
+                if (-1 == at[i2].charge &&
+                    at[i2].el_number == at[i1].el_number && /* exact match */
+                    (0 == at[i2].radical || RADICAL_SINGLET == at[i2].radical) &&
+                    get_el_valence(at[i2].el_number, at[i2].charge, 0) == at[i2].chem_bonds_valence + NUMH(at, i2))
                 {
                     for (ineigh = 0, num_H_i2 = 0, i2_c = -1; ineigh < at[i2].valence; ineigh++)
                     {
@@ -732,9 +762,9 @@ int fix_odd_things( int num_atoms,
                         if (at[neigh].el_number == EL_NUMBER_H)
                         {
                             if (at[neigh].chem_bonds_valence == 1 &&
-                                ( 0 == at[neigh].radical || RADICAL_SINGLET == at[neigh].radical ))
+                                (0 == at[neigh].radical || RADICAL_SINGLET == at[neigh].radical))
                             {
-                                num_H_i2++;  /* found H-neighbor */
+                                num_H_i2++; /* found H-neighbor */
                             }
                             else
                             {
@@ -753,7 +783,7 @@ int fix_odd_things( int num_atoms,
                             }
                         }
                     }
-                    if (num_H_i2 + ( i2_c >= 0 ) != at[i2].valence)
+                    if (num_H_i2 + (i2_c >= 0) != at[i2].valence)
                     {
                         continue;
                     }
@@ -802,27 +832,27 @@ int fix_odd_things( int num_atoms,
     for (i1 = 0; i1 < num_atoms; i1++)
     {
         if (1 == at[i1].valence &&
-             -1 == at[i1].charge &&
-             ( 0 == at[i1].radical || RADICAL_SINGLET == at[i1].radical ) &&
-             !NUMH( at, i1 ) &&
-             BOND_TYPE_SINGLE == at[i1].bond_type[0] &&
-             memchr( en + FIRST_NEIGHB2, at[i1].el_number, (long long)ne - FIRST_NEIGHB2 )) /* djb-rwth: cast operator added */
+            -1 == at[i1].charge &&
+            (0 == at[i1].radical || RADICAL_SINGLET == at[i1].radical) &&
+            !NUMH(at, i1) &&
+            BOND_TYPE_SINGLE == at[i1].bond_type[0] &&
+            memchr(en + FIRST_NEIGHB2, at[i1].el_number, (long long)ne - FIRST_NEIGHB2)) /* djb-rwth: cast operator added */
         {
             int charge, i;
             /* found a candidate for X */
-            c = (int) at[i1].neighbor[0]; /* candidate for Y */
-            if (( ( charge = 2 ) == at[c].charge && memchr( en + FIRST_CENTER2, at[c].el_number, (long long)ne - FIRST_CENTER2 ) /* djb-rwth: cast operator added */
+            c = (int)at[i1].neighbor[0];                                                                                    /* candidate for Y */
+            if (((charge = 2) == at[c].charge && memchr(en + FIRST_CENTER2, at[c].el_number, (long long)ne - FIRST_CENTER2) /* djb-rwth: cast operator added */
 
 #ifndef FIX_P_IV_Plus_O_Minus
-                  || ( charge = 1 ) == at[c].charge && EL_NUMBER_P == at[c].el_number
+                 || (charge = 1) == at[c].charge && EL_NUMBER_P == at[c].el_number
 #endif
-                  ) &&
-                 4 == at[c].valence &&
-                 ( 0 == at[c].radical || RADICAL_SINGLET == at[c].radical ) &&
-                 at[c].valence == at[c].chem_bonds_valence &&
-                 !NUMH( at, c ))
+                 ) &&
+                4 == at[c].valence &&
+                (0 == at[c].radical || RADICAL_SINGLET == at[c].radical) &&
+                at[c].valence == at[c].chem_bonds_valence &&
+                !NUMH(at, c))
             {
-                ;  /* accept */
+                ; /* accept */
             }
             else
             {
@@ -836,12 +866,12 @@ int fix_odd_things( int num_atoms,
                     continue;
                 }
                 if (1 == at[i2].valence &&
-                     -1 == at[i2].charge  &&
-                     memchr( en + FIRST_NEIGHB2, at[i2].el_number, (long long)ne - FIRST_NEIGHB2 ) && /* djb-rwth: cast operator added */
-                     /*at[i2].el_number == at[i1].el_number &&*/ /* exact match */
-                     ( 0 == at[i2].radical || RADICAL_SINGLET == at[i2].radical ) &&
-                     !NUMH( at, i2 ) &&
-                     BOND_TYPE_SINGLE == at[i2].bond_type[0])
+                    -1 == at[i2].charge &&
+                    memchr(en + FIRST_NEIGHB2, at[i2].el_number, (long long)ne - FIRST_NEIGHB2) && /* djb-rwth: cast operator added */
+                    /*at[i2].el_number == at[i1].el_number &&*/                                    /* exact match */
+                    (0 == at[i2].radical || RADICAL_SINGLET == at[i2].radical) &&
+                    !NUMH(at, i2) &&
+                    BOND_TYPE_SINGLE == at[i2].bond_type[0])
                 {
                     /* found both X(-) and X(-); change bonds and remove charges */
                     for (k1 = 0; k1 < at[c].valence && i1 != at[c].neighbor[k1]; k1++)
@@ -855,24 +885,26 @@ int fix_odd_things( int num_atoms,
                         for the neutralization of the components */
                         switch (i)
                         {
-                            case 0:
-                                at[i1].charge++; /* = 0; changed 2010-03-17 DT*/
-                                at[i1].bond_type[0] = at[c].bond_type[k1] = BOND_TYPE_DOUBLE;
-                                at[i1].bond_stereo[0] = at[c].bond_stereo[k1] = 0;
-                                at[i1].chem_bonds_valence++;
-                                at[c].chem_bonds_valence++;
-                                if (bFixBug) at[c].charge--; /* added 2010-03-17 DT*/
-                                num_changes++;
-                                break;
-                            case 1:
-                                at[i2].charge++; /*= 0; changed 2010-03-17 DT*/
-                                at[i2].bond_type[0] = at[c].bond_type[k2] = BOND_TYPE_DOUBLE;
-                                at[i2].bond_stereo[0] = at[c].bond_stereo[k2] = 0;
-                                at[i2].chem_bonds_valence++;
-                                at[c].chem_bonds_valence++;
-                                if (bFixBug) at[c].charge--; /* added 2010-03-17 DT */
-                                num_changes++;
-                                break;
+                        case 0:
+                            at[i1].charge++; /* = 0; changed 2010-03-17 DT*/
+                            at[i1].bond_type[0] = at[c].bond_type[k1] = BOND_TYPE_DOUBLE;
+                            at[i1].bond_stereo[0] = at[c].bond_stereo[k1] = 0;
+                            at[i1].chem_bonds_valence++;
+                            at[c].chem_bonds_valence++;
+                            if (bFixBug)
+                                at[c].charge--; /* added 2010-03-17 DT*/
+                            num_changes++;
+                            break;
+                        case 1:
+                            at[i2].charge++; /*= 0; changed 2010-03-17 DT*/
+                            at[i2].bond_type[0] = at[c].bond_type[k2] = BOND_TYPE_DOUBLE;
+                            at[i2].bond_stereo[0] = at[c].bond_stereo[k2] = 0;
+                            at[i2].chem_bonds_valence++;
+                            at[c].chem_bonds_valence++;
+                            if (bFixBug)
+                                at[c].charge--; /* added 2010-03-17 DT */
+                            num_changes++;
+                            break;
                         }
                     }
 
@@ -897,13 +929,13 @@ int fix_odd_things( int num_atoms,
     for (i1 = 0; i1 < num_atoms; i1++)
     {
         if (RADICAL_DOUBLET == at[i1].radical &&
-             0 <= ( i2 = the_only_doublet_neigh( at, i1, &k1, &k2 ) ))
+            0 <= (i2 = the_only_doublet_neigh(at, i1, &k1, &k2)))
         {
             if (at[i1].bond_type[k1] <= BOND_TYPE_DOUBLE)
             {
-                at[i1].bond_type[k1] ++;
+                at[i1].bond_type[k1]++;
                 at[i1].chem_bonds_valence++;
-                at[i2].bond_type[k2] ++;
+                at[i2].bond_type[k2]++;
                 at[i2].chem_bonds_valence++;
                 at[i1].radical = 0;
                 at[i2].radical = 0;
@@ -911,26 +943,23 @@ int fix_odd_things( int num_atoms,
         }
     }
 
-#if ( REMOVE_ION_PAIRS_EARLY == 1 )
-    num_changes += remove_ion_pairs( num_atoms, at );
+#if (REMOVE_ION_PAIRS_EARLY == 1)
+    num_changes += remove_ion_pairs(num_atoms, at);
 #endif
 
     return num_changes;
 }
 
-
 /****************************************************************************/
-int post_fix_odd_things( int num_atoms, inp_ATOM *at )
+int post_fix_odd_things(int num_atoms, inp_ATOM *at)
 {
     int num_changes = 0;
     /* currently does nothing */
-    return
-        num_changes;
+    return num_changes;
 }
 
-
 /****************************************************************************/
-int nFindOneOM( inp_ATOM *at, int at_no, int ord_OM[], int num_OM )
+int nFindOneOM(inp_ATOM *at, int at_no, int ord_OM[], int num_OM)
 {
     int i, n_OM, best_value, cur_value, diff; /* djb-rwth: removing redundant variables */
     int num_best;
@@ -946,13 +975,13 @@ int nFindOneOM( inp_ATOM *at, int at_no, int ord_OM[], int num_OM )
 
     /* select neighbors with min. number of bonds */
     num_best = 1;
-    n_OM = (int) at[at_no].neighbor[ord_OM[0]];
-    best_value = (int) at[n_OM].valence;
+    n_OM = (int)at[at_no].neighbor[ord_OM[0]];
+    best_value = (int)at[n_OM].valence;
     /* compare number of bonds; move indexes of the best neighbors to the first elements of ord_OM[] */
     for (i = 1; i < num_OM; i++)
     {
         n_OM = at[at_no].neighbor[ord_OM[i]];
-        cur_value = (int) at[n_OM].valence;
+        cur_value = (int)at[n_OM].valence;
         diff = cur_value - best_value;
         if (diff < 0)
         {
@@ -962,7 +991,7 @@ int nFindOneOM( inp_ATOM *at, int at_no, int ord_OM[], int num_OM )
             num_best = 1;
         }
         else if (diff == 0)
-        {    /* was '=', pointed by WDI */
+        { /* was '=', pointed by WDI */
             ord_OM[num_best++] = ord_OM[i];
         }
     }
@@ -974,14 +1003,14 @@ int nFindOneOM( inp_ATOM *at, int at_no, int ord_OM[], int num_OM )
 
     /* select neighbors with min. periodic numbers */
     num_best = 1;
-    n_OM = (int) at[at_no].neighbor[ord_OM[0]];
-    best_value = (int) at[n_OM].el_number;
+    n_OM = (int)at[at_no].neighbor[ord_OM[0]];
+    best_value = (int)at[n_OM].el_number;
 
     /* compare periodic numbers; move indexes of the best neighbors to the first elements of ord_OM[] */
     for (i = 1; i < num_OM; i++)
     {
         n_OM = at[at_no].neighbor[ord_OM[i]];
-        cur_value = (int) at[n_OM].el_number;
+        cur_value = (int)at[n_OM].el_number;
         diff = cur_value - best_value;
         if (diff < 0)
         {
@@ -991,7 +1020,7 @@ int nFindOneOM( inp_ATOM *at, int at_no, int ord_OM[], int num_OM )
             num_best = 1;
         }
         else if (diff == 0)
-        {    /* was '=', pointed by WDI */
+        { /* was '=', pointed by WDI */
             ord_OM[num_best++] = ord_OM[i];
         }
     }
@@ -1009,16 +1038,16 @@ int nFindOneOM( inp_ATOM *at, int at_no, int ord_OM[], int num_OM )
 
     /* if neighbors are terminal atoms then the one without isotope or with lightest isotope */
     num_best = 1;
-    n_OM = (int) at[at_no].neighbor[ord_OM[0]];
-    best_value = (int) at[n_OM].iso_atw_diff;
+    n_OM = (int)at[at_no].neighbor[ord_OM[0]];
+    best_value = (int)at[n_OM].iso_atw_diff;
 
     /* compare periodic numbers; move indexes of the best neighbors to the first elements of ord_OM[] */
     for (i = 1; i < num_OM; i++)
     {
         n_OM = at[at_no].neighbor[ord_OM[i]];
-        cur_value = (int) at[n_OM].el_number;
+        cur_value = (int)at[n_OM].el_number;
         diff = cur_value - best_value;
-        if (( !cur_value && best_value ) || diff < 0)
+        if ((!cur_value && best_value) || diff < 0)
         {
             /* djb-rwth: removing redundant code */
             best_value = cur_value;
@@ -1042,12 +1071,11 @@ int nFindOneOM( inp_ATOM *at, int at_no, int ord_OM[], int num_OM )
     return ord_OM[0];
 }
 
-
 /****************************************************************************
 NB:
 the bonds are fixed in fix_special_bonds()
 ****************************************************************************/
-int remove_ion_pairs( int num_atoms, inp_ATOM *at )
+int remove_ion_pairs(int num_atoms, inp_ATOM *at)
 {
     int num_changes = 0;
 #define MAX_NEIGH 6
@@ -1063,39 +1091,39 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
     /****** count candidates ********/
     for (i = 0, a = at; i < num_atoms; i++, a++)
     {
-        if (1 == ( chrg = a->charge ) || -1 == chrg)
+        if (1 == (chrg = a->charge) || -1 == chrg)
         {
-            switch (ion_el_group( a->el_number ))
+            switch (ion_el_group(a->el_number))
             {
-                case EL_NUMBER_C:
-                    if (chrg > 0)
-                    {
-                        num_C_plus++;
-                    }
-                    else
-                    {
-                        num_C_minus++;
-                    }
-                    break;
-                case EL_NUMBER_O:
-                    if (chrg > 0)
-                    {
-                        num_O_plus++;
-                    }
-                    else
-                    {
-                        num_O_minus++;
-                    }
-                    break;
-                case EL_NUMBER_N:
-                    if (chrg > 0)
-                    {
-                        num_N_plus++;
-                    }
-                    else
-                    {
-                        num_N_minus++;
-                    }
+            case EL_NUMBER_C:
+                if (chrg > 0)
+                {
+                    num_C_plus++;
+                }
+                else
+                {
+                    num_C_minus++;
+                }
+                break;
+            case EL_NUMBER_O:
+                if (chrg > 0)
+                {
+                    num_O_plus++;
+                }
+                else
+                {
+                    num_O_minus++;
+                }
+                break;
+            case EL_NUMBER_N:
+                if (chrg > 0)
+                {
+                    num_N_plus++;
+                }
+                else
+                {
+                    num_N_minus++;
+                }
 #ifdef FIX_P_IV_Plus_O_Minus
                     num_P_IV_plus += a->el_number != EL_NUMBER_N &&
                                      chrg == 1 &&
@@ -1105,9 +1133,9 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     break;
             }
         }
-        else if (!chrg && a->chem_bonds_valence + NUMH( a, 0 ) == 2 &&
-                  get_el_valence( a->el_number, 0, 0 ) == 4 &&
-                  ion_el_group( a->el_number ) == EL_NUMBER_C)
+        else if (!chrg && a->chem_bonds_valence + NUMH(a, 0) == 2 &&
+                 get_el_valence(a->el_number, 0, 0) == 4 &&
+                 ion_el_group(a->el_number) == EL_NUMBER_C)
         {
             num_C_II++;
         }
@@ -1137,30 +1165,30 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
 
     for (type = 1; type <= 18; type++)
     {
-        if (( !type || 1 == type ))
+        if ((!type || 1 == type))
         {
             for (i = 0; i < num_atoms && 0 < num_N_plus && 0 < num_O_minus; i++)
             {
-                if (1 == at[i].charge && 3 == nNoMetalNumBonds( at, i ) &&
-                     4 == nNoMetalBondsValence( at, i ) &&
-                     ion_el_group( at[i].el_number ) == EL_NUMBER_N)
+                if (1 == at[i].charge && 3 == nNoMetalNumBonds(at, i) &&
+                    4 == nNoMetalBondsValence(at, i) &&
+                    ion_el_group(at[i].el_number) == EL_NUMBER_N)
                 {
                     int num_OM = 0, ord_OM[3]; /* -O(-) */
-                    int num_O = 0; /* =O    */
+                    int num_O = 0;             /* =O    */
                     int num_O_other = 0;
                     for (i1 = 0; i1 < at[i].valence; i1++)
                     {
                         n = at[i].neighbor[i1];
-                        if (1 == nNoMetalNumBonds( at, n ) && 0 == num_of_H( at, n ) &&
-                            ion_el_group( at[n].el_number) == EL_NUMBER_O) /* djb-rwth: ignoring LLVM warning: variable used */
+                        if (1 == nNoMetalNumBonds(at, n) && 0 == num_of_H(at, n) &&
+                            ion_el_group(at[n].el_number) == EL_NUMBER_O) /* djb-rwth: ignoring LLVM warning: variable used */
                         {
                             if (BOND_TYPE_SINGLE == at[i].bond_type[i1] &&
-                                 -1 == at[n].charge)
+                                -1 == at[n].charge)
                             {
                                 ord_OM[num_OM++] = i1;
                             }
                             else if (BOND_TYPE_DOUBLE == at[n].bond_type[0] &&
-                                      0 == at[n].charge)
+                                     0 == at[n].charge)
                             {
                                 num_O++;
                             }
@@ -1171,13 +1199,13 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         }
                     }
                     if (num_OM > 0 && num_O > 0 && !num_O_other &&
-                         0 <= ( i1 = nFindOneOM( at, i, ord_OM, num_OM ) ))
+                        0 <= (i1 = nFindOneOM(at, i, ord_OM, num_OM)))
                     {
                         /* remove charges and increase bond order */
                         n = at[i].neighbor[i1];
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
                         at[i].charge--;
@@ -1208,21 +1236,21 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
 
             for (i = 0; i < num_atoms && 0 < num_P_IV_plus /*&& 0 < num_N_plus*/ && 0 < num_O_minus; i++)
             {
-                if (1 == at[i].charge && 4 == nNoMetalNumBonds( at, i ) &&
-                     4 == nNoMetalBondsValence( at, i ) &&
-                     at[i].el_number != EL_NUMBER_N && ion_el_group( at[i].el_number ) == EL_NUMBER_N)
+                if (1 == at[i].charge && 4 == nNoMetalNumBonds(at, i) &&
+                    4 == nNoMetalBondsValence(at, i) &&
+                    at[i].el_number != EL_NUMBER_N && ion_el_group(at[i].el_number) == EL_NUMBER_N)
                 {
                     int num_OM = 0, ord_OM[4]; /* -O(-) */
-                                               /*int num_O  = 0;*/ /* =O    */
-                    /* djb-rwth: removing redundant variables */
+                    /*int num_O  = 0;*/        /* =O    */
+                                               /* djb-rwth: removing redundant variables */
                     for (i1 = 0; i1 < at[i].valence; i1++)
                     {
                         n = at[i].neighbor[i1];
-                        if (1 == nNoMetalNumBonds( at, n ) && 0 == num_of_H( at, n ) &&
-                            ion_el_group( at[n].el_number) == EL_NUMBER_O) /* djb-rwth: ignoring LLVM warning: variable used */
+                        if (1 == nNoMetalNumBonds(at, n) && 0 == num_of_H(at, n) &&
+                            ion_el_group(at[n].el_number) == EL_NUMBER_O) /* djb-rwth: ignoring LLVM warning: variable used */
                         {
                             if (BOND_TYPE_SINGLE == at[i].bond_type[i1] &&
-                                 -1 == at[n].charge)
+                                -1 == at[n].charge)
                             {
                                 ord_OM[num_OM++] = i1;
                                 /*
@@ -1236,13 +1264,13 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         }
                     }
                     if (num_OM > 0 /*&& num_O > 0 && !num_O_other*/ &&
-                         0 <= ( i1 = nFindOneOM( at, i, ord_OM, num_OM ) ))
+                        0 <= (i1 = nFindOneOM(at, i, ord_OM, num_OM)))
                     {
                         /* remove charges and increase bond order */
                         n = at[i].neighbor[i1];
-                        i2 = is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor;
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        i2 = is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor;
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
                         at[i].charge--;
@@ -1259,7 +1287,6 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
             }
 #endif /* FIX_P_IV_Plus_O_Minus */
         }
-
 
         /*-------------------------------------------------------------------------
         Terminal pair types: 2,3,4,5,6,7,8,9   N=N,P,As,Sb; O=O,S,Se,Te; C=C,Si
@@ -1279,39 +1306,39 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
         {
             for (i = 0; i < num_atoms && 0 < num_All; i++)
             {
-                if (0 == at[i].charge && 1 == nNoMetalNumBonds( at, i ) && 2 == nNoMetalBondsValence( at, i ) &&
-                     0 == num_of_H( at, i ) &&
-                     ion_el_group( at[i].el_number ) == EL_NUMBER_O &&
-                     0 <= ( i1 = nNoMetalNeighIndex( at, i ) ) &&
-                     at[i].bond_type[i1] <= BOND_TYPE_TRIPLE)
+                if (0 == at[i].charge && 1 == nNoMetalNumBonds(at, i) && 2 == nNoMetalBondsValence(at, i) &&
+                    0 == num_of_H(at, i) &&
+                    ion_el_group(at[i].el_number) == EL_NUMBER_O &&
+                    0 <= (i1 = nNoMetalNeighIndex(at, i)) &&
+                    at[i].bond_type[i1] <= BOND_TYPE_TRIPLE)
                 {
                     /* terminal O= */
                     n = at[i].neighbor[i1];
-                    if (( !type || type == 2 ) && 0 < num_C_II)
+                    if ((!type || type == 2) && 0 < num_C_II)
                     {
                         /* avoid alternating bonds */
                         if (0 == at[n].charge &&
-                             2 == nNoMetalNumBonds( at, n ) && 3 == nNoMetalBondsValence( at, n ) &&
-                             0 == num_of_H( at, n ) &&
-                             ion_el_group( at[n].el_number ) == EL_NUMBER_N &&
-                             0 <= ( i2 = nNoMetalOtherNeighIndex( at, n, i ) ) &&
-                             at[n].bond_type[i2] <= BOND_TYPE_TRIPLE)
+                            2 == nNoMetalNumBonds(at, n) && 3 == nNoMetalBondsValence(at, n) &&
+                            0 == num_of_H(at, n) &&
+                            ion_el_group(at[n].el_number) == EL_NUMBER_N &&
+                            0 <= (i2 = nNoMetalOtherNeighIndex(at, n, i)) &&
+                            at[n].bond_type[i2] <= BOND_TYPE_TRIPLE)
                         {
                             /* i2 = index of opposite to at[i] neighbor of at[n] */
                             /*i2 = (at[n].neighbor[0] == i);*/
                             n2 = at[n].neighbor[i2];
                             if (0 == at[n2].charge &&
-                                 2 == at[n2].valence && 2 == at[n2].chem_bonds_valence &&
-                                 0 == num_of_H( at, n2 ) &&
-                                 ion_el_group( at[n2].el_number ) == EL_NUMBER_C)
+                                2 == at[n2].valence && 2 == at[n2].chem_bonds_valence &&
+                                0 == num_of_H(at, n2) &&
+                                ion_el_group(at[n2].el_number) == EL_NUMBER_C)
                             {
                                 /*       i n n2     */
                                 /* found O=N-C(II)- */
                                 /* convert O=N-C(II)-     => O=N#C- */
 
-                                i3 = ( at[n2].neighbor[0] != n ); /* index of at[n] neighbor of n2 */
-                                at[n].chem_bonds_valence = 5; /* N */
-                                at[n2].chem_bonds_valence = 4; /* C */
+                                i3 = (at[n2].neighbor[0] != n); /* index of at[n] neighbor of n2 */
+                                at[n].chem_bonds_valence = 5;   /* N */
+                                at[n2].chem_bonds_valence = 4;  /* C */
                                 at[n].bond_type[i2] = BOND_TYPE_TRIPLE;
                                 at[n2].bond_type[i3] = BOND_TYPE_TRIPLE;
                                 at[n2].radical = 0;
@@ -1323,28 +1350,28 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         }
                     }
 
-                    if (( !type || type == 3 ) && 0 < num_O_plus && 0 < num_C_minus)
+                    if ((!type || type == 3) && 0 < num_O_plus && 0 < num_C_minus)
                     {
-                        if (1 == at[n].charge && 2 == nNoMetalNumBonds( at, n ) && 3 == nNoMetalBondsValence( at, n ) &&
-                             0 == num_of_H( at, n ) &&
-                             ion_el_group( at[n].el_number ) == EL_NUMBER_O &&
-                             0 <= ( i2 = nNoMetalOtherNeighIndex( at, n, i ) ) &&
-                             at[n].bond_type[i2] <= BOND_TYPE_TRIPLE)
+                        if (1 == at[n].charge && 2 == nNoMetalNumBonds(at, n) && 3 == nNoMetalBondsValence(at, n) &&
+                            0 == num_of_H(at, n) &&
+                            ion_el_group(at[n].el_number) == EL_NUMBER_O &&
+                            0 <= (i2 = nNoMetalOtherNeighIndex(at, n, i)) &&
+                            at[n].bond_type[i2] <= BOND_TYPE_TRIPLE)
                         {
                             /* found O=O(+)- */
                             /* i2 = index of opposite to at[i] neighbor of at[n] */
                             /*i2 = (at[n].neighbor[0] == i);*/
                             n2 = at[n].neighbor[i2];
-                            if (-1 == at[n2].charge && 3 >= nNoMetalNumBonds( at, n2 ) && 3 == nNoMetalBondsValence( at, n2 ) + NUMH( at, n2 ) &&
-                                 ion_el_group( at[n2].el_number ) == EL_NUMBER_C)
+                            if (-1 == at[n2].charge && 3 >= nNoMetalNumBonds(at, n2) && 3 == nNoMetalBondsValence(at, n2) + NUMH(at, n2) &&
+                                ion_el_group(at[n2].el_number) == EL_NUMBER_C)
                             {
                                 /*             i n    n2        */
                                 /* found found O=O(+)-C(-)(III) */
                                 /* convert O=O(+)-C(-)(III)     => O=O=C(IV) */
-                                i3 = ( at[n2].neighbor[0] != n ); /* index of at[n] neighbor of n2 */
+                                i3 = (at[n2].neighbor[0] != n); /* index of at[n] neighbor of n2 */
                                 at[n].charge--;
                                 at[n2].charge++;
-                                at[n].chem_bonds_valence += 1; /* =O- => =O= */
+                                at[n].chem_bonds_valence += 1;  /* =O- => =O= */
                                 at[n2].chem_bonds_valence += 1; /* -C  => =C  */
                                 at[n].bond_type[i2] = BOND_TYPE_DOUBLE;
                                 at[n2].bond_type[i3] = BOND_TYPE_DOUBLE;
@@ -1359,33 +1386,33 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                 }
 
                 else if (-1 == at[i].charge &&
-                          0 < num_O_minus + num_N_minus &&
-                          0 < num_N_plus + num_O_plus + num_C_plus &&
-                          1 == nNoMetalNumBonds( at, i ) && 1 == nNoMetalBondsValence( at, i ) &&
-                          0 == num_of_H( at, i ) &&
-                          ion_el_group( at[i].el_number ) == EL_NUMBER_O &&
-                          0 <= ( i1 = nNoMetalNeighIndex( at, i ) ) &&
-                          at[i].bond_type[i1] <= BOND_TYPE_TRIPLE)
+                         0 < num_O_minus + num_N_minus &&
+                         0 < num_N_plus + num_O_plus + num_C_plus &&
+                         1 == nNoMetalNumBonds(at, i) && 1 == nNoMetalBondsValence(at, i) &&
+                         0 == num_of_H(at, i) &&
+                         ion_el_group(at[i].el_number) == EL_NUMBER_O &&
+                         0 <= (i1 = nNoMetalNeighIndex(at, i)) &&
+                         at[i].bond_type[i1] <= BOND_TYPE_TRIPLE)
                 {
                     /* terminal O(-)- */
                     n = at[i].neighbor[i1];
 
-                    if (( !type || type == 4 ) && 0 < num_O_minus && 0 < num_N_plus && /* O(-)-N(+)(IV) */
-                         1 == at[n].charge && 3 >= nNoMetalNumBonds( at, n ) && 4 == nNoMetalBondsValence( at, n ) &&
-                         0 == num_of_H( at, n ) &&
-                         ion_el_group( at[n].el_number ) == EL_NUMBER_N /* except >O(+)- */
-                         )
+                    if ((!type || type == 4) && 0 < num_O_minus && 0 < num_N_plus && /* O(-)-N(+)(IV) */
+                        1 == at[n].charge && 3 >= nNoMetalNumBonds(at, n) && 4 == nNoMetalBondsValence(at, n) &&
+                        0 == num_of_H(at, n) &&
+                        ion_el_group(at[n].el_number) == EL_NUMBER_N /* except >O(+)- */
+                    )
                     {
                         /* found O(-)-N(+)(IV) */
                         /* convert O(-)-N(+)(IV)     => O=N(V)  */
 
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor ); /* index of at[i] neighbor of at[n] */
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor); /* index of at[i] neighbor of at[n] */
                         at[i].charge++;
                         at[n].charge--;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         num_changes++;
                         num_O_minus--;
                         num_N_plus--;
@@ -1393,22 +1420,22 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         continue;
                     }
 
-                    if (( !type || type == 5 ) && 0 < num_O_minus && 0 < num_O_plus &&/* O(-)-O(+)(III) */
-                         1 == at[n].charge && 3 >= nNoMetalNumBonds( at, n ) && 3 == nNoMetalBondsValence( at, n ) &&
-                         0 == num_of_H( at, n ) &&
-                         ion_el_group( at[n].el_number ) == EL_NUMBER_O /* except >O(+)- */
-                         )
+                    if ((!type || type == 5) && 0 < num_O_minus && 0 < num_O_plus && /* O(-)-O(+)(III) */
+                        1 == at[n].charge && 3 >= nNoMetalNumBonds(at, n) && 3 == nNoMetalBondsValence(at, n) &&
+                        0 == num_of_H(at, n) &&
+                        ion_el_group(at[n].el_number) == EL_NUMBER_O /* except >O(+)- */
+                    )
                     {
                         /* found  O(+)(III) */
                         /* convert O(-)-O(+)(III)    => O=O(IV) */
 
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor ); /* index of at[i] neighbor of at[n] */
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor); /* index of at[i] neighbor of at[n] */
                         at[i].charge++;
                         at[n].charge--;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         num_changes++;
                         num_O_minus--;
                         num_O_plus--;
@@ -1417,33 +1444,33 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     }
 
                     /* i    n n2        */
-                    if (( !type || type == 6 ) && /* O(-)-O-C(+)(III) */
-                         0 < num_O_minus && 0 < num_C_plus &&
-                         0 == at[n].charge && 2 == nNoMetalNumBonds( at, n ) && 2 == nNoMetalBondsValence( at, n ) &&
-                         0 == num_of_H( at, n ) &&
-                         ion_el_group( at[n].el_number ) == EL_NUMBER_O &&
-                         0 <= ( i2 = nNoMetalOtherNeighIndex( at, n, i ) ) &&
-                         at[n].bond_type[i2] <= BOND_TYPE_TRIPLE)
+                    if ((!type || type == 6) && /* O(-)-O-C(+)(III) */
+                        0 < num_O_minus && 0 < num_C_plus &&
+                        0 == at[n].charge && 2 == nNoMetalNumBonds(at, n) && 2 == nNoMetalBondsValence(at, n) &&
+                        0 == num_of_H(at, n) &&
+                        ion_el_group(at[n].el_number) == EL_NUMBER_O &&
+                        0 <= (i2 = nNoMetalOtherNeighIndex(at, n, i)) &&
+                        at[n].bond_type[i2] <= BOND_TYPE_TRIPLE)
                     {
                         /* found O(-)-O- */
                         /* i2 = index of opposite to at[i] neighbor of at[n] */
                         /*i2 = (at[n].neighbor[0] == i);*/
                         n2 = at[n].neighbor[i2];
-                        if (1 == at[n2].charge && 3 >= nNoMetalNumBonds( at, n2 ) &&
-                             3 == nNoMetalBondsValence( at, n2 ) + NUMH( at, n2 ) &&
-                             ion_el_group( at[n2].el_number ) == EL_NUMBER_C)
+                        if (1 == at[n2].charge && 3 >= nNoMetalNumBonds(at, n2) &&
+                            3 == nNoMetalBondsValence(at, n2) + NUMH(at, n2) &&
+                            ion_el_group(at[n2].el_number) == EL_NUMBER_C)
                         {
                             /*       i    n n2  */
                             /* found O(-)-O-C(+)(III) */
                             /* convert O(-)-O-C(+)(III)     => O=O=C(IV) */
                             /*i3 = (at[n2].neighbor[0] != n);*/ /* i3 = index of at[n] neighbor of at[n2] */
-                            i3 = (int) ( is_in_the_list( at[n2].neighbor, (AT_NUMB) n, at[n2].valence ) - at[n2].neighbor );
+                            i3 = (int)(is_in_the_list(at[n2].neighbor, (AT_NUMB)n, at[n2].valence) - at[n2].neighbor);
                             /*i4 = index of at[i] in the adjacency list of at[n] */
-                            i4 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i4 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].charge++;
                             at[n2].charge--;
-                            at[i].chem_bonds_valence += 1; /* O-  => O=  */
-                            at[n].chem_bonds_valence += 2; /* -O- => =O= */
+                            at[i].chem_bonds_valence += 1;  /* O-  => O=  */
+                            at[n].chem_bonds_valence += 2;  /* -O- => =O= */
                             at[n2].chem_bonds_valence += 1; /* -C  => =C  */
                             at[i].bond_type[i1] = BOND_TYPE_DOUBLE;
                             at[n].bond_type[i4] = BOND_TYPE_DOUBLE;
@@ -1458,70 +1485,70 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     }
                 }
                 else if (-1 == at[i].charge && 0 < num_N_minus && 0 < num_N_plus + num_O_plus + num_C_plus &&
-                          1 == nNoMetalNumBonds( at, i ) && 2 == nNoMetalBondsValence( at, i ) + NUMH( at, i ) &&
-                          /*0 == num_of_H( at, i ) &&*/
-                          ion_el_group( at[i].el_number ) == EL_NUMBER_N &&
-                          0 <= ( i1 = nNoMetalNeighIndex( at, i ) ) &&
-                          at[i].bond_type[i1] <= BOND_TYPE_TRIPLE)
+                         1 == nNoMetalNumBonds(at, i) && 2 == nNoMetalBondsValence(at, i) + NUMH(at, i) &&
+                         /*0 == num_of_H( at, i ) &&*/
+                         ion_el_group(at[i].el_number) == EL_NUMBER_N &&
+                         0 <= (i1 = nNoMetalNeighIndex(at, i)) &&
+                         at[i].bond_type[i1] <= BOND_TYPE_TRIPLE)
                 {
                     /* terminal N(-)= */
                     n = at[i].neighbor[i1 = 0];
-                    if (( !type || type == 7 ) && 0 < num_N_plus && /* N(-)=N(+)(IV) */
-                         1 == at[n].charge && 3 >= nNoMetalNumBonds( at, n ) && 4 == nNoMetalBondsValence( at, n ) &&
-                         0 == num_of_H( at, n ) &&
-                         ion_el_group( at[n].el_number ) == EL_NUMBER_N)
+                    if ((!type || type == 7) && 0 < num_N_plus && /* N(-)=N(+)(IV) */
+                        1 == at[n].charge && 3 >= nNoMetalNumBonds(at, n) && 4 == nNoMetalBondsValence(at, n) &&
+                        0 == num_of_H(at, n) &&
+                        ion_el_group(at[n].el_number) == EL_NUMBER_N)
                     {
                         /* found N(-)-N(+)(IV) */
                         /* convert N(-)=N(+)(IV)     => N#N(V)  */
 
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor ); /* index of at[i] neighbor of at[n] */
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor); /* index of at[i] neighbor of at[n] */
                         at[i].charge++;
                         at[n].charge--;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         num_changes++;
                         num_N_minus--;
                         num_N_plus--;
                         num_All -= 2;
                         continue;
                     }
-                    if (( !type || type == 8 ) && 0 < num_O_plus && /* N(-)=O(+)(III) */
-                         1 == at[n].charge && 2 == nNoMetalNumBonds( at, n ) && 3 == nNoMetalBondsValence( at, n ) &&
-                         0 == num_of_H( at, n ) &&
-                         ion_el_group( at[n].el_number ) == EL_NUMBER_O)
+                    if ((!type || type == 8) && 0 < num_O_plus && /* N(-)=O(+)(III) */
+                        1 == at[n].charge && 2 == nNoMetalNumBonds(at, n) && 3 == nNoMetalBondsValence(at, n) &&
+                        0 == num_of_H(at, n) &&
+                        ion_el_group(at[n].el_number) == EL_NUMBER_O)
                     {
                         /* found N(-)-O(+)(III) */
                         /* convert N(-)=O(+)(III)    => N#O(IV)- */
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor ); /* index of at[i] neighbor of at[n] */
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor); /* index of at[i] neighbor of at[n] */
                         at[i].charge++;
                         at[n].charge--;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         num_changes++;
                         num_N_minus--;
                         num_O_plus--;
                         num_All -= 2;
                         continue;
                     }
-                    if (( !type || type == 9 ) && 0 < num_C_plus && /* N(-)=C(+)(III) */
-                         1 == at[n].charge && 2 == at[n].valence && 3 == at[n].chem_bonds_valence &&
-                         0 == num_of_H( at, n ) &&
-                         ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                    if ((!type || type == 9) && 0 < num_C_plus && /* N(-)=C(+)(III) */
+                        1 == at[n].charge && 2 == at[n].valence && 3 == at[n].chem_bonds_valence &&
+                        0 == num_of_H(at, n) &&
+                        ion_el_group(at[n].el_number) == EL_NUMBER_C)
                     {
                         /* found N(-)=C(+)(III) */
                         /* convert N(-)=C(+)(III)    => N#C(IV)- */
 
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor ); /* index of at[i] neighbor of at[n] */
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor); /* index of at[i] neighbor of at[n] */
                         at[i].charge++;
                         at[n].charge--;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         num_changes++;
                         num_N_minus--;
                         num_C_plus--;
@@ -1552,22 +1579,22 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
             for (i = 0; i < num_atoms && 0 < num_All; i++)
             {
                 if (1 == at[i].charge &&
-                     0 < num_N_plus + num_O_plus && 0 < num_C_minus + num_N_minus &&
-                     4 >= nNoMetalNumBonds( at, i ) && 4 == nNoMetalBondsValence( at, i ) &&
-                     0 == num_of_H( at, i ) &&
-                     ion_el_group( at[i].el_number ) == EL_NUMBER_N)
+                    0 < num_N_plus + num_O_plus && 0 < num_C_minus + num_N_minus &&
+                    4 >= nNoMetalNumBonds(at, i) && 4 == nNoMetalBondsValence(at, i) &&
+                    0 == num_of_H(at, i) &&
+                    ion_el_group(at[i].el_number) == EL_NUMBER_N)
                 {
                     /* found non-terminal N(+)(IV) */
-                    if (( !type || 10 == type ) && 0 < num_N_plus && 0 < num_C_minus)
+                    if ((!type || 10 == type) && 0 < num_N_plus && 0 < num_C_minus)
                     {
                         int num_neigh = 0, pos_neigh = -1;
                         for (i1 = 0; i1 < at[i].valence; i1++)
                         {
                             n = at[i].neighbor[i1];
-                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH( at, n ) &&
-                                 /*0 == at[n].num_H &&*/
-                                 at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
-                                 ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH(at, n) &&
+                                /*0 == at[n].num_H &&*/
+                                at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
+                                ion_el_group(at[n].el_number) == EL_NUMBER_C)
                             {
                                 /* found N(+)(IV)-C(-)(III); prepare conversion to N(V)=C(IV) */
                                 num_neigh++;
@@ -1576,18 +1603,18 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         }
                         i1 = pos_neigh;
                         if (1 == num_neigh &&
-                             at[i].bond_type[i1] <= BOND_TYPE_TRIPLE &&
-                             !has_other_ion_neigh( at, i, n = at[i].neighbor[i1] ) &&
-                             !has_other_ion_neigh( at, n, i ))
+                            at[i].bond_type[i1] <= BOND_TYPE_TRIPLE &&
+                            !has_other_ion_neigh(at, i, n = at[i].neighbor[i1]) &&
+                            !has_other_ion_neigh(at, n, i))
                         {
                             /*n = at[i].neighbor[i1=pos_neigh];*/
-                            i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].charge--;
                             at[n].charge++;
                             at[i].chem_bonds_valence++;
                             at[n].chem_bonds_valence++;
-                            at[i].bond_type[i1] ++;
-                            at[n].bond_type[i2] ++;
+                            at[i].bond_type[i1]++;
+                            at[n].bond_type[i2]++;
                             num_changes++;
                             num_C_minus--;
                             num_N_plus--;
@@ -1595,16 +1622,16 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             continue;
                         }
                     }
-                    if (( !type || 11 == type ) && 0 < num_N_plus && 0 < num_C_minus)
+                    if ((!type || 11 == type) && 0 < num_N_plus && 0 < num_C_minus)
                     {
                         int num_neigh = 0, pos_neigh = -1;
                         for (i1 = 0; i1 < at[i].valence; i1++)
                         {
                             n = at[i].neighbor[i1];
-                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH( at, n ) &&
-                                 /*0 == at[n].num_H &&*/
-                                 at[i].bond_type[i1] == BOND_TYPE_DOUBLE &&
-                                 ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH(at, n) &&
+                                /*0 == at[n].num_H &&*/
+                                at[i].bond_type[i1] == BOND_TYPE_DOUBLE &&
+                                ion_el_group(at[n].el_number) == EL_NUMBER_C)
                             {
                                 /* found N(+)(IV)=C(-)(III); prepare conversion to N(V)#C(IV) */
                                 num_neigh++;
@@ -1612,17 +1639,17 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             }
                         }
                         if (1 == num_neigh &&
-                             !has_other_ion_neigh( at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
-                             !has_other_ion_neigh( at, n, i))
+                            !has_other_ion_neigh(at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
+                            !has_other_ion_neigh(at, n, i))
                         {
                             /*n = at[i].neighbor[i1=pos_neigh];*/
-                            i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].charge--;
                             at[n].charge++;
                             at[i].chem_bonds_valence++;
                             at[n].chem_bonds_valence++;
-                            at[i].bond_type[i1] ++;
-                            at[n].bond_type[i2] ++;
+                            at[i].bond_type[i1]++;
+                            at[n].bond_type[i2]++;
                             num_changes++;
                             num_C_minus--;
                             num_N_plus--;
@@ -1636,11 +1663,11 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         for (i1 = 0; i1 < at[i].valence; i1++)
                         {
                             n = at[i].neighbor[i1];
-                            if (-1 == at[n].charge && 2 >= nNoMetalNumBonds( at, n ) &&
-                                 2 == nNoMetalBondsValence( at, n ) + NUMH( at, n ) &&
-                                 /*0 == num_of_H( at, n ) &&*/
-                                 at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
-                                 ion_el_group( at[n].el_number ) == EL_NUMBER_N)
+                            if (-1 == at[n].charge && 2 >= nNoMetalNumBonds(at, n) &&
+                                2 == nNoMetalBondsValence(at, n) + NUMH(at, n) &&
+                                /*0 == num_of_H( at, n ) &&*/
+                                at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
+                                ion_el_group(at[n].el_number) == EL_NUMBER_N)
                             {
                                 /* found N(+)(IV)=N(-)(II); prepare conversion to N(V)#N(III) */
                                 num_neigh++;
@@ -1648,17 +1675,17 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             }
                         }
                         if (1 == num_neigh &&
-                             !has_other_ion_neigh( at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
-                             !has_other_ion_neigh( at, n, i))
+                            !has_other_ion_neigh(at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
+                            !has_other_ion_neigh(at, n, i))
                         {
                             /*n = at[i].neighbor[i1=pos_neigh];*/
-                            i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].charge--;
                             at[n].charge++;
                             at[i].chem_bonds_valence++;
                             at[n].chem_bonds_valence++;
-                            at[i].bond_type[i1] ++;
-                            at[n].bond_type[i2] ++;
+                            at[i].bond_type[i1]++;
+                            at[n].bond_type[i2]++;
                             num_changes++;
                             num_N_minus--;
                             num_N_plus--;
@@ -1668,22 +1695,22 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     }
                 }
                 else if (1 == at[i].charge &&
-                          0 < num_O_plus && 0 < num_C_minus + num_N_minus &&
-                          3 >= nNoMetalNumBonds( at, i ) && 3 == nNoMetalBondsValence( at, i ) &&
-                          0 == num_of_H( at, i ) &&
-                          ion_el_group( at[i].el_number ) == EL_NUMBER_O)
+                         0 < num_O_plus && 0 < num_C_minus + num_N_minus &&
+                         3 >= nNoMetalNumBonds(at, i) && 3 == nNoMetalBondsValence(at, i) &&
+                         0 == num_of_H(at, i) &&
+                         ion_el_group(at[i].el_number) == EL_NUMBER_O)
                 {
                     /* found non-terminal O(+)(III) */
-                    if (( !type || 13 == type ) && 0 < num_C_minus)
+                    if ((!type || 13 == type) && 0 < num_C_minus)
                     {
                         int num_neigh = 0, pos_neigh = -1;
                         for (i1 = 0; i1 < at[i].valence; i1++)
                         {
                             n = at[i].neighbor[i1];
-                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH( at, n ) &&
-                                 /*0 == at[n].num_H &&*/
-                                 at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
-                                 ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH(at, n) &&
+                                /*0 == at[n].num_H &&*/
+                                at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
+                                ion_el_group(at[n].el_number) == EL_NUMBER_C)
                             {
                                 /* found O(+)(III)-C(-)(II); prepare conversion to O(IV)=C(IV) */
                                 num_neigh++;
@@ -1691,17 +1718,17 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             }
                         }
                         if (1 == num_neigh &&
-                             !has_other_ion_neigh( at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
-                             !has_other_ion_neigh( at, n, i))
+                            !has_other_ion_neigh(at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
+                            !has_other_ion_neigh(at, n, i))
                         {
                             /*n = at[i].neighbor[i1=pos_neigh];*/
-                            i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].charge--;
                             at[n].charge++;
                             at[i].chem_bonds_valence++;
                             at[n].chem_bonds_valence++;
-                            at[i].bond_type[i1] ++;
-                            at[n].bond_type[i2] ++;
+                            at[i].bond_type[i1]++;
+                            at[n].bond_type[i2]++;
                             num_changes++;
                             num_C_minus--;
                             num_O_plus--;
@@ -1709,16 +1736,16 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             continue;
                         }
                     }
-                    if (( !type || 14 == type ) && 0 < num_C_minus)
+                    if ((!type || 14 == type) && 0 < num_C_minus)
                     {
                         int num_neigh = 0, pos_neigh = -1;
                         for (i1 = 0; i1 < at[i].valence; i1++)
                         {
                             n = at[i].neighbor[i1];
-                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH( at, n ) &&
-                                 /*0 == at[n].num_H &&*/
-                                 at[i].bond_type[i1] == BOND_TYPE_DOUBLE &&
-                                 ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                            if (-1 == at[n].charge && 3 >= at[n].valence && 3 == at[n].chem_bonds_valence + NUMH(at, n) &&
+                                /*0 == at[n].num_H &&*/
+                                at[i].bond_type[i1] == BOND_TYPE_DOUBLE &&
+                                ion_el_group(at[n].el_number) == EL_NUMBER_C)
                             {
                                 /* found O(+)(III)=C(-)(III); prepare conversion to O(IV)#C(IV) */
                                 num_neigh++;
@@ -1726,17 +1753,17 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             }
                         }
                         if (1 == num_neigh &&
-                             !has_other_ion_neigh( at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
-                             !has_other_ion_neigh( at, n, i))
+                            !has_other_ion_neigh(at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
+                            !has_other_ion_neigh(at, n, i))
                         {
                             /*n = at[i].neighbor[i1=pos_neigh];*/
-                            i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].charge--;
                             at[n].charge++;
                             at[i].chem_bonds_valence++;
                             at[n].chem_bonds_valence++;
-                            at[i].bond_type[i1] ++;
-                            at[n].bond_type[i2] ++;
+                            at[i].bond_type[i1]++;
+                            at[n].bond_type[i2]++;
                             num_changes++;
                             num_C_minus--;
                             num_O_plus--;
@@ -1744,17 +1771,17 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             continue;
                         }
                     }
-                    if (( !type || 15 == type ) && 0 < num_N_minus)
+                    if ((!type || 15 == type) && 0 < num_N_minus)
                     {
                         int num_neigh = 0, pos_neigh = -1;
                         for (i1 = 0; i1 < at[i].valence; i1++)
                         {
                             n = at[i].neighbor[i1];
-                            if (-1 == at[n].charge && 2 >= nNoMetalNumBonds( at, n ) &&
-                                 2 == nNoMetalBondsValence( at, n ) + NUMH( at, n ) &&
-                                 /*0 == num_of_H( at, n ) &&*/
-                                 at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
-                                 ion_el_group( at[n].el_number ) == EL_NUMBER_N)
+                            if (-1 == at[n].charge && 2 >= nNoMetalNumBonds(at, n) &&
+                                2 == nNoMetalBondsValence(at, n) + NUMH(at, n) &&
+                                /*0 == num_of_H( at, n ) &&*/
+                                at[i].bond_type[i1] == BOND_TYPE_SINGLE &&
+                                ion_el_group(at[n].el_number) == EL_NUMBER_N)
                             {
                                 /* found O(+)(III)=N(-)(II); prepare conversion to O(IV)#N(III) */
                                 num_neigh++;
@@ -1762,17 +1789,17 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             }
                         }
                         if (1 == num_neigh &&
-                             !has_other_ion_neigh( at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
-                             !has_other_ion_neigh( at, n, i))
+                            !has_other_ion_neigh(at, i, n = at[i].neighbor[i1 = pos_neigh]) &&
+                            !has_other_ion_neigh(at, n, i))
                         {
                             /*n = at[i].neighbor[i1=pos_neigh];*/
-                            i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].charge--;
                             at[n].charge++;
                             at[i].chem_bonds_valence++;
                             at[n].chem_bonds_valence++;
-                            at[i].bond_type[i1] ++;
-                            at[n].bond_type[i2] ++;
+                            at[i].bond_type[i1]++;
+                            at[n].bond_type[i2]++;
                             num_changes++;
                             num_N_minus--;
                             num_O_plus--;
@@ -1799,42 +1826,42 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
 
         */
 
-        if (( !type || 16 == type ) && 0 < num_C_plus && 0 < num_N_minus)
+        if ((!type || 16 == type) && 0 < num_C_plus && 0 < num_N_minus)
         {
             int m[2], j[2], k;
             for (i = 0; i < num_atoms; i++)
             {
-                if (0 == at[i].charge && 2 == nNoMetalNumBonds( at, i ) && 2 == nNoMetalBondsValence( at, i ) &&
-                     0 == num_of_H( at, i ) &&
-                     0 <= ( j[0] = nNoMetalNeighIndex( at, i ) ) &&
-                     at[m[0] = at[i].neighbor[j[0]]].charge &&
-                     0 <= ( j[1] = nNoMetalOtherNeighIndex( at, i, m[0] ) ) &&
-                     0 == at[m[0]].charge + at[m[1] = at[i].neighbor[j[1]]].charge &&
-                     5 >= nNoMetalBondsValence( at, m[0] ) + nNoMetalBondsValence( at, m[1] ) &&
-                     /*5 >= at[m[0]].chem_bonds_valence + at[m[1]].chem_bonds_valence &&*/
-                     ion_el_group( at[i].el_number ) == EL_NUMBER_O)
+                if (0 == at[i].charge && 2 == nNoMetalNumBonds(at, i) && 2 == nNoMetalBondsValence(at, i) &&
+                    0 == num_of_H(at, i) &&
+                    0 <= (j[0] = nNoMetalNeighIndex(at, i)) &&
+                    at[m[0] = at[i].neighbor[j[0]]].charge &&
+                    0 <= (j[1] = nNoMetalOtherNeighIndex(at, i, m[0])) &&
+                    0 == at[m[0]].charge + at[m[1] = at[i].neighbor[j[1]]].charge &&
+                    5 >= nNoMetalBondsValence(at, m[0]) + nNoMetalBondsValence(at, m[1]) &&
+                    /*5 >= at[m[0]].chem_bonds_valence + at[m[1]].chem_bonds_valence &&*/
+                    ion_el_group(at[i].el_number) == EL_NUMBER_O)
                 {
                     /* found non-terminal A(+)-O-B(-); chem_bond_val of A+B <= 5 */
                     int n_N = -1, n_C = -1, i_C = -1;
                     for (k = 0; k < 2; k++)
                     {
                         n = m[k];
-                        if (-1 == at[n].charge && 2 == nNoMetalNumBonds( at, n ) + NUMH( at, n ) &&
-                             /*0 == num_of_H( at, n ) &&*/
-                             ion_el_group( at[n].el_number ) == EL_NUMBER_N)
+                        if (-1 == at[n].charge && 2 == nNoMetalNumBonds(at, n) + NUMH(at, n) &&
+                            /*0 == num_of_H( at, n ) &&*/
+                            ion_el_group(at[n].el_number) == EL_NUMBER_N)
                         {
                             n_N = n;
                         }
-                        else if (1 == at[n].charge && 3 == at[n].chem_bonds_valence + NUMH( at, n ) &&
-                                  ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                        else if (1 == at[n].charge && 3 == at[n].chem_bonds_valence + NUMH(at, n) &&
+                                 ion_el_group(at[n].el_number) == EL_NUMBER_C)
                         {
                             n_C = n;
                             i_C = k;
                         }
                     }
                     if (n_C < 0 || n_N < 0 ||
-                         has_other_ion_in_sphere_2( at, n_C, n_N) ||
-                         has_other_ion_in_sphere_2( at, n_N, n_C))
+                        has_other_ion_in_sphere_2(at, n_C, n_N) ||
+                        has_other_ion_in_sphere_2(at, n_N, n_C))
                     {
                         continue;
                     }
@@ -1844,12 +1871,12 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     {
                         n = k ? n_C : n_N;
                         i1 = k ? j[i_C] : j[1 - i_C];
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
-                        at[n].charge += ( k ? -1 : 1 );
+                        at[n].charge += (k ? -1 : 1);
                     }
                     num_changes++;
                     num_N_minus--;
@@ -1859,24 +1886,20 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
             }
         }
 
-        if (( !type || 17 == type ) && 0 < num_C_plus && 0 < num_C_minus)
+        if ((!type || 17 == type) && 0 < num_C_plus && 0 < num_C_minus)
         {
             int m[3], c[3], j[3], k;
             for (i = 0; i < num_atoms; i++)
             {
-                if (0 == at[i].charge && 3 == nNoMetalNumBonds( at, i ) && 3 == nNoMetalBondsValence( at, i ) &&
-                     0 == num_of_H( at, i ) &&
-                     0 <= ( j[0] = nNoMetalNeighIndex( at, i ) ) &&
-                     0 <= ( j[1] = nNoMetalOtherNeighIndex( at, i, m[0] = at[i].neighbor[j[0]] ) ) &&
-                     0 <= ( j[2] = nNoMetalOtherNeighIndex2( at, i, m[0], m[1] = at[i].neighbor[j[1]] ) ) &&
-                     1 == !( c[0] = at[m[0]].charge )
-                     + !( c[1] = at[m[1]].charge )
-                     + !( c[2] = at[m[2] = at[i].neighbor[j[2]]].charge ) &&
-                     0 == c[0] + c[1] + c[2] &&
-                     2 == ( 3 == ( c[0] ? at[m[0]].chem_bonds_valence + NUMH( at, m[0] ) : 0 ) )
-                     + ( 3 == ( c[1] ? at[m[1]].chem_bonds_valence + NUMH( at, m[1] ) : 0 ) )
-                     + ( 3 == ( c[2] ? at[m[2]].chem_bonds_valence + NUMH( at, m[2] ) : 0 ) ) &&
-                     ion_el_group( at[i].el_number ) == EL_NUMBER_N)
+                if (0 == at[i].charge && 3 == nNoMetalNumBonds(at, i) && 3 == nNoMetalBondsValence(at, i) &&
+                    0 == num_of_H(at, i) &&
+                    0 <= (j[0] = nNoMetalNeighIndex(at, i)) &&
+                    0 <= (j[1] = nNoMetalOtherNeighIndex(at, i, m[0] = at[i].neighbor[j[0]])) &&
+                    0 <= (j[2] = nNoMetalOtherNeighIndex2(at, i, m[0], m[1] = at[i].neighbor[j[1]])) &&
+                    1 == !(c[0] = at[m[0]].charge) + !(c[1] = at[m[1]].charge) + !(c[2] = at[m[2] = at[i].neighbor[j[2]]].charge) &&
+                    0 == c[0] + c[1] + c[2] &&
+                    2 == (3 == (c[0] ? at[m[0]].chem_bonds_valence + NUMH(at, m[0]) : 0)) + (3 == (c[1] ? at[m[1]].chem_bonds_valence + NUMH(at, m[1]) : 0)) + (3 == (c[2] ? at[m[2]].chem_bonds_valence + NUMH(at, m[2]) : 0)) &&
+                    ion_el_group(at[i].el_number) == EL_NUMBER_N)
                 {
                     /* found non-terminal A(+)-O-B(-) */
                     int n_Cp = -1, n_Cm = -1, i_Cp = -1, i_Cm = -1; /* p = positive, m = negatice ion C */
@@ -1886,13 +1909,13 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         {
                             n = m[k];
                             if (-1 == at[n].charge &&
-                                 ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                                ion_el_group(at[n].el_number) == EL_NUMBER_C)
                             {
                                 n_Cm = n;
                                 i_Cm = k;
                             }
                             else if (1 == at[n].charge &&
-                                      ion_el_group( at[n].el_number ) == EL_NUMBER_C)
+                                     ion_el_group(at[n].el_number) == EL_NUMBER_C)
                             {
                                 n_Cp = n;
                                 i_Cp = k;
@@ -1900,8 +1923,8 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         }
                     }
                     if (n_Cp < 0 || n_Cm < 0 ||
-                         has_other_ion_in_sphere_2( at, n_Cp, n_Cm) ||
-                         has_other_ion_in_sphere_2( at, n_Cm, n_Cp))
+                        has_other_ion_in_sphere_2(at, n_Cp, n_Cm) ||
+                        has_other_ion_in_sphere_2(at, n_Cm, n_Cp))
                     {
                         continue;
                     }
@@ -1912,12 +1935,12 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     {
                         n = k ? n_Cp : n_Cm;
                         i1 = k ? j[i_Cp] : j[i_Cm];
-                        i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
-                        at[i].bond_type[i1] ++;
-                        at[n].bond_type[i2] ++;
+                        i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
+                        at[i].bond_type[i1]++;
+                        at[n].bond_type[i2]++;
                         at[i].chem_bonds_valence++;
                         at[n].chem_bonds_valence++;
-                        at[n].charge += ( k ? -1 : 1 );
+                        at[n].charge += (k ? -1 : 1);
                     }
                     num_changes++;
                     num_C_minus--;
@@ -1927,23 +1950,21 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
             }
         }
 
-        if (( !type || 18 == type ) && ( (0 < num_C_plus && 0 < num_C_minus) || 0 < num_C_II )) /* djb-rwth: addressing LLVM warning */
+        if ((!type || 18 == type) && ((0 < num_C_plus && 0 < num_C_minus) || 0 < num_C_II)) /* djb-rwth: addressing LLVM warning */
         {
             int m[2], v[2], j[2], k;
             for (i = 0; i < num_atoms; i++)
             {
-                if (0 == at[i].charge && 2 == nNoMetalNumBonds( at, i ) && 3 == nNoMetalBondsValence( at, i ) &&
-                     0 == num_of_H( at, i ) &&
-                     0 <= ( j[0] = nNoMetalNeighIndex( at, i ) ) &&
-                     0 <= ( j[1] = nNoMetalOtherNeighIndex( at, i, m[0] = at[i].neighbor[j[0]] ) ) &&
-                     0 == at[m[0]].charge
-                     + at[m[1] = at[i].neighbor[j[1]]].charge &&
-                     6 == ( v[0] = at[m[0]].chem_bonds_valence + NUMH( at, m[0] ) )
-                     + ( v[1] = at[m[1]].chem_bonds_valence + NUMH( at, m[1] ) ) &&
-                     2 >= abs( v[0] - v[1] ) &&
-                     ion_el_group( at[i].el_number ) == EL_NUMBER_N &&
-                     ion_el_group( at[m[0]].el_number ) == EL_NUMBER_C &&
-                     ion_el_group( at[m[1]].el_number ) == EL_NUMBER_C)
+                if (0 == at[i].charge && 2 == nNoMetalNumBonds(at, i) && 3 == nNoMetalBondsValence(at, i) &&
+                    0 == num_of_H(at, i) &&
+                    0 <= (j[0] = nNoMetalNeighIndex(at, i)) &&
+                    0 <= (j[1] = nNoMetalOtherNeighIndex(at, i, m[0] = at[i].neighbor[j[0]])) &&
+                    0 == at[m[0]].charge + at[m[1] = at[i].neighbor[j[1]]].charge &&
+                    6 == (v[0] = at[m[0]].chem_bonds_valence + NUMH(at, m[0])) + (v[1] = at[m[1]].chem_bonds_valence + NUMH(at, m[1])) &&
+                    2 >= abs(v[0] - v[1]) &&
+                    ion_el_group(at[i].el_number) == EL_NUMBER_N &&
+                    ion_el_group(at[m[0]].el_number) == EL_NUMBER_C &&
+                    ion_el_group(at[m[1]].el_number) == EL_NUMBER_C)
                 {
                     /*                    n_Cm      i n_Cp */
                     /* found non-terminal C(-)(III)-N=C(+)(III) or C(IV)=N-C(II): Cm-N-Cp */
@@ -1963,7 +1984,7 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                             i_Cp = k;
                         }
                     }
-                    if (n_Cp < 0 || n_Cm < 0 || at[n_Cp].valence + NUMH( at, n_Cp ) != 2)
+                    if (n_Cp < 0 || n_Cm < 0 || at[n_Cp].valence + NUMH(at, n_Cp) != 2)
                     {
                         continue; /* guarantees at[n_Cp].valence <= 2 */
                     }
@@ -1973,7 +1994,7 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                         {
                             /* neighbor of at[n_Cp] opposite to at[i] */
                             k = at[n_Cp].neighbor[at[n_Cp].neighbor[0] == i];
-                            if (ion_el_group( at[k].el_number ) == EL_NUMBER_N)
+                            if (ion_el_group(at[k].el_number) == EL_NUMBER_N)
                             {
                                 continue;
                             }
@@ -1981,8 +2002,8 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     }
                     else if (at[n_Cp].charge)
                     {
-                        if (has_other_ion_in_sphere_2( at, n_Cp, n_Cm) ||
-                             has_other_ion_in_sphere_2( at, n_Cm, n_Cp))
+                        if (has_other_ion_in_sphere_2(at, n_Cp, n_Cm) ||
+                            has_other_ion_in_sphere_2(at, n_Cm, n_Cp))
                         {
                             continue;
                         }
@@ -2010,14 +2031,14 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
                     for (k = 0; k < 2; k++)
                     {
                         n = k ? n_Cp : n_Cm;
-                        i3 = k ? i_Cp : i_Cm; /* added to fix the bug */
-                                              /*i1 = k? j[i_Cp] : j[i_Cm];*/ /* replaced with next line */
+                        i3 = k ? i_Cp : i_Cm;          /* added to fix the bug */
+                        /*i1 = k? j[i_Cp] : j[i_Cm];*/ /* replaced with next line */
                         i1 = j[i3];
                         if (v[i3 /*was i1*/] < 4)
                         {
                             /* WDI found a bug here: bounds violation */
                             int delta = 4 - v[i3 /*was i1*/];
-                            i2 = (int) ( is_in_the_list( at[n].neighbor, (AT_NUMB) i, at[n].valence ) - at[n].neighbor );
+                            i2 = (int)(is_in_the_list(at[n].neighbor, (AT_NUMB)i, at[n].valence) - at[n].neighbor);
                             at[i].bond_type[i1] += delta;
                             at[n].bond_type[i2] += delta;
                             at[i].chem_bonds_valence += delta;
@@ -2037,19 +2058,15 @@ int remove_ion_pairs( int num_atoms, inp_ATOM *at )
     return num_changes;
 }
 
-
-
-
 /*#if ( DISCONNECT_SALTS == 1 )*/ /* { */
 
-
-                                  /****************************************************************************/
-int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
+/****************************************************************************/
+int RemoveInpAtBond(inp_ATOM *atom, int iat, int k)
 {
-    int      i, j, m, m2; /* djb-rwth: removing redundant variables */
+    int i, j, m, m2; /* djb-rwth: removing redundant variables */
     inp_ATOM *at = atom + iat;
     inp_ATOM *at2 = NULL;
-    int      val = at->valence - 1;
+    int val = at->valence - 1;
 
     if (val >= 0)
     {
@@ -2057,7 +2074,7 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
         if (bond > BOND_TYPE_TRIPLE)
             bond = BOND_TYPE_SINGLE; /* added 08-06-2003 */
 
-                                     /* update CML tetrahedral atom parity. */
+        /* update CML tetrahedral atom parity. */
         if (at->p_parity)
         {
             for (m = 0; m < MAX_NUM_STEREO_ATOM_NEIGH; m++)
@@ -2073,7 +2090,7 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
                 /* p_orig_at_num is a fixed size array of MAX_NUM_STEREO_ATOM_NEIGH (4) elements */
                 for (m = 0; m < at->valence && m < MAX_NUM_STEREO_ATOM_NEIGH; m++) /* djb-rwth: fixing GH PR #72 */
                 {
-                    if (atom[(int) at->neighbor[k]].orig_at_number == at->p_orig_at_num[m])
+                    if (atom[(int)at->neighbor[k]].orig_at_number == at->p_orig_at_num[m])
                     {
                         break;
                     }
@@ -2089,19 +2106,18 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
             }
         }
 
-
         /* update CML stereogenic bond parities; at this point no removed explicit H exist yet */
         if (at->sb_parity[0])
         {
-            for (m = 0; m < MAX_NUM_STEREO_BONDS && at->sb_parity[m]; )
+            for (m = 0; m < MAX_NUM_STEREO_BONDS && at->sb_parity[m];)
             {
-                if (k == at->sb_ord[m] || (k == at->sn_ord[m] && val < 2 && ATOM_PARITY_WELL_DEF( at->sb_parity[m] ))) /* djb-rwth: addressing LLVM warning */
+                if (k == at->sb_ord[m] || (k == at->sn_ord[m] && val < 2 && ATOM_PARITY_WELL_DEF(at->sb_parity[m]))) /* djb-rwth: addressing LLVM warning */
                 {
                     /* !!! FLAW: does take into account removed H !!! */
                     /* stereogenic bond is being removed OR */
                     /* remove stereogenic bond because its only neighbor is being removed */
                     int pnxt_atom, pinxt2cur, pinxt_sb_parity_ord;
-                    int len = get_opposite_sb_atom( atom, iat, at->sb_ord[m], &pnxt_atom, &pinxt2cur, &pinxt_sb_parity_ord );
+                    int len = get_opposite_sb_atom(atom, iat, at->sb_ord[m], &pnxt_atom, &pinxt2cur, &pinxt_sb_parity_ord);
                     if (len)
                     {
                         i = pinxt_sb_parity_ord;
@@ -2126,9 +2142,9 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
                         /* remove bond parity from at */
                         if (m < MAX_NUM_STEREO_BONDS - 1)
                         {
-                            memmove(at->sb_parity + m, at->sb_parity + m + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m) * sizeof(at->sb_parity[0])); /* djb-rwth: cast operator added */
-                            memmove(at->sb_ord + m, at->sb_ord + m + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m) * sizeof(at->sb_ord[0])); /* djb-rwth: cast operator added */
-                            memmove(at->sn_ord + m, at->sn_ord + m + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m) * sizeof(at->sn_ord[0])); /* djb-rwth: cast operator added */
+                            memmove(at->sb_parity + m, at->sb_parity + m + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m) * sizeof(at->sb_parity[0]));                /* djb-rwth: cast operator added */
+                            memmove(at->sb_ord + m, at->sb_ord + m + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m) * sizeof(at->sb_ord[0]));                         /* djb-rwth: cast operator added */
+                            memmove(at->sn_ord + m, at->sn_ord + m + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m) * sizeof(at->sn_ord[0]));                         /* djb-rwth: cast operator added */
                             memmove(at->sn_orig_at_num + m, at->sn_orig_at_num + m + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m) * sizeof(at->sn_orig_at_num[0])); /* djb-rwth: cast operator added */
                         }
                         at->sb_parity[MAX_NUM_STEREO_BONDS - 1] = 0;
@@ -2138,9 +2154,9 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
                         /* remove bond parity from at2 */
                         if (m2 < MAX_NUM_STEREO_BONDS - 1)
                         {
-                            memmove(at2->sb_parity + m2, at2->sb_parity + m2 + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m2) * sizeof(at2->sb_parity[0])); /* djb-rwth: cast operator added */
-                            memmove(at2->sb_ord + m2, at2->sb_ord + m2 + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m2) * sizeof(at2->sb_ord[0])); /* djb-rwth: cast operator added */
-                            memmove(at2->sn_ord + m2, at2->sn_ord + m2 + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m2) * sizeof(at2->sn_ord[0])); /* djb-rwth: cast operator added */
+                            memmove(at2->sb_parity + m2, at2->sb_parity + m2 + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m2) * sizeof(at2->sb_parity[0]));                /* djb-rwth: cast operator added */
+                            memmove(at2->sb_ord + m2, at2->sb_ord + m2 + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m2) * sizeof(at2->sb_ord[0]));                         /* djb-rwth: cast operator added */
+                            memmove(at2->sn_ord + m2, at2->sn_ord + m2 + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m2) * sizeof(at2->sn_ord[0]));                         /* djb-rwth: cast operator added */
                             memmove(at2->sn_orig_at_num + m2, at2->sn_orig_at_num + m2 + 1, (MAX_NUM_STEREO_BONDS - 1 - (long long)m2) * sizeof(at2->sn_orig_at_num[0])); /* djb-rwth: cast operator added */
                         }
                         at2->sb_parity[MAX_NUM_STEREO_BONDS - 1] = 0;
@@ -2169,31 +2185,31 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
 
                     /* i is the position of the neighbor that will become a new neighbor */
                     /***************************************************************************
-                    *  at->sb_parity[m] is the direction (EVEN=clockwise, ODD=counterclockwise)
-                    *  from stereobond to the neighbor. If the neighbor is removed then
-                    *  the parity should invert, otherwise it should be unchanged.
-                    ***************************************************************************/
+                     *  at->sb_parity[m] is the direction (EVEN=clockwise, ODD=counterclockwise)
+                     *  from stereobond to the neighbor. If the neighbor is removed then
+                     *  the parity should invert, otherwise it should be unchanged.
+                     ***************************************************************************/
                     if (i < 0)
                     {
                         /* no alternative neighbor is available */
-                        if (ATOM_PARITY_WELL_DEF( at->sb_parity[m] ))
+                        if (ATOM_PARITY_WELL_DEF(at->sb_parity[m]))
                         {
                             /* parity cannot be not well-defined anymore */
                             int pnxt_atom, pinxt2cur, pinxt_sb_parity_ord;
-                            int len = get_opposite_sb_atom( atom, iat, at->sb_ord[m], &pnxt_atom, &pinxt2cur, &pinxt_sb_parity_ord );
+                            int len = get_opposite_sb_atom(atom, iat, at->sb_ord[m], &pnxt_atom, &pinxt2cur, &pinxt_sb_parity_ord);
                             if (len > 0)
                             {
                                 atom[pnxt_atom].sb_parity[pinxt_sb_parity_ord] = at->sb_parity[m] = AB_PARITY_UNDF;
                             }
                         }
-                        at->sn_ord[m] = -99; /* sb neighbor has been disconnected */
-                        at->sb_ord[m] -= ( at->sb_ord[m] > k ); /* same as above */
+                        at->sn_ord[m] = -99;                  /* sb neighbor has been disconnected */
+                        at->sb_ord[m] -= (at->sb_ord[m] > k); /* same as above */
                         at->sn_orig_at_num[m] = 0;
                     }
                     else if (i < at->valence)
                     {
                         /* choose another stereogenic bond neighbor, its ord. number is i before bond removal */
-                        if (ATOM_PARITY_WELL_DEF( at->sb_parity[m] ))
+                        if (ATOM_PARITY_WELL_DEF(at->sb_parity[m]))
                         {
                             /* ALL WRONG: 'move' previous stereo bond neighbor to the last position (pos. 2 out of 0,1,2) */
                             /* the parity of the transpositions is (2 - at->sn_ord[m])%2 = at->sn_ord[m] % 2 */
@@ -2206,9 +2222,9 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
                             /*=== parity should be INVERTED ===*/
                             at->sb_parity[m] = 3 - at->sb_parity[m];
                         }
-                        at->sn_ord[m] = i - ( i > k ); /* ord. number shifted because preceding bond is removed */
-                        at->sb_ord[m] -= ( at->sb_ord[m] > k ); /* same as above */
-                        at->sn_orig_at_num[m] = atom[(int) at->neighbor[i]].orig_at_number;
+                        at->sn_ord[m] = i - (i > k);          /* ord. number shifted because preceding bond is removed */
+                        at->sb_ord[m] -= (at->sb_ord[m] > k); /* same as above */
+                        at->sn_orig_at_num[m] = atom[(int)at->neighbor[i]].orig_at_number;
                         /*at->sb_parity[m]      =  2 - ( at->sb_parity[m] + 1 ) % 2;*/
                     }
                     else
@@ -2220,19 +2236,19 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
                 else
                 {
                     /* removing another neighbor, k: first move it to the last position (pos. 2 out of 0,1,2) */
-                    if (k < 2 && ATOM_PARITY_WELL_DEF( at->sb_parity[m] ))
+                    if (k < 2 && ATOM_PARITY_WELL_DEF(at->sb_parity[m]))
                     {
                         /*at->sb_parity[m] =  2 - ( at->sb_parity[m] + k ) % 2;*/
                         /*at->sb_parity[m] =  2 - ( at->sb_parity[m] + (at->sn_ord[m] > k) + (at->sb_ord[m] > k) ) % 2;*/
-                        ;/*==== Parity should remain UNCHANGED ===*/
+                        ; /*==== Parity should remain UNCHANGED ===*/
                     }
                     if (at->sb_ord[m] > k)
                     {
-                        at->sb_ord[m] --;
+                        at->sb_ord[m]--;
                     }
                     if (at->sn_ord[m] > k)
                     {
-                        at->sn_ord[m] --;
+                        at->sn_ord[m]--;
                     }
                     m++;
                 }
@@ -2241,9 +2257,9 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
 
         if (k < val)
         {
-            memmove(at->neighbor + k, at->neighbor + k + 1, sizeof(at->neighbor[0])* ((long long)val - (long long)k)); /* djb-rwth: cast operators added */
-            memmove(at->bond_stereo + k, at->bond_stereo + k + 1, sizeof(at->bond_stereo[0])* ((long long)val - (long long)k)); /* djb-rwth: cast operators added */
-            memmove(at->bond_type + k, at->bond_type + k + 1, sizeof(at->bond_type[0])* ((long long)val - (long long)k)); /* djb-rwth: cast operators added */
+            memmove(at->neighbor + k, at->neighbor + k + 1, sizeof(at->neighbor[0]) * ((long long)val - (long long)k));          /* djb-rwth: cast operators added */
+            memmove(at->bond_stereo + k, at->bond_stereo + k + 1, sizeof(at->bond_stereo[0]) * ((long long)val - (long long)k)); /* djb-rwth: cast operators added */
+            memmove(at->bond_type + k, at->bond_type + k + 1, sizeof(at->bond_type[0]) * ((long long)val - (long long)k));       /* djb-rwth: cast operators added */
         }
 
         at->neighbor[val] = 0;
@@ -2257,12 +2273,11 @@ int RemoveInpAtBond( inp_ATOM *atom, int iat, int k )
     return 0;
 }
 
-
 /****************************************************************************/
-int DisconnectInpAtBond( inp_ATOM *at,
-                         AT_NUMB *nOldCompNumber,
-                         int iat,
-                         int neigh_ord )
+int DisconnectInpAtBond(inp_ATOM *at,
+                        AT_NUMB *nOldCompNumber,
+                        int iat,
+                        int neigh_ord)
 {
     int neigh, i, ret = 0;
     int component;
@@ -2270,7 +2285,7 @@ int DisconnectInpAtBond( inp_ATOM *at,
 
     for (i = 0; i < at[neigh].valence; i++)
     {
-        if (iat == (int) at[neigh].neighbor[i])
+        if (iat == (int)at[neigh].neighbor[i])
         {
             break;
         }
@@ -2278,8 +2293,8 @@ int DisconnectInpAtBond( inp_ATOM *at,
 
     if (i < at[neigh].valence)
     {
-        ret += RemoveInpAtBond( at, iat, neigh_ord );
-        ret += RemoveInpAtBond( at, neigh, i );
+        ret += RemoveInpAtBond(at, iat, neigh_ord);
+        ret += RemoveInpAtBond(at, neigh, i);
         if (nOldCompNumber && ret)
         {
             if ((component = at[iat].component)) /* djb-rwth: addressing LLVM warning */
@@ -2293,16 +2308,15 @@ int DisconnectInpAtBond( inp_ATOM *at,
         }
     }
 
-    return ( ret == 2 );
+    return (ret == 2);
 }
 
-
 /****************************************************************************/
-int bIsAmmoniumSalt( inp_ATOM *at,
-                     int i,
-                     int *piO,
-                     int *pk,
-                     S_CHAR *num_explicit_H )
+int bIsAmmoniumSalt(inp_ATOM *at,
+                    int i,
+                    int *piO,
+                    int *pk,
+                    S_CHAR *num_explicit_H)
 {
     /* NH4(+charge)-O(-charge)-C -> NH3 + HO-C; any charge including 0, */
     /* any C except charged or radical F, Cl, Br, I                     */
@@ -2317,29 +2331,29 @@ int bIsAmmoniumSalt( inp_ATOM *at,
 
     /* check for NH4-O-C... -> NH3 + HO-C... */
     val = at[i].valence;
-    num_impl_iso_H = NUM_ISO_H( at, i );
+    num_impl_iso_H = NUM_ISO_H(at, i);
     num_non_iso_H = at[i].num_H;
     num_H = num_non_iso_H + num_impl_iso_H;
     if (val + num_H == 5)
     {
         int num_O = 0;
-        memset( num_explicit_H, 0, ( NUM_H_ISOTOPES + 1 ) * sizeof( num_explicit_H[0] ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+        memset(num_explicit_H, 0, (NUM_H_ISOTOPES + 1) * sizeof(num_explicit_H[0])); /* djb-rwth: memset_s C11/Annex K variant? */
         for (j = 0; j < val; j++)
         { /* looking for O: H4N-O-C... */
             neigh = at[i].neighbor[j];
             if (at[neigh].num_H ||
-                 (at[neigh].charge && ( at[neigh].el_number != EL_NUMBER_O || at[neigh].charge + at[i].charge )) ||
-                 (at[neigh].radical && at[neigh].radical != RADICAL_SINGLET)) /* djb-rwth: addressing LLVM warnings */
+                (at[neigh].charge && (at[neigh].el_number != EL_NUMBER_O || at[neigh].charge + at[i].charge)) ||
+                (at[neigh].radical && at[neigh].radical != RADICAL_SINGLET)) /* djb-rwth: addressing LLVM warnings */
             {
                 bDisconnect = 0;
                 break; /* reject */
             }
             if (at[neigh].el_number == EL_NUMBER_H && at[neigh].valence == 1 &&
-                 !at[neigh].charge && !at[neigh].radical)
+                !at[neigh].charge && !at[neigh].radical)
             {
                 num_H++; /* at this point at[].num_H does not include explicit H count */
-                num_non_iso_H += ( 0 == at[neigh].iso_atw_diff );
-                num_explicit_H[at[neigh].iso_atw_diff] ++;  /* explicit H on N */
+                num_non_iso_H += (0 == at[neigh].iso_atw_diff);
+                num_explicit_H[at[neigh].iso_atw_diff]++; /* explicit H on N */
             }
             else if (at[neigh].el_number == EL_NUMBER_O && at[neigh].valence == 2 && !num_O)
             {
@@ -2348,22 +2362,23 @@ int bIsAmmoniumSalt( inp_ATOM *at,
                 k = j;
                 iC = at[iO].neighbor[at[iO].neighbor[0] == i];
                 if (at[iC].el_number != EL_NUMBER_C || /*
-                                                       at[iC].num_H ||
-                                                       at[iC].chem_bonds_valence != 4 || */
-                     at[iC].charge ||
-                     (at[iC].radical && at[iC].radical != RADICAL_SINGLET) /*||
-                                                                         at[iC].valence == at[iC].chem_bonds_valence*/) /* djb-rwth: addressing LLVM warning */
+                                                      at[iC].num_H ||
+                                                      at[iC].chem_bonds_valence != 4 || */
+                    at[iC].charge ||
+                    (at[iC].radical && at[iC].radical != RADICAL_SINGLET) /*||
+                                                                        at[iC].valence == at[iC].chem_bonds_valence*/
+                    )                                                     /* djb-rwth: addressing LLVM warning */
                 {
                     bDisconnect = 0;
                     break; /* reject */
                 }
             }
-            else if (( at[neigh].el_number == EL_NUMBER_F ||
-                       at[neigh].el_number == EL_NUMBER_CL ||
-                       at[neigh].el_number == EL_NUMBER_BR ||
-                       at[neigh].el_number == EL_NUMBER_I ) &&
-                      at[neigh].valence == 1 && at[neigh].chem_bonds_valence == 1 &&
-                      !at[neigh].charge && !NUMH( at, neigh ) && !num_O)
+            else if ((at[neigh].el_number == EL_NUMBER_F ||
+                      at[neigh].el_number == EL_NUMBER_CL ||
+                      at[neigh].el_number == EL_NUMBER_BR ||
+                      at[neigh].el_number == EL_NUMBER_I) &&
+                     at[neigh].valence == 1 && at[neigh].chem_bonds_valence == 1 &&
+                     !at[neigh].charge && !NUMH(at, neigh) && !num_O)
             {
                 num_O++; /* found O: N-O- */
                 iO = neigh;
@@ -2373,10 +2388,10 @@ int bIsAmmoniumSalt( inp_ATOM *at,
             else
             {
                 bDisconnect = 0;
-                break;  /* reject */
+                break; /* reject */
             }
         }
-        if (bDisconnect && ( num_O != 1 || num_H != 4 ))
+        if (bDisconnect && (num_O != 1 || num_H != 4))
         {
             bDisconnect = 0; /* reject */
         }
@@ -2394,13 +2409,12 @@ int bIsAmmoniumSalt( inp_ATOM *at,
     return bDisconnect;
 }
 
-
 /****************************************************************************/
-int DisconnectAmmoniumSalt( inp_ATOM *at,
-                            int iN,
-                            int iO,
-                            int k,
-                            S_CHAR *num_explicit_H )
+int DisconnectAmmoniumSalt(inp_ATOM *at,
+                           int iN,
+                           int iO,
+                           int k,
+                           S_CHAR *num_explicit_H)
 {
 
     /* disconnect NH4-O from O */
@@ -2408,17 +2422,17 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
 
     int nMove_H_iso_diff = -1; /* do not move explicit H */
     int j, neigh, iso_diff, neigh_pos;
-    int    val = at[iN].valence;
+    int val = at[iN].valence;
 
-    if (at[iN].charge && !( at[iN].charge + at[iO].charge ))
+    if (at[iN].charge && !(at[iN].charge + at[iO].charge))
     {
         at[iN].charge = at[iO].charge = 0; /* remove charges */
     }
 
-    neigh_pos = ( at[iO].valence == 2 ) ? ( at[iO].neighbor[1] == iN ) : 0; /* position of at[iN] in the neigh list of iO */
-                                                                            /* disconnect bond O-N */
-    RemoveInpAtBond( at, iO, neigh_pos );
-    RemoveInpAtBond( at, iN, k );
+    neigh_pos = (at[iO].valence == 2) ? (at[iO].neighbor[1] == iN) : 0; /* position of at[iN] in the neigh list of iO */
+    /* disconnect bond O-N */
+    RemoveInpAtBond(at, iO, neigh_pos);
+    RemoveInpAtBond(at, iN, k);
     val--;
 
     /* move 1 H from NH4 to O- or Cl */
@@ -2431,7 +2445,7 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
             /* find non-isotopic H */
             if (at[iN].num_H)
             {
-                at[iN].num_H--;  /* move non-isotopic implicit H */
+                at[iN].num_H--; /* move non-isotopic implicit H */
                 at[iO].num_H++;
                 break;
             }
@@ -2447,8 +2461,8 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
             /* num_iso_H has length NUM_H_ISOTOPES; do not access out-of-bounds */
             if ((iso_diff < NUM_H_ISOTOPES) && at[iN].num_iso_H[iso_diff]) /* djb-rwth: fixing GH PR #72 */
             {
-                at[iN].num_iso_H[iso_diff] --; /* move implicit isotopic H, atw = 1 */
-                at[iO].num_iso_H[iso_diff] ++;
+                at[iN].num_iso_H[iso_diff]--; /* move implicit isotopic H, atw = 1 */
+                at[iO].num_iso_H[iso_diff]++;
                 break;
             }
             else
@@ -2466,16 +2480,16 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
     {
         /* move explicit H, it is isotopic if nMove_H_iso_diff > 0 */
         double dist2_H_O, min_dist2_H_O = -1.0;
-        int    jH = -1, iH = -1;
+        int jH = -1, iH = -1;
         for (j = 0; j < val; j++)
         { /* looking H in N-H such that H-O is shortest */
             neigh = at[iN].neighbor[j];
             if (at[neigh].el_number == EL_NUMBER_H &&
-                 at[neigh].iso_atw_diff == nMove_H_iso_diff)
+                at[neigh].iso_atw_diff == nMove_H_iso_diff)
             {
-                dist2_H_O = ( at[neigh].x - at[iO].x ) * ( at[neigh].x - at[iO].x ) +
-                    ( at[neigh].y - at[iO].y ) * ( at[neigh].y - at[iO].y ) +
-                    ( at[neigh].z - at[iO].z ) * ( at[neigh].z - at[iO].z );
+                dist2_H_O = (at[neigh].x - at[iO].x) * (at[neigh].x - at[iO].x) +
+                            (at[neigh].y - at[iO].y) * (at[neigh].y - at[iO].y) +
+                            (at[neigh].z - at[iO].z) * (at[neigh].z - at[iO].z);
                 if (min_dist2_H_O < 0.0 || min_dist2_H_O > dist2_H_O)
                 {
                     min_dist2_H_O = dist2_H_O;
@@ -2496,7 +2510,7 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
         at[iH].bond_stereo[0] = 0;
 
         /* disconnect H from N */
-        RemoveInpAtBond( at, iN, jH );
+        RemoveInpAtBond(at, iN, jH);
         val--;
         if (k > jH)
         {
@@ -2507,23 +2521,22 @@ int DisconnectAmmoniumSalt( inp_ATOM *at,
     return 1;
 }
 
-
 /****************************************************************************/
-int bIsMetalSalt( inp_ATOM *at, int i )
+int bIsMetalSalt(inp_ATOM *at, int i)
 {
     int type, val, k, iO, iC, j, neigh;
     int bDisconnect = 1;
 
     /* check for a metal atom:
     metal atom should be connected and be a metal */
-    if (!( val = at[i].valence ) ||
-         !( type = get_el_type( at[i].el_number ) ) ||
-         !( type & IS_METAL ))
+    if (!(val = at[i].valence) ||
+        !(type = get_el_type(at[i].el_number)) ||
+        !(type & IS_METAL))
     {
-        bDisconnect = 0;  /* reject */
+        bDisconnect = 0; /* reject */
     }
     else if (at[i].num_H)
-        /* metal atom should not have adjacent H or multiple bonds or radical */
+    /* metal atom should not have adjacent H or multiple bonds or radical */
     {
         bDisconnect = 0; /* reject */
     }
@@ -2531,10 +2544,10 @@ int bIsMetalSalt( inp_ATOM *at, int i )
     {
         /* check valence */
         if ((at[i].charge == 0 &&
-            ( (( type & 1 ) && val == get_el_valence( at[i].el_number, 0, 0 )) ||
-             (( type & 2 ) && val == get_el_valence( at[i].el_number, 0, 1 ) ))) ||
-             (at[i].charge > 0 &&
-             ( type & 1 ) && val == get_el_valence( at[i].el_number, at[i].charge, 0 ))) /* djb-rwth: addressing LLVM warnings */
+             (((type & 1) && val == get_el_valence(at[i].el_number, 0, 0)) ||
+              ((type & 2) && val == get_el_valence(at[i].el_number, 0, 1)))) ||
+            (at[i].charge > 0 &&
+             (type & 1) && val == get_el_valence(at[i].el_number, at[i].charge, 0))) /* djb-rwth: addressing LLVM warnings */
         {
             ; /* accept */
         }
@@ -2547,20 +2560,20 @@ int bIsMetalSalt( inp_ATOM *at, int i )
     if (bDisconnect)
     {
         /*************************************************************************
-        *                                                                  |    *
-        * check M neighbors. Disconnect if all neighbors are M-O-C# or M-O-C=   *
-        *                                                                  |    *
-        *************************************************************************/
+         *                                                                  |    *
+         * check M neighbors. Disconnect if all neighbors are M-O-C# or M-O-C=   *
+         *                                                                  |    *
+         *************************************************************************/
         for (k = 0; k < at[i].valence; k++)
         {
             iO = at[i].neighbor[k];
             /* halogenide 2004-07-08 */
-            if (( at[iO].el_number == EL_NUMBER_F ||
-                  at[iO].el_number == EL_NUMBER_CL ||
-                  at[iO].el_number == EL_NUMBER_BR ||
-                  at[iO].el_number == EL_NUMBER_I ) &&
-                 at[iO].valence == 1 && at[iO].chem_bonds_valence == 1 &&
-                 !at[iO].charge && !( at[iO].radical && at[iO].radical != RADICAL_SINGLET ) && !NUMH( at, iO ))
+            if ((at[iO].el_number == EL_NUMBER_F ||
+                 at[iO].el_number == EL_NUMBER_CL ||
+                 at[iO].el_number == EL_NUMBER_BR ||
+                 at[iO].el_number == EL_NUMBER_I) &&
+                at[iO].valence == 1 && at[iO].chem_bonds_valence == 1 &&
+                !at[iO].charge && !(at[iO].radical && at[iO].radical != RADICAL_SINGLET) && !NUMH(at, iO))
             {
                 ; /* found */
             }
@@ -2568,22 +2581,22 @@ int bIsMetalSalt( inp_ATOM *at, int i )
             {
                 /* -O-C= */
                 if (at[iO].el_number != EL_NUMBER_O ||
-                     NUMH( at, iO ) ||
-                     at[iO].valence != 2 ||
-                     at[iO].charge ||
-                     (at[iO].radical && at[iO].radical != RADICAL_SINGLET) ||
-                     at[iO].valence != at[iO].chem_bonds_valence) /* djb-rwth: addressing LLVM warning */
+                    NUMH(at, iO) ||
+                    at[iO].valence != 2 ||
+                    at[iO].charge ||
+                    (at[iO].radical && at[iO].radical != RADICAL_SINGLET) ||
+                    at[iO].valence != at[iO].chem_bonds_valence) /* djb-rwth: addressing LLVM warning */
                 {
                     bDisconnect = 0; /* reject */
                     break;
                 }
                 iC = at[iO].neighbor[at[iO].neighbor[0] == i];
                 if (at[iC].el_number != EL_NUMBER_C ||
-                     at[iC].num_H ||
-                     at[iC].chem_bonds_valence != 4 ||
-                     at[iC].charge ||
-                     (at[iC].radical && at[iC].radical != RADICAL_SINGLET) ||
-                     at[iC].valence == at[iC].chem_bonds_valence) /* djb-rwth: addressing LLVM warning */
+                    at[iC].num_H ||
+                    at[iC].chem_bonds_valence != 4 ||
+                    at[iC].charge ||
+                    (at[iC].radical && at[iC].radical != RADICAL_SINGLET) ||
+                    at[iC].valence == at[iC].chem_bonds_valence) /* djb-rwth: addressing LLVM warning */
                 {
                     bDisconnect = 0; /* reject */
                     break;
@@ -2608,9 +2621,8 @@ int bIsMetalSalt( inp_ATOM *at, int i )
     return bDisconnect;
 }
 
-
 /****************************************************************************/
-int DisconnectMetalSalt( inp_ATOM *at, int i )
+int DisconnectMetalSalt(inp_ATOM *at, int i)
 {
     int k, iO;
     /* disconnect metal atom or ion at[i] */
@@ -2664,12 +2676,11 @@ int DisconnectMetalSalt( inp_ATOM *at, int i )
     return k;
 }
 
-
 /****************************************************************************/
-int DisconnectSalts( ORIG_ATOM_DATA *orig_inp_data, int bDisconnect )
+int DisconnectSalts(ORIG_ATOM_DATA *orig_inp_data, int bDisconnect)
 {
     int i, k, iO, num_changes, val;
-    S_CHAR    num_explicit_H[NUM_H_ISOTOPES + 1];
+    S_CHAR num_explicit_H[NUM_H_ISOTOPES + 1];
     inp_ATOM *at = orig_inp_data->at;
     int num_at = orig_inp_data->num_inp_atoms;
 
@@ -2677,29 +2688,29 @@ int DisconnectSalts( ORIG_ATOM_DATA *orig_inp_data, int bDisconnect )
     for (i = 0, num_changes = 0; i < num_at; i++)
     {
 
-        if (!( val = at[i].valence ) || /* disconnected atom */
-             val != at[i].chem_bonds_valence || /* a bond has higher multiplicity than 1 */
-             (at[i].radical && at[i].radical != RADICAL_SINGLET) /* radical */) /* djb-rwth: addressing LLVM warning */
+        if (!(val = at[i].valence) ||                                          /* disconnected atom */
+            val != at[i].chem_bonds_valence ||                                 /* a bond has higher multiplicity than 1 */
+            (at[i].radical && at[i].radical != RADICAL_SINGLET) /* radical */) /* djb-rwth: addressing LLVM warning */
         {
-            continue;   /* reject */
+            continue; /* reject */
         }
 
-        if (bIsAmmoniumSalt( at, i, &iO, &k, num_explicit_H ))
+        if (bIsAmmoniumSalt(at, i, &iO, &k, num_explicit_H))
         {
             if (bDisconnect)
             {
-                DisconnectAmmoniumSalt( at, i, iO, k, num_explicit_H );
+                DisconnectAmmoniumSalt(at, i, iO, k, num_explicit_H);
                 orig_inp_data->num_inp_bonds--;
             }
 
             /* count disconnected atoms */
             num_changes++;
         }
-        else if (bIsMetalSalt( at, i ))
+        else if (bIsMetalSalt(at, i))
         {
             if (bDisconnect)
             {
-                k = DisconnectMetalSalt( at, i );
+                k = DisconnectMetalSalt(at, i);
                 orig_inp_data->num_inp_bonds -= k;
             }
             num_changes++;
@@ -2709,7 +2720,6 @@ int DisconnectSalts( ORIG_ATOM_DATA *orig_inp_data, int bDisconnect )
     return num_changes;
 }
 
-
 /*****************************************************************************/
 /* Important: Salt disconnection is independent from coord. disconnection:   */
 /* because different atoms are disconnected.                                 */
@@ -2717,7 +2727,7 @@ int DisconnectSalts( ORIG_ATOM_DATA *orig_inp_data, int bDisconnect )
 /* because metal disconnection may make certain atoms be eligible for salt   */
 /* disconnection                                                             */
 /*****************************************************************************/
-int bIsMetalToDisconnect( inp_ATOM *at, int i, int bCheckMetalValence )
+int bIsMetalToDisconnect(inp_ATOM *at, int i, int bCheckMetalValence)
 {
     int type, at_valence, num_H;
 
@@ -2725,13 +2735,13 @@ int bIsMetalToDisconnect( inp_ATOM *at, int i, int bCheckMetalValence )
     if ( !at[i].valence )
     */
 
-    if (!( type = get_el_type( at[i].el_number ) ) ||
-         !( type & IS_METAL ))
+    if (!(type = get_el_type(at[i].el_number)) ||
+        !(type & IS_METAL))
     {
         return 0;
     }
 
-    num_H = NUMH( at, i );
+    num_H = NUMH(at, i);
     at_valence = num_H + at[i].chem_bonds_valence;
 
     if (!at_valence)
@@ -2741,12 +2751,12 @@ int bIsMetalToDisconnect( inp_ATOM *at, int i, int bCheckMetalValence )
 
     if (bCheckMetalValence)
     {
-        if (abs( at[i].charge ) > 1)
+        if (abs(at[i].charge) > 1)
         {
             return 1; /* multiple charges */
         }
 
-        for (i = 0; i < 2 && ( i & type ); i++)
+        for (i = 0; i < 2 && (i & type); i++)
         {
             if (at_valence == get_el_valence( at[i].el_number, at[i].charge, i )) /* djb-rwth: fixing coverity ID #499532 -- unresolved issue -- revision required */
             {
@@ -2758,14 +2768,13 @@ int bIsMetalToDisconnect( inp_ATOM *at, int i, int bCheckMetalValence )
     return 1;
 }
 
-
 /****************************************************************************/
-int bMayDisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
-                          int bCheckMetalValence,
-                          INCHI_MODE *bTautFlagsDone )
+int bMayDisconnectMetals(ORIG_ATOM_DATA *orig_inp_data,
+                         int bCheckMetalValence,
+                         INCHI_MODE *bTautFlagsDone)
 {
     int i, j, k, iO, num_changes, val, bRadOrMultBonds, num_impl_H = 0;
-    S_CHAR    num_explicit_H[NUM_H_ISOTOPES + 1];
+    S_CHAR num_explicit_H[NUM_H_ISOTOPES + 1];
     inp_ATOM *at = orig_inp_data->at;
     int num_at = orig_inp_data->num_inp_atoms;
     int *nNumImplH = &orig_inp_data->bDisconnectCoord;
@@ -2774,26 +2783,26 @@ int bMayDisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
     for (i = 0, num_changes = 0; i < num_at; i++)
     {
 
-        if (!( val = at[i].valence ) && !NUMH( at, i ))
+        if (!(val = at[i].valence) && !NUMH(at, i))
         {
             continue; /* disconnected atom */
         }
 
-        bRadOrMultBonds = ( val == 0 ) ||
-            ( val != at[i].chem_bonds_valence ) || /* a bond has higher multiplicity than 1 */
-            ( at[i].radical && at[i].radical != RADICAL_SINGLET ); /* radical */
+        bRadOrMultBonds = (val == 0) ||
+                          (val != at[i].chem_bonds_valence) ||                 /* a bond has higher multiplicity than 1 */
+                          (at[i].radical && at[i].radical != RADICAL_SINGLET); /* radical */
 
-        if (!bRadOrMultBonds && bIsAmmoniumSalt( at, i, &iO, &k, num_explicit_H ))
+        if (!bRadOrMultBonds && bIsAmmoniumSalt(at, i, &iO, &k, num_explicit_H))
         {
             ;
         }
-        else if (!bRadOrMultBonds && bIsMetalSalt( at, i ))
+        else if (!bRadOrMultBonds && bIsMetalSalt(at, i))
         {
             ;
         }
-        else if (1 == ( j = bIsMetalToDisconnect( at, i, bCheckMetalValence ) ))
+        else if (1 == (j = bIsMetalToDisconnect(at, i, bCheckMetalValence)))
         {
-            num_impl_H += NUMH( at, i );
+            num_impl_H += NUMH(at, i);
             num_changes++;
         }
         else if (2 == j && bTautFlagsDone)
@@ -2810,26 +2819,23 @@ int bMayDisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
     return num_changes;
 }
 
-
 /****************************************************************************/
 
-
-#if ( bRELEASE_VERSION == 0 && (EXTR_HAS_METAL_ATOM & (EXTR_MASK | EXTR_FLAG) ) )
-
+#if (bRELEASE_VERSION == 0 && (EXTR_HAS_METAL_ATOM & (EXTR_MASK | EXTR_FLAG)))
 
 /****************************************************************************/
-int bHasMetalAtom( ORIG_ATOM_DATA *orig_inp_data )
+int bHasMetalAtom(ORIG_ATOM_DATA *orig_inp_data)
 {
     int i;
     inp_ATOM *at;
 
-    if (orig_inp_data && ( at = orig_inp_data->at ))
+    if (orig_inp_data && (at = orig_inp_data->at))
     {
         int num_at = orig_inp_data->num_inp_atoms;
         /* check each atom */
         for (i = 0; i < num_at; i++)
         {
-            if (IS_METAL & get_el_type( at[i].el_number ))
+            if (IS_METAL & get_el_type(at[i].el_number))
             {
                 return 1;
             }
@@ -2839,8 +2845,6 @@ int bHasMetalAtom( ORIG_ATOM_DATA *orig_inp_data )
     return 0;
 }
 #endif
-
-
 
 /*****************************************************************************
 { "F",   19,  19,  18.998403220,     0 ,  0, {{0,},       {0,},       {1,},       {2,},       {3,5},      },},
@@ -2860,34 +2864,34 @@ int bHasMetalAtom( ORIG_ATOM_DATA *orig_inp_data )
 { "B",   11,  11,  11.009300000,     0 ,  0, {{3,},       {4,},       {3,},       {2,},       {1,},       },},
 *****************************************************************************/
 
-
-
 /****************************************************************************/
-int DisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
-                      int bCheckMetalValence,
-                      INCHI_MODE *bTautFlagsDone )
+int DisconnectMetals(ORIG_ATOM_DATA *orig_inp_data,
+                     int bCheckMetalValence,
+                     INCHI_MODE *bTautFlagsDone)
 {
     int i, j, k, n, iO, num_changes, val, bRadOrMultBonds;
     int num_impl_H, num_at, err, num_disconnected;
     S_CHAR num_explicit_H[NUM_H_ISOTOPES + 1];
-    static char elnumber_Heteroat[16] = { '\0', };
-    static int  num_halogens = 0;
+    static char elnumber_Heteroat[16] = {
+        '\0',
+    };
+    static int num_halogens = 0;
     int num_halogens2;
 
-    inp_ATOM  *at = NULL;
-    S_CHAR    *bMetal = NULL;
-    inp_ATOM  *atom = orig_inp_data->at;
-    int        num_atoms = orig_inp_data->num_inp_atoms;
-    int        nNumExplH = ( orig_inp_data->bDisconnectCoord > 0 ) ? orig_inp_data->bDisconnectCoord - 1 : 0;
-    AT_NUMB   *nOldCompNumber = orig_inp_data->nOldCompNumber;
+    inp_ATOM *at = NULL;
+    S_CHAR *bMetal = NULL;
+    inp_ATOM *atom = orig_inp_data->at;
+    int num_atoms = orig_inp_data->num_inp_atoms;
+    int nNumExplH = (orig_inp_data->bDisconnectCoord > 0) ? orig_inp_data->bDisconnectCoord - 1 : 0;
+    AT_NUMB *nOldCompNumber = orig_inp_data->nOldCompNumber;
 
     err = 0;
     num_impl_H = 0;
     num_at = num_atoms;
     num_disconnected = 0;
 
-    if (!( at = (inp_ATOM *) inchi_calloc( (long long)num_at + (long long)nNumExplH, sizeof( at[0] ) ) ) || /* djb-rwth: cast operators added */
-         !( bMetal = (S_CHAR    *) inchi_calloc( (long long)num_at + (long long)nNumExplH, sizeof( bMetal[0] ) ) )) /* djb-rwth: cast operators added */
+    if (!(at = (inp_ATOM *)inchi_calloc((long long)num_at + (long long)nNumExplH, sizeof(at[0]))) ||     /* djb-rwth: cast operators added */
+        !(bMetal = (S_CHAR *)inchi_calloc((long long)num_at + (long long)nNumExplH, sizeof(bMetal[0])))) /* djb-rwth: cast operators added */
     {
         err = 1;
         goto exit_function;
@@ -2897,23 +2901,23 @@ int DisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
     {
         i = 0;
         /* halogens */
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_F; /* 0 */
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_CL;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_BR;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_I;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_AT; /* 4 */
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_F; /* 0 */
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_CL;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_BR;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_I;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_AT; /* 4 */
         num_halogens2 = i;
         /* other non-metal */
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_N;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_P;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_AS;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_N;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_P;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_AS;
         /*elnumber_Heteroat[i++] = EL_NUMBER_SB;*/ /* metal 10-28-2003 */
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_O;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_S;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_SE;
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_TE;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_O;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_S;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_SE;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_TE;
         /*elnumber_Heteroat[i++] = EL_NUMBER_PO;*/ /* metal 10-28-2003 */
-        elnumber_Heteroat[i++] = (char) EL_NUMBER_B;
+        elnumber_Heteroat[i++] = (char)EL_NUMBER_B;
         elnumber_Heteroat[i++] = 0;
         num_halogens = num_halogens2;
     }
@@ -2923,25 +2927,25 @@ int DisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
     /* check each atom, mark metals */
     for (i = 0, k = 0, num_changes = 0; i < num_atoms; i++)
     {
-        if (!( val = at[i].valence ) && !NUMH( at, i ))
+        if (!(val = at[i].valence) && !NUMH(at, i))
         {
             continue; /* disconnected atom */
         }
-        bRadOrMultBonds = ( val == 0 ) ||
-            ( val != at[i].chem_bonds_valence ) || /* a bond has higher multiplicity than 1 */
-            ( at[i].radical && at[i].radical != RADICAL_SINGLET ); /* radical */
+        bRadOrMultBonds = (val == 0) ||
+                          (val != at[i].chem_bonds_valence) ||                 /* a bond has higher multiplicity than 1 */
+                          (at[i].radical && at[i].radical != RADICAL_SINGLET); /* radical */
 
-        if (!bRadOrMultBonds && bIsAmmoniumSalt( at, i, &iO, &k, num_explicit_H ))
+        if (!bRadOrMultBonds && bIsAmmoniumSalt(at, i, &iO, &k, num_explicit_H))
         {
             ;
         }
-        else if (!bRadOrMultBonds && bIsMetalSalt( at, i ))
+        else if (!bRadOrMultBonds && bIsMetalSalt(at, i))
         {
             ;
         }
-        else if (1 == ( j = bIsMetalToDisconnect( at, i, bCheckMetalValence ) ))
+        else if (1 == (j = bIsMetalToDisconnect(at, i, bCheckMetalValence)))
         {
-            num_impl_H += ( k = NUMH( at, i ) );
+            num_impl_H += (k = NUMH(at, i));
             bMetal[i] = 1 + k;
             num_changes++;
         }
@@ -2975,17 +2979,17 @@ int DisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
                     goto exit_function;
                 }
                 at[num_at].elname[0] = 'H';
-                at[num_at].el_number = get_periodic_table_number( at[num_at].elname );
+                at[num_at].el_number = get_periodic_table_number(at[num_at].elname);
                 at[num_at].iso_atw_diff = k;
                 at[num_at].component = at[i].component;
-                move_explicit_Hcation( at, num_at + 1, i, num_at, 1 );
+                move_explicit_Hcation(at, num_at + 1, i, num_at, 1);
                 at[num_at].orig_at_number = num_at + 1;
                 num_at++;
                 num_impl_H--;
-                bMetal[i] --;
+                bMetal[i]--;
                 if (k)
                 {
-                    at[i].num_iso_H[k - 1] --;
+                    at[i].num_iso_H[k - 1]--;
                 }
                 else
                 {
@@ -3037,19 +3041,19 @@ int DisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
 
         for (j = at[i].valence - 1; 0 <= j; j--)
         {
-            if (j < at[i].valence && !bMetal[(int) at[i].neighbor[j]])
+            if (j < at[i].valence && !bMetal[(int)at[i].neighbor[j]])
             {
                 /* do not break metal-metal bond here */
 
-                num_disconnected += DisconnectOneLigand( at,
-                                                         nOldCompNumber,
-                                                         bMetal,
-                                                         elnumber_Heteroat,
-                                                         num_halogens,
-                                                         num_atoms,
-                                                         i,
-                                                         j,
-                                                         bTautFlagsDone );
+                num_disconnected += DisconnectOneLigand(at,
+                                                        nOldCompNumber,
+                                                        bMetal,
+                                                        elnumber_Heteroat,
+                                                        num_halogens,
+                                                        num_atoms,
+                                                        i,
+                                                        j,
+                                                        bTautFlagsDone);
             }
         }
     }
@@ -3063,19 +3067,19 @@ int DisconnectMetals( ORIG_ATOM_DATA *orig_inp_data,
         }
         for (j = at[i].valence - 1; 0 <= j; j--)
         {
-            if (j < at[i].valence && bMetal[(int) at[i].neighbor[j]])
+            if (j < at[i].valence && bMetal[(int)at[i].neighbor[j]])
             {
                 /* break metal-metal bond here */
 
-                num_disconnected += DisconnectOneLigand( at,
-                                                         nOldCompNumber,
-                                                         bMetal,
-                                                         elnumber_Heteroat,
-                                                         num_halogens,
-                                                         num_atoms,
-                                                         i,
-                                                         j,
-                                                         bTautFlagsDone );
+                num_disconnected += DisconnectOneLigand(at,
+                                                        nOldCompNumber,
+                                                        bMetal,
+                                                        elnumber_Heteroat,
+                                                        num_halogens,
+                                                        num_atoms,
+                                                        i,
+                                                        j,
+                                                        bTautFlagsDone);
             }
         }
     }
@@ -3088,16 +3092,16 @@ exit_function:
     }
     if (at && err)
     {
-        inchi_free( at );
+        inchi_free(at);
         at = NULL;
     }
     if (atom && at)
-    {    /* changed if ( at ) to if ( atom && at ) 2004-04-03 */
-        inchi_free( atom );
+    { /* changed if ( at ) to if ( atom && at ) 2004-04-03 */
+        inchi_free(atom);
         atom = NULL;
     }
     if (bMetal)
-        inchi_free( bMetal );
+        inchi_free(bMetal);
 
     if (at)
     {
@@ -3108,17 +3112,16 @@ exit_function:
     return err ? -err : num_disconnected;
 }
 
-
 /****************************************************************************/
-int DisconnectOneLigand( inp_ATOM *at,
-                         AT_NUMB *nOldCompNumber,
-                         S_CHAR *bMetal,
-                         char *elnumber_Heteroat,
-                         int num_halogens,
-                         int num_atoms,
-                         int iMetal,
-                         int jLigand,
-                         INCHI_MODE *bTautFlagsDone )
+int DisconnectOneLigand(inp_ATOM *at,
+                        AT_NUMB *nOldCompNumber,
+                        S_CHAR *bMetal,
+                        char *elnumber_Heteroat,
+                        int num_halogens,
+                        int num_atoms,
+                        int iMetal,
+                        int jLigand,
+                        INCHI_MODE *bTautFlagsDone)
 {
     int i, j, iLigand, neigh, val;
     int metal_neigh_ord[MAXVAL], num_neigh_arom_bonds[MAXVAL];
@@ -3135,7 +3138,7 @@ int DisconnectOneLigand( inp_ATOM *at,
     for (i = 0; i < at[iLigand].valence; i++)
     {
         num_neigh_arom_bonds[i] = 0;
-        neigh = (int) at[iLigand].neighbor[i];
+        neigh = (int)at[iLigand].neighbor[i];
         if (neigh < num_atoms && bMetal[neigh])
         {
             metal_neigh_ord[num_metal_neigh++] = i;
@@ -3144,12 +3147,12 @@ int DisconnectOneLigand( inp_ATOM *at,
                 /* aromatic bond */
                 for (j = 0; j < at[neigh].valence; j++)
                 {
-                    num_neigh_arom_bonds[i] += ( at[neigh].bond_type[j] > BOND_TYPE_TRIPLE );
+                    num_neigh_arom_bonds[i] += (at[neigh].bond_type[j] > BOND_TYPE_TRIPLE);
                 }
                 num_del_arom_bonds++;
             }
         }
-        num_tot_arom_bonds += ( at[iLigand].bond_type[i] > BOND_TYPE_TRIPLE );
+        num_tot_arom_bonds += (at[iLigand].bond_type[i] > BOND_TYPE_TRIPLE);
     }
 
     /* Disconnect */
@@ -3163,10 +3166,10 @@ int DisconnectOneLigand( inp_ATOM *at,
             if (num_neigh_arom_bonds[j])
             {
                 neigh = at[iLigand].neighbor[j];
-                at[neigh].chem_bonds_valence -= num_neigh_arom_bonds[j] / 2 - ( num_neigh_arom_bonds[j] - 1 ) / 2;
+                at[neigh].chem_bonds_valence -= num_neigh_arom_bonds[j] / 2 - (num_neigh_arom_bonds[j] - 1) / 2;
             }
         }
-        at[iLigand].chem_bonds_valence -= num_tot_arom_bonds / 2 - ( num_tot_arom_bonds - num_del_arom_bonds ) / 2;
+        at[iLigand].chem_bonds_valence -= num_tot_arom_bonds / 2 - (num_tot_arom_bonds - num_del_arom_bonds) / 2;
     }
 
     /* disconnect in reverse order, otherwise the metal_neigh_ord[i]
@@ -3174,22 +3177,22 @@ int DisconnectOneLigand( inp_ATOM *at,
     */
     for (i = num_metal_neigh - 1; 0 <= i; i--)
     {
-        num_disconnections += DisconnectInpAtBond( at,
-                                                   nOldCompNumber,
-                                                   iLigand,
-                                                   metal_neigh_ord[i] );
+        num_disconnections += DisconnectInpAtBond(at,
+                                                  nOldCompNumber,
+                                                  iLigand,
+                                                  metal_neigh_ord[i]);
     }
 
     /* attempt to change ligand charge to make its valence 'natural' */
     i = num_tot_arom_bonds - num_del_arom_bonds;
     if ((i && i != 2 && i != 3) ||
-         (at[iLigand].radical && at[iLigand].radical != RADICAL_SINGLET) ||
-         !( p = strchr( elnumber_Heteroat, at[iLigand].el_number ) )) /* djb-rwth: addressing LLVM warnings */
+        (at[iLigand].radical && at[iLigand].radical != RADICAL_SINGLET) ||
+        !(p = strchr(elnumber_Heteroat, at[iLigand].el_number))) /* djb-rwth: addressing LLVM warnings */
     {
-        goto exit_function;  /* non-standard atom */
+        goto exit_function; /* non-standard atom */
     }
 
-    val = at[iLigand].chem_bonds_valence + NUMH( at, iLigand );
+    val = at[iLigand].chem_bonds_valence + NUMH(at, iLigand);
     new_charge = MAX_ATOMS; /* impossible value */
 
     if (!val)
@@ -3203,7 +3206,7 @@ int DisconnectOneLigand( inp_ATOM *at,
     {
         for (i = -1; i <= 1; i++)
         {
-            if (val == get_el_valence( at[iLigand].el_number, i, 0 ))
+            if (val == get_el_valence(at[iLigand].el_number, i, 0))
             {
                 new_charge = i; /* found charge that fits chem. valence */
                 break;
@@ -3213,13 +3216,13 @@ int DisconnectOneLigand( inp_ATOM *at,
 
     if (new_charge != MAX_ATOMS)
     {
-        if (( new_charge != at[iLigand].charge ||
-            ( at[iLigand].radical && at[iLigand].radical != RADICAL_SINGLET ) ) &&
-             1 == num_metal_neigh)
+        if ((new_charge != at[iLigand].charge ||
+             (at[iLigand].radical && at[iLigand].radical != RADICAL_SINGLET)) &&
+            1 == num_metal_neigh)
         {
             if (1 == new_charge && 4 == val && 2 == at[iLigand].valence &&
-                 4 == at[iLigand].chem_bonds_valence &&
-                 at[iLigand].bond_type[0] == at[iLigand].bond_type[1])
+                4 == at[iLigand].chem_bonds_valence &&
+                at[iLigand].bond_type[0] == at[iLigand].bond_type[1])
             {
                 ; /* do not add +1 charge to disconnected =N=, etc. 2004-10-27 */
             }
@@ -3241,38 +3244,35 @@ exit_function:
     return num_disconnections; /* ret;*/
 }
 
-
 /****************************************************************************/
-double dist3D( inp_ATOM *at1, inp_ATOM *at2 )
+double dist3D(inp_ATOM *at1, inp_ATOM *at2)
 {
     double dx = at1->x - at2->x;
     double dy = at1->y - at2->y;
     double dz = at1->z - at2->z;
 
-    return sqrt( dx*dx + dy*dy + dz*dz );
+    return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+/****************************************************************************/
+#define MIN_BOND_LENGTH (1.0e-6)
+#define MIN_COS (1.0e-6)
+#define MIN_BOND_LENGTH2 (MIN_BOND_LENGTH * MIN_BOND_LENGTH)
+#define MAX_BOND_LENGTH (1.0e30)
+/****************************************************************************/
 
 /****************************************************************************/
-#define MIN_BOND_LENGTH   (1.0e-6)
-#define MIN_COS           (1.0e-6)
-#define MIN_BOND_LENGTH2  (MIN_BOND_LENGTH*MIN_BOND_LENGTH)
-#define MAX_BOND_LENGTH   (1.0e30)
-/****************************************************************************/
-
-
-/****************************************************************************/
-double GetMinDistDistribution( inp_ATOM *at,
-                               int num_at,
-                               int iat,
-                               int iat_H,
-                               int bInAllComponents,
-                               double min_dist[],
-                               int num_segm )
+double GetMinDistDistribution(inp_ATOM *at,
+                              int num_at,
+                              int iat,
+                              int iat_H,
+                              int bInAllComponents,
+                              double min_dist[],
+                              int num_segm)
 {
     /*    const double one_pi = 2.0*atan2(1.0 , 0.0 ); */
     const double one_pi = 3.14159265358979323846; /* M_PI */
-    const double two_pi = 2.0*one_pi;
+    const double two_pi = 2.0 * one_pi;
     const double f_step = two_pi / num_segm;
     const double h_step = f_step / 2.0;
     int i, j, k, kk, ki, kn, n, num_bonds;
@@ -3289,71 +3289,71 @@ double GetMinDistDistribution( inp_ATOM *at,
     for (i = 0; i < num_at; i++)
     {
         if (i != iat && i != iat_H &&
-            ( bInAllComponents || at[i].component == at[iat].component ))
+            (bInAllComponents || at[i].component == at[iat].component))
         {
             for (j = 0; j < at[i].valence; j++)
             {
                 n = at[i].neighbor[j];
-                if (( n > i && n != iat ) || n == iat_H)
+                if ((n > i && n != iat) || n == iat_H)
                 {
                     continue;
                 }
-#if ( bRELEASE_VERSION != 1 && defined(_DEBUG) )
+#if (bRELEASE_VERSION != 1 && defined(_DEBUG))
                 if (n == iat)
                 {
-                    int stop = 1;  /* <BRKPT> */
+                    int stop = 1; /* <BRKPT> */
                 }
 #endif
-                xi = at[i].x - at[iat].x;  /* ri; i != iat */
+                xi = at[i].x - at[iat].x; /* ri; i != iat */
                 yi = at[i].y - at[iat].y;
-                xn = at[n].x - at[iat].x;  /* rn; possibly n == iat */
+                xn = at[n].x - at[iat].x; /* rn; possibly n == iat */
                 yn = at[n].y - at[iat].y;
-                cross_prod_in = xi*yn - xn*yi; /* ((r(i)-r(iat)) x (r(n)-r(iat)) */
-                if (cross_prod_in < -0.01*MIN_BOND_LENGTH2)
+                cross_prod_in = xi * yn - xn * yi; /* ((r(i)-r(iat)) x (r(n)-r(iat)) */
+                if (cross_prod_in < -0.01 * MIN_BOND_LENGTH2)
                 {
                     /* make sure the r(i)->r(n) vector is counterclockwise around at[iat] */
-                    inchi_swap( (char*) &xi, (char*) &xn, sizeof( xi ) );
-                    inchi_swap( (char*) &yi, (char*) &yn, sizeof( yi ) );
+                    inchi_swap((char *)&xi, (char *)&xn, sizeof(xi));
+                    inchi_swap((char *)&yi, (char *)&yn, sizeof(yi));
                     /* djb-rwth: removing redundant code */
                 }
 
                 xni = xn - xi; /* r(n)->r(i) */
                 yni = yn - yi;
-                rni = xni*xni + yni*yni;
-                if (rni > 0.01*MIN_BOND_LENGTH2)
+                rni = xni * xni + yni * yni;
+                if (rni > 0.01 * MIN_BOND_LENGTH2)
                 {
                     /* vector length |ri->rn| is not too small */
                     /* arrowhead of the vector r(t) = ri + (rn-ri)*t; 0 <= t <= 1 points to the bond ri->rn */
                     /* r(tni) is perpendicular to the bond ri->rn so that min|r(t)| = r(tni) = |tni|*rni */
-                    tni = -( xni*xi + yni*yi ) / rni;
+                    tni = -(xni * xi + yni * yi) / rni;
                     /* find min. distance from n-i bond to at[iat] */
                     if (tni < 0.0)
                     {
-                        rmin = sqrt( xi*xi + yi*yi );
+                        rmin = sqrt(xi * xi + yi * yi);
                     }
                     else if (tni > 1.0)
                     {
-                        rmin = sqrt( xn*xn + yn*yn );
+                        rmin = sqrt(xn * xn + yn * yn);
                     }
                     else
                     {
-                        rmin = sqrt( tni*tni*rni );
+                        rmin = sqrt(tni * tni * rni);
                     }
-                    ave_bond_len += sqrt( rni );
+                    ave_bond_len += sqrt(rni);
                     num_bonds++;
                 }
                 else
                 {
                     /* zero length i-n bond */
-                    tni = 0.5; /* fake */
-                    rmin = sqrt( xi*xi + yi*yi ); /* arbitrarily choose one */
+                    tni = 0.5;                      /* fake */
+                    rmin = sqrt(xi * xi + yi * yi); /* arbitrarily choose one */
                 }
-                if (rmin >= 0.1*MIN_BOND_LENGTH)
+                if (rmin >= 0.1 * MIN_BOND_LENGTH)
                 {
                     /* at[iat] does not belong to at[i]-at[n] bond */
-                    int    bCalc_rt = 1;
-                    fi = atan2( yi, xi );
-                    fn = ( n == iat ) ? fi : atan2( yn, xn );
+                    int bCalc_rt = 1;
+                    fi = atan2(yi, xi);
+                    fn = (n == iat) ? fi : atan2(yn, xn);
                     if (fi > fn)
                     {
                         /* make sure fn - fi >= 0 */
@@ -3364,8 +3364,8 @@ double GetMinDistDistribution( inp_ATOM *at,
                         fi += two_pi;
                         fn += two_pi;
                     }
-                    ki = (int) floor( ( fi + h_step ) / f_step );  /* cast does not match function type */
-                    kn = (int) floor( ( fn + h_step ) / f_step );
+                    ki = (int)floor((fi + h_step) / f_step); /* cast does not match function type */
+                    kn = (int)floor((fn + h_step) / f_step);
 
                     /* the bond may affect several segments */
                     for (k = ki; k <= kn; k++)
@@ -3385,15 +3385,15 @@ double GetMinDistDistribution( inp_ATOM *at,
                             else
                             {
                                 double xt, yt;
-                                xt = xi + xni*tni;
-                                yt = yi + yni*tni;
-                                ft = atan2( yt, xt );
-                                rt = sqrt( xt*xt + yt*yt );
+                                xt = xi + xni * tni;
+                                yt = yi + yni * tni;
+                                ft = atan2(yt, xt);
+                                rt = sqrt(xt * xt + yt * yt);
                             }
                             bCalc_rt = 0;
                         }
                         fk = f_step * kk;
-                        c = fabs( cos( fk - ft ) );
+                        c = fabs(cos(fk - ft));
                         if (c < MIN_COS)
                             c = MIN_COS;
                         rk = rt / c;
@@ -3406,35 +3406,37 @@ double GetMinDistDistribution( inp_ATOM *at,
                 else
                 {
                     /* rmin < 0.1*MIN_BOND_LENGTH */
-                    ri = xi*xi + yi*yi;
-                    rn = xn*xn + yn*yn;
+                    ri = xi * xi + yi * yi;
+                    rn = xn * xn + yn * yn;
                     if (ri > MIN_BOND_LENGTH2 && rn > MIN_BOND_LENGTH2)
                     {
-                        dot_prod_in = xn*xi + yn*yi;
+                        dot_prod_in = xn * xi + yn * yi;
                         /* a very short bond */
-                        if (dot_prod_in > 0.01*MIN_BOND_LENGTH2)
+                        if (dot_prod_in > 0.01 * MIN_BOND_LENGTH2)
                         {
                             /* bond does not cross at[iat] */
-                            double fyixi = atan2( yi, xi );
-                            if (fyixi < 0.0) fyixi += two_pi;
-                            kk = (int) floor( ( fyixi + h_step ) / f_step ) % num_segm;
+                            double fyixi = atan2(yi, xi);
+                            if (fyixi < 0.0)
+                                fyixi += two_pi;
+                            kk = (int)floor((fyixi + h_step) / f_step) % num_segm;
                             if (min_dist[kk] > rmin)
                             {
                                 min_dist[kk] = rmin;
                             }
                         }
-                        else if (dot_prod_in < -0.01*MIN_BOND_LENGTH2)
+                        else if (dot_prod_in < -0.01 * MIN_BOND_LENGTH2)
                         {
                             /* bond does cross at[iat] */
-                            double fyixi = atan2( yi, xi );
-                            if (fyixi < 0.0) fyixi += two_pi;
-                            kk = (int) floor( ( fyixi + h_step ) / f_step ) % num_segm;
+                            double fyixi = atan2(yi, xi);
+                            if (fyixi < 0.0)
+                                fyixi += two_pi;
+                            kk = (int)floor((fyixi + h_step) / f_step) % num_segm;
                             if (min_dist[kk] > rmin)
                             {
                                 min_dist[kk] = rmin;
                             }
                             fyixi += one_pi;
-                            kk = (int) floor( ( fyixi + h_step ) / f_step ) % num_segm;
+                            kk = (int)floor((fyixi + h_step) / f_step) % num_segm;
                             if (min_dist[kk] > rmin)
                             {
                                 min_dist[kk] = rmin;
@@ -3453,9 +3455,10 @@ double GetMinDistDistribution( inp_ATOM *at,
                     else
                     {
                         /* one end of the bond coincides with at[iat] */
-                        fi = ri > rn ? atan2( yi, xi ) : atan2( yn, xn );
-                        if (fi < 0.0) fi += two_pi;
-                        kk = (int) floor( ( fi + h_step ) / f_step ) % num_segm;
+                        fi = ri > rn ? atan2(yi, xi) : atan2(yn, xn);
+                        if (fi < 0.0)
+                            fi += two_pi;
+                        kk = (int)floor((fi + h_step) / f_step) % num_segm;
                         if (min_dist[kk] > rmin)
                         {
                             min_dist[kk] = rmin;
@@ -3468,7 +3471,7 @@ double GetMinDistDistribution( inp_ATOM *at,
 
     if (num_bonds)
     {
-        return  ave_bond_len / (double) num_bonds;
+        return ave_bond_len / (double)num_bonds;
     }
     else
     {
@@ -3476,20 +3479,19 @@ double GetMinDistDistribution( inp_ATOM *at,
     }
 }
 
-
 /****************************************************************************/
-int move_explicit_Hcation( inp_ATOM *at,
-                           int num_at,
-                           int iat,
-                           int iat_H,
-                           int bInAllComponents )
+int move_explicit_Hcation(inp_ATOM *at,
+                          int num_at,
+                          int iat,
+                          int iat_H,
+                          int bInAllComponents)
 {
 
 #define NUM_SEGM 20
 
     /*    const double one_pi = 2.0*atan2(1.0 , 0.0 ); */
     const double one_pi = 3.14159265358979323846; /* M_PI */
-    const double two_pi = 2.0*one_pi;
+    const double two_pi = 2.0 * one_pi;
     const double f_step = two_pi / NUM_SEGM;
     const double h_step = f_step / 2.0;
     double min_dist[NUM_SEGM];
@@ -3508,21 +3510,20 @@ int move_explicit_Hcation( inp_ATOM *at,
             xd += at[next].x;
             yd += at[next].y;
             zd += at[next].z;
-            r += dist3D( at + iat, at + next );
+            r += dist3D(at + iat, at + next);
             nB++;
         }
-        xd /= (double) nB;
-        yd /= (double) nB;
-        zd /= (double) nB;
-        r /= (double) nB;
-        r0 = sqrt( (double) ( xd - at[iat].x )*( xd - at[iat].x )
-                   + (double) ( yd - at[iat].y )*( yd - at[iat].y ) );
+        xd /= (double)nB;
+        yd /= (double)nB;
+        zd /= (double)nB;
+        r /= (double)nB;
+        r0 = sqrt((double)(xd - at[iat].x) * (xd - at[iat].x) + (double)(yd - at[iat].y) * (yd - at[iat].y));
     }
     else
     {
         if (at[iat_H].valence)
         {
-            r = dist3D( at + iat_H, at + (int) at[iat_H].neighbor[0] );
+            r = dist3D(at + iat_H, at + (int)at[iat_H].neighbor[0]);
         }
         else
         {
@@ -3531,9 +3532,9 @@ int move_explicit_Hcation( inp_ATOM *at,
         r0 = 0.0;
     }
 
-    ave_bond_len = GetMinDistDistribution( at, num_at, iat, iat_H,
-                                           bInAllComponents, min_dist,
-                                           NUM_SEGM );
+    ave_bond_len = GetMinDistDistribution(at, num_at, iat, iat_H,
+                                          bInAllComponents, min_dist,
+                                          NUM_SEGM);
 
     if (r < MIN_BOND_LENGTH && ave_bond_len > MIN_BOND_LENGTH)
     {
@@ -3544,9 +3545,9 @@ int move_explicit_Hcation( inp_ATOM *at,
     {
         /* process non-zero bond lengths */
         double f;
-        if (10.0*r0 < r)
+        if (10.0 * r0 < r)
         {
-            xr = -r;     /* arbitrary */
+            xr = -r; /* arbitrary */
             yr = 0.0;
             zr = 0.0;
         }
@@ -3557,36 +3558,36 @@ int move_explicit_Hcation( inp_ATOM *at,
             r0 = 1.0;
             }
             */
-            xr = r * ( at[iat].x - xd ) / r0;
-            yr = r * ( at[iat].y - yd ) / r0; /* length = r */
-            zr = r * ( at[iat].z - zd ) / r0;
+            xr = r * (at[iat].x - xd) / r0;
+            yr = r * (at[iat].y - yd) / r0; /* length = r */
+            zr = r * (at[iat].z - zd) / r0;
 
             /*          -- test: opposire direction --
             xr =   -r * ( at[iat].x - xd )/r0;
             yr =   -r * ( at[iat].y - yd )/r0;
             zr =   -r * ( at[iat].z - zd )/r0;
             */
-            if (xr*xr + yr*yr < 0.04*r*r)
+            if (xr * xr + yr * yr < 0.04 * r * r)
             {
                 xr = -r;
                 yr = 0.0;
             }
         }
 
-        r = sqrt( xr*xr + yr*yr );
-        f = atan2( yr, xr );
+        r = sqrt(xr * xr + yr * yr);
+        f = atan2(yr, xr);
 
         if (f < 0.0)
         {
             f += two_pi;
         }
 
-        kk = (int) floor( ( f + h_step ) / f_step ) % NUM_SEGM;
+        kk = (int)floor((f + h_step) / f_step) % NUM_SEGM;
         /* cast does not match function type by design */
 
-        if (min_dist[kk] < 1.5* r)
+        if (min_dist[kk] < 1.5 * r)
         {
-            double dist = 1.5*r;
+            double dist = 1.5 * r;
             int start = -1, len = 0, start_max = -1, len_max = 0;
 
         again:
@@ -3613,7 +3614,7 @@ int move_explicit_Hcation( inp_ATOM *at,
             }
             if (!len_max)
             {
-                if (dist > 0.1*r)
+                if (dist > 0.1 * r)
                 {
                     dist *= 0.75;
                     goto again;
@@ -3626,11 +3627,11 @@ int move_explicit_Hcation( inp_ATOM *at,
             else
             {
                 /* found a good sector */
-                f = f_step * ( (double)start_max +  ((double)len_max - 1.0 ) / 2.0 ); /* djb-rwth: cast operators added */
+                f = f_step * ((double)start_max + ((double)len_max - 1.0) / 2.0); /* djb-rwth: cast operators added */
                 r0 = dist / 1.5;
-                xr = r0 * cos( f );
-                yr = r0 * sin( f );
-                zr = zr / r*r0;
+                xr = r0 * cos(f);
+                yr = r0 * sin(f);
+                zr = zr / r * r0;
             }
         }
     }
@@ -3648,7 +3649,7 @@ done:
         {
             if (at[next].neighbor[i] == iat_H)
             {
-                RemoveInpAtBond( at, next, i );
+                RemoveInpAtBond(at, next, i);
                 i = 0; /* success */
                 break;
             }
@@ -3686,7 +3687,7 @@ done:
             at[iat].chem_bonds_valence += at[iat_H].bond_type[0];
             at[iat].valence = val + 1;
         };
-#pragma warning (pop)
+#pragma warning(pop)
 
         at[iat_H].component = at[iat].component;
         at[iat_H].neighbor[0] = iat;
@@ -3701,9 +3702,8 @@ done:
     return 0; /* failed */
 }
 
-
 /****************************************************************************/
-int add_DT_to_num_H( int num_atoms, inp_ATOM *at )
+int add_DT_to_num_H(int num_atoms, inp_ATOM *at)
 /*  assume num_1H, num_D and num_T are not included in num_H */
 {
     int i, j;
@@ -3717,29 +3717,63 @@ int add_DT_to_num_H( int num_atoms, inp_ATOM *at )
     return 0;
 }
 
+/****************************************************************************
+ **@nnuk
+ * @param at input atom array
+ * @param num_atoms number of atoms
+ * @param metal_idx index of the metal atom
+ * @return 1  all neighbors are H/D/T
+ * @return 0  at least one non-hydrogen neighbor is present
+****************************************************************************/
+static int is_only_HDT_neighbors(const inp_ATOM* at, int num_atoms, int metal_idx)
+{
+    int v;
+
+    if (!at || metal_idx < 0 || metal_idx >= num_atoms)
+    {
+        return 0;
+    }
+
+    for (v = 0; v < at[metal_idx].valence; v++)
+    {
+        int nb = at[metal_idx].neighbor[v];
+
+        if (nb < 0 || nb >= num_atoms)
+        {
+            continue;
+        }
+
+        if (!(at[nb].elname[0] == 'H' && at[nb].elname[1] == '\0'))
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
 
 /****************************************************************************
 Return value: new number of atoms > 0 or -1=out of RAM
 ****************************************************************************/
-int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
+int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg)
 {
-    AT_NUMB   *new_ord;
-    inp_ATOM  *new_at;
+    AT_NUMB *new_ord;
+    inp_ATOM *new_at;
     char *p;
     static const char szHDT[] = "HDT";
-    static const int  kMax = sizeof( szHDT ); /*  = 4 */
+    static const int kMax = sizeof(szHDT); /*  = 4 */
     int ret = -1;
-    int num_hydrogens = 0, num_H = 0;  /*  number of terminal H, D, T */
+    int num_hydrogens = 0, num_H = 0; /*  number of terminal H, D, T */
     int i, j, k, n, m;
     int val;
     AT_RANK new_HydrogenAt_order[NUM_H_ISOTOPES + 1];
     AT_RANK new_OtherNeigh_order[MAXVAL];
-    S_CHAR  old_trans[MAX_NUM_STEREO_BONDS];
+    S_CHAR old_trans[MAX_NUM_STEREO_BONDS];
 
-    int  num_OtherNeigh, num_HydrogenAt;
+    int num_OtherNeigh, num_HydrogenAt;
 
-    new_ord = (AT_NUMB *) inchi_calloc( num_atoms, sizeof( new_ord[0] ) ); /* changed malloc to calloc 9-11-2003 */
-    new_at = (inp_ATOM  *) inchi_malloc( sizeof( new_at[0] ) *num_atoms );
+    new_ord = (AT_NUMB *)inchi_calloc(num_atoms, sizeof(new_ord[0])); /* changed malloc to calloc 9-11-2003 */
+    new_at = (inp_ATOM *)inchi_malloc(sizeof(new_at[0]) * num_atoms);
     if (!new_ord || !new_at)
     {
         goto exit_function;
@@ -3749,28 +3783,29 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
     for (i = 0; i < num_atoms; i++)
     {
         at[i].component = i; /*  temporarily save original numbering */
-                             /*  get k = temp. hydrogen isotope/non-hydrogen atom type: */
-                             /*  k=0:H, k=2:D, k=3:T, k=4=kMax: not a hydrogen */
-        k = at[i].elname[1] ? kMax : ( p = (char*) strchr( szHDT, at[i].elname[0] ) ) ? (int) ( p - szHDT ) : kMax;
+        /*  get k = temp. hydrogen isotope/non-hydrogen atom type: */
+        /*  k=0:H, k=2:D, k=3:T, k=4=kMax: not a hydrogen */
+        k = at[i].elname[1] ? kMax : (p = (char *)strchr(szHDT, at[i].elname[0])) ? (int)(p - szHDT)
+                                                                                  : kMax;
         /*  set hydrogen isotope atw differences */
         /*  Notes: k-value of isotopic H is incremented to correct iso_atw_diff value later. */
         /*         1H isotope cannot be detected here. */
         if (k == ATW_H || k == ATW_H + 1)
         {
             /* D or T, k = 1 or 2 */
-            at[i].elname[0] = 'H'; /*  hydrogen isotope */
+            at[i].elname[0] = 'H';    /*  hydrogen isotope */
             at[i].iso_atw_diff = ++k; /*  increment k to make k = iso_atw_diff ( 2 for D, 3 for T ) */
         }
-        num_H += ( k != kMax && at[i].valence == 1 && at[i].chem_bonds_valence == 1 && !NUMH( at, i ) );
+        num_H += (k != kMax && at[i].valence == 1 && at[i].chem_bonds_valence == 1 && !NUMH(at, i));
     }
 
     /* special case: HD, HT, DT, HH: the only non-isotopic H or
-    * the lightest isotopic H out of two is removed
-    * to become implicit (make the heavier H the "central atom").
-    * Note: This must be consistent with MOL_FMT_to_atom()
-    * treatment of isotopic Hn aliases.
-    */
-    if (2 == num_H && 2 == num_atoms && !NUMH( at, 0 ) && !NUMH( at, 1 ))
+     * the lightest isotopic H out of two is removed
+     * to become implicit (make the heavier H the "central atom").
+     * Note: This must be consistent with MOL_FMT_to_atom()
+     * treatment of isotopic Hn aliases.
+     */
+    if (2 == num_H && 2 == num_atoms && !NUMH(at, 0) && !NUMH(at, 1))
     {
 
         if (at[0].iso_atw_diff >= at[1].iso_atw_diff)
@@ -3797,18 +3832,20 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
         /* general case except H-H */
         for (i = 0; i < num_atoms; i++)
         {
-            k = ( at[i].elname[1] || NUMH( at, i ) ) ? kMax : ( at[i].elname[0] == 'H' ) ? at[i].iso_atw_diff : kMax;
+            k = (at[i].elname[1] || NUMH(at, i)) ? kMax : (at[i].elname[0] == 'H') ? at[i].iso_atw_diff
+                                                                                   : kMax;
+            n = (int)at[i].neighbor[0];
             if (k < kMax && at[i].valence == 1 && at[i].chem_bonds_valence == 1 &&
-                 /*  the order of comparison is important */
-                ( ( n = (int) at[i].neighbor[0] ) > i               /* at[n] has not been encountered yet*/ ||
-                 (int) new_ord[n] < num_atoms - num_hydrogens ) /* at[n] might have been encountered; it has not been moved */)
+                /*  the order of comparison is important */
+                ((n > i) /* at[n] has not been encountered yet*/ ||
+                 (int)new_ord[n] < num_atoms - num_hydrogens) /* at[n] might have been encountered; it has not been moved */ &&
+                 (!is_el_a_metal(at[n].el_number) || is_only_HDT_neighbors(at, num_atoms, n))/*@nnuk*/ )
             {
                 /*  found an explicit terminal hydrogen */
                 num_hydrogens++;
                 if (k == 0 && ATW_H <= at[i].iso_atw_diff && at[i].iso_atw_diff < ATW_H + NUM_H_ISOTOPES)
                 {
                     k = at[i].iso_atw_diff; /*  H isotope has already been marked above or elsewhere */ /* djb-rwth: ignoring LLVM warning: variable used */
-
                 }
                 if (at[i].charge)
                 {
@@ -3826,12 +3863,12 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
                             new_at[new_ord[n]].charge = at[n].charge;
                     }
                 }
-                new_ord[i] = num_atoms - num_hydrogens;  /*  move hydrogens to the end of the list */
+                new_ord[i] = num_atoms - num_hydrogens; /*  move hydrogens to the end of the list */
             }
             else
             {
                 /* atom is not an explicit terminal hydrogen */
-                new_ord[i] = i - num_hydrogens;  /*  adjust non-hydrogens positions */
+                new_ord[i] = i - num_hydrogens; /*  adjust non-hydrogens positions */
             }
 
             /*  copy atom to the new position */
@@ -3846,41 +3883,41 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
         {
             /*  sort hydrogen isotopes in ascending order, */
             /*  orig, numbers being the secondary sorting key */
-            qsort( new_at + num_others, num_hydrogens, sizeof( new_at[0] ), cmp_iso_atw_diff_component_no );
+            qsort(new_at + num_others, num_hydrogens, sizeof(new_at[0]), cmp_iso_atw_diff_component_no);
         }
         /*  save new numbering of hydrogen atoms using temporarily saved orig numbering */
         for (i = num_others; i < num_atoms; i++)
         {
-            new_ord[(int) new_at[i].component] = i;
+            new_ord[(int)new_at[i].component] = i;
         }
 
         /*  renumber neighbors according to new_ord[] and detach terminal hydrogens */
         for (i = 0; i < num_others; i++)
         {
-            memset( new_HydrogenAt_order, 0, sizeof( new_HydrogenAt_order ) ); /* djb-rwth: memset_s C11/Annex K variant? */
-            memset( new_OtherNeigh_order, 0, sizeof( new_OtherNeigh_order ) ); /* djb-rwth: memset_s C11/Annex K variant? */
+            memset(new_HydrogenAt_order, 0, sizeof(new_HydrogenAt_order)); /* djb-rwth: memset_s C11/Annex K variant? */
+            memset(new_OtherNeigh_order, 0, sizeof(new_OtherNeigh_order)); /* djb-rwth: memset_s C11/Annex K variant? */
             num_OtherNeigh = 0;
             num_HydrogenAt = 0;
             num_H = 0;
 
             for (m = 0; m < MAX_NUM_STEREO_BONDS && new_at[i].sb_parity[m]; m++)
             {
-                old_trans[m] = 2 - ( new_at[i].sn_ord[m] + new_at[i].sb_ord[m] + ( new_at[i].sn_ord[m] > new_at[i].sb_ord[m] ) ) % 2;
+                old_trans[m] = 2 - (new_at[i].sn_ord[m] + new_at[i].sb_ord[m] + (new_at[i].sn_ord[m] > new_at[i].sb_ord[m])) % 2;
             }
 
             for (k = val = 0; k < new_at[i].valence; k++) /* djb-rwth: removing redundant variables/code */
             {
-                if (num_others <= ( n = new_ord[new_at[i].neighbor[k]] ))
+                if (num_others <= (n = new_ord[new_at[i].neighbor[k]]))
                 {
                     /*  discovered neighbor = disconnected explicit hydrogen
-                    *  i = new atom new_at[i] ordering number
-                    *  n = new number of the explicit H
-                    *  k = ordering number of the explicit H in new_at[i] adjacency list
-                    */
+                     *  i = new atom new_at[i] ordering number
+                     *  n = new number of the explicit H
+                     *  k = ordering number of the explicit H in new_at[i] adjacency list
+                     */
                     if (0 < new_at[n].iso_atw_diff && new_at[n].iso_atw_diff < ATW_H + NUM_H_ISOTOPES)
                     {
                         /* make explicit isotopic H implicit */
-                        new_at[i].num_iso_H[new_at[n].iso_atw_diff - 1] ++; /*  isotopic H */
+                        new_at[i].num_iso_H[new_at[n].iso_atw_diff - 1]++; /*  isotopic H */
                         num_HydrogenAt += !new_HydrogenAt_order[new_at[n].iso_atw_diff];
                         new_HydrogenAt_order[new_at[n].iso_atw_diff] = k + 1;
                     }
@@ -3893,16 +3930,16 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
                         new_HydrogenAt_order[0] = k + 1;
                     }
                     /*  decrement chem. bonds valence because one bond is removed */
-                    new_at[i].chem_bonds_valence = inchi_max( 0, new_at[i].chem_bonds_valence - 1 );
+                    new_at[i].chem_bonds_valence = inchi_max(0, new_at[i].chem_bonds_valence - 1);
                     new_at[n].neighbor[0] = i; /*  update removed hydrogen neighbor number */
                     if (new_at[i].sb_parity[0])
                     {
                         /* if the removed H is an SB neighbor then mark it as removed */
                         for (m = 0; m < MAX_NUM_STEREO_BONDS && new_at[i].sb_parity[m]; m++)
                         {
-                            if (k == (int) new_at[i].sn_ord[m])
+                            if (k == (int)new_at[i].sn_ord[m])
                             {
-                                new_at[i].sn_ord[m] = -( new_at[n].iso_atw_diff + 1 );
+                                new_at[i].sn_ord[m] = -(new_at[n].iso_atw_diff + 1);
                                 /* means the SB neighbor has been removed; (-4)=H, (-3)=1H, (-2)=D, (-1)=T */
                             }
                         }
@@ -3923,11 +3960,10 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
                             /* store new stereobond and sb-neighbor ordering numbers */
                             for (m = 0; m < MAX_NUM_STEREO_BONDS && new_at[i].sb_parity[m]; m++)
                             {
-                                if (k == (int) new_at[i].sb_ord[m])
+                                if (k == (int)new_at[i].sb_ord[m])
                                     new_at[i].sb_ord[m] = val;
-                                else
-                                    if (k == (int) new_at[i].sn_ord[m])
-                                        new_at[i].sn_ord[m] = val;
+                                else if (k == (int)new_at[i].sn_ord[m])
+                                    new_at[i].sn_ord[m] = val;
                             }
                         }
                     }
@@ -3950,7 +3986,7 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
                             new_OtherNeigh_order[num_HydrogenAt - j] = new_HydrogenAt_order[k];
                             for (m = 0; m < MAX_NUM_STEREO_BONDS && new_at[i].sb_parity[m]; m++)
                             {
-                                if ((int) new_at[i].sn_ord[m] == -( k + 1 ))
+                                if ((int)new_at[i].sn_ord[m] == -(k + 1))
                                 {
                                     new_at[i].sn_ord[m] = -j;
                                     /* negative means explicit H isotope ord are
@@ -3962,24 +3998,24 @@ int remove_terminal_HDT( int num_atoms, inp_ATOM *at, int bFixTermHChrg )
                     }
                     /* at this point new_OtherNeigh_order[] contains
                     incremented old ordering numbers in new order */
-                    k = insertions_sort_AT_RANK( new_OtherNeigh_order, num_HydrogenAt + num_OtherNeigh ); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
+                    k = insertions_sort_AT_RANK(new_OtherNeigh_order, num_HydrogenAt + num_OtherNeigh); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
                     /* djb-rwth: removing redundant code */
-                               /*if ( k ) {*/
-                               /*
-                               for ( m = 0; m < MAX_NUM_STEREO_BONDS && new_at[i].sb_parity[m]; m ++ ) {
-                               if ( PARITY_WELL_DEF(new_at[i].sb_parity[m]) ) {
-                               if ( old_trans[m] != 2 - (4 + new_at[i].sn_ord[m] + new_at[i].sb_ord[m] + (new_at[i].sn_ord[m] > new_at[i].sb_ord[m]))%2 ) {
-                               new_at[i].sb_parity[m] = 3 - new_at[i].sb_parity[m];
-                               }
-                               }
-                               }
-                               */
-                               /*}*/
+                    /*if ( k ) {*/
+                    /*
+                    for ( m = 0; m < MAX_NUM_STEREO_BONDS && new_at[i].sb_parity[m]; m ++ ) {
+                    if ( PARITY_WELL_DEF(new_at[i].sb_parity[m]) ) {
+                    if ( old_trans[m] != 2 - (4 + new_at[i].sn_ord[m] + new_at[i].sb_ord[m] + (new_at[i].sn_ord[m] > new_at[i].sb_ord[m]))%2 ) {
+                    new_at[i].sb_parity[m] = 3 - new_at[i].sb_parity[m];
+                    }
+                    }
+                    }
+                    */
+                    /*}*/
                 }
             }
             new_at[i].valence = val;
         }
-        memcpy(at, new_at, sizeof(at[0])* num_atoms);
+        memcpy(at, new_at, sizeof(at[0]) * num_atoms);
         ret = num_others;
     }
     else
@@ -3991,16 +4027,15 @@ exit_function:
 
     if (new_ord)
     {
-        inchi_free( new_ord );
+        inchi_free(new_ord);
     }
     if (new_at)
     {
-        inchi_free( new_at );
+        inchi_free(new_at);
     }
 
     return ret;
 }
-
 
 /*#endif*/ /* } DISCONNECT_SALTS */
 
@@ -4022,40 +4057,2700 @@ typedef enum tagIonAtomType
 } ION_ATOM_TYPE;
 
 /****************************************************************************/
-int get_iat_number( int el_number )
+int get_iat_number(int el_number)
 {
-    switch (el_number) {
-        case EL_NUMBER_H:  return IAT_H;
-        case EL_NUMBER_C:  return IAT_C;
-        case EL_NUMBER_N:  return IAT_N;
-        case EL_NUMBER_P:  return IAT_P;
-        case EL_NUMBER_O:  return IAT_O;
-        case EL_NUMBER_S:  return IAT_S;
-        case EL_NUMBER_SE: return IAT_Se;
-        case EL_NUMBER_TE: return IAT_Te;
-        case EL_NUMBER_F:  return IAT_F;
-        case EL_NUMBER_CL: return IAT_Cl;
-        case EL_NUMBER_BR: return IAT_Br;
-        case EL_NUMBER_I:  return IAT_I;
-        default: return -1;
+    switch (el_number)
+    {
+    case EL_NUMBER_H:
+        return IAT_H;
+    case EL_NUMBER_C:
+        return IAT_C;
+    case EL_NUMBER_N:
+        return IAT_N;
+    case EL_NUMBER_P:
+        return IAT_P;
+    case EL_NUMBER_O:
+        return IAT_O;
+    case EL_NUMBER_S:
+        return IAT_S;
+    case EL_NUMBER_SE:
+        return IAT_Se;
+    case EL_NUMBER_TE:
+        return IAT_Te;
+    case EL_NUMBER_F:
+        return IAT_F;
+    case EL_NUMBER_CL:
+        return IAT_Cl;
+    case EL_NUMBER_BR:
+        return IAT_Br;
+    case EL_NUMBER_I:
+        return IAT_I;
+    default:
+        return -1;
     }
 }
 
-#if ( READ_INCHI_STRING == 1 )
+/*****************************************************************************
+ * (@nnuk : Nauman Ullah Khan)
+ * Array only to be used for molecular inorganics. It is seperate from the ElData
+ * array in util.c file. The need for duplicate array arrives as in molecular inorganics
+ * we need a change in metal type. Some changes include an upgrade from lower metal
+ * type to higher metal type (meaning : more valences of an atom can be used).
+ * Some changes include a degradation from higher metal type to a lower metal type
+ * where fewer number of valences for an atom are used. Due to these changes there
+ * is an urge to have a duplicate array so that the current functionality does
+ * not get affected.
+ *
+ * (Summary) : Type of the element has changed from METAL -> MolInOrg.
+ ******************************************************************************/
+const MolecularInorganicsElData MolecularInorganicsArray[] =
+    {
+        /*       avg  norm                         El   No  -------- Valence(s) of an ion or neutral atom -------------*/
+        /*        mw  mass  exact mw       type   neg   H    -2          -1          0           +1         +2          */
+        {"H", 1, 1, 1.007825035, 0, 21, 0, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                1,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"D", 2, 2, 2.014101778, 0, 21, 0, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                1,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"T", 3, 3, 3.016049268, 0, 21, 0, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                1,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"He", 4, 4, 4.002600000, 0, 0, 0, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"Li", 7, 7, 7.016000000, MolInOrg1, 10, 0, {{
+                                                         0,
+                                                     },
+                                                     {
+                                                         0,
+                                                     },
+                                                     {
+                                                         1,
+                                                     },
+                                                     {
+                                                         0,
+                                                     },
+                                                     {
+                                                         0,
+                                                     }}},
+        {"Be", 9, 9, 9.012180000, MolInOrg1, 15, 0, {{
+                                                         0,
+                                                     },
+                                                     {
+                                                         0,
+                                                     },
+                                                     {
+                                                         2,
+                                                     },
+                                                     {
+                                                         1,
+                                                     },
+                                                     {
+                                                         0,
+                                                     }}},
+        {"B", 11, 11, 11.009300000, 0, 20, 0, {{
+                                                   3,
+                                               },
+                                               {
+                                                   4,
+                                               },
+                                               {
+                                                   3,
+                                               },
+                                               {
+                                                   2,
+                                               },
+                                               {
+                                                   1,
+                                               }}},
+        {"C", 12, 12, 12.000000000, 0, 25, 0, {{
+                                                   2,
+                                               },
+                                               {
+                                                   3,
+                                               },
+                                               {
+                                                   4,
+                                               },
+                                               {
+                                                   3,
+                                               },
+                                               {
+                                                   2,
+                                               }}},
+        {"N", 14, 14, 14.003074000, 0, 30, 0, {{
+                                                   1,
+                                               },
+                                               {
+                                                   2,
+                                               },
+                                               {3, 5},
+                                               {
+                                                   4,
+                                               },
+                                               {
+                                                   3,
+                                               }}},
+        {"O", 16, 16, 15.994914630, 0, 35, 0, {{
+                                                   0,
+                                               },
+                                               {
+                                                   1,
+                                               },
+                                               {
+                                                   2,
+                                               },
+                                               {
+                                                   3,
+                                                   5,
+                                               },
+                                               {
+                                                   4,
+                                               }}},
+        {"F", 19, 19, 18.998403220, 0, 40, 0, {{
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   1,
+                                               },
+                                               {
+                                                   2,
+                                               },
+                                               {3, 5}}},
+        {"Ne", 20, 20, 19.992440000, 0, 0, 0, {{
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               }}},
+        {"Na", 23, 23, 22.989770000, MolInOrg1, 9, 0, {{
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           1,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       }}},
+        {"Mg", 24, 24, 23.985000000, MolInOrg1, 12, 0, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                        },
+                                                        {
+                                                            1,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Al", 27, 27, 26.981540000, MolInOrg1, 15, 0, {{
+                                                            3,
+                                                            5,
+                                                        },
+                                                        {
+                                                            4,
+                                                        },
+                                                        {
+                                                            3,
+                                                        },
+                                                        {
+                                                            2,
+                                                        },
+                                                        {
+                                                            1,
+                                                        }}},
+        {"Si", 28, 28, 27.976927100, 0, 18, 0, {{
+                                                    2,
+                                                },
+                                                {3, 5},
+                                                {
+                                                    4,
+                                                },
+                                                {
+                                                    3,
+                                                },
+                                                {
+                                                    2,
+                                                }}},
+        {"P", 31, 31, 30.973762000, 0, 21, 0, {{
+                                                   1,
+                                                   3,
+                                                   5,
+                                                   7,
+                                               },
+                                               {
+                                                   2,
+                                                   4,
+                                                   6,
+                                               },
+                                               {
+                                                   3,
+                                                   5,
+                                               },
+                                               {
+                                                   4,
+                                               },
+                                               {
+                                                   3,
+                                               }}},
+        {"S", 32, 32, 31.972070700, 0, 25, 0, {{
+                                                   0,
+                                               },
+                                               {
+                                                   1,
+                                                   3,
+                                                   5,
+                                                   7,
+                                               },
+                                               {2, 4, 6},
+                                               {
+                                                   3,
+                                                   5,
+                                               },
+                                               {
+                                                   4,
+                                               }}},
+        {"Cl", 35, 35, 34.968852730, 0, 30, 0, {{
+                                                    0,
+                                                },
+                                                {
+                                                    0,
+                                                },
+                                                {1, 3, 5, 7},
+                                                {2, 4, 6},
+                                                {
+                                                    3,
+                                                    5,
+                                                }}},
+        {"Ar", 40, 40, 39.962400000, 0, 0, 0, {{
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               }}},
+        {"K", 39, 39, 38.963700000, MolInOrg1, 8, 0, {{
+                                                          0,
+                                                      },
+                                                      {
+                                                          0,
+                                                      },
+                                                      {
+                                                          1,
+                                                      },
+                                                      {
+                                                          0,
+                                                      },
+                                                      {
+                                                          0,
+                                                      }}},
+        {"Ca", 40, 40, 39.962600000, MolInOrg1, 10, 0, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                        },
+                                                        {
+                                                            1,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Sc", 45, 45, 44.955910000, MolInOrg1, 13, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            3,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Ti", 48, 48, 47.947950000, MolInOrg2, 15, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {3, 4},
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"V", 51, 51, 50.943960000, MolInOrg4, 16, 1, {{
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           2,
+                                                           3,
+                                                           4,
+                                                           5,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       }}},
+        {"Cr", 52, 52, 51.940500000, MolInOrg2, 16, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                            3,
+                                                            6,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Mn", 55, 55, 54.938050000, MolInOrg1, 15, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                            3,
+                                                            4,
+                                                            6,
+                                                            7,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Fe", 56, 56, 55.934900000, MolInOrg2, 18, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                            3,
+                                                            4,
+                                                            6,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Co", 59, 59, 58.933200000, MolInOrg2, 18, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                            3,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Ni", 59, 58, 57.935300000, MolInOrg1, 18, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                            3,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Cu", 64, 63, 62.929600000, MolInOrg2, 19, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            1,
+                                                            2,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Zn", 65, 64, 63.929147000, MolInOrg1, 16, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Ga", 70, 69, 68.925600000, MolInOrg1, 18, 0, {{
+                                                            3,
+                                                            5,
+                                                        },
+                                                        {
+                                                            4,
+                                                        },
+                                                        {
+                                                            3,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            1,
+                                                        }}},
+        {"Ge", 73, 74, 73.921177400, 0, 18, 0, {{
+                                                    2,
+                                                    4,
+                                                    6,
+                                                },
+                                                {
+                                                    3,
+                                                    5,
+                                                },
+                                                {
+                                                    4,
+                                                },
+                                                {
+                                                    3,
+                                                },
+                                                {
+                                                    0,
+                                                }}},
+        {"As", 75, 75, 74.921594200, 0, 20, 0, {{
+                                                    1,
+                                                    3,
+                                                    5,
+                                                    7,
+                                                },
+                                                {
+                                                    2,
+                                                    4,
+                                                    6,
+                                                },
+                                                {
+                                                    3,
+                                                    5,
+                                                },
+                                                {
+                                                    4,
+                                                },
+                                                {
+                                                    3,
+                                                }}},
+        {"Se", 79, 80, 79.916519600, 0, 24, 0, {{
+                                                    0,
+                                                },
+                                                {
+                                                    1,
+                                                    3,
+                                                    5,
+                                                    7,
+                                                },
+                                                {
+                                                    2,
+                                                    4,
+                                                    6,
+                                                },
+                                                {
+                                                    3,
+                                                    5,
+                                                },
+                                                {
+                                                    4,
+                                                }}},
+        {"Br", 80, 79, 78.918336100, 0, 28, 0, {{
+                                                    0,
+                                                },
+                                                {
+                                                    0,
+                                                },
+                                                {
+                                                    1,
+                                                    3,
+                                                    5,
+                                                    7,
+                                                },
+                                                {
+                                                    2,
+                                                    4,
+                                                    6,
+                                                },
+                                                {
+                                                    3,
+                                                    5,
+                                                }}},
+        {"Kr", 84, 84, 83.911500000, 0, 0, 0, {{
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               },
+                                               {
+                                                   0,
+                                               }}},
+        {"Rb", 85, 85, 84.911800000, MolInOrg1, 8, 0, {{
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           1,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       }}},
+        {"Sr", 88, 88, 87.905600000, MolInOrg1, 10, 0, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            2,
+                                                        },
+                                                        {
+                                                            1,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Y", 89, 89, 88.905860000, MolInOrg1, 12, 1, {{
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           3,
+                                                       },
+                                                       {
+                                                           0,
+                                                       },
+                                                       {
+                                                           0,
+                                                       }}},
+        {"Zr", 91, 90, 89.904700000, MolInOrg1, 14, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            4,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Nb", 93, 93, 92.906400000, MolInOrg2, 16, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            3,
+                                                            5,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Mo", 96, 98, 97.905400000, MolInOrg4, 18, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            3,
+                                                            4,
+                                                            5,
+                                                            6,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Tc", 98, 98, 97.907200000, MolInOrg1, 19, 1, {{
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            7,
+                                                        },
+                                                        {
+                                                            0,
+                                                        },
+                                                        {
+                                                            0,
+                                                        }}},
+        {"Ru", 101, 102, 101.904300000, MolInOrg2, 22, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                               3,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Rh", 103, 103, 102.905500000, MolInOrg2, 22, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                               3,
+                                                               4,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Pd", 106, 106, 105.903500000, MolInOrg1, 22, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Ag", 108, 107, 106.905100000, MolInOrg1, 19, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               1,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Cd", 112, 114, 113.903400000, MolInOrg1, 17, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"In", 115, 115, 114.903900000, MolInOrg1, 17, 0, {{
+                                                               3,
+                                                               5,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               3,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               1,
+                                                           }}},
+        {"Sn", 119, 120, 119.902200000, MolInOrg2, 18, 0, {{
+                                                               2,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {3, 5},
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               3,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Sb", 122, 121, 120.903800000, MolInOrg2, 19, 0, {{
+                                                               1,
+                                                               3,
+                                                               5,
+                                                               7,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {
+                                                               3,
+                                                               5,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               3,
+                                                           }}},
+        {"Te", 128, 130, 129.906200000, 0, 21, 0, {{
+                                                       0,
+                                                   },
+                                                   {
+                                                       1,
+                                                       3,
+                                                       5,
+                                                       7,
+                                                   },
+                                                   {
+                                                       2,
+                                                       4,
+                                                       6,
+                                                   },
+                                                   {
+                                                       3,
+                                                       5,
+                                                   },
+                                                   {
+                                                       2,
+                                                       4,
+                                                   }}},
+        {"I", 127, 127, 126.904500000, 0, 25, 0, {{
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  },
+                                                  {
+                                                      1,
+                                                      3,
+                                                      5,
+                                                      7,
+                                                  },
+                                                  {2, 4, 6},
+                                                  {
+                                                      3,
+                                                      5,
+                                                  }}},
+        {"Xe", 131, 132, 131.904100000, 0, 0, 0, {{
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  }}},
+        {"Cs", 133, 133, 132.905430000, MolInOrg1, 7, 0, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Ba", 137, 138, 137.905200000, MolInOrg1, 9, 0, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              2,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"La", 139, 139, 138.906360000, MolInOrg1, 11, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               3,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Ce", 140, 140, 139.905400000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Pr", 141, 141, 140.907660000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Nd", 144, 142, 141.907719000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Pm", 145, 145, 144.912800000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Sm", 150, 152, 151.919700000, MolInOrg2, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              2,
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Eu", 152, 153, 152.921200000, MolInOrg2, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              2,
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Gd", 157, 158, 157.924099000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Tb", 159, 159, 158.925350000, MolInOrg2, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Dy", 163, 164, 163.929200000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}}, /*  mw rounding uncertain */
+        {"Ho", 165, 165, 164.930300000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Er", 167, 166, 165.930300000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Tm", 169, 169, 168.934230000, MolInOrg2, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              2,
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Yb", 173, 174, 173.938900000, MolInOrg2, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              2,
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Lu", 175, 175, 174.940800000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Hf", 178, 180, 179.946600000, MolInOrg1, 13, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               4,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Ta", 181, 181, 180.948010000, MolInOrg1, 15, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               5,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"W", 184, 184, 183.951000000, MolInOrg4, 17, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                              5,
+                                                              6,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Re", 186, 187, 186.955800000, MolInOrg4, 19, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                               6,
+                                                               7,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Os", 190, 192, 191.961500000, MolInOrg3, 22, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                               3,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Ir", 192, 193, 192.962900000, MolInOrg2, 22, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                               3,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Pt", 195, 195, 194.964800000, MolInOrg1, 22, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Au", 197, 197, 196.966560000, MolInOrg2, 24, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               1,
+                                                               3,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Hg", 201, 202, 201.970617000, MolInOrg2, 19, 1, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               1,
+                                                               2,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Tl", 204, 205, 204.974400000, MolInOrg1, 18, 0, {{
+                                                               3,
+                                                               5,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               1,
+                                                               3,
+                                                           },
+                                                           {
+                                                               0,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Pb", 207, 208, 207.976627000, MolInOrg1, 18, 0, {{
+                                                               2,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {3, 5},
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               3,
+                                                           },
+                                                           {
+                                                               0,
+                                                           }}},
+        {"Bi", 209, 209, 208.980390000, MolInOrg1, 19, 0, {{
+                                                               1,
+                                                               3,
+                                                               5,
+                                                               7,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {
+                                                               3,
+                                                               5,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                           },
+                                                           {
+                                                               3,
+                                                           }}},
+        {"Po", 209, 209, 208.982400000, MolInOrg2, 20, 0, {{
+                                                               0,
+                                                           },
+                                                           {
+                                                               1,
+                                                               3,
+                                                               5,
+                                                               7,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                               6,
+                                                           },
+                                                           {
+                                                               3,
+                                                               5,
+                                                           },
+                                                           {
+                                                               2,
+                                                               4,
+                                                           }}},
+        {"At", 210, 210, 209.987100000, 0, 22, 0, {{
+                                                       0,
+                                                   },
+                                                   {
+                                                       0,
+                                                   },
+                                                   {
+                                                       1,
+                                                       3,
+                                                       5,
+                                                       7,
+                                                   },
+                                                   {2, 4, 6},
+                                                   {
+                                                       3,
+                                                       5,
+                                                   }}},
+        {"Rn", 222, 222, 222.017500000, 0, 0, 0, {{
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  },
+                                                  {
+                                                      0,
+                                                  }}},
+        {"Fr", 223, 223, 223.019700000, MolInOrg1, 0, 0, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Ra", 226, 226, 226.025410000, MolInOrg1, 0, 0, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              2,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Ac", 227, 227, 227.027750000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Th", 232, 232, 232.038050000, MolInOrg2, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Pa", 231, 231, 231.035880000, MolInOrg3, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                              5,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"U", 238, 238, 238.050790000, MolInOrg4, 0, 1, {{
+                                                             0,
+                                                         },
+                                                         {
+                                                             0,
+                                                         },
+                                                         {
+                                                             3,
+                                                             4,
+                                                             5,
+                                                             6,
+                                                         },
+                                                         {
+                                                             0,
+                                                         },
+                                                         {
+                                                             0,
+                                                         }}},
+        {"Np", 237, 237, 237.048170000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                              5,
+                                                              6,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Pu", 244, 244, 244.064200000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                              5,
+                                                              6,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Am", 243, 243, 243.061370000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                              5,
+                                                              6,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Cm", 247, 247, 247.070300000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Bk", 247, 247, 247.070300000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                              4,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Cf", 251, 251, 251.079600000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Es", 252, 252, 252.082800000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Fm", 257, 257, 257.095100000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Md", 258, 258, 258.098600000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              3,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"No", 259, 259, 259.100900000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Lr", 260, 260, 260.105400000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        {"Rf", 261, 261, 261.108700000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
 
+        /*
+            The elements below were added after v. 1.03.
+            When available, the mass is given for isotope with the longest half-life.
+            Standard valences given here are just placeholders.
+            v. 1.04: added elements 105-112.
+                        Ref.: M. E. WIESER AND T. B. COPLEN.
+                        Atomic weights of the elements 2009 (IUPAC Technical Report).
+                        Pure Appl. Chem., Vol. 83, No. 2, pp. 359-396, 2011.
+            v. 1.05: added elements 114 and 116;
+                        updated data for elements 105-112.
+                        Ref.: J. Meija, T.B. Coplen, M.Berglund et al.
+                        Atomic weights of the elements 2013 (IUPAC Technical Report).
+                        Pure Appl. Chem., Vol. 88, No. 3, pp. 265-291, 2016.
+                    added elements 113, 115, 117, and 118, according to IUPAC provisional recommendations:
+                        Ref.: L. Ohrstrom, J. Reedijk.
+                        Names and Symbols of the Elements with Atomic Numbers 113, 115, 117 and 118.
+                        Pure Appl. Chem., May 1, 2016, Manuscript ID PAC-REC-16-05-01
+                        http://iupac.org/cms/wp-content/uploads/2016/06/names-and-symbols-of-elements.pdf
+        */
 
-/****************************************************************************/
-int bHeteroAtomMayHaveXchgIsoH( inp_ATOM *atom, int iat )
+        /* 105 dubnium Db                ? Like: Ta */
+        {"Db", 270, 270, 270.131000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 106 seaborgium Sg            ? Like: W */
+        {"Sg", 269, 269, 269.129000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 107 bohrium Bh                ? Like: Re */
+        {"Bh", 270, 270, 270.133000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 108 hassium Hs                ? Like: Os */
+        {"Hs", 270, 270, 270.134000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 109 meitnerium Mt            ? Like: Ir */
+        {"Mt", 278, 278, 278.156000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 110 darmstadtium Ds            ? Like: Pt */
+        {"Ds", 281, 281, 281.165000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 111 roentgenium Rg            ? Like: Au */
+        {"Rg", 281, 281, 281.166000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 112 copernicium Cn            ? Like: Hg */
+        {"Cn", 285, 285, 285.177000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 113 nihonium Nh                ? Like: ? */
+        {"Nh", 278, 278, 278.000000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 114 flerovium Fl                ? Like: Pb */
+        {"Fl", 289, 289, 289.190000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 115 moscovium Mc                ? Like: ? */
+        {"Mc", 289, 289, 289.000000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 116 livermorium Lv            ? Like: Po */
+        {"Lv", 293, 293, 293.204000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 117 tennessine Ts            ? Like: ? */
+        {"Ts", 297, 297, 297.000000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* 118 oganesson Og            ? Like: ? */
+        {"Og", 294, 294, 294.000000000, MolInOrg1, 0, 1, {{
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              1,
+                                                          },
+                                                          {
+                                                              0,
+                                                          },
+                                                          {
+                                                              0,
+                                                          }}},
+        /* End of added in v. 1.04 - 1.05 */
+        {"Zy", 0, 0, 0.000000000, 0, 0, 1, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                1,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"Zz", 0, 0, 0.000000000, 0, 0, 1, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                1,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+#ifdef INCHI_ZFRAG
+        {"Zu", 0, 0, 0.000000000, 0, 0, 1, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                1,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"Zv", 0, 0, 0.000000000, 0, 0, 1, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                2,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"Zw", 0, 0, 0.000000000, 0, 0, 1, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                3,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+        {"Zx", 0, 0, 0.000000000, 0, 0, 1, {{
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                1,
+                                                2,
+                                            },
+                                            {
+                                                0,
+                                            },
+                                            {
+                                                0,
+                                            }}},
+#endif
+
+        {"", 0, 0, 0.000000000, 0, 0, 0, {{
+                                              0,
+                                          },
+                                          {
+                                              0,
+                                          },
+                                          {
+                                              0,
+                                          },
+                                          {
+                                              0,
+                                          },
+                                          {
+                                              0,
+                                          }}},
+};
+
+/****************************************************************************
+ * (@nnuk : Nauman Ullah Khan)
+ * Function retrieves the valence values from the MolecularInoragnicsArray
+ ****************************************************************************/
+int getElValenceforMolecularInorganics(int nPeriodicNum, int charge, int val_num)
 {
-    inp_ATOM *at = atom + iat, *at2;
-    int j, val, is_H = 0, num_H, iat_numb, bAccept; /* djb-rwth: removing redundant variables */
-
-    if (0 > ( iat_numb = get_iat_number( at->el_number ) ))
+    if (charge < MIN_ATOM_CHARGE || charge > MAX_ATOM_CHARGE || val_num >= MAX_NUM_VALENCES)
     {
         return 0;
     }
 
-    if (abs( at->charge ) > 1 || (at->radical && RADICAL_SINGLET != at->radical)) /* djb-rwth: addressing LLVM warning */
+    return MolecularInorganicsArray[nPeriodicNum > 1 ? nPeriodicNum + 1 : 0].cValence[NEUTRAL_STATE + charge][val_num];
+}
+
+/****************************************************************************
+ * (@nnuk : Nauman Ullah Khan)
+ * Function retrieves the element type value from the MolecularInorganicsArray
+ ****************************************************************************/
+int getElTypeforMolecularInorganics(int nPeriodicNum)
+{
+    return MolecularInorganicsArray[nPeriodicNum + 1].nType;
+}
+
+/*****************************************************************************
+ * (@nnuk : Nauman Ullah Khan)
+ * Function check for molecular inorganics if a metal atom has to be disconnected
+ * or not.
+ ******************************************************************************/
+int MolecularInorganicsIsMetalToDisconnect(inp_ATOM *at, int atom_idx)
+{
+
+    int at_valence, num_H;
+    int type = getElTypeforMolecularInorganics(at[atom_idx].el_number);
+    int j;
+
+    /* Calculate the actual valence of the atom
+     * It means that the total bounding capacity
+     * of the atom has to be taken into account
+     * which will further get equated within the
+     * elements array to a metal atom(neutral or an ion) */
+    num_H = NUMH(at, atom_idx);
+    at_valence = num_H + at[atom_idx].chem_bonds_valence;
+
+    if (!at_valence || (abs(at[atom_idx].charge) > 1))
+    {
+        return 0; /* Isolated metal atom or Atom has multiple charges */
+    }
+
+    /* Check if the valence matches a known normal valence */
+    for (j = 0; j < 4; j++)
+    {
+        const int bitmask = (1 << j);                              /* Create bitmask for the j-th bit */
+        const bool is_valence_state_valid = (bitmask & type) != 0; /* Check if the j-th valence state is allowed */
+
+        if (is_valence_state_valid && at_valence == getElValenceforMolecularInorganics(at[atom_idx].el_number, at[atom_idx].charge, j))
+        {
+            return 1; /* Atom has normal valence follows disconnection logic if applicable */
+        }
+    }
+
+    /* Default: Valence greater than usual or the atom is isolated hence no disconnection */
+    return 0;
+}
+
+#define NUM_ELEMENTS 118 /* Adjust according to the number of elements in the array */
+/*****************************************************************************
+ * (@nnuk : Nauman Ullah Khan)
+ * Elements Array for for molecular inorganics
+ ******************************************************************************/
+
+ElementsMolecularInorganics elementListMolecularInorganics[NUM_ELEMENTS] =
+    {
+        {1, "H"}, {2, "He"}, {3, "Li"}, {4, "Be"}, {5, "B"}, {6, "C"}, {7, "N"}, {8, "O"}, {9, "F"}, {10, "Ne"}, {11, "Na"}, {12, "Mg"}, {13, "Al"}, {14, "Si"}, {15, "P"}, {16, "S"}, {17, "Cl"}, {18, "Ar"}, {19, "K"}, {20, "Ca"}, {21, "Sc"}, {22, "Ti"}, {23, "V"}, {24, "Cr"}, {25, "Mn"}, {26, "Fe"}, {27, "Co"}, {28, "Ni"}, {29, "Cu"}, {30, "Zn"}, {31, "Ga"}, {32, "Ge"}, {33, "As"}, {34, "Se"}, {35, "Br"}, {36, "Kr"}, {37, "Rb"}, {38, "Sr"}, {39, "Y"}, {40, "Zr"}, {41, "Nb"}, {42, "Mo"}, {43, "Tc"}, {44, "Ru"}, {45, "Rh"}, {46, "Pd"}, {47, "Ag"}, {48, "Cd"}, {49, "In"}, {50, "Sn"}, {51, "Sb"}, {52, "Te"}, {53, "I"}, {54, "Xe"}, {55, "Cs"}, {56, "Ba"}, {57, "La"}, {58, "Ce"}, {59, "Pr"}, {60, "Nd"}, {61, "Pm"}, {62, "Sm"}, {63, "Eu"}, {64, "Gd"}, {65, "Tb"}, {66, "Dy"}, {67, "Ho"}, {68, "Er"}, {69, "Tm"}, {70, "Yb"}, {71, "Lu"}, {72, "Hf"}, {73, "Ta"}, {74, "W"}, {75, "Re"}, {76, "Os"}, {77, "Ir"}, {78, "Pt"}, {79, "Au"}, {80, "Hg"}, {81, "Tl"}, {82, "Pb"}, {83, "Bi"}, {84, "Po"}, {85, "At"}, {86, "Rn"}, {87, "Fr"}, {88, "Ra"}, {89, "Ac"}, {90, "Th"}, {91, "Pa"}, {92, "U"}, {93, "Np"}, {94, "Pu"}, {95, "Am"}, {96, "Cm"}, {97, "Bk"}, {98, "Cf"}, {99, "Es"}, {100, "Fm"}, {101, "Md"}, {102, "No"}, {103, "Lr"}, {104, "Rf"}, {105, "Db"}, {106, "Sg"}, {107, "Bh"}, {108, "Hs"}, {109, "Mt"}, {110, "Ds"}, {111, "Rg"}, {112, "Cn"}, {113, "Nh"}, {114, "Fl"}, {115, "Mc"}, {116, "Lv"}, {117, "Ts"}, {118, "Og"}};
+
+/*************************************************************************
+ * (@nnuk : NaumanUllahKhan)
+ * Binary Array of all the Electronegativity values between Elements
+ **************************************************************************/
+
+const int binaryArrayMolecularInorganics[NUM_ELEMENTS][NUM_ELEMENTS] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+};
+
+/*****************************************************************************
+ * (@nnuk : Nauman Ullah Khan)
+ * Function to retrieve binary values for MolecularInorganicsPreprocessing
+ * Binary values are retrieved from the disconnection array "binaryArrayMolecularInorganics"
+ * "1" means that the bond between atom and the neighbouring atom has to be
+ * disconnected whereas, "0" means the bond has to be kept.
+ ******************************************************************************/
+
+int shouldBondBeCut(int atom1, int atom2)
+{
+    int index1, index2, binaryValue;
+
+    /* Get the indices corresponding to the atomic numbers */
+    index1 = atom1 - 1;
+    index2 = atom2 - 1;
+
+    /* Retrieve the binary value from the binary array */
+    binaryValue = binaryArrayMolecularInorganics[index1][index2];
+
+    /* Output for debugging purposes */
+    /*printf("Electronegativity binary value between the atom and it's neighbour is: %d\n", binaryValue); */
+
+    return binaryValue;
+}
+
+/*****************************************************************************
+ * (@nnuk : Nauman Ullah Khan)
+ * Function to update the neighboring list of the atom for MolecularInorganicsPreprocessing.
+ ******************************************************************************/
+
+void updateNeighborListMolecularInorganics(inp_ATOM *at, int atom_idx, int neighbor_idx)
+{
+
+    int valence = at[atom_idx].valence;
+    int i, j;
+
+    for (i = 0; i < valence; i++)
+    {
+        if (at[atom_idx].neighbor[i] == neighbor_idx)
+        {
+            /* Shift remaining neighbors to fill the gap */
+            for (j = i; j < valence - 1; j++)
+            {
+                at[atom_idx].neighbor[j] = at[atom_idx].neighbor[j + 1];
+            }
+            at[atom_idx].valence--; /* Reduce the valence (number of neighbors) */
+
+            break;
+        }
+    }
+}
+
+/*****************************************************************************
+ * (@nnuk :: Nauman Ullah Khan)
+ * @brief Function to preprocess molecular inorganics structures by disconnecting metal bonds and handling salts + ammonium salts.
+ *
+ * This function processes a given molecular structure, identifies metal atoms,
+ * and performs bond disconnections based on electronegativity differences. After metal disconnections,
+ * it also checks for ammonium salt patterns and disconnects them where applicable.
+ *
+ * @param orig_at_data Pointer to the original atom data structure.
+ * @param ip Pointer to the input parameters structure.
+ * @return Number of successful disconnections or -1 on error.
+ *****************************************************************************/
+
+int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *ip)
+{
+    int ret_code = 0;
+
+    if (!ip || !orig_at_data || !orig_at_data->at)
+    {
+        return -1;
+    }
+
+    if (!ip->bMolecularInorganics)
+    {
+        return -1;
+    }
+
+    /* Pointer to the array of input atoms from the original atom data structure */
+    inp_ATOM *at = orig_at_data->at;
+
+    /* Total number of input atoms present in the molecular structure */
+    int num_at = orig_at_data->num_inp_atoms;
+
+    /* Pointer to the array storing the old component numbers for each atom, used for tracking connectivity */
+    AT_NUMB *nOldCompNumber = orig_at_data->nOldCompNumber;
+
+    /* Track number of disconnections */
+    int num_disconnected = 0;
+
+    /* variables declared */
+    int i, j, n, k, t;
+    int binaryValue;
+    int disconnectDecision;
+    int neighbor_idx, neigh_pos;
+    int num_metals, current_component;
+
+    /* memory allocation */
+    S_CHAR* dfs_visited = (S_CHAR*)inchi_calloc(num_at, sizeof(S_CHAR));
+    int* dfs_stack = (int*)inchi_malloc(num_at * sizeof(int));
+    int* ligand_elem_array = (int*)inchi_malloc(num_at * sizeof(int));
+    int* structure_id = (int*)inchi_malloc(num_at * sizeof(int));
+    int* structure_metal_count = (int*)inchi_calloc(num_at, sizeof(int));
+
+    if (!dfs_visited || !dfs_stack || !ligand_elem_array || !structure_id || !structure_metal_count)
+    {
+        ret_code = -1;
+        goto cleanup;
+    }
+
+    /* Before disconnection, invoke ammonium salt functions */
+    for (j = 0; j < num_at; j++)
+    {
+        int piO, pk;
+        S_CHAR num_explicit_H[NUM_H_ISOTOPES + 1];
+
+        if (bIsAmmoniumSalt(at, j, &piO, &pk, num_explicit_H))
+        {
+            DisconnectAmmoniumSalt(at, j, piO, pk, num_explicit_H);
+        }
+    }
+
+    /* Function call to Mark ring systems */
+    MarkRingSystemsInp(at, num_at, 0);
+
+    /* Compute metal list */
+    num_metals = 0;
+    for (i = 0; i < num_at; i++)
+    {
+        if (is_el_a_metal(at[i].el_number))
+        {
+            num_metals++;
+        }
+    }
+
+    /*
+     * Precompute structure components (DFS RUN ONCE) to satisfy this rule below,
+     * (if there is a path from this metal to ANY other metal,
+     * keep all bonds for this metal)
+    */
+    for (i = 0; i < num_at; i++)
+    {
+        structure_id[i] = -1;
+    }
+
+    current_component = 0;
+
+    for (i = 0; i < num_at; i++)
+    {
+        if (structure_id[i] >= 0)
+        {
+            continue;
+        }
+
+        int dfs_stack_size = 0;
+        dfs_stack[dfs_stack_size++] = i;
+        structure_id[i] = current_component;
+
+        while (dfs_stack_size)
+        {
+            int current_atom = dfs_stack[--dfs_stack_size];
+
+            if (is_el_a_metal(at[current_atom].el_number))
+            {
+                structure_metal_count[current_component]++;
+            }
+
+            for (neigh_pos = 0; neigh_pos < at[current_atom].valence; neigh_pos++)
+            {
+                int neighbor_atom = at[current_atom].neighbor[neigh_pos];
+
+                if (neighbor_atom < 0 || neighbor_atom >= num_at)
+                {
+                    continue;
+                }
+
+                if (structure_id[neighbor_atom] >= 0)
+                {
+                    continue;
+                }
+
+                structure_id[neighbor_atom] = current_component;
+
+                if (dfs_stack_size < num_at)
+                {
+                    dfs_stack[dfs_stack_size++] = neighbor_atom;
+                }
+            }
+        }
+
+        current_component++;
+    }
+
+    for (i = 0; i < num_at; i++)
+    {
+        if (!is_el_a_metal(at[i].el_number))
+        {
+            continue;
+        }
+
+       /*@nnuk
+        *If there exists any path between this metal and any other metal OR
+        *the atom belongs to a ring system containing at least one metal, then keep all bonds for this metal.
+       */
+        int keep_all_ligand_for_this_metal = 0;
+
+        /* @nnuk
+         *if this metal is part of a ring system that contains at least one metal,
+         *keep all bonds for this metal
+        */
+        if (at[i].nRingSystem)
+        {
+            /* scan atoms that are in same ring system and check for a metal */
+            AT_NUMB ring_id = at[i].nRingSystem;
+
+            for (k = 0; k < num_at; k++)
+            {
+                if (k != i && at[k].nRingSystem == ring_id && is_el_a_metal(at[k].el_number))
+                {
+                    keep_all_ligand_for_this_metal = 1;
+                    break;
+                }
+            }
+        }
+
+        /*@nnuk
+         *if there is a path from this metal to ANY other metal,
+         *keep all bonds for this metal.
+        */
+        if (!keep_all_ligand_for_this_metal && num_metals > 1)
+        {
+            int processed_structure = structure_id[i];
+
+            if (structure_metal_count[processed_structure] > 1)
+            {
+                keep_all_ligand_for_this_metal = 1;
+            }
+        }
+
+        if (keep_all_ligand_for_this_metal)
+        {
+            ip->bMolecularInorganicsReconnectedInChI = 1;
+            continue;
+        }
+
+        /*@nnuk
+         *If central metal is bound to different ligand atom element types
+         *AND at least one of the bonds must be kept according to existing bond rules,
+         *then keep ALL bonds
+        */
+        {
+            int ligand_type_count = 0;
+            int must_keep_neighbor = 0;
+
+            for (n = 0; n < at[i].valence; n++)
+            {
+                int neigh_idx = at[i].neighbor[n];
+
+                if (neigh_idx < 0 || neigh_idx >= num_at)
+                {
+                    continue;
+                }
+
+                int neigh_elem = at[neigh_idx].el_number;
+                int found = 0;
+
+                for (t = 0; t < ligand_type_count; t++)
+                {
+                    if (ligand_elem_array[t] == neigh_elem)
+                    {
+                        found = 1;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    ligand_elem_array[ligand_type_count++] = neigh_elem;
+                }
+
+                if (at[i].bond_type[n] > 1 || is_el_a_metal(at[neigh_idx].el_number))
+                {
+                    must_keep_neighbor = 1;
+                }
+                else
+                {
+                    binaryValue = shouldBondBeCut(at[i].el_number, neigh_elem);
+
+                    if (binaryValue != 1)
+                    {
+                        must_keep_neighbor = 1;
+                    }
+                }
+            }
+
+            if (ligand_type_count > 1 && must_keep_neighbor)
+            {
+                ip->bMolecularInorganicsReconnectedInChI = 1;
+                continue;
+            }
+        }
+
+        /* Call the MolecularInorganicsIsMetalToDisconnect function */
+        disconnectDecision = MolecularInorganicsIsMetalToDisconnect(at, i);
+
+        if (disconnectDecision != 1) /* If disconnectDecision = 1, then disconnection procedure will be followed if applicable */
+        {
+            /* (@nnuk) : No disconnection if the metal atom bounding capacity is greater than
+             * the limit set inside Molecular Inorganics elements array or if the metal atom is
+             * isolated. */
+            ip->bMolecularInorganicsReconnectedInChI = 1;
+            continue;
+        }
+
+        /* Proceed with electronegativity and disconnection logic */
+        for (n = at[i].valence - 1; n >= 0; n--)
+        {
+            neighbor_idx = at[i].neighbor[n];
+
+            /* Check if the neighboring atom has more than 1 bond connected to the metal atom or
+             * if the neighbour is also a metal atom. In both cases no disconnection has to be done */
+            if (at[i].bond_type[n] > 1 || is_el_a_metal(at[neighbor_idx].el_number))
+            {
+                ip->bMolecularInorganicsReconnectedInChI = 1;
+                continue; /* Skip disconnection for this bond */
+            }
+
+            binaryValue = shouldBondBeCut(at[i].el_number, at[neighbor_idx].el_number);
+
+            if (binaryValue != 1)
+            {
+                /* (@nnuk : Keep the bonds, no disconnection) */
+                ip->bMolecularInorganicsReconnectedInChI = 1;
+                continue;
+            }
+
+            DisconnectInpAtBond(at, nOldCompNumber, i, n);
+
+            /* Updating the metal as well as neighbor list */
+            updateNeighborListMolecularInorganics(at, i, neighbor_idx);
+            updateNeighborListMolecularInorganics(at, neighbor_idx, i);
+
+            at[i].charge += 1;            /* Metal atom loses an electron -> +1 charge */
+            at[neighbor_idx].charge -= 1; /* Neighbor atom gains an electron -> -1 charge */
+
+            num_disconnected++;
+        }
+    }
+
+cleanup:
+    if (dfs_visited) inchi_free(dfs_visited);
+    if (dfs_stack) inchi_free(dfs_stack);
+    if (ligand_elem_array) inchi_free(ligand_elem_array);
+    if (structure_id) inchi_free(structure_id);
+    if (structure_metal_count) inchi_free(structure_metal_count);
+
+    return (ret_code < 0) ? ret_code : num_disconnected;
+}
+
+#if (READ_INCHI_STRING == 1)
+
+/****************************************************************************/
+int bHeteroAtomMayHaveXchgIsoH(inp_ATOM *atom, int iat)
+{
+    inp_ATOM *at = atom + iat, *at2;
+    int j, val, is_H = 0, num_H, iat_numb, bAccept; /* djb-rwth: removing redundant variables */
+
+    if (0 > (iat_numb = get_iat_number(at->el_number)))
+    {
+        return 0;
+    }
+
+    if (abs(at->charge) > 1 || (at->radical && RADICAL_SINGLET != at->radical)) /* djb-rwth: addressing LLVM warning */
     {
         return 0;
     }
@@ -4063,6 +6758,99 @@ int bHeteroAtomMayHaveXchgIsoH( inp_ATOM *atom, int iat )
     val = -1;
     switch (iat_numb)
     {
+    case IAT_N:
+    case IAT_P:
+        /* djb-rwth: removing redundant code */
+        val = 3 + at->charge;
+        break;
+
+    case IAT_O:
+    case IAT_S:
+    case IAT_Se:
+    case IAT_Te:
+        /* djb-rwth: removing redundant code */
+        val = 2 + at->charge;
+        break;
+
+    case IAT_F:
+    case IAT_Cl:
+    case IAT_Br:
+    case IAT_I:
+        if (at->charge == 0)
+        {
+            /* djb-rwth: removing redundant code */
+            val = 1;
+        }
+        break;
+
+    case IAT_H:
+        if (at->valence == 0 &&
+            at->charge == 1)
+        {
+            is_H = 1; /* isolated proton */
+            val = 0;
+        }
+    }
+    if (val < 0)
+    {
+        return 0;
+    }
+    num_H = NUMH(at, 0);
+    if (val != at->chem_bonds_valence + num_H)
+    {
+        return 0;
+    }
+    if (is_H)
+    {
+        return 2; /* H atom */
+    }
+    else
+    {
+        /* djb-rwth: removing redundant code */
+        for (j = 0, bAccept = 1; j < at->valence && bAccept; j++)
+        {
+            at2 = atom + (int)at->neighbor[j];
+            if ((at2->charge && at->charge) ||
+                (at2->radical && RADICAL_SINGLET != at2->radical)) /* djb-rwth: addressing LLVM warning */
+            {
+                return 0; /* adjacent charged/radical atoms: do not neutralizate */
+            }
+        }
+    }
+
+    return 1;
+}
+
+#endif
+
+/****************************************************************************/
+int bNumHeterAtomHasIsotopicH(inp_ATOM *atom, int num_atoms)
+{
+    int i, j, val, is_H = 0, num_H, iat_numb, bAccept, num_iso_H, cur_num_iso_H, num_iso_atoms; /* djb-rwth: removing redundant variables */
+    inp_ATOM *at, *at2;
+
+    num_iso_H = 0;
+    num_iso_atoms = 0;
+
+    for (i = 0, at = atom; i < num_atoms; i++, at++)
+    {
+
+        num_iso_atoms += (at->iso_atw_diff != 0 || NUM_ISO_H(at, 0));
+        /* isotopic atoms and implicit isotopic H */
+
+        if (0 > (iat_numb = get_iat_number(at->el_number)))
+        {
+            continue;
+        }
+
+        if (abs(at->charge) > 1 || (at->radical && RADICAL_SINGLET != at->radical)) /* djb-rwth: addressing LLVM warning */
+        {
+            continue;
+        }
+
+        val = -1;
+        switch (iat_numb)
+        {
         case IAT_N:
         case IAT_P:
             /* djb-rwth: removing redundant code */
@@ -4090,113 +6878,18 @@ int bHeteroAtomMayHaveXchgIsoH( inp_ATOM *atom, int iat )
 
         case IAT_H:
             if (at->valence == 0 &&
-                 at->charge == 1)
+                at->charge == 1)
             {
                 is_H = 1; /* isolated proton */
                 val = 0;
             }
-    }
-    if (val < 0)
-    {
-        return 0;
-    }
-    num_H = NUMH( at, 0 );
-    if (val != at->chem_bonds_valence + num_H)
-    {
-        return 0;
-    }
-    if (is_H)
-    {
-        return 2; /* H atom */
-    }
-    else
-    {
-        /* djb-rwth: removing redundant code */
-        for (j = 0, bAccept = 1; j < at->valence && bAccept; j++)
-        {
-            at2 = atom + (int) at->neighbor[j];
-            if ((at2->charge && at->charge) ||
-                ( at2->radical && RADICAL_SINGLET != at2->radical )) /* djb-rwth: addressing LLVM warning */
-            {
-                return 0; /* adjacent charged/radical atoms: do not neutralizate */
-            }
-        }
-    }
-
-    return 1;
-}
-
-
-#endif
-
-
-/****************************************************************************/
-int bNumHeterAtomHasIsotopicH( inp_ATOM *atom, int num_atoms )
-{
-    int i, j, val, is_H = 0, num_H, iat_numb, bAccept, num_iso_H, cur_num_iso_H, num_iso_atoms; /* djb-rwth: removing redundant variables */
-    inp_ATOM *at, *at2;
-
-    num_iso_H = 0;
-    num_iso_atoms = 0;
-
-    for (i = 0, at = atom; i < num_atoms; i++, at++)
-    {
-
-        num_iso_atoms += ( at->iso_atw_diff != 0 || NUM_ISO_H( at, 0 ) );
-        /* isotopic atoms and implicit isotopic H */
-
-        if (0 >( iat_numb = get_iat_number( at->el_number ) ))
-        {
-            continue;
-        }
-
-        if (abs( at->charge ) > 1 || (at->radical && RADICAL_SINGLET != at->radical)) /* djb-rwth: addressing LLVM warning */
-        {
-            continue;
-        }
-
-        val = -1;
-        switch (iat_numb)
-        {
-            case IAT_N:
-            case IAT_P:
-                /* djb-rwth: removing redundant code */
-                val = 3 + at->charge;
-                break;
-
-            case IAT_O:
-            case IAT_S:
-            case IAT_Se:
-            case IAT_Te:
-                /* djb-rwth: removing redundant code */
-                val = 2 + at->charge;
-                break;
-
-            case IAT_F:
-            case IAT_Cl:
-            case IAT_Br:
-            case IAT_I:
-                if (at->charge == 0)
-                {
-                    /* djb-rwth: removing redundant code */
-                    val = 1;
-                }
-                break;
-
-            case IAT_H:
-                if (at->valence == 0 &&
-                     at->charge == 1)
-                {
-                    is_H = 1; /* isolated proton */
-                    val = 0;
-                }
         }
         if (val < 0)
         {
             continue;
         }
 
-        num_H = NUMH( at, 0 );
+        num_H = NUMH(at, 0);
         if (val != at->chem_bonds_valence + num_H)
         {
             continue;
@@ -4205,22 +6898,22 @@ int bNumHeterAtomHasIsotopicH( inp_ATOM *atom, int num_atoms )
         if (is_H)
         {
             bAccept = 1;
-            cur_num_iso_H = ( at->iso_atw_diff != 0 );
+            cur_num_iso_H = (at->iso_atw_diff != 0);
         }
         else
         {
             cur_num_iso_H = 0;
             for (j = 0, bAccept = 1; j < at->valence && bAccept; j++)
             {
-                at2 = atom + (int) at->neighbor[j];
+                at2 = atom + (int)at->neighbor[j];
                 if ((at2->charge && at->charge) ||
-                    ( at2->radical && RADICAL_SINGLET != at2->radical )) /* djb-rwth: addressing LLVM warning */
+                    (at2->radical && RADICAL_SINGLET != at2->radical)) /* djb-rwth: addressing LLVM warning */
                 {
                     bAccept = 0; /* adjacent charged/radical atoms: do not neutralizate */
                     break;
                 }
                 else if (at2->el_number == EL_NUMBER_H &&
-                          at2->valence == 1 && at2->iso_atw_diff)
+                         at2->valence == 1 && at2->iso_atw_diff)
                 {
                     cur_num_iso_H++; /* isotopic explicit H */
                 }
@@ -4228,44 +6921,42 @@ int bNumHeterAtomHasIsotopicH( inp_ATOM *atom, int num_atoms )
 
             if (bAccept)
             {
-                num_iso_atoms -= cur_num_iso_H;  /* avoid counting explicit H as isotopic atom */
-                cur_num_iso_H += NUM_ISO_H( at, 0 );
+                num_iso_atoms -= cur_num_iso_H; /* avoid counting explicit H as isotopic atom */
+                cur_num_iso_H += NUM_ISO_H(at, 0);
             }
         }
 
-        num_iso_H += ( bAccept && cur_num_iso_H ); /* number of acceptable heteroatoms that have isotopic H */
+        num_iso_H += (bAccept && cur_num_iso_H); /* number of acceptable heteroatoms that have isotopic H */
     }
 
-    return
-        ( ( num_iso_H ? 1 : 0 ) | ( num_iso_atoms ? 2 : 0 ) );
+    return ((num_iso_H ? 1 : 0) | (num_iso_atoms ? 2 : 0));
 }
-
 
 /****************************************************/
 /* Mark and count disconnected structure components */
 /* by Depth-first searching each component          */
 /****************************************************/
-int cmp_components( const void *a1, const void *a2 )
+int cmp_components(const void *a1, const void *a2)
 {
     int ret;
     AT_NUMB n1;
     AT_NUMB n2;
 
-    n1 = ( (const AT_NUMB *) a1 )[0];
+    n1 = ((const AT_NUMB *)a1)[0];
     /* number of atoms in the component -- descending order */
-    n2 = ( (const AT_NUMB *) a2 )[0];
+    n2 = ((const AT_NUMB *)a2)[0];
 
-    if ((ret = (int) n2 - (int) n1)) /* djb-rwth: addressing LLVM warning */
+    if ((ret = (int)n2 - (int)n1)) /* djb-rwth: addressing LLVM warning */
     {
         return ret;
     }
 
     /* stable sort */
-    n1 = ( (const AT_NUMB *) a1 )[1];
+    n1 = ((const AT_NUMB *)a1)[1];
     /* component ordering number -- ascending order */
-    n2 = ( (const AT_NUMB *) a2 )[1];
+    n2 = ((const AT_NUMB *)a2)[1];
 
-    ret = (int) n1 - (int) n2;
+    ret = (int)n1 - (int)n2;
 
     return ret;
 }
@@ -4568,18 +7259,18 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
 Set the (disconnected) component numbers in ORIG_ATOM_DATA 'at[*].component'
 NB: components are (stable) sorted by number of heavy atoms
 ****************************************************************************/
-int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
-                                int bProcessOldCompNumbers )
+int MarkDisconnectedComponents(ORIG_ATOM_DATA *orig_at_data,
+                               int bProcessOldCompNumbers)
 {
     typedef AT_NUMB AT_TRIPLE[3];
 
-    inp_ATOM    *at = orig_at_data->at;
-    int         num_at = orig_at_data->num_inp_atoms;
-    AT_NUMB     *nCurAtLen = NULL;
+    inp_ATOM *at = orig_at_data->at;
+    int num_at = orig_at_data->num_inp_atoms;
+    AT_NUMB *nCurAtLen = NULL;
 
     AT_NUMB *nNewCompNumber = NULL;
     AT_NUMB *nPrevAtom = NULL;
-    S_CHAR  *iNeigh = NULL;
+    S_CHAR *iNeigh = NULL;
 
     AT_NUMB *nOldCompNumber = NULL;
     int i, j, num_components, ret;
@@ -4587,12 +7278,12 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
     AT_NUMB old_comp_no, another_comp_no, no_component;
 
     /* component_nbr[i][0] = number of atoms in the component i-1
-    * component_nbr[i][1] = original component number (id-1) = i
-    * after sorting:
-    * component_nbr[j][2] = new number of component #(component_nbr[i][1]+1)
-    */
+     * component_nbr[i][1] = original component number (id-1) = i
+     * after sorting:
+     * component_nbr[j][2] = new number of component #(component_nbr[i][1]+1)
+     */
     AT_TRIPLE *component_nbr = NULL;
-    int fst_at, nxt_at, cur_at, cur_neq_fst;  /* moved from below 2024-09-01 DT */
+    int fst_at, nxt_at, cur_at, cur_neq_fst; /* moved from below 2024-09-01 DT */
 
     /* initialize */
     if (bProcessOldCompNumbers && !orig_at_data->nOldCompNumber)
@@ -4614,9 +7305,9 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
         return 0;
     }
 
-    nNewCompNumber = (AT_NUMB*)inchi_calloc(num_at, sizeof(nNewCompNumber[0]));
-    nPrevAtom = (AT_NUMB*)inchi_calloc(num_at, sizeof(nPrevAtom[0]));
-    iNeigh = (S_CHAR*)inchi_calloc(num_at, sizeof(iNeigh[0]));
+    nNewCompNumber = (AT_NUMB *)inchi_calloc(num_at, sizeof(nNewCompNumber[0]));
+    nPrevAtom = (AT_NUMB *)inchi_calloc(num_at, sizeof(nPrevAtom[0]));
+    iNeigh = (S_CHAR *)inchi_calloc(num_at, sizeof(iNeigh[0]));
 
     if (!nNewCompNumber || !nPrevAtom || !iNeigh) /* nNewCompNumber: for non-recursive DFS only: */
     {
@@ -4641,7 +7332,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
 
             /* first time at at[j] */
             fst_at = cur_at;
-            nNewCompNumber[fst_at] = (AT_NUMB) num_components;
+            nNewCompNumber[fst_at] = (AT_NUMB)num_components;
 
             /* find next neighbor */
             do
@@ -4655,8 +7346,8 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
                     if (!nNewCompNumber[nxt_at])
                     {
                         /* forward edge: found new atom */
-                        nNewCompNumber[nxt_at] = (AT_NUMB) num_components;
-                        nPrevAtom[nxt_at] = (AT_NUMB) cur_at;
+                        nNewCompNumber[nxt_at] = (AT_NUMB)num_components;
+                        nPrevAtom[nxt_at] = (AT_NUMB)cur_at;
                         cur_at = nxt_at;
                     }
                 }
@@ -4673,17 +7364,17 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
         }
     }
 
-    inchi_free( nPrevAtom );
+    inchi_free(nPrevAtom);
     nPrevAtom = NULL;
-    inchi_free( iNeigh );
+    inchi_free(iNeigh);
     iNeigh = NULL;
 
     /* Allocate more memory */
-    i = inchi_max( num_components, orig_at_data->num_components );
+    i = inchi_max(num_components, orig_at_data->num_components);
 
-    nCurAtLen = (AT_NUMB*)inchi_calloc((long long)num_components + 1, sizeof(nCurAtLen[0])); /* djb-rwth: cast operator added */
-    nOldCompNumber = (AT_NUMB*)inchi_calloc((long long)i + 1, sizeof(nOldCompNumber[0])); /* djb-rwth: cast operator added */
-    component_nbr = (AT_TRIPLE*)inchi_calloc((long long)num_components + 1, sizeof(component_nbr[0])); /* djb-rwth: cast operator added */
+    nCurAtLen = (AT_NUMB *)inchi_calloc((long long)num_components + 1, sizeof(nCurAtLen[0]));           /* djb-rwth: cast operator added */
+    nOldCompNumber = (AT_NUMB *)inchi_calloc((long long)i + 1, sizeof(nOldCompNumber[0]));              /* djb-rwth: cast operator added */
+    component_nbr = (AT_TRIPLE *)inchi_calloc((long long)num_components + 1, sizeof(component_nbr[0])); /* djb-rwth: cast operator added */
 
     if (!nCurAtLen || !nOldCompNumber || !component_nbr)
     {
@@ -4699,7 +7390,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
 
     for (j = 0; j < num_at; j++)
     {
-        component_nbr[(int) nNewCompNumber[j] - 1][0] ++; /* count atoms in each component */
+        component_nbr[(int)nNewCompNumber[j] - 1][0]++; /* count atoms in each component */
     }
 
     /* Sort settings
@@ -4723,7 +7414,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
     for (j = 0; j < num_at; j++)
     {
         /* new component number for at[j] */
-        new_comp_no = component_nbr[(int) nNewCompNumber[j] - 1][2] - 1; /* starts from 0 */
+        new_comp_no = component_nbr[(int)nNewCompNumber[j] - 1][2] - 1; /* starts from 0 */
         if (bProcessOldCompNumbers)
         {
             /* old component number for at[j] */
@@ -4747,7 +7438,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
                     for (i = 0; i < num_components; i++)
                     {
                         if (nOldCompNumber[i] == old_comp_no ||
-                             nOldCompNumber[i] == another_comp_no)
+                            nOldCompNumber[i] == another_comp_no)
                         {
                             nOldCompNumber[i] = no_component;
                         }
@@ -4773,7 +7464,7 @@ int MarkDisconnectedComponents( ORIG_ATOM_DATA *orig_at_data,
                 nOldCompNumber[j] = 0;
             }
             else if (nOldCompNumber[j] &&
-                      !orig_at_data->nOldCompNumber[nOldCompNumber[j] - 1])
+                     !orig_at_data->nOldCompNumber[nOldCompNumber[j] - 1])
             {
                 /* the component has changed in the previous processing  */
                 nOldCompNumber[j] = 0;
@@ -4794,33 +7485,33 @@ exit_function:
 
     if (nNewCompNumber)
     {
-        inchi_free( nNewCompNumber );
+        inchi_free(nNewCompNumber);
     }
     if (component_nbr)
     {
-        inchi_free( component_nbr );
+        inchi_free(component_nbr);
     }
 
     if (ret < 0)
     {
         if (nPrevAtom)
         {
-            inchi_free( nPrevAtom );
+            inchi_free(nPrevAtom);
             nPrevAtom = NULL;
         }
         if (iNeigh)
         {
-            inchi_free( iNeigh );
+            inchi_free(iNeigh);
             iNeigh = NULL;
         }
         if (nCurAtLen)
         {
-            inchi_free( nCurAtLen );
+            inchi_free(nCurAtLen);
             nCurAtLen = NULL;
         }
         if (nOldCompNumber)
         {
-            inchi_free( nOldCompNumber );
+            inchi_free(nOldCompNumber);
             nOldCompNumber = NULL;
         }
         num_components = ret;
@@ -4829,11 +7520,11 @@ exit_function:
     /* avoid memory leaks */
     if (orig_at_data->nCurAtLen)
     {
-        inchi_free( orig_at_data->nCurAtLen );
+        inchi_free(orig_at_data->nCurAtLen);
     }
     if (orig_at_data->nOldCompNumber)
     {
-        inchi_free( orig_at_data->nOldCompNumber );
+        inchi_free(orig_at_data->nOldCompNumber);
     }
 
     orig_at_data->nCurAtLen = nCurAtLen;
@@ -4841,25 +7532,24 @@ exit_function:
 
     orig_at_data->num_components = num_components;
 
-    return ret;  /* number of disconnected components;
-              1=>single connected structure        */
+    return ret; /* number of disconnected components;
+             1=>single connected structure        */
 }
-
 
 /****************************************************************************
 Extract one (connected) component
 ****************************************************************************/
-int ExtractConnectedComponent( inp_ATOM *at,
-                               int num_at,
-                               int component_number,
-                               inp_ATOM *component_at )
+int ExtractConnectedComponent(inp_ATOM *at,
+                              int num_at,
+                              int component_number,
+                              inp_ATOM *component_at)
 {
     int i, j, num_component_at;
     AT_NUMB *number;
 
-    if (NULL == ( number = (AT_NUMB*) inchi_calloc( num_at, sizeof( AT_NUMB ) ) ))
+    if (NULL == (number = (AT_NUMB *)inchi_calloc(num_at, sizeof(AT_NUMB))))
     {
-        return CT_OUT_OF_RAM; /* out of memory */  /*   <BRKPT> */
+        return CT_OUT_OF_RAM; /* out of memory */ /*   <BRKPT> */
     }
 
     /* copy atoms */
@@ -4875,64 +7565,61 @@ int ExtractConnectedComponent( inp_ATOM *at,
     /* renumber neighbors */
     for (i = 0; i < num_component_at; i++)
     {
-        component_at[i].orig_compt_at_numb = (AT_NUMB) ( i + 1 );
+        component_at[i].orig_compt_at_numb = (AT_NUMB)(i + 1);
         for (j = 0; j < component_at[i].valence; j++)
         {
-            component_at[i].neighbor[j] = number[(int) component_at[i].neighbor[j]];
+            component_at[i].neighbor[j] = number[(int)component_at[i].neighbor[j]];
         }
     }
 
-    inchi_free( number );
+    inchi_free(number);
 
     return num_component_at;
 }
 
-
 /****************************************************************************/
-int SetConnectedComponentNumber( inp_ATOM *at, int num_at, int component_number )
+int SetConnectedComponentNumber(inp_ATOM *at, int num_at, int component_number)
 {
     int i;
     for (i = 0; i < num_at; i++)
     {
-        at[i].component = (AT_NUMB) component_number;
+        at[i].component = (AT_NUMB)component_number;
     }
 
     return 0;
 }
 
-
 /****************************************************************************/
-int Free_INChI_Stereo( INChI_Stereo *pINChI_Stereo )
+int Free_INChI_Stereo(INChI_Stereo *pINChI_Stereo)
 {
     if (pINChI_Stereo)
     {
-        qzfree( pINChI_Stereo->nNumber );
-        qzfree( pINChI_Stereo->t_parity );
-        qzfree( pINChI_Stereo->nNumberInv );
-        qzfree( pINChI_Stereo->t_parityInv );
-        qzfree( pINChI_Stereo->nBondAtom1 );
-        qzfree( pINChI_Stereo->nBondAtom2 );
-        qzfree( pINChI_Stereo->b_parity );
+        qzfree(pINChI_Stereo->nNumber);
+        qzfree(pINChI_Stereo->t_parity);
+        qzfree(pINChI_Stereo->nNumberInv);
+        qzfree(pINChI_Stereo->t_parityInv);
+        qzfree(pINChI_Stereo->nBondAtom1);
+        qzfree(pINChI_Stereo->nBondAtom2);
+        qzfree(pINChI_Stereo->b_parity);
     }
 
     return 0;
 }
 
-
 /****************************************************************************/
-INChI_Stereo *Alloc_INChI_Stereo( int num_at, int num_bonds )
+INChI_Stereo *Alloc_INChI_Stereo(int num_at, int num_bonds)
 {
 
     INChI_Stereo *pINChI_Stereo = (INChI_Stereo *)
-        inchi_calloc( 1, sizeof( INChI_Stereo ) );
+        inchi_calloc(1, sizeof(INChI_Stereo));
 
     if (pINChI_Stereo)
     {
         if (num_at &&
-            ( pINChI_Stereo->nNumber = (AT_NUMB *) inchi_calloc( num_at, sizeof( pINChI_Stereo->nNumber[0] ) ) ) &&
-             ( pINChI_Stereo->t_parity = (S_CHAR  *) inchi_calloc( num_at, sizeof( pINChI_Stereo->t_parity[0] ) ) ) &&
-             ( pINChI_Stereo->nNumberInv = (AT_NUMB *) inchi_calloc( num_at, sizeof( pINChI_Stereo->nNumberInv[0] ) ) ) &&
-             ( pINChI_Stereo->t_parityInv = (S_CHAR  *) inchi_calloc( num_at, sizeof( pINChI_Stereo->t_parityInv[0] ) ) ))
+            (pINChI_Stereo->nNumber = (AT_NUMB *)inchi_calloc(num_at, sizeof(pINChI_Stereo->nNumber[0]))) &&
+            (pINChI_Stereo->t_parity = (S_CHAR *)inchi_calloc(num_at, sizeof(pINChI_Stereo->t_parity[0]))) &&
+            (pINChI_Stereo->nNumberInv = (AT_NUMB *)inchi_calloc(num_at, sizeof(pINChI_Stereo->nNumberInv[0]))) &&
+            (pINChI_Stereo->t_parityInv = (S_CHAR *)inchi_calloc(num_at, sizeof(pINChI_Stereo->t_parityInv[0]))))
         {
             ;
         }
@@ -4942,9 +7629,9 @@ INChI_Stereo *Alloc_INChI_Stereo( int num_at, int num_bonds )
         }
 
         if (num_bonds &&
-            ( pINChI_Stereo->nBondAtom1 = (AT_NUMB *) inchi_calloc( num_bonds, sizeof( pINChI_Stereo->nBondAtom1[0] ) ) ) &&
-             ( pINChI_Stereo->nBondAtom2 = (AT_NUMB *) inchi_calloc( num_bonds, sizeof( pINChI_Stereo->nBondAtom2[0] ) ) ) &&
-             ( pINChI_Stereo->b_parity = (S_CHAR  *) inchi_calloc( num_bonds, sizeof( pINChI_Stereo->b_parity[0] ) ) ))
+            (pINChI_Stereo->nBondAtom1 = (AT_NUMB *)inchi_calloc(num_bonds, sizeof(pINChI_Stereo->nBondAtom1[0]))) &&
+            (pINChI_Stereo->nBondAtom2 = (AT_NUMB *)inchi_calloc(num_bonds, sizeof(pINChI_Stereo->nBondAtom2[0]))) &&
+            (pINChI_Stereo->b_parity = (S_CHAR *)inchi_calloc(num_bonds, sizeof(pINChI_Stereo->b_parity[0]))))
         {
             ;
         }
@@ -4957,16 +7644,15 @@ INChI_Stereo *Alloc_INChI_Stereo( int num_at, int num_bonds )
 
     out_of_RAM:
 
-        Free_INChI_Stereo( pINChI_Stereo );
-        qzfree( pINChI_Stereo );
+        Free_INChI_Stereo(pINChI_Stereo);
+        qzfree(pINChI_Stereo);
     } /* if ( pINChI_Stereo )  */
 
     return NULL;
 }
 
-
 /****************************************************************************/
-int Free_INChI( INChI **ppINChI )
+int Free_INChI(INChI **ppINChI)
 {
 
     INChI *pINChI;
@@ -4974,22 +7660,21 @@ int Free_INChI( INChI **ppINChI )
     if ((pINChI = *ppINChI)) /* djb-rwth: addressing LLVM warning */
     {
 
-#if ( bREUSE_INCHI == 1 )
+#if (bREUSE_INCHI == 1)
         if (pINChI->nRefCount-- > 0)
             return 1;
 #endif
 
-        Free_INChI_Members( pINChI );
-        qzfree( pINChI );
+        Free_INChI_Members(pINChI);
+        qzfree(pINChI);
         *ppINChI = NULL;
     }
 
     return 0;
 }
 
-
 /****************************************************************************/
-int Free_INChI_Members( INChI *pINChI )
+int Free_INChI_Members(INChI *pINChI)
 {
     if (pINChI)
     {
@@ -5003,29 +7688,28 @@ int Free_INChI_Members( INChI *pINChI )
         qzfree(pINChI->IsotopicAtom);
         qzfree(pINChI->IsotopicTGroup);
         qzfree(pINChI->nPossibleLocationsOfIsotopicH);
-        qzfree( pINChI->Stereo );
-        qzfree( pINChI->StereoIsotopic );
-        qzfree( pINChI->szHillFormula );
+        qzfree(pINChI->Stereo);
+        qzfree(pINChI->StereoIsotopic);
+        qzfree(pINChI->szHillFormula);
     }
 
     return 0;
 }
 
-
 /****************************************************************************/
-INChI *Alloc_INChI( inp_ATOM *at,
-                    int num_at,
-                    int *found_num_bonds,
-                    int *found_num_isotopic,
-                    int nAllocMode )
+INChI *Alloc_INChI(inp_ATOM *at,
+                   int num_at,
+                   int *found_num_bonds,
+                   int *found_num_isotopic,
+                   int nAllocMode)
 {
-    int    i, num_bonds, num_isotopic_atoms;
-    INChI  *pINChI;
-    int    bIsotopic = ( nAllocMode & REQ_MODE_ISO );
+    int i, num_bonds, num_isotopic_atoms;
+    INChI *pINChI;
+    int bIsotopic = (nAllocMode & REQ_MODE_ISO);
     /* int    bTautomeric = (nAllocMode & REQ_MODE_TAUT); */
 
     if (num_at <= 0 ||
-         NULL == ( pINChI = (INChI *) inchi_calloc( 1, sizeof( INChI ) ) ))
+        NULL == (pINChI = (INChI *)inchi_calloc(1, sizeof(INChI))))
     {
         return NULL;
     }
@@ -5034,12 +7718,12 @@ INChI *Alloc_INChI( inp_ATOM *at,
     {
         num_bonds += at[i].valence;
         /* if ( bIsotopic ) { */
-        num_isotopic_atoms += ( 0 != at[i].iso_atw_diff ||
-                                !strcmp( at[i].elname, "D" ) ||
-                                !strcmp( at[i].elname, "T" ) ||
-                                at[i].num_iso_H[0] ||
-                                at[i].num_iso_H[1] ||
-                                at[i].num_iso_H[2] );
+        num_isotopic_atoms += (0 != at[i].iso_atw_diff ||
+                               !strcmp(at[i].elname, "D") ||
+                               !strcmp(at[i].elname, "T") ||
+                               at[i].num_iso_H[0] ||
+                               at[i].num_iso_H[1] ||
+                               at[i].num_iso_H[2]);
         /* } */
     }
     num_bonds /= 2;
@@ -5047,11 +7731,11 @@ INChI *Alloc_INChI( inp_ATOM *at,
     *found_num_bonds = num_bonds;
     *found_num_isotopic = num_isotopic_atoms;
 
-    if (( pINChI->nAtom = (U_CHAR*) inchi_calloc( num_at, sizeof( pINChI->nAtom[0] ) ) ) &&
-        ( pINChI->nConnTable = (AT_NUMB*) inchi_calloc( (long long)num_at + (long long)num_bonds, sizeof( pINChI->nConnTable[0] ) ) ) && /* djb-rwth: cast operator added */
-         ( pINChI->nTautomer = (AT_NUMB*) inchi_calloc( ( ( 3 + INCHI_T_NUM_MOVABLE )*(long long)num_at ) / 2 + 1, sizeof( pINChI->nTautomer[0] ) ) ) && /* djb-rwth: cast operator added */
-         ( pINChI->nNum_H = (S_CHAR*) inchi_calloc( num_at, sizeof( pINChI->nNum_H[0] ) ) ) &&
-         ( pINChI->nNum_H_fixed = (S_CHAR*) inchi_calloc( num_at, sizeof( pINChI->nNum_H_fixed[0] ) ) ))
+    if ((pINChI->nAtom = (U_CHAR *)inchi_calloc(num_at, sizeof(pINChI->nAtom[0]))) &&
+        (pINChI->nConnTable = (AT_NUMB *)inchi_calloc((long long)num_at + (long long)num_bonds, sizeof(pINChI->nConnTable[0]))) &&              /* djb-rwth: cast operator added */
+        (pINChI->nTautomer = (AT_NUMB *)inchi_calloc(((3 + INCHI_T_NUM_MOVABLE) * (long long)num_at) / 2 + 1, sizeof(pINChI->nTautomer[0]))) && /* djb-rwth: cast operator added */
+        (pINChI->nNum_H = (S_CHAR *)inchi_calloc(num_at, sizeof(pINChI->nNum_H[0]))) &&
+        (pINChI->nNum_H_fixed = (S_CHAR *)inchi_calloc(num_at, sizeof(pINChI->nNum_H_fixed[0]))))
     {
         ;
         /* nTautomer length: max. number of tautomeric groups is num_at/2
@@ -5082,8 +7766,8 @@ INChI *Alloc_INChI( inp_ATOM *at,
     if (bIsotopic)
     {
         if (num_isotopic_atoms &&
-            ( pINChI->IsotopicAtom = (INChI_IsotopicAtom *) inchi_calloc( num_isotopic_atoms, sizeof( INChI_IsotopicAtom ) ) ) &&
-             ( pINChI->IsotopicTGroup = (INChI_IsotopicTGroup *) inchi_calloc( num_isotopic_atoms, sizeof( INChI_IsotopicTGroup ) ) ))
+            (pINChI->IsotopicAtom = (INChI_IsotopicAtom *)inchi_calloc(num_isotopic_atoms, sizeof(INChI_IsotopicAtom))) &&
+            (pINChI->IsotopicTGroup = (INChI_IsotopicTGroup *)inchi_calloc(num_isotopic_atoms, sizeof(INChI_IsotopicTGroup))))
         {
             ;
         }
@@ -5091,13 +7775,13 @@ INChI *Alloc_INChI( inp_ATOM *at,
         {
             goto out_of_RAM;
         }
-        if (!( pINChI->nPossibleLocationsOfIsotopicH = (AT_NUMB *) inchi_calloc( (long long)num_at + 1, sizeof( pINChI->nPossibleLocationsOfIsotopicH[0] ) ) )) /* djb-rwth: cast operator added */
+        if (!(pINChI->nPossibleLocationsOfIsotopicH = (AT_NUMB *)inchi_calloc((long long)num_at + 1, sizeof(pINChI->nPossibleLocationsOfIsotopicH[0])))) /* djb-rwth: cast operator added */
         {
             goto out_of_RAM;
         }
     }
 
-    if (( pINChI->Stereo = Alloc_INChI_Stereo( num_at, num_bonds ) ))
+    if ((pINChI->Stereo = Alloc_INChI_Stereo(num_at, num_bonds)))
     {
         ;
     }
@@ -5108,7 +7792,7 @@ INChI *Alloc_INChI( inp_ATOM *at,
 
     if (bIsotopic)
     {
-        if (( pINChI->StereoIsotopic = Alloc_INChI_Stereo( num_at, num_bonds ) ))
+        if ((pINChI->StereoIsotopic = Alloc_INChI_Stereo(num_at, num_bonds)))
         {
             ;
         }
@@ -5123,7 +7807,7 @@ INChI *Alloc_INChI( inp_ATOM *at,
 out_of_RAM:
     if (pINChI)
     {
-        Free_INChI( &pINChI );
+        Free_INChI(&pINChI);
         /*
         inchi_free(pINChI);
         */
@@ -5132,25 +7816,24 @@ out_of_RAM:
     return NULL;
 }
 
-
 /****************************************************************************/
-int Free_INChI_Aux( INChI_Aux **ppINChI_Aux )
+int Free_INChI_Aux(INChI_Aux **ppINChI_Aux)
 {
     INChI_Aux *pINChI_Aux = *ppINChI_Aux;
     if (pINChI_Aux)
     {
 
-#if ( bREUSE_INCHI == 1 )
+#if (bREUSE_INCHI == 1)
         if (pINChI_Aux->nRefCount-- > 0)
             return 1;
 #endif
 
-        qzfree( pINChI_Aux->nOrigAtNosInCanonOrd );
-        qzfree( pINChI_Aux->nIsotopicOrigAtNosInCanonOrd );
-        qzfree( pINChI_Aux->nOrigAtNosInCanonOrdInv );
-        qzfree( pINChI_Aux->nIsotopicOrigAtNosInCanonOrdInv );
-        qzfree( pINChI_Aux->szOrigCoord );
-        qzfree( pINChI_Aux->OrigInfo );
+        qzfree(pINChI_Aux->nOrigAtNosInCanonOrd);
+        qzfree(pINChI_Aux->nIsotopicOrigAtNosInCanonOrd);
+        qzfree(pINChI_Aux->nOrigAtNosInCanonOrdInv);
+        qzfree(pINChI_Aux->nIsotopicOrigAtNosInCanonOrdInv);
+        qzfree(pINChI_Aux->szOrigCoord);
+        qzfree(pINChI_Aux->OrigInfo);
         /*
         qzfree( pINChI_Aux->nOriginalAtomNumber          );
         qzfree( pINChI_Aux->nCanonicalTGroupNumbers      );
@@ -5162,41 +7845,40 @@ int Free_INChI_Aux( INChI_Aux **ppINChI_Aux )
         qzfree( pINChI_Aux->nNontautomericEquNumbers               );
         qzfree( pINChI_Aux->nNontautomericIsotopicEquNumbers       );
         */
-        qzfree( pINChI_Aux->nConstitEquNumbers );
-        qzfree( pINChI_Aux->nConstitEquTGroupNumbers );
-        qzfree( pINChI_Aux->nConstitEquIsotopicNumbers );
-        qzfree( pINChI_Aux->nConstitEquIsotopicTGroupNumbers );
-        qzfree( pINChI_Aux );
+        qzfree(pINChI_Aux->nConstitEquNumbers);
+        qzfree(pINChI_Aux->nConstitEquTGroupNumbers);
+        qzfree(pINChI_Aux->nConstitEquIsotopicNumbers);
+        qzfree(pINChI_Aux->nConstitEquIsotopicTGroupNumbers);
+        qzfree(pINChI_Aux);
         *ppINChI_Aux = NULL;
     }
 
     return 0;
 }
 
-
 /****************************************************************************/
-INChI_Aux *Alloc_INChI_Aux( int num_at,
-                            int num_isotopic_atoms,
-                            int nAllocMode,
-                            int bOrigCoord )
+INChI_Aux *Alloc_INChI_Aux(int num_at,
+                           int num_isotopic_atoms,
+                           int nAllocMode,
+                           int bOrigCoord)
 {
-    INChI_Aux     *pINChI_Aux;
-    int    bIsotopic = ( nAllocMode & REQ_MODE_ISO );
-    int    num_at_tg = num_at + num_at / 2;
+    INChI_Aux *pINChI_Aux;
+    int bIsotopic = (nAllocMode & REQ_MODE_ISO);
+    int num_at_tg = num_at + num_at / 2;
     /* int    bTautomeric = (nAllocMode & REQ_MODE_TAUT); */
 
     if (num_at <= 0 ||
-         NULL == ( pINChI_Aux = (INChI_Aux *) inchi_calloc( 1, sizeof( INChI_Aux ) ) ))
+        NULL == (pINChI_Aux = (INChI_Aux *)inchi_calloc(1, sizeof(INChI_Aux))))
     {
         return NULL;
     }
 
-    if (( pINChI_Aux->nOrigAtNosInCanonOrd = (AT_NUMB*)
-          inchi_calloc( num_at_tg, sizeof( pINChI_Aux->nOrigAtNosInCanonOrd[0] ) ) ) &&
-          ( pINChI_Aux->nOrigAtNosInCanonOrdInv = (AT_NUMB*)
-            inchi_calloc( num_at_tg, sizeof( pINChI_Aux->nOrigAtNosInCanonOrd[0] ) ) ) &&
-            ( pINChI_Aux->nConstitEquNumbers = (AT_NUMB*)
-              inchi_calloc( num_at_tg, sizeof( pINChI_Aux->nConstitEquNumbers[0] ) ) ))
+    if ((pINChI_Aux->nOrigAtNosInCanonOrd = (AT_NUMB *)
+             inchi_calloc(num_at_tg, sizeof(pINChI_Aux->nOrigAtNosInCanonOrd[0]))) &&
+        (pINChI_Aux->nOrigAtNosInCanonOrdInv = (AT_NUMB *)
+             inchi_calloc(num_at_tg, sizeof(pINChI_Aux->nOrigAtNosInCanonOrd[0]))) &&
+        (pINChI_Aux->nConstitEquNumbers = (AT_NUMB *)
+             inchi_calloc(num_at_tg, sizeof(pINChI_Aux->nConstitEquNumbers[0]))))
     {
         ;
     }
@@ -5206,7 +7888,7 @@ INChI_Aux *Alloc_INChI_Aux( int num_at,
     }
 
     if (num_at > 1 &&
-        ( pINChI_Aux->nConstitEquTGroupNumbers = (AT_NUMB*) inchi_calloc( (long long)num_at / 2 + 1, sizeof( pINChI_Aux->nConstitEquTGroupNumbers[0] ) ) )) /* djb-rwth: cast operator added */
+        (pINChI_Aux->nConstitEquTGroupNumbers = (AT_NUMB *)inchi_calloc((long long)num_at / 2 + 1, sizeof(pINChI_Aux->nConstitEquTGroupNumbers[0])))) /* djb-rwth: cast operator added */
     {
         ;
     }
@@ -5220,24 +7902,24 @@ INChI_Aux *Alloc_INChI_Aux( int num_at,
 
     if (num_at > 0)
     {
-        pINChI_Aux->OrigInfo = (ORIG_INFO *) inchi_calloc( num_at, sizeof( pINChI_Aux->OrigInfo[0] ) );
+        pINChI_Aux->OrigInfo = (ORIG_INFO *)inchi_calloc(num_at, sizeof(pINChI_Aux->OrigInfo[0]));
         if (!pINChI_Aux->OrigInfo)
             goto out_of_RAM;
     }
 
     if (bOrigCoord && num_at > 0)
     {
-        pINChI_Aux->szOrigCoord = (MOL_COORD *) inchi_calloc( num_at, sizeof( pINChI_Aux->szOrigCoord[0] ) );
+        pINChI_Aux->szOrigCoord = (MOL_COORD *)inchi_calloc(num_at, sizeof(pINChI_Aux->szOrigCoord[0]));
         if (!pINChI_Aux->szOrigCoord)
             goto out_of_RAM;
     }
 
     if (bIsotopic)
     {
-        if ( /*num_isotopic_atoms &&*/
-            ( pINChI_Aux->nIsotopicOrigAtNosInCanonOrd = (AT_NUMB*) inchi_calloc( num_at_tg, sizeof( pINChI_Aux->nIsotopicOrigAtNosInCanonOrd[0] ) ) ) &&
-             ( pINChI_Aux->nIsotopicOrigAtNosInCanonOrdInv = (AT_NUMB*) inchi_calloc( num_at_tg, sizeof( pINChI_Aux->nIsotopicOrigAtNosInCanonOrd[0] ) ) ) &&
-             ( pINChI_Aux->nConstitEquIsotopicNumbers = (AT_NUMB*) inchi_calloc( num_at_tg, sizeof( pINChI_Aux->nConstitEquIsotopicNumbers[0] ) ) ))
+        if (/*num_isotopic_atoms &&*/
+            (pINChI_Aux->nIsotopicOrigAtNosInCanonOrd = (AT_NUMB *)inchi_calloc(num_at_tg, sizeof(pINChI_Aux->nIsotopicOrigAtNosInCanonOrd[0]))) &&
+            (pINChI_Aux->nIsotopicOrigAtNosInCanonOrdInv = (AT_NUMB *)inchi_calloc(num_at_tg, sizeof(pINChI_Aux->nIsotopicOrigAtNosInCanonOrd[0]))) &&
+            (pINChI_Aux->nConstitEquIsotopicNumbers = (AT_NUMB *)inchi_calloc(num_at_tg, sizeof(pINChI_Aux->nConstitEquIsotopicNumbers[0]))))
         {
             ;
         }
@@ -5246,8 +7928,8 @@ INChI_Aux *Alloc_INChI_Aux( int num_at,
             goto out_of_RAM;
         }
 
-        if ( /*num_isotopic_atoms && num_at > 1 &&*/
-            ( pINChI_Aux->nConstitEquIsotopicTGroupNumbers = (AT_NUMB*) inchi_calloc( (long long)num_at / 2 + 1, sizeof( pINChI_Aux->nConstitEquIsotopicTGroupNumbers[0] ) ) )) /* djb-rwth: cast operator added */
+        if (                                                                                                                                                              /*num_isotopic_atoms && num_at > 1 &&*/
+            (pINChI_Aux->nConstitEquIsotopicTGroupNumbers = (AT_NUMB *)inchi_calloc((long long)num_at / 2 + 1, sizeof(pINChI_Aux->nConstitEquIsotopicTGroupNumbers[0])))) /* djb-rwth: cast operator added */
         {
             ;
         }
@@ -5259,12 +7941,11 @@ INChI_Aux *Alloc_INChI_Aux( int num_at,
 
     return pINChI_Aux;
 
-
 out_of_RAM:
 
     if (pINChI_Aux)
     {
-        Free_INChI_Aux( &pINChI_Aux );
+        Free_INChI_Aux(&pINChI_Aux);
         /*
         inchi_free(pINChI_Aux);
         */
@@ -5273,11 +7954,10 @@ out_of_RAM:
     return NULL;
 }
 
-
 /****************************************************************************
 Note that orig_num, curr_num are allocd by caller as (n+1)-long lists
 ****************************************************************************/
-void CompAtomData_GetNumMapping( COMP_ATOM_DATA *adata, int *orig_num, int *curr_num )
+void CompAtomData_GetNumMapping(COMP_ATOM_DATA *adata, int *orig_num, int *curr_num)
 {
     int i;
     if (!orig_num || !curr_num)
@@ -5287,16 +7967,15 @@ void CompAtomData_GetNumMapping( COMP_ATOM_DATA *adata, int *orig_num, int *curr
     for (i = 0; i < adata->num_at; i++)
     {
         int orig = adata->at[i].orig_at_number;
-        orig_num[i] = orig;    /* orig's are from 1 */
-        curr_num[orig] = i;    /* curr's are from 0 */
+        orig_num[i] = orig; /* orig's are from 1 */
+        curr_num[orig] = i; /* curr's are from 0 */
     }
 }
-
 
 /****************************************************************************
  Allocate integer matrix [mxn]
 ****************************************************************************/
-int imat_new( int m, int n, int ***a )
+int imat_new(int m, int n, int ***a)
 {
     int i;
     if (m == 0 || n == 0)
@@ -5308,15 +7987,15 @@ int imat_new( int m, int n, int ***a )
         imat_free(m, *a);
         *a = NULL;
     }
-    *a = (int **) inchi_calloc( m, sizeof( int * ) );
+    *a = (int **)inchi_calloc(m, sizeof(int *));
     if (NULL == *a)
     {
         return 1;
     }
     for (i = 0; i < m; i++)
     {
-        ( *a )[i] = (int *) inchi_calloc( n, sizeof( int ) );
-        if (NULL == ( *a )[i])
+        (*a)[i] = (int *)inchi_calloc(n, sizeof(int));
+        if (NULL == (*a)[i])
         {
             return 1;
         }
@@ -5327,7 +8006,7 @@ int imat_new( int m, int n, int ***a )
 /****************************************************************************
  Free integer matrix [mxn]
 ****************************************************************************/
-void imat_free( int m, int **a )
+void imat_free(int m, int **a)
 {
     int i;
     if (NULL != a)
@@ -5336,32 +8015,30 @@ void imat_free( int m, int **a )
         {
             if (NULL != a[i]) /* djb-rwth: unresolved issue -- revision required? -- false positive as this function just does the clean-up job */
             {
-                inchi_free( a[i] );
+                inchi_free(a[i]);
             }
         }
-        inchi_free( a );
+        inchi_free(a);
         a = NULL;
     }
 
     return;
 }
 
-
 /*
 Lt-wt subgraph
 */
 
-
 /****************************************************************************
  Establish light-weight subgraph representing (part of) orig_inp_data
  ****************************************************************************/
-subgraf *subgraf_new( ORIG_ATOM_DATA *orig_inp_data,
-                      int nnodes,
-                      int *nodes )
+subgraf *subgraf_new(ORIG_ATOM_DATA *orig_inp_data,
+                     int nnodes,
+                     int *nodes)
 {
     int i, j, iat, nbr, jat, nj, degree, nat, err = 0;
 
-    subgraf *sg = (subgraf *) inchi_calloc( 1, sizeof( subgraf ) );
+    subgraf *sg = (subgraf *)inchi_calloc(1, sizeof(subgraf));
     if (!sg)
     {
         return NULL;
@@ -5371,15 +8048,15 @@ subgraf *subgraf_new( ORIG_ATOM_DATA *orig_inp_data,
 
     /* orig2node is mapping of original at numbers --> subgraph node numbers */
     err = 1;
-    if (!( sg->orig2node = (int *) inchi_calloc( (long long)nat + 1, sizeof( int ) ) )) /* djb-rwth: cast operator added */
+    if (!(sg->orig2node = (int *)inchi_calloc((long long)nat + 1, sizeof(int)))) /* djb-rwth: cast operator added */
     {
         goto exit_function;
     }
-    if (!( sg->nodes = (int *) inchi_calloc( nnodes, sizeof( int ) ) ))
+    if (!(sg->nodes = (int *)inchi_calloc(nnodes, sizeof(int))))
     {
         goto exit_function;
     }
-    if (!( sg->degrees = (int *) inchi_calloc( nnodes, sizeof( int ) ) ))
+    if (!(sg->degrees = (int *)inchi_calloc(nnodes, sizeof(int))))
     {
         goto exit_function;
     }
@@ -5402,7 +8079,7 @@ subgraf *subgraf_new( ORIG_ATOM_DATA *orig_inp_data,
 
     /* Create and fill subgraph adjacency matrix based on nodes/orig atom numbers
        and connections stored in orig_inp_data */
-    sg->adj = (subgraf_edge **) inchi_calloc( nnodes, sizeof( subgraf_edge * ) );
+    sg->adj = (subgraf_edge **)inchi_calloc(nnodes, sizeof(subgraf_edge *));
     if (!sg->adj)
     {
         goto exit_function;
@@ -5410,10 +8087,10 @@ subgraf *subgraf_new( ORIG_ATOM_DATA *orig_inp_data,
 
     for (i = 0; i < sg->nnodes; i++)
     {
-        iat = nodes[i] - 1;    /* current atom  number for this node */
+        iat = nodes[i] - 1; /* current atom  number for this node */
         degree = orig_inp_data->at[iat].valence;
         nj = -1;
-        sg->adj[i] = (subgraf_edge *) inchi_calloc( degree, sizeof( subgraf_edge ) );
+        sg->adj[i] = (subgraf_edge *)inchi_calloc(degree, sizeof(subgraf_edge));
         if (!sg->adj[i])
         {
             goto exit_function;
@@ -5437,16 +8114,15 @@ subgraf *subgraf_new( ORIG_ATOM_DATA *orig_inp_data,
 exit_function:
     if (err)
     {
-        subgraf_free( sg );
+        subgraf_free(sg);
         return NULL; /* djb-rwth: avoiding reading from freed memory */
     }
 
     return sg;
 }
 
-
 /****************************************************************************/
-void subgraf_free( subgraf *sg )
+void subgraf_free(subgraf *sg)
 {
     int i;
     if (!sg)
@@ -5455,15 +8131,15 @@ void subgraf_free( subgraf *sg )
     }
     if (sg->nodes)
     {
-        inchi_free( sg->nodes );
+        inchi_free(sg->nodes);
     }
     if (sg->degrees)
     {
-        inchi_free( sg->degrees );
+        inchi_free(sg->degrees);
     }
     if (sg->orig2node)
     {
-        inchi_free( sg->orig2node );
+        inchi_free(sg->orig2node);
     }
     if (sg->adj)
     {
@@ -5471,55 +8147,54 @@ void subgraf_free( subgraf *sg )
         {
             if (sg->adj[i]) /* djb-rwth: unresolved issue -- revision required? -- false positive as this function just does the clean-up job */
             {
-                inchi_free( sg->adj[i] );
+                inchi_free(sg->adj[i]);
             }
         }
-        inchi_free( sg->adj );
+        inchi_free(sg->adj);
     }
-    inchi_free( sg );
+    inchi_free(sg);
     sg = NULL;
 
     return;
 }
 
 /****************************************************************************/
-void subgraf_debug_trace( subgraf *sg )
+void subgraf_debug_trace(subgraf *sg)
 {
     int p, q;
 
-    ITRACE_( "\n\n*********************************************************************\n* Subgraf:" );
-    ITRACE_( "\n\tNodes: %-d ( ", sg->nnodes );
+    ITRACE_("\n\n*********************************************************************\n* Subgraf:");
+    ITRACE_("\n\tNodes: %-d ( ", sg->nnodes);
     for (p = 0; p < sg->nnodes; p++)
     {
-        ITRACE_( "%-d ", sg->nodes[p] );
+        ITRACE_("%-d ", sg->nodes[p]);
     }
-    ITRACE_( ")\n\tAdj lists:\n" );
+    ITRACE_(")\n\tAdj lists:\n");
     for (p = 0; p < sg->nnodes; p++)
     {
-        ITRACE_( "\tNode #%-d (orig# %-d) ::: Neighbors (node#, orig#) : ",
-                 p, sg->nodes[p] );
+        ITRACE_("\tNode #%-d (orig# %-d) ::: Neighbors (node#, orig#) : ",
+                p, sg->nodes[p]);
         for (q = 0; q < sg->degrees[p]; q++)
         {
             int nbr = sg->adj[p][q].nbr; /* djb-rwth: ignoring LLVM warning: variable used */
-            ITRACE_( "(%-d/%-d/%-d)  ", nbr, sg->nodes[nbr] );
+            ITRACE_("(%-d/%-d/%-d)  ", nbr, sg->nodes[nbr]);
         }
-        ITRACE_( "\n" );
+        ITRACE_("\n");
     }
-    ITRACE_( "\n* End Subgraf\n*********************************************************************\n" );
+    ITRACE_("\n* End Subgraf\n*********************************************************************\n");
 
     return;
 }
 
-
 /****************************************************************************/
-subgraf_pathfinder * subgraf_pathfinder_new( subgraf *sg,
-                                             ORIG_ATOM_DATA *orig_inp_data,
-                                             int start,
-                                             int end )
+subgraf_pathfinder *subgraf_pathfinder_new(subgraf *sg,
+                                           ORIG_ATOM_DATA *orig_inp_data,
+                                           int start,
+                                           int end)
 {
     subgraf_pathfinder *spf = NULL;
 
-    spf = (subgraf_pathfinder *) inchi_calloc( 1, sizeof( subgraf_pathfinder ) );
+    spf = (subgraf_pathfinder *)inchi_calloc(1, sizeof(subgraf_pathfinder));
     if (!spf)
     {
         goto exit_function;
@@ -5531,10 +8206,10 @@ subgraf_pathfinder * subgraf_pathfinder_new( subgraf *sg,
     spf->nbonds = 0;
     spf->nseen = 0;
 
-    spf->seen = (int *) inchi_calloc( spf->sg->nnodes, sizeof( int ) );
+    spf->seen = (int *)inchi_calloc(spf->sg->nnodes, sizeof(int));
     if (!spf->seen)
     {
-        inchi_free( spf );
+        inchi_free(spf);
         spf = NULL;
     }
 
@@ -5543,7 +8218,7 @@ exit_function:
 }
 
 /****************************************************************************/
-void subgraf_pathfinder_free( subgraf_pathfinder *spf )
+void subgraf_pathfinder_free(subgraf_pathfinder *spf)
 {
     if (!spf)
     {
@@ -5551,27 +8226,26 @@ void subgraf_pathfinder_free( subgraf_pathfinder *spf )
     }
     if (spf->seen)
     {
-        inchi_free( spf->seen );
+        inchi_free(spf->seen);
     }
-    inchi_free( spf );
+    inchi_free(spf);
     spf = NULL;
     return;
 }
-
 
 /****************************************************************************
  Find path(s) from subgraf node spf->start to spf->end
  and fill bonds[nbonds] and atoms[natoms]
  Do not traverse through supplied forbidden edges (if not zero/NULL)
 ****************************************************************************/
-void subgraf_pathfinder_run( subgraf_pathfinder *spf,
-                             int nforbidden,		/* number of edges forbidden for traversal	*/
-                             int *forbidden,		/* nodes of forbidden edges: [edge1node1,edge1node2, edge2node1, edge2node2, ... ] */
-                             int *nbonds,
-                             int **bonds,			/* collect subgraf bonds here */
-                             int *natoms,
-                             int *atoms				/* if not NULL, collect subgraf atoms here	*/
-                             )
+void subgraf_pathfinder_run(subgraf_pathfinder *spf,
+                            int nforbidden, /* number of edges forbidden for traversal	*/
+                            int *forbidden, /* nodes of forbidden edges: [edge1node1,edge1node2, edge2node1, edge2node2, ... ] */
+                            int *nbonds,
+                            int **bonds, /* collect subgraf bonds here */
+                            int *natoms,
+                            int *atoms /* if not NULL, collect subgraf atoms here	*/
+)
 {
     int j, k, node, node0;
     int f, skip;
@@ -5587,7 +8261,7 @@ void subgraf_pathfinder_run( subgraf_pathfinder *spf,
     for (j = 0; j < spf->sg->degrees[node0]; j++)
     {
         node = spf->sg->adj[node0][j].nbr;
-        if (is_in_the_ilist( spf->seen, node, spf->nseen ))
+        if (is_in_the_ilist(spf->seen, node, spf->nseen))
         {
             continue;
         }
@@ -5596,7 +8270,7 @@ void subgraf_pathfinder_run( subgraf_pathfinder *spf,
             skip = 0;
             for (f = 0; f < nforbidden; f++)
             {
-                if (bIsSameBond(node0, node, forbidden[2 * f], forbidden[2 * f + 1]) )
+                if (bIsSameBond(node0, node, forbidden[2 * f], forbidden[2 * f + 1]))
                 {
                     skip = 1;
                     break;
@@ -5611,36 +8285,36 @@ void subgraf_pathfinder_run( subgraf_pathfinder *spf,
         {
             spf->seen[spf->nseen++] = node;
 
-            ITRACE_( "\n\tFound path (in orig atom numbers):\t" );
+            ITRACE_("\n\tFound path (in orig atom numbers):\t");
             for (k = 0; k < spf->nseen; k++)
             {
                 int orig_atnum = spf->sg->nodes[spf->seen[k]];
-                ITRACE_( "%-d ", orig_atnum);
+                ITRACE_("%-d ", orig_atnum);
                 if (atoms && !is_in_the_ilist(atoms, orig_atnum, *natoms))
                 {
                     atoms[(*natoms)++] = orig_atnum;
                 }
             }
-            ITRACE_( "\t( In node nums: " );
+            ITRACE_("\t( In node nums: ");
             for (k = 1; k < spf->nseen; k++)
             {
                 int at1 = spf->seen[k - 1];
                 int at2 = spf->seen[k];
-                add_bond_if_unseen( spf, at1, at2, nbonds, bonds );
+                add_bond_if_unseen(spf, at1, at2, nbonds, bonds);
 
-                ITRACE_( "%-d ", spf->seen[k] );
+                ITRACE_("%-d ", spf->seen[k]);
             }
-            ITRACE_( ")" );
+            ITRACE_(")");
 
             spf->seen[spf->nseen - 1] = 0;
-            spf->nseen--;    /* pop_back        */
+            spf->nseen--; /* pop_back        */
             break;
         }
     }
     for (j = 0; j < spf->sg->degrees[node0]; j++)
     {
         node = spf->sg->adj[node0][j].nbr;
-        if (node == spf->end || is_in_the_ilist( spf->seen, node, spf->nseen ))
+        if (node == spf->end || is_in_the_ilist(spf->seen, node, spf->nseen))
         {
             continue;
         }
@@ -5661,7 +8335,7 @@ void subgraf_pathfinder_run( subgraf_pathfinder *spf,
             }
         }
         spf->seen[spf->nseen++] = node;
-        subgraf_pathfinder_run( spf, 0, NULL, nbonds, bonds, natoms, atoms );
+        subgraf_pathfinder_run(spf, 0, NULL, nbonds, bonds, natoms, atoms);
         spf->seen[spf->nseen - 1] = 0;
         spf->nseen--;
     }
@@ -5669,20 +8343,19 @@ void subgraf_pathfinder_run( subgraf_pathfinder *spf,
     return;
 }
 
-
 /****************************************************************************/
-void add_bond_if_unseen( subgraf_pathfinder *spf,
-                         int node0,
-                         int node,
-                         int *nbonds,
-                         int **bonds )
+void add_bond_if_unseen(subgraf_pathfinder *spf,
+                        int node0,
+                        int node,
+                        int *nbonds,
+                        int **bonds)
 {
     int seen, p, at1, at2;
 
     at1 = spf->sg->nodes[node0];
     at2 = spf->sg->nodes[node];
 #if 0
-    if (at1 > at2)
+    if ( at1 > at2 )
     {
         int tmp = at1;
         at1 = at2;
@@ -5703,21 +8376,20 @@ void add_bond_if_unseen( subgraf_pathfinder *spf,
     {
         bonds[*nbonds][0] = at1;
         bonds[*nbonds][1] = at2;
-        ( *nbonds )++;
+        (*nbonds)++;
     }
 
     return;
 }
 
-
 /****************************************************************************
  At the first call, push start node to spf->start and set spf->nseen = 0
 ****************************************************************************/
 int subgraf_pathfinder_collect_all(subgraf_pathfinder *spf,
-                                   int nforbidden,		/* number of edges forbidden for traversal	*/
-                                   int *forbidden,		/* nodes of forbidden edges: [edge1node1,edge1node2, edge2node1, edge2node2, ... ] */
-                                   int *atnums          /* 1-based origs# */
-                                    )
+                                   int nforbidden, /* number of edges forbidden for traversal	*/
+                                   int *forbidden, /* nodes of forbidden edges: [edge1node1,edge1node2, edge2node1, edge2node2, ... ] */
+                                   int *atnums     /* 1-based origs# */
+)
 {
     int j, f, node, next_node, skip;
 
@@ -5756,13 +8428,11 @@ int subgraf_pathfinder_collect_all(subgraf_pathfinder *spf,
     return spf->nseen;
 }
 
-
-#if ( FIX_ADJ_RAD == 1 )
-
+#if (FIX_ADJ_RAD == 1)
 
 /****************************************************************************/
-int FixNextRadicals( int cur_at, inp_ATOM *at );
-int FixNextRadicals( int cur_at, inp_ATOM *at )
+int FixNextRadicals(int cur_at, inp_ATOM *at);
+int FixNextRadicals(int cur_at, inp_ATOM *at)
 {
     int j, neigh, num_found = 0;
 
@@ -5773,20 +8443,19 @@ int FixNextRadicals( int cur_at, inp_ATOM *at )
         {
             at[neigh].radical = 0;
             num_found++;
-            num_found += FixNextRadicals( neigh, at );
+            num_found += FixNextRadicals(neigh, at);
         }
     }
 
     return num_found;
 }
 
-
 /****************************************************************************/
-int FixAdjacentRadicals( int num_inp_atoms, inp_ATOM *at )
+int FixAdjacentRadicals(int num_inp_atoms, inp_ATOM *at)
 {
     int i, j;
     char *bVisited = NULL;
-    int  nNumFound = 0, neigh, cur_found;
+    int nNumFound = 0, neigh, cur_found;
 
     for (i = 0; i < num_inp_atoms; i++)
     {
@@ -5805,7 +8474,7 @@ int FixAdjacentRadicals( int num_inp_atoms, inp_ATOM *at )
             {
                 nNumFound++;
                 at[i].radical = 0;
-                nNumFound += FixNextRadicals( i, at );
+                nNumFound += FixNextRadicals(i, at);
             }
         }
     }
@@ -5824,12 +8493,12 @@ int FixAdjacentRadicals( int num_inp_atoms, inp_ATOM *at )
 */
 
 /****************************************************************************/
-void PrintFileName( const char *fmt,
-                    FILE *out_file,
-                    /* INCHI_IOSTREAM *out_file,  */
-                    const char *szFname )
+void PrintFileName(const char *fmt,
+                   FILE *out_file,
+                   /* INCHI_IOSTREAM *out_file,  */
+                   const char *szFname)
 {
-    inchi_print_nodisplay( out_file, fmt, szFname );
+    inchi_print_nodisplay(out_file, fmt, szFname);
 }
 #endif
 
