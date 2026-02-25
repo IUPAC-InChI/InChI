@@ -124,7 +124,8 @@ int set_common_options_by_parg(const char* pArg,
     int* pbMergeHash,
     int* pbHideInChI,
     int* pbMolecularInorganics,     /* @nnuk */
-    int* pbEnhancedStereochemistry);
+    int* pbEnhancedStereochemistry,
+    int* pbAtropisomers);
 
 
 /****************************************************************************
@@ -169,7 +170,8 @@ int set_common_options_by_parg(const char* pArg,
     int* pbMergeHash,
     int* pbHideInChI,
     int* pbMolecularInorganics,     /*@nnuk*/
-    int* pbEnhancedStereochemistry
+    int* pbEnhancedStereochemistry,
+    int* pbAtropisomers
 )
 {
     int got = 0;
@@ -822,7 +824,7 @@ int ReadCommandLineParms(int argc,
                 &bLargeMolecules, &bPolymers,
                 &bFoldPolymerSRU, &bFrameShiftScheme,
                 &bStereoAtZz, &bNPZz,
-                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry);
+                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry, &bAtropisomers);
             if (got)
             {
                 ;
@@ -1270,7 +1272,7 @@ int ReadCommandLineParms(int argc,
                 &bLargeMolecules, &bPolymers,
                 &bFoldPolymerSRU, &bFrameShiftScheme,
                 &bStereoAtZz, &bNPZz,
-                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry);
+                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry, &bAtropisomers);
 
             if ( got )
             {
