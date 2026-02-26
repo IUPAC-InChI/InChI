@@ -55,6 +55,8 @@
 
 #include "bcf_s.h"
 
+#include "ring_detection.h"
+
 /* Added fix to remove_ion_pairs() -- 2010-03-17 DT */
 #define FIX_P_IV_Plus_O_Minus
 
@@ -7198,8 +7200,8 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
                     atom_i.bond_stereo[j] == 0 &&
                     atom_i.bond_type[j] == 1) {
 
-                    if (atom_i.nNumAtInRingSystem > 1 ||
-                        atom_j.nNumAtInRingSystem > 1) {
+                    if (atom_i.ring_count > 0 ||
+                        atom_j.ring_count > 0) {
 
                         int nof_wedge_bonds_i = 0;
                         int has_double_bond_i = 0;
@@ -7229,19 +7231,14 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
                         if (nof_wedge_bonds_i > 0 ||
                             nof_wedge_bonds_j > 0) {
 
-                            // if(atom_i.nRingSystem != atom_j.nRingSystem) {
-                            //     printf("Atropisomer candidate: Atom %d with neighbor %d\n", i + 1, neighbors[j] + 1);
-                            // } else {
-                            if (has_double_bond_i || has_double_bond_j) {
+                            if ((has_double_bond_i || has_double_bond_j)) {
                                 printf("Atropisomer candidate: atom %d with atom %d; bond type %d; bond stereo %d\n",
                                         i + 1, neighbors[j] + 1, atom_i.bond_type[j], atom_i.bond_stereo[j]);
                                 printf("atom type %d %d\n", atom_i.el_number, atom_j.el_number);
                                 printf("has double bond %d %d\n", has_double_bond_i, has_double_bond_j);
-                                printf("ring info #atoms in rings %d %d\n", atom_i.nNumAtInRingSystem, atom_j.nNumAtInRingSystem);
-                                printf("ring info ring ids        %d %d\n", atom_i.nRingSystem, atom_j.nRingSystem);
-                                printf("ring info block ids       %d %d\n", atom_i.nBlockSystem, atom_j.nBlockSystem);
+                                printf("nof shared rings %d\n", get_number_of_common_rings(orig_inp_data->at, orig_inp_data->num_inp_atoms, i, neighbors[j]));
+
                             }
-                            // }
                         }
                     }
 

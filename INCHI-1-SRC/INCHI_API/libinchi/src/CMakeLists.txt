@@ -127,6 +127,8 @@ target_sources(libinchi PRIVATE
 	${P_BASE}/permutation_util.c
 	${P_BASE}/readinch.c
 	${P_BASE}/readinch.h
+	${P_BASE}/ring_detection.c
+	${P_BASE}/ring_detection.h
 	${P_BASE}/runichi.c
 	${P_BASE}/runichi2.c
 	${P_BASE}/runichi3.c

@@ -54,6 +54,8 @@
 
 #include "bcf_s.h"
 
+#include "ring_detection.h"
+
 /*
     Local functions
 */
@@ -3903,16 +3905,20 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     MarkRingSystemsInp(out_at, num_atoms, 0);
 
     if (ip->Atropisomers) {
+        RingResult *ring_result = find_rings(out_at, num_atoms);
+
+        print_ring_result(ring_result);
+
+        free_ring_result(ring_result);
+
         for (i = 0; i < num_atoms; i++) {
-            if (out_at[i].nRingSystem > 0) {
-                orig_inp_data->at[i].nRingSystem = out_at[i].nRingSystem;
+            if (out_at[i].ring_count > 0) {
+                orig_inp_data->at[i].ring_count = out_at[i].ring_count;
+                for (int j = 0; j < out_at[i].ring_count; j++) {
+                    orig_inp_data->at[i].ring_ids[j] = out_at[i].ring_ids[j];
+                }
             }
-            if (out_at[i].nNumAtInRingSystem > 0) {
-                orig_inp_data->at[i].nNumAtInRingSystem = out_at[i].nNumAtInRingSystem;
-            }
-            if (out_at[i].nBlockSystem > 0) {
-                orig_inp_data->at[i].nBlockSystem = out_at[i].nBlockSystem;
-            }
+
             for (int j = 0; j < out_at[i].valence; j++) {
                 if (out_at[i].bond_stereo[j] > 0) {
                     orig_inp_data->at[i].bond_stereo[j] = out_at[i].bond_stereo[j];
@@ -3921,6 +3927,7 @@ int  Create_INChI(CANON_GLOBALS* pCG,
 
             }
         }
+
     }
 
 #endif
