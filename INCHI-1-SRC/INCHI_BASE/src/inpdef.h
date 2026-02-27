@@ -101,7 +101,7 @@ typedef S_SHORT ST_CAP_FLOW;
 #define SB_PARITY_2(X) (((X) >> SB_PARITY_SHFT) & SB_PARITY_MASK) /**< refers to connected structure */
 
 #define RS_MAX_RINGS_PER_ATOM 10
-
+#define RS_MAX_NOF_RINGS 1000
 
 /**
  * @brief Structure describing an input atom
@@ -195,6 +195,8 @@ typedef struct tagInputAtom
 
     int ring_ids[RS_MAX_RINGS_PER_ATOM];
     int ring_count;
+
+    int fused_partner_atom_id;
 
 #if (FIND_RINS_SYSTEMS_DISTANCES == 1)
     AT_NUMB nDistanceFromTerminal; /* terminal atom or ring system has 1, next has 2, etc. */
@@ -466,6 +468,8 @@ typedef struct tagOrigAtom
     OAD_V3000 *v3000;
     int valid_polymer;
     int n_zy; /* number of non-polymeric pseudoatoms (Zy)             */
+
+    int ring_id_to_size[RS_MAX_NOF_RINGS];
 
 } ORIG_ATOM_DATA;
 

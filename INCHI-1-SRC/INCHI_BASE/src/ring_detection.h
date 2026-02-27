@@ -1,10 +1,9 @@
 
-
 typedef struct Ring {
     int id;
     int *atom_ids;
     int size;
-    int nof_unique_fused_ring;
+    int nof_atomic_rings;
     int parent_id; // Added: ID of the larger ring containing this one
     int *child_ids;
     int child_count;
@@ -13,16 +12,20 @@ typedef struct Ring {
 typedef struct {
     Ring* rings;
     int count;
-} RingResult;
+} RingSystems;
 
 
-RingResult *find_rings(inp_ATOM* atoms, int num_atoms);
+RingSystems *find_rings(inp_ATOM* atoms, int num_atoms);
 
-int get_number_of_common_rings(const inp_ATOM* atoms,
-                               int num_atoms,
-                               int atom1,
-                               int atom2);
+int is_fused_ring_pivot(const RingSystems *rs,
+                        const inp_ATOM * atoms,
+                        int atom_id1, int atom_id2);
 
-void print_ring_result(const RingResult *rr);
+void print_ring_result(const RingSystems *rs);
 
-void free_ring_result(RingResult *rr);
+void free_ring_system(RingSystems *rs);
+
+int are_atoms_in_same_small_ring(const inp_ATOM* atoms,
+                                 const int *ring_id_to_size,
+                                 int atom_id1, int atom_id2,
+                                 int max_ring_size);

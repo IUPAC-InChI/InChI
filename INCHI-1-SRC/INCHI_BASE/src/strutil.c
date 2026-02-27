@@ -7188,12 +7188,26 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
 
         const inp_ATOM atom_i = orig_inp_data->at[i];
 
+        // if (atom_i.is_fused_pivot_atom == 0) {
+        //     continue;
+        // }
+
         int num_neighbors_i = atom_i.valence;
         const AT_NUMB *neighbors = atom_i.neighbor;
         // printf("Atom %d with %d neighbors; ring system id %d; num atoms in ring %d\n", i + 1, num_neighbors, orig_inp_data->at[i].nRingSystem, orig_inp_data->at[i].nNumAtInRingSystem);
         if (num_neighbors_i == 3) {
             for (int j = 0; j < num_neighbors_i; j++) {
+
+                if (i >= neighbors[j]) {
+                    continue;
+                }
+
                 const inp_ATOM atom_j = orig_inp_data->at[neighbors[j]];
+
+                // if (atom_j.is_fused_pivot_atom == 0) {
+                //     continue;
+                // }
+
                 int num_neighbors_j = atom_j.valence;
 
                 if (num_neighbors_j == 3 &&
@@ -7232,12 +7246,23 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
                             nof_wedge_bonds_j > 0) {
 
                             if ((has_double_bond_i || has_double_bond_j)) {
-                                printf("Atropisomer candidate: atom %d with atom %d; bond type %d; bond stereo %d\n",
-                                        i + 1, neighbors[j] + 1, atom_i.bond_type[j], atom_i.bond_stereo[j]);
-                                printf("atom type %d %d\n", atom_i.el_number, atom_j.el_number);
-                                printf("has double bond %d %d\n", has_double_bond_i, has_double_bond_j);
-                                printf("nof shared rings %d\n", get_number_of_common_rings(orig_inp_data->at, orig_inp_data->num_inp_atoms, i, neighbors[j]));
+                                if ((atom_i.fused_partner_atom_id != j &&
+                                     atom_j.fused_partner_atom_id != i) ||
+                                    (atom_i.fused_partner_atom_id == -1 ||
+                                     atom_j.fused_partner_atom_id == -1)) {
 
+                                    if (are_atoms_in_same_small_ring(orig_inp_data->at,
+                                                                     orig_inp_data->ring_id_to_size,
+                                                                     i, neighbors[j],
+                                                                     6) == 0) {
+                                        printf(">>> is atropisomer\n");
+                                        printf("infos: atom %d with atom %d; bond type %d; bond stereo %d\n",
+                                                i, neighbors[j], atom_i.bond_type[j], atom_i.bond_stereo[j]);
+                                        printf("atom type %d %d\n", atom_i.el_number, atom_j.el_number);
+                                        printf("has double bond %d %d\n", has_double_bond_i, has_double_bond_j);
+                                        printf("fused pivot atoms %d %d\n", atom_i.fused_partner_atom_id, atom_j.fused_partner_atom_id);
+                                    }
+                                }
                             }
                         }
                     }

@@ -3905,11 +3905,32 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     MarkRingSystemsInp(out_at, num_atoms, 0);
 
     if (ip->Atropisomers) {
-        RingResult *ring_result = find_rings(out_at, num_atoms);
+        RingSystems *ring_result = find_rings(out_at, num_atoms);
 
-        print_ring_result(ring_result);
+        // print_ring_result(ring_result);
 
-        free_ring_result(ring_result);
+        for (i = 0; i < num_atoms; i++) {
+            out_at[i].fused_partner_atom_id = -1;
+        }
+        for (i = 0; i < num_atoms; i++) {
+            for (int j = i + 1; j < num_atoms; j++) {
+                // printf("%d %d\n", i, j);
+                if(is_fused_ring_pivot(ring_result, out_at, i, j)) {
+                    // printf(">>> Found pivot atom pair: %d, %d\n", i, j);
+                    out_at[i].fused_partner_atom_id = j;
+                    out_at[j].fused_partner_atom_id = i;
+                }
+            }
+        }
+
+        if (ring_result != NULL) {
+            // orig_inp_data->ring_id_to_size = (int*)inchi_calloc(ring_result->count, sizeof(int));
+            for (i = 0; i < ring_result->count; i++) {
+                orig_inp_data->ring_id_to_size[i] = ring_result->rings[i].size;
+            }
+        }
+
+        free_ring_system(ring_result);
 
         for (i = 0; i < num_atoms; i++) {
             if (out_at[i].ring_count > 0) {
@@ -3924,8 +3945,10 @@ int  Create_INChI(CANON_GLOBALS* pCG,
                     orig_inp_data->at[i].bond_stereo[j] = out_at[i].bond_stereo[j];
                     // printf("%d %d\n", i, out_at[i].bond_stereo[j]);
                 }
-
             }
+            // if (out_at[i].fused_partner_atom_id > -1) {
+            orig_inp_data->at[i].fused_partner_atom_id = out_at[i].fused_partner_atom_id;
+
         }
 
     }
