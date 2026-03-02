@@ -1,7 +1,9 @@
 
 #include "mode.h"
 #include "inpdef.h"
+
 #include "ring_detection.h"
+
 
 int is_subset(Ring* child,
               Ring* potential_parent) {
@@ -106,18 +108,18 @@ int is_atom_in_ring(const Ring *r, int atom_id) {
 }
 
 int are_atoms_in_same_small_ring(const inp_ATOM* atoms,
-                                 const int *ring_id_to_size,
+                                 const RingSystems *rs,
                                  int atom_id1, int atom_id2,
                                  int max_ring_size) {
 
     inp_ATOM atom1 = atoms[atom_id1];
     inp_ATOM atom2 = atoms[atom_id2];
 
-    for (int i = 0; i < atom1.ring_count; i++) {
-        int ring_id1 = atom1.ring_ids[i];
-        if (ring_id_to_size[ring_id1] <= max_ring_size) {
-            for (int j = 0; j < atom2.ring_count; j++) {
-                int ring_id2 = atom2.ring_ids[j];
+    for (int i = 0; i < rs->atom_to_ring_mapping[atom_id1].ring_count; i++) {
+        int ring_id1 = rs->atom_to_ring_mapping[atom_id1].ring_ids[i];
+        if (rs->rings[ring_id1].size <= max_ring_size) {
+            for (int j = 0; j < rs->atom_to_ring_mapping[atom_id2].ring_count; j++) {
+                int ring_id2 = rs->atom_to_ring_mapping[atom_id2].ring_ids[j];
                 if (ring_id1 == ring_id2) {
                     return 1;
                 }
@@ -162,6 +164,11 @@ void free_ring_system(RingSystems *rs) {
         inchi_free(rs->rings[i].child_ids);
     }
     inchi_free(rs->rings);
+
+    for (int i = 0; i < rs->num_atoms; i++) {
+        inchi_free(rs->atom_to_ring_mapping[i].ring_ids);
+    }
+    inchi_free(rs->atom_to_ring_mapping);
     inchi_free(rs);
 }
 
@@ -212,11 +219,33 @@ void *create_new_ring(RingSystems *rs,
     r->child_count = 0;
     r->child_ids = NULL;
     r->nof_atomic_rings = 0;
+    r->is_fused_ring = 0;
     r->atom_ids = (int*)inchi_calloc(path_len, sizeof(int));
     for (int i = 0; i < path_len; i++) {
         r->atom_ids[i] = path[i];
-        atoms[path[i]].ring_ids[atoms[path[i]].ring_count] = rs->count;
-        atoms[path[i]].ring_count++;
+
+        rs->atom_to_ring_mapping[path[i]].atom_id = path[i];
+        rs->atom_to_ring_mapping[path[i]].ring_ids = (int*)inchi_realloc(rs->atom_to_ring_mapping[path[i]].ring_ids,
+            (rs->atom_to_ring_mapping[path[i]].ring_count + 1) * sizeof(int));
+        rs->atom_to_ring_mapping[path[i]].ring_ids[rs->atom_to_ring_mapping[path[i]].ring_count] = r->id;
+        rs->atom_to_ring_mapping[path[i]].ring_count++;
+
+        inp_ATOM atom = atoms[path[i]];
+        for (int j = i + 1; j < path_len; j++) {
+            // prev, i, next
+            int prev_atom_id = path[i - 1 < 0 ? path_len - 1 : i - 1];
+            int cur_atom_id = path[i];
+            int next_atom_id = path[i + 1 >= path_len ? 0 : i + 1];
+            int other_atom_id = path[j];
+            for (int k = 0; k < atom.valence; k++) {
+                if (atom.neighbor[k] == prev_atom_id || atom.neighbor[k] == next_atom_id) {
+                    continue;
+                } else if (atom.neighbor[k] == other_atom_id)
+                {
+                    r->is_fused_ring = 1;
+                }
+            }
+        }
     }
 
     rs->rings[rs->count] = *r;
@@ -277,8 +306,6 @@ void dfs(RingSystems *rs,
         }
     }
     visited[curr] = 0;
-
-
 }
 
 int is_fused_ring_pivot(const RingSystems *rs,
@@ -363,6 +390,8 @@ RingSystems *find_rings(inp_ATOM* atoms,
     RingSystems *rs = (RingSystems*)inchi_calloc(1, sizeof(RingSystems));
     rs->rings = NULL; //(Ring*)inchi_calloc(num_atoms * 10, sizeof(Ring));
     rs->count = 0;
+    rs->num_atoms = num_atoms;
+    rs->atom_to_ring_mapping = (Atom2RingMapping*)inchi_calloc(num_atoms, sizeof(Atom2RingMapping));
 
     int visited[num_atoms];
     int path[num_atoms];
@@ -373,7 +402,7 @@ RingSystems *find_rings(inp_ATOM* atoms,
         visited[i] = 0;
         path[i] = -1;
 
-        inp_ATOM *atom_i = &atoms[i];
+        const inp_ATOM *atom_i = &atoms[i];
         for (int j = 0; j < atom_i->valence; j++) {
             int neighbor = atom_i->neighbor[j];
             adj[i][neighbor] = 1;

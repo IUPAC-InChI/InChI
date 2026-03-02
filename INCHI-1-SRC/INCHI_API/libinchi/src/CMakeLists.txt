@@ -54,6 +54,8 @@ target_sources(libinchi PRIVATE
 	${P_IXA}/ixa_read_mol.c
 	${P_IXA}/ixa_status.c
 	${P_IXA}/ixa_status.h
+	${P_BASE}/atropisomers.h
+	${P_BASE}/atropisomers.c
 	${P_BASE}/bcf_s.h
 	${P_BASE}/bcf_s.c
 	${P_BASE}/extr_ct.h

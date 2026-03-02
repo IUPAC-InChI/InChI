@@ -52,7 +52,7 @@ TEST(test_atropisomers, test_dummy_1)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H";
+    const char expected_inchi[] = "InChI=1B";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -126,7 +126,7 @@ TEST(test_atropisomers, test_dummy_2)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3";
+    const char expected_inchi[] = "InChI=1B";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -193,7 +193,7 @@ TEST(test_atropisomers, test_dummy_3)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C20H16O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-11,18,21-22H,12H2";
+    const char expected_inchi[] = "InChI=1B";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -274,7 +274,7 @@ TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C20H28N2O2/c1-5-17(23)22(14-10-7-6-8-11-14)18-15(19(21)24)12-9-13-16(18)20(2,3)4/h5,9,12-14H,1,6-8,10-11H2,2-4H3,(H2,21,24)";
+    const char expected_inchi[] = "InChI=1B";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -282,7 +282,7 @@ TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
     FreeINCHI(poutput);
 }
 
-TEST(test_atropisomers, test_dummy_5_no_wedge_bonds)
+TEST(test_atropisomers, test_dummy_5_no_atropisomer_no_wedge_bonds)
 {
     const char *molblock =
         "atropisomer test mol                                                        \n"
@@ -516,7 +516,7 @@ TEST(test_atropisomers, test_dummy_7_no_atropisomer_1)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C12H10Br2/c1-7-3-4-8(2)12-10(14)6-5-9(13)11(7)12/h3-6H,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -577,7 +577,7 @@ TEST(test_atropisomers, test_dummy_8_no_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C18H14O/c1-11-7-8-13-9-10-19-18-15-6-4-3-5-14(15)12(2)16(11)17(13)18/h3-10H,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -620,7 +620,7 @@ TEST(test_atropisomers, test_dummy_9_no_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C9H9NO/c1-6-3-4-11-9-8(6)7(2)5-10-9/h3-5H,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -668,7 +668,7 @@ TEST(test_atropisomers, test_dummy_10_no_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C13H10/c1-3-7-12-10(5-1)9-11-6-2-4-8-13(11)12/h1-8H,9H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -781,7 +781,7 @@ TEST(test_atropisomers, test_dummy_11_no_atropisomer_3_fragments)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C16H10.C14H10.C13H10/c1-3-11-7-9-13-5-2-6-14-10-8-12(4-1)15(11)16(13)14;1-3-7-13-11(5-1)9-10-12-6-2-4-8-14(12)13;1-3-7-12-10(5-1)9-11-6-2-4-8-13(11)12/h1-10H;1-10H;1-8H,9H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -829,6 +829,105 @@ TEST(test_atropisomers, test_dummy_12_atropisomer)
         "  3  2  1  1     0  0                                                     \n"
         " 12 11  1  1     0  0                                                     \n"
         "M  END                                                                    \n";
+
+    char options[] = "-Atropisomers";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    const char expected_inchi[] = "InChI=1B";
+
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    FreeINCHI(poutput);
+}
+
+TEST(test_atropisomers, test_dummy_13_atropisomer_Caryophyllene)
+{
+    const char *molblock =
+        "5281515 Caryophyllene                                                      \n"
+        "  -OEChem-03022602172D                                                     \n"
+        "                                                                           \n"
+        " 39 40  0     1  0  0  0  0  0999 V2000                                    \n"
+        "    2.9665    1.2303    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.7095    0.2553    0.0000 C   0  0  1  0  0  0  0  0  0  0  0  0      \n"
+        "    3.6754   -0.0036    0.0000 C   0  0  2  0  0  0  0  0  0  0  0  0      \n"
+        "    3.9404    0.9693    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.4507   -0.7107    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.2233    2.1967    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.0000    1.4871    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.5415    0.4964    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.9507   -1.5767    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    5.4075   -0.0036    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.8167   -1.0767    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    5.5488   -1.0767    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.5415    1.4964    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.6827   -1.5767    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.8167   -0.0767    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    1.8880    0.4736    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.7864   -0.8463    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.5388    0.8072    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.1017    1.5679    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    1.9137   -0.4007    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.0123   -1.1491    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.8225    2.0375    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.3825    2.7959    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.6241    2.3559    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.1592    2.0863    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    1.4008    1.6463    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    1.8408    0.8879    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    2.4137   -1.8867    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.2607   -2.1136    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    6.0251   -0.0576    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    5.5939    0.5877    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    5.7860   -1.6495    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    6.1476   -0.9162    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    5.0784    1.8064    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.0045    1.8064    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.6827   -2.1967    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    4.4367   -0.0767    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.8167    0.5433    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "    3.1967   -0.0767    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0      \n"
+        "  1  2  1  0  0  0  0                                                      \n"
+        "  1  4  1  0  0  0  0                                                      \n"
+        "  1  6  1  0  0  0  0                                                      \n"
+        "  1  7  1  0  0  0  0                                                      \n"
+        "  2  3  1  0  0  0  0                                                      \n"
+        "  2  5  1  0  0  0  0                                                      \n"
+        "  2 16  1  6  0  0  0                                                      \n"
+        "  3  4  1  0  0  0  0                                                      \n"
+        "  3  8  1  0  0  0  0                                                      \n"
+        "  3 17  1  1  0  0  0                                                      \n"
+        "  4 18  1  0  0  0  0                                                      \n"
+        "  4 19  1  0  0  0  0                                                      \n"
+        "  5  9  1  0  0  0  0                                                      \n"
+        "  5 20  1  0  0  0  0                                                      \n"
+        "  5 21  1  0  0  0  0                                                      \n"
+        "  6 22  1  0  0  0  0                                                      \n"
+        "  6 23  1  0  0  0  0                                                      \n"
+        "  6 24  1  0  0  0  0                                                      \n"
+        "  7 25  1  0  0  0  0                                                      \n"
+        "  7 26  1  0  0  0  0                                                      \n"
+        "  7 27  1  0  0  0  0                                                      \n"
+        "  8 10  1  0  0  0  0                                                      \n"
+        "  8 13  2  0  0  0  0                                                      \n"
+        "  9 11  1  0  0  0  0                                                      \n"
+        "  9 28  1  0  0  0  0                                                      \n"
+        "  9 29  1  0  0  0  0                                                      \n"
+        " 10 12  1  0  0  0  0                                                      \n"
+        " 10 30  1  0  0  0  0                                                      \n"
+        " 10 31  1  0  0  0  0                                                      \n"
+        " 11 14  2  0  0  0  0                                                      \n"
+        " 11 15  1  0  0  0  0                                                      \n"
+        " 12 14  1  0  0  0  0                                                      \n"
+        " 12 32  1  0  0  0  0                                                      \n"
+        " 12 33  1  0  0  0  0                                                      \n"
+        " 13 34  1  0  0  0  0                                                      \n"
+        " 13 35  1  0  0  0  0                                                      \n"
+        " 14 36  1  0  0  0  0                                                      \n"
+        " 15 37  1  0  0  0  0                                                      \n"
+        " 15 38  1  0  0  0  0                                                      \n"
+        " 15 39  1  0  0  0  0                                                      \n"
+        "M  END                                                                     \n";
 
     char options[] = "-Atropisomers";
     inchi_Output output;

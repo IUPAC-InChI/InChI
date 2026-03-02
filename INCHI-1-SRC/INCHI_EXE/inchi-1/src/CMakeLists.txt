@@ -26,6 +26,8 @@ add_executable(inchi-1)
 
 target_sources(inchi-1 PRIVATE
 	main.c
+	${P_BASE}/atropisomers.h
+	${P_BASE}/atropisomers.c
 	${P_BASE}/ichimain.c
 	${P_BASE}/dispstru.c
 	${P_BASE}/dispstru.h

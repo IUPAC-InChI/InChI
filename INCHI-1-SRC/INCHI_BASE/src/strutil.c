@@ -55,8 +55,6 @@
 
 #include "bcf_s.h"
 
-#include "ring_detection.h"
-
 /* Added fix to remove_ion_pairs() -- 2010-03-17 DT */
 #define FIX_P_IV_Plus_O_Minus
 
@@ -7104,6 +7102,52 @@ int invert_parities(const INChI *inchi,
     return 0;
 }
 
+
+/**
+ * @brief Set t- and m-layers object for atropisomer stereochemistry
+ *
+ * @param orig_inp_data Pointer to original input atom data
+ * @param inchi Pointer to INChI structure
+ * @param aux Pointer to INChI auxiliary data
+ * @return int
+ */
+int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+                                const INChI *inchi,
+                                const INChI_Aux *aux)
+{
+    int ret = 0;
+
+    if (orig_inp_data == NULL)
+    {
+        return 1;
+    }
+
+    if (inchi == NULL || aux == NULL)
+    {
+        return 1;
+    }
+
+    if (aux->nOrigAtNosInCanonOrd == NULL ||
+        aux->nNumberOfAtoms <= 0) {
+        return 1;
+    }
+
+    //TODO
+    // - t layer parities for atropisomers
+    //    -> t-parity[atom] = 1 (-)
+    // - m layer for atropisomers
+    //    -> enantiomeric atropisomers: m1 (inchi->Stereo->nCompInv2Abs = -1; //m1)
+    //    -> diastereomeric atropisomers: m0 (inchi->Stereo->nCompInv2Abs = 1; //m0)
+    //        -> check number of stereocenters: if #stereocenter >= 2
+
+    if (orig_inp_data->is_atropisomer) {
+        printf(">>>>> TODO set t- and m-layers for atropisomers\n");
+    }
+
+
+    return ret;
+}
+
 /**
  * @brief Set the enhanced stereochemistry information for t- and m-layers
  *
@@ -7149,130 +7193,6 @@ int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
          orig_inp_data->v3000->n_sterac)) {
         inchi->Stereo->nCompInv2Abs = 1; //m0
     }
-
-    return ret;
-}
-
-/**
- * @brief Set t- and m-layers object for atropisomer stereochemistry
- *
- * @param orig_inp_data Pointer to original input atom data
- * @param inchi Pointer to INChI structure
- * @param aux Pointer to INChI auxiliary data
- * @return int
- */
-int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
-                                const INChI *inchi,
-                                const INChI_Aux *aux)
-{
-    int ret = 0;
-
-    if (orig_inp_data == NULL)
-    {
-        return 1;
-    }
-
-    if (inchi == NULL || aux == NULL)
-    {
-        return 1;
-    }
-
-    if (aux->nOrigAtNosInCanonOrd == NULL ||
-        aux->nNumberOfAtoms <= 0) {
-        return 1;
-    }
-
-    printf("-------------------\n");
-
-    for (int i = 0; i < orig_inp_data->num_inp_atoms; i++) {
-
-        const inp_ATOM atom_i = orig_inp_data->at[i];
-
-        // if (atom_i.is_fused_pivot_atom == 0) {
-        //     continue;
-        // }
-
-        int num_neighbors_i = atom_i.valence;
-        const AT_NUMB *neighbors = atom_i.neighbor;
-        // printf("Atom %d with %d neighbors; ring system id %d; num atoms in ring %d\n", i + 1, num_neighbors, orig_inp_data->at[i].nRingSystem, orig_inp_data->at[i].nNumAtInRingSystem);
-        if (num_neighbors_i == 3) {
-            for (int j = 0; j < num_neighbors_i; j++) {
-
-                if (i >= neighbors[j]) {
-                    continue;
-                }
-
-                const inp_ATOM atom_j = orig_inp_data->at[neighbors[j]];
-
-                // if (atom_j.is_fused_pivot_atom == 0) {
-                //     continue;
-                // }
-
-                int num_neighbors_j = atom_j.valence;
-
-                if (num_neighbors_j == 3 &&
-                    atom_i.bond_stereo[j] == 0 &&
-                    atom_i.bond_type[j] == 1) {
-
-                    if (atom_i.ring_count > 0 ||
-                        atom_j.ring_count > 0) {
-
-                        int nof_wedge_bonds_i = 0;
-                        int has_double_bond_i = 0;
-                        for (int k = 0; k < num_neighbors_i; k++) {
-                            if (atom_i.bond_stereo[k] == 1 ||
-                                atom_i.bond_stereo[k] == 4 ||
-                                atom_i.bond_stereo[k] == 6) {
-                                nof_wedge_bonds_i++;
-                            }
-                            if (atom_i.bond_type[k] == 2) {
-                                has_double_bond_i = 1;
-                            }
-                        }
-                        int nof_wedge_bonds_j = 0;
-                        int has_double_bond_j = 0;
-                        for (int k = 0; k < num_neighbors_j; k++) {
-                            if (atom_j.bond_stereo[k] == 1 ||
-                                atom_j.bond_stereo[k] == 4 ||
-                                atom_j.bond_stereo[k] == 6) {
-                                nof_wedge_bonds_j++;
-                            }
-                            if (atom_j.bond_type[k] == 2) {
-                                has_double_bond_j = 1;
-                            }
-                        }
-
-                        if (nof_wedge_bonds_i > 0 ||
-                            nof_wedge_bonds_j > 0) {
-
-                            if ((has_double_bond_i || has_double_bond_j)) {
-                                if ((atom_i.fused_partner_atom_id != j &&
-                                     atom_j.fused_partner_atom_id != i) ||
-                                    (atom_i.fused_partner_atom_id == -1 ||
-                                     atom_j.fused_partner_atom_id == -1)) {
-
-                                    if (are_atoms_in_same_small_ring(orig_inp_data->at,
-                                                                     orig_inp_data->ring_id_to_size,
-                                                                     i, neighbors[j],
-                                                                     6) == 0) {
-                                        printf(">>> is atropisomer\n");
-                                        printf("infos: atom %d with atom %d; bond type %d; bond stereo %d\n",
-                                                i, neighbors[j], atom_i.bond_type[j], atom_i.bond_stereo[j]);
-                                        printf("atom type %d %d\n", atom_i.el_number, atom_j.el_number);
-                                        printf("has double bond %d %d\n", has_double_bond_i, has_double_bond_j);
-                                        printf("fused pivot atoms %d %d\n", atom_i.fused_partner_atom_id, atom_j.fused_partner_atom_id);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-
-
 
     return ret;
 }
