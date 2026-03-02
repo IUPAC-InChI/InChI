@@ -4537,6 +4537,10 @@ exit_function:
         /* free_t_group_info(t_group_info); */
         if (t_group_info) /* djb-rwth: fixing oss-fuzz issue #42537161/70475 */
         {
+            if (t_group_info->t_group)
+            {
+                inchi_free(t_group_info->t_group);
+            }
             if (t_group_info->nEndpointAtomNumber)
             {
                 inchi_free(t_group_info->nEndpointAtomNumber);
