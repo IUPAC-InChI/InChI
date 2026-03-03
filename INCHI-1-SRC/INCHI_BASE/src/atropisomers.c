@@ -79,6 +79,7 @@ void find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
                                      fused_atom_partner[atom_id2] == -1)) {
 
                                     if (are_atoms_in_same_small_ring(out_at,
+                                                                     num_atoms,
                                                                      ring_result,
                                                                      atom_id1, atom_id2,
                                                                      6) == 0) {

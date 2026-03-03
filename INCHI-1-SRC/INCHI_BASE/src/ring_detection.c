@@ -8,6 +8,15 @@
 int is_subset(Ring* child,
               Ring* potential_parent) {
 
+    if (child == NULL || potential_parent == NULL) {
+        return 0;
+    }
+
+    if (child->atom_ids == NULL || potential_parent->atom_ids == NULL) {
+        return 0;
+    }
+
+
     if (child->size >= potential_parent->size) {
         return 0;
     }
@@ -28,6 +37,15 @@ int is_subset(Ring* child,
 }
 
 void determine_ring_hierarchy(RingSystems* rs) {
+
+    if (rs == NULL) {
+        return;
+    }
+
+    if (rs->rings == NULL) {
+        return;
+    }
+
     for (int i = 0; i < rs->count; i++) {
         rs->rings[i].parent_id = -1;
 
@@ -39,14 +57,11 @@ void determine_ring_hierarchy(RingSystems* rs) {
             }
 
             if (is_subset(&rs->rings[i], &rs->rings[j])) {
-                // if (rs->rings[j].size < smallest_parent_size) {
                 rs->rings[i].parent_id = rs->rings[j].id;
-                // smallest_parent_size = rs->rings[j].size;
 
                 rs->rings[j].child_ids = (int*)inchi_realloc(rs->rings[j].child_ids, (rs->rings[j].child_count + 1) * sizeof(int));
                 rs->rings[j].child_ids[rs->rings[j].child_count] = rs->rings[i].id;
                 rs->rings[j].child_count++;
-                // }
             }
         }
     }
@@ -54,6 +69,15 @@ void determine_ring_hierarchy(RingSystems* rs) {
 
 int get_ring_atom_overlap(const Ring *r1, const Ring *r2) {
     int overlap = 0;
+
+    if (r1 == NULL || r2 == NULL) {
+        return overlap;
+    }
+
+    if (r1->atom_ids == NULL || r2->atom_ids == NULL) {
+        return overlap;
+    }
+
     for (int i = 0; i < r1->size; i++) {
         for (int j = 0; j < r2->size; j++) {
             if (r1->atom_ids[i] == r2->atom_ids[j]) {
@@ -67,6 +91,15 @@ int get_ring_atom_overlap(const Ring *r1, const Ring *r2) {
 int get_number_of_overlapping_rings(const Ring *r1, const Ring *r2) {
 
     int count = 0;
+
+    if (r1 == NULL || r2 == NULL) {
+        return count;
+    }
+
+    if (r1->child_ids == NULL || r2->child_ids == NULL) {
+        return count;
+    }
+
     for (int i = 0; i < r1->child_count; i++) {
         for (int j = 0; j < r2->child_count; j++) {
             if (r1->child_ids[i] == r2->child_ids[j]) {
@@ -80,8 +113,16 @@ int get_number_of_overlapping_rings(const Ring *r1, const Ring *r2) {
 int get_number_of_atomic_rings_from_atom(const RingSystems *rs,
                                          int atom_id) {
 
+    if (rs == NULL) {
+        return 0;
+    }
+
+    if (rs->rings == NULL) {
+        return 0;
+    }
+
     if (atom_id < 0) {
-        return 0; // Invalid input
+        return 0;
     }
 
     int count = 0;
@@ -99,6 +140,15 @@ int get_number_of_atomic_rings_from_atom(const RingSystems *rs,
 }
 
 int is_atom_in_ring(const Ring *r, int atom_id) {
+
+    if (r == NULL) {
+        return 0;
+    }
+
+    if (r->atom_ids == NULL) {
+        return 0;
+    }
+
     for (int i = 0; i < r->size; i++) {
         if (r->atom_ids[i] == atom_id) {
             return 1;
@@ -108,12 +158,29 @@ int is_atom_in_ring(const Ring *r, int atom_id) {
 }
 
 int are_atoms_in_same_small_ring(const inp_ATOM* atoms,
+                                 int num_atoms,
                                  const RingSystems *rs,
                                  int atom_id1, int atom_id2,
                                  int max_ring_size) {
 
-    inp_ATOM atom1 = atoms[atom_id1];
-    inp_ATOM atom2 = atoms[atom_id2];
+    if (atoms == NULL) {
+        return 0;
+    }
+
+    if (rs == NULL) {
+        return 0;
+    }
+
+    if (rs->atom_to_ring_mapping == NULL) {
+        return 0;
+    }
+
+    if (atom_id1 >= num_atoms || atom_id2 >= num_atoms) {
+        return 0;
+    }
+
+    const inp_ATOM atom1 = atoms[atom_id1];
+    const inp_ATOM atom2 = atoms[atom_id2];
 
     for (int i = 0; i < rs->atom_to_ring_mapping[atom_id1].ring_count; i++) {
         int ring_id1 = rs->atom_to_ring_mapping[atom_id1].ring_ids[i];
@@ -130,6 +197,11 @@ int are_atoms_in_same_small_ring(const inp_ATOM* atoms,
 }
 
 void print_ring(const Ring *r) {
+
+    if (r == NULL) {
+        return;
+    }
+
     printf("Ring ID: %d, Size: %d, nof fused ring %d, parent %d, Atoms: ",
         r->id, r->size, r->nof_atomic_rings, r->parent_id);
     for (int i = 0; i < r->size; i++) {
@@ -144,6 +216,10 @@ void print_ring(const Ring *r) {
 }
 
 void print_ring_result(const RingSystems *rs) {
+
+    if (rs == NULL) {
+        return;
+    }
 
     printf("Number of rings: %d\n", rs->count);
 
@@ -184,6 +260,14 @@ int sub_ring_counter(RingSystems* rs, const Ring *r, int *ring_counter) {
 
 void determine_fused_rings(RingSystems* rs) {
 
+    if (rs == NULL) {
+        return;
+    }
+
+    if (rs->rings == NULL) {
+        return 0;
+    }
+
     for (int i = 0; i < rs->count; i++) {
         Ring *cur_ring = &rs->rings[i];
 
@@ -209,8 +293,9 @@ void *create_new_ring(RingSystems *rs,
                       int *path,
                       int path_len) {
 
-    // Ring *r = &rs->rings[rs->count]; //(Ring*)inchi_calloc(1, sizeof(Ring));
+
     rs->rings = (Ring*)inchi_realloc(rs->rings, (rs->count + 1) * sizeof(Ring));
+
     Ring *r = &rs->rings[rs->count];
 
     r->id = rs->count;
@@ -384,18 +469,18 @@ RingSystems *find_rings(inp_ATOM* atoms,
                         int num_atoms) {
 
     if (atoms == NULL || num_atoms <= 0) {
-        return NULL; // Invalid input
+        return NULL;
     }
 
     RingSystems *rs = (RingSystems*)inchi_calloc(1, sizeof(RingSystems));
-    rs->rings = NULL; //(Ring*)inchi_calloc(num_atoms * 10, sizeof(Ring));
+    rs->rings = NULL;
     rs->count = 0;
     rs->num_atoms = num_atoms;
     rs->atom_to_ring_mapping = (Atom2RingMapping*)inchi_calloc(num_atoms, sizeof(Atom2RingMapping));
 
     int visited[num_atoms];
     int path[num_atoms];
-    int **adj = (int**)inchi_calloc(num_atoms, sizeof(int*));  //[num_atoms][num_atoms]; // Adjacency matrix
+    int **adj = (int**)inchi_calloc(num_atoms, sizeof(int*));
 
     for (int i = 0; i < num_atoms; ++i) {
         adj[i] = (int*)inchi_calloc(num_atoms, sizeof(int));
@@ -406,7 +491,6 @@ RingSystems *find_rings(inp_ATOM* atoms,
         for (int j = 0; j < atom_i->valence; j++) {
             int neighbor = atom_i->neighbor[j];
             adj[i][neighbor] = 1;
-            // adj[neighbor][i] = 1; // Undirected graph
         }
     }
 
@@ -414,9 +498,7 @@ RingSystems *find_rings(inp_ATOM* atoms,
         dfs(rs, atoms, adj, num_atoms, i, i, visited, path, 0);
     }
 
-
     determine_ring_hierarchy(rs);
-
     determine_fused_rings(rs);
 
     for (int i = 0; i < num_atoms; ++i) {
