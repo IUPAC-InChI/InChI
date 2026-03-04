@@ -265,7 +265,7 @@ void determine_fused_rings(RingSystems* rs) {
     }
 
     if (rs->rings == NULL) {
-        return 0;
+        return;
     }
 
     for (int i = 0; i < rs->count; i++) {
