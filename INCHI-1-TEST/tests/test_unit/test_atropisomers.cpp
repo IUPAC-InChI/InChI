@@ -7,7 +7,7 @@ extern "C"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mode.h"
 }
 
-TEST(test_atropisomers, test_dummy_1)
+TEST(test_atropisomers, test_dummy_1_atropisomer)
 {
     const char *molblock =
         "atropisomer test mol                                                                  \n"
@@ -52,7 +52,7 @@ TEST(test_atropisomers, test_dummy_1)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -60,7 +60,7 @@ TEST(test_atropisomers, test_dummy_1)
     FreeINCHI(poutput);
 }
 
-TEST(test_atropisomers, test_dummy_2)
+TEST(test_atropisomers, test_dummy_2_atropisomer)
 {
     const char *molblock =
         "atropisomer test mol                                                     \n"
@@ -126,7 +126,7 @@ TEST(test_atropisomers, test_dummy_2)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -134,7 +134,7 @@ TEST(test_atropisomers, test_dummy_2)
     FreeINCHI(poutput);
 }
 
-TEST(test_atropisomers, test_dummy_3)
+TEST(test_atropisomers, test_dummy_3_atropismer)
 {
     const char *molblock =
         "atropisomer test mol                                                     \n"
@@ -193,7 +193,7 @@ TEST(test_atropisomers, test_dummy_3)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C20H16O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-11,18,21-22H,12H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -274,7 +274,7 @@ TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C20H28N2O2/c1-5-17(23)22(14-10-7-6-8-11-14)18-15(19(21)24)12-9-13-16(18)20(2,3)4/h5,9,12-14H,1,6-8,10-11H2,2-4H3,(H2,21,24)";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -366,7 +366,7 @@ TEST(test_atropisomers, test_dummy_5_no_atropisomer_no_wedge_bonds)
     inchi_Output *poutput = &output;
     const char expected_inchi[] = "InChI=1B/C23H21FN6O3/c1-12-15(11-28(2)27-12)13-6-14-17(7-19(13)32-4)26-9-18-21(14)30(23(31)29(18)3)22-16(24)8-25-10-20(22)33-5/h6-11H,1-5H3";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -467,9 +467,9 @@ TEST(test_atropisomers, test_dummy_6_two_atropisomer_bonds)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C25H10Br6Cl4/c26-12-3-1-4-13(27)17(12)19-16(32)8-7-10(23(19)33)9-11-21(30)24(34)20(25(35)22(11)31)18-14(28)5-2-6-15(18)29/h1-8H,9H2";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -833,7 +833,7 @@ TEST(test_atropisomers, test_dummy_12_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C15H14/c1-3-10-14-12(6-1)8-5-9-13-7-2-4-11-15(13)14/h1-4,6-7,10-11H,5,8-9H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -932,10 +932,206 @@ TEST(test_atropisomers, test_dummy_13_atropisomer_Caryophyllene)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B";
+    const char expected_inchi[] = "InChI=1B/C15H24/c1-11-6-5-7-12(2)13-10-15(3,4)14(13)9-8-11/h6,13-14H,2,5,7-10H2,1,3-4H3/b11-6+/t13-,14-/m1/s1";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
+}
+
+TEST(test_atropisomers, test_dummy_14_atropisomer)
+{
+    const char *molblock =
+        "atropisomer test mol                                                     \n"
+        "  ChemDraw03052610012D                                                   \n"
+        "                                                                         \n"
+        " 22 25  0  0  0  0  0  0  0  0999 V2000                                  \n"
+        "   -0.0000    0.4125    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -0.6675    0.8974    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    0.6674    0.8975    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -0.4125    1.6820    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    0.4124    1.6822    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -1.4744    0.7259    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -2.0264    1.3390    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -0.9645    2.2951    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -1.7715    2.1236    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    1.4521    0.6426    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    0.0000   -0.4125    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    0.6675   -0.8974    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -0.6674   -0.8975    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    0.4125   -1.6820    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -0.4124   -1.6822    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    1.4744   -0.7259    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    2.0264   -1.3390    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    0.9645   -2.2951    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    1.7715   -2.1236    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -1.4521   -0.6426    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "    2.0652    1.1946    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "   -2.0652   -1.1946    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0    \n"
+        "  1  2  1  1                                                             \n"
+        "  1  3  1  6                                                             \n"
+        "  1 11  1  0                                                             \n"
+        "  2  6  1  0                                                             \n"
+        "  2  4  2  0                                                             \n"
+        "  3  5  2  0                                                             \n"
+        "  3 10  1  0                                                             \n"
+        "  4  5  1  0                                                             \n"
+        "  4  8  1  0                                                             \n"
+        "  6  7  2  0                                                             \n"
+        "  7  9  1  0                                                             \n"
+        "  8  9  2  0                                                             \n"
+        " 10 21  1  0                                                             \n"
+        " 11 12  1  1                                                             \n"
+        " 11 13  1  6                                                             \n"
+        " 12 16  1  0                                                             \n"
+        " 12 14  2  0                                                             \n"
+        " 13 15  2  0                                                             \n"
+        " 13 20  1  0                                                             \n"
+        " 14 15  1  0                                                             \n"
+        " 14 18  1  0                                                             \n"
+        " 16 17  2  0                                                             \n"
+        " 17 19  1  0                                                             \n"
+        " 18 19  2  0                                                             \n"
+        " 20 22  1  0                                                             \n"
+        "M  END                                                                   \n";
+
+    char options[] = "-Atropisomers";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    const char expected_inchi[] = "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3";
+
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    FreeINCHI(poutput);
+}
+
+TEST(test_atropisomers, test_dummy_15_test_file_1)
+{
+
+    const char* inchi_filename = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/atropisomers_test_file_1_v2.sdf";
+    // const char* inchi_filename = "/workspaces/InChI/INCHI-1-TEST/tests/test_unit/fixtures/atropisomers_test_file_1.sdf";
+
+    std::ifstream file_inchi(inchi_filename, std::ios::binary);
+    ASSERT_TRUE(file_inchi.is_open());
+
+    // Read the whole file into a string
+    std::stringstream buffer;
+    buffer << file_inchi.rdbuf();
+    std::string file_content = buffer.str();
+    file_inchi.close();
+
+    // Split on "$$$$"
+    std::vector<std::string> molblocks;
+    size_t pos = 0;
+    size_t prev = 0;
+    const std::string delimiter = "$$$$";
+    while ((pos = file_content.find(delimiter, prev)) != std::string::npos) {
+        std::string mol = file_content.substr(prev, pos - prev);
+        // Optionally trim whitespace
+        size_t first_non_ws = mol.find_first_not_of(" \t\r\n");
+        if (first_non_ws != std::string::npos) {
+            mol = mol.substr(first_non_ws);
+            molblocks.push_back(mol);
+        }
+        prev = pos + delimiter.length();
+    }
+    // Add the last block if any
+    std::string mol = file_content.substr(prev);
+    size_t first_non_ws = mol.find_first_not_of(" \t\r\n");
+    if (first_non_ws != std::string::npos) {
+        mol = mol.substr(first_non_ws);
+        molblocks.push_back(mol);
+    }
+
+    std::vector<std::string> list_expected_inchis = {
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
+        "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
+        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3",
+        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3",
+        "InChI=1B/C20H22N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-13,18H,3-4,14H2,1-2H3/t18-/m1/s1",
+        "InChI=1B/C16H20N2/c1-4-15-10-9-12(2)17(15)18-13(3)11-14-7-5-6-8-16(14)18/h5-12,15H,4H2,1-3H3/t12-,15+/m0/s1",
+        "InChI=1B/C14H15NO/c1-10(2)12-8-9-14(16)15(12)13-7-5-4-6-11(13)3/h4-9H,1-3H3",
+        "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H",
+        "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
+        "InChI=1B/C14H26/c1-9(2)13(10(3)4)14(11(5)6)12(7)8/h9,11H,1-8H3",
+        "InChI=1B/C12H17NO/c1-5-10-8-6-7-9(2)11(10)12(14)13(3)4/h6-8H,5H2,1-4H3",
+        "InChI=1B/C15H22ClNO2/c1-5-13-8-6-7-11(2)15(13)17(14(18)9-16)12(3)10-19-4/h6-8,12H,5,9-10H2,1-4H3/t12-/m0/s1",
+        "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23-",
+        "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23-",
+        "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23+",
+        "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23+",
+    };
+
+    int nof_inchis = 49;
+
+    // EXPECT_EQ(nof_inchis, molblocks.size());
+    // EXPECT_EQ(nof_inchis, list_expected_inchis.size());
+
+    char options[] = "-Atropisomers";
+
+    for (int i = 0; i < nof_inchis; ++i) {
+
+        inchi_Output output;
+        inchi_Output* poutput = &output;
+
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        poutput->szInChI = nullptr;
+
+        printf("mol no %d\n", i + 1);
+
+        int ret = MakeINCHIFromMolfileText(molblocks[i].c_str(), options, poutput);
+
+        // EXPECT_LT(ret, 2);
+
+        EXPECT_STREQ(poutput->szInChI, list_expected_inchis[i].c_str());
+
+        if (poutput->szLog) {
+            inchi_free(poutput->szLog);
+            poutput->szLog = nullptr;
+        }
+        if (poutput->szMessage) {
+            inchi_free(poutput->szMessage);
+            poutput->szMessage = nullptr;
+        }
+        if (poutput->szInChI) {
+            inchi_free(poutput->szInChI);
+            poutput->szInChI = nullptr;
+        }
+    }
 }

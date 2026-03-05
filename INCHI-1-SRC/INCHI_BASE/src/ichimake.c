@@ -3929,7 +3929,7 @@ int  Create_INChI(CANON_GLOBALS* pCG,
         //map values to orig_inp_data
         if (orig_inp_data->is_atropisomer) {
             for (i = 0; i < num_atoms; i++) {
-                //todo set atoms with atropisomeric bonds in orig_atom_data
+                orig_inp_data->at[i].bAtropisomeric = out_at[i].bAtropisomeric;
             }
         }
 

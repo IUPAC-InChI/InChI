@@ -184,6 +184,8 @@ typedef struct tagInputAtom
     S_CHAR sb_parity[MAX_NUM_STEREO_BONDS];
     AT_NUMB sn_orig_at_num[MAX_NUM_STEREO_BONDS]; /* orig. at number of sn_ord[] neighbors        */
 
+    AT_NUMB bAtropisomeric; /* flag indicating if the atom is part of an atropisomeric bond */
+
 #if (FIND_RING_SYSTEMS == 1)
     S_CHAR bCutVertex;
     AT_NUMB nRingSystem;
