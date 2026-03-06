@@ -1619,17 +1619,17 @@ int OutputINChI1( CANON_GLOBALS *pCG,
                     }
                 }
 
-                if (ip->bEnhancedStereo)
-                {
-                    set_EnhancedStereo_t_m_layers(orig_inp_data, pINChI, pINChI_Aux);
-                }
-
                 if (ip->Atropisomers)
                 {
                     if (set_Atropisomer_t_m_layers(orig_inp_data, pINChI, pINChI_Aux)) {
                         io.sDifSegs[io.nCurINChISegment][DIFS_t_SATOMS] = DIFV_OUTPUT_FILL_T;
-                        // io.sDifSegs[io.nCurINChISegment][DIFS_m_SP3INV] = DIFV_OUTPUT_FILL_T;
+                        io.sDifSegs[io.nCurINChISegment][DIFS_m_SP3INV] = DIFV_OUTPUT_FILL_T;
                     }
+                }
+
+                if (ip->bEnhancedStereo)
+                {
+                    set_EnhancedStereo_t_m_layers(orig_inp_data, pINChI, pINChI_Aux);
                 }
             }
         }

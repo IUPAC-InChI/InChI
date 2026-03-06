@@ -56,8 +56,10 @@ extern "C" {
     int bCanAtomBeMiddleAllene( char *elname, S_CHAR charge, S_CHAR radical );
     int bAtomHasValence3( char *elname, S_CHAR charge, S_CHAR radical );
 
-    double dot_prod3(const double a[], const double b[]); 
+    double dot_prod3(const double a[], const double b[]);
     void* cross_prod3(const double a[], const double b[], double result[]);
+
+    int are_4at_in_one_plane( double at_coord[][3], double min_sine );
 
     struct tagCANON_GLOBALS;
     int set_stereo_parity( struct tagCANON_GLOBALS *pCG,

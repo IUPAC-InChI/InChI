@@ -7102,6 +7102,13 @@ int invert_parities(const INChI *inchi,
     return 0;
 }
 
+int cmp_AT_NUMB(const void *a1, const void *a2)
+{
+    AT_NUMB n1 = *(const AT_NUMB *)a1;
+    AT_NUMB n2 = *(const AT_NUMB *)a2;
+
+    return (int)n1 - (int)n2;
+}
 
 /**
  * @brief Set t- and m-layers object for atropisomer stereochemistry
@@ -7141,32 +7148,56 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
     //        -> check number of stereocenters: if #stereocenter >= 2
 
     if (orig_inp_data->is_atropisomer) {
-        printf(">>>>> TODO set t- and m-layers for atropisomers\n");
+        // printf(">>>>> TODO set t- and m-layers for atropisomers\n");
 
-
-        int p_count = 0;
         for (int i = 0; i < orig_inp_data->num_inp_atoms; i++) {
             if (orig_inp_data->at[i].bAtropisomeric) {
-                inchi->Stereo->nNumberOfStereoCenters++;
 
-                printf("atom id %d, is_atropisomer %d\n", i + 1, orig_inp_data->at[i].bAtropisomeric);
+                // printf("atom id %d, is_atropisomer %d\n", i + 1, orig_inp_data->at[i].bAtropisomeric);
 
                 AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, i + 1);
-                // int parity_idx = get_parity_idx_from_canonical_atom_number(canon_atom_num,
-                //                                                             inchi->Stereo->nNumber,
-                //                                                             inchi->Stereo->nNumberOfStereoCenters);
-                // if (parity_idx == -1) {
-                int parity_idx = p_count;
-                p_count++;
-                // }
+                int parity_idx = get_parity_idx_from_canonical_atom_number(canon_atom_num,
+                                                                           inchi->Stereo->nNumber,
+                                                                           inchi->Stereo->nNumberOfStereoCenters);
+                if (parity_idx == -1) {
+                    parity_idx = inchi->Stereo->nNumberOfStereoCenters;
+                    inchi->Stereo->nNumberOfStereoCenters++;
+                }
                 inchi->Stereo->nNumber[parity_idx] = canon_atom_num;
-                inchi->Stereo->t_parity[parity_idx] = 1; // set t-parity to 1 (-) for atropisomeric atoms
+
+                inchi->Stereo->t_parity[parity_idx] = 1;
+
                 ret = 1;
             }
         }
 
+        for (int i = 0; i < inchi->Stereo->nNumberOfStereoCenters; i++) {
+            int min_idx = i;
+            for (int j = i + 1; j < inchi->Stereo->nNumberOfStereoCenters; j++) {
+                if (inchi->Stereo->nNumber[j] < inchi->Stereo->nNumber[min_idx]) {
+                    min_idx = j;
+                }
+            }
+            if (min_idx != i) {
+                // Swap nNumber
+                int tmp_num = inchi->Stereo->nNumber[i];
+                inchi->Stereo->nNumber[i] = inchi->Stereo->nNumber[min_idx];
+                inchi->Stereo->nNumber[min_idx] = tmp_num;
+                // Swap t_parity to keep association
+                int tmp_parity = inchi->Stereo->t_parity[i];
+                inchi->Stereo->t_parity[i] = inchi->Stereo->t_parity[min_idx];
+                inchi->Stereo->t_parity[min_idx] = tmp_parity;
+            }
+        }
 
+        if (ret == 1) {
+            if (orig_inp_data->is_diasteroisomeric_atropisomer == 1) {
+                inchi->Stereo->nCompInv2Abs = 1; //m1
+            } else {
+                inchi->Stereo->nCompInv2Abs = -1;
+            }
 
+        }
     }
 
 

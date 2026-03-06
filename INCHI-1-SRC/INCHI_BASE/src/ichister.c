@@ -106,7 +106,7 @@ static int CompDble( const void *a1, const void *a2, void * );
 static int Get2DTetrahedralAmbiguity( CANON_GLOBALS *pCG, double at_coord[][3], int bAddExplicitNeighbor, int bFix2DstereoBorderCase, double vMinAngle );
 static double triple_prod_and_min_abs_sine2( double at_coord[][3], double central_at_coord[], int bAddedExplicitNeighbor,
                                             double *min_sine, int *bAmbiguous, double vMinSine );
-static int are_4at_in_one_plane( double at_coord[][3], double min_sine );
+// static int are_4at_in_one_plane( double at_coord[][3], double min_sine );
 static int bInpAtomHasRequirdNeigh( inp_ATOM *at, int cur_at, int RequirdNeighType, int NumDbleBonds, int bStereoAtZz );
 static int bIsSuitableHeteroInpAtom( inp_ATOM  *at );
 static int bIsOxide( inp_ATOM  *at, int cur_at );
@@ -2190,7 +2190,7 @@ int half_stereo_bond_parity( inp_ATOM *at,
     {
         for (k = 0; k < 3; k++)
         {
-            at_coord[j][k] = 0; 
+            at_coord[j][k] = 0;
         }
     }
 

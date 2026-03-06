@@ -465,6 +465,8 @@ typedef struct tagOrigAtom
 
     int is_atropisomer;     /* flag indicating whether the structure is an atropisomer; it is set to 1 if the structure has been identified as an atropisomer during input processing, and 0 otherwise */
 
+    int is_diasteroisomeric_atropisomer;
+
 } ORIG_ATOM_DATA;
 
 /**
