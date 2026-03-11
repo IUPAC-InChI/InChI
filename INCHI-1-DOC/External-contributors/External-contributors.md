@@ -5,6 +5,7 @@ This file contains information about external contributors (other than InChITrus
 The following persons and organizations are acknowledged for the indicated contributions:
 
 ## InChI for polymers
+
 Preparing “InChI Requirements for Representation of Polymers and Mixtures” (portions of which are also used in InChI v. 1.05 documentation)
 
 **IUPAC Task group**
