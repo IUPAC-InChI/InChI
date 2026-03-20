@@ -7142,10 +7142,11 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
     //TODO
     // - t layer parities for atropisomers
     //    -> t-parity[atom] = 1 (-)
+    //    -> should parity be set to (+) ???
     // - m layer for atropisomers
-    //    -> enantiomeric atropisomers: m1 (inchi->Stereo->nCompInv2Abs = -1; //m1)
-    //    -> diastereomeric atropisomers: m0 (inchi->Stereo->nCompInv2Abs = 1; //m0)
-    //        -> check number of stereocenters: if #stereocenter >= 2
+    //    -> enantiomeric atropisomers: m1 (inchi->Stereo->nCompInv2Abs = -1; //m1) (are mirror images)
+    //    -> diastereomeric atropisomers: m0 (inchi->Stereo->nCompInv2Abs = 1; //m0) ???
+    //        -> rules?
 
     if (orig_inp_data->is_atropisomer) {
         // printf(">>>>> TODO set t- and m-layers for atropisomers\n");
@@ -7191,7 +7192,7 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
         }
 
         if (ret == 1) {
-            if (orig_inp_data->is_diasteroisomeric_atropisomer == 1) {
+            if (orig_inp_data->is_enantiomeric_atropisomer == 1) {
                 inchi->Stereo->nCompInv2Abs = 1; //m1
             } else {
                 inchi->Stereo->nCompInv2Abs = -1;
