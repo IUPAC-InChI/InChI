@@ -38,7 +38,7 @@ void print_ring_result(const RingSystems *rs);
 
 void free_ring_system(RingSystems *rs);
 
-int are_atoms_in_same_small_ring(const inp_ATOM* atoms,
+int are_atoms_in_same_small_ring(const inp_ATOM *atoms,
                                  int num_atoms,
                                  const RingSystems *rs,
                                  int atom_id1, int atom_id2,

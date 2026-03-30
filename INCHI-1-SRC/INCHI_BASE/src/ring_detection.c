@@ -167,11 +167,19 @@ int are_atoms_in_same_small_ring(const inp_ATOM* atoms,
         return 0;
     }
 
+    if (num_atoms <= 0) {
+        return 0;
+    }
+
     if (rs == NULL) {
         return 0;
     }
 
     if (rs->atom_to_ring_mapping == NULL) {
+        return 0;
+    }
+
+    if (atom_id1 < 0 || atom_id2 < 0) {
         return 0;
     }
 

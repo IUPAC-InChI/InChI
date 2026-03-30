@@ -3911,21 +3911,8 @@ int  Create_INChI(CANON_GLOBALS* pCG,
         RingSystems *ring_result = find_rings(out_at, num_atoms);
 
         // print_ring_result(ring_result);
-        int fused_atom_partner[num_atoms];
-        for (i = 0; i < num_atoms; i++) {
-            // out_at[i].fused_partner_atom_id = -1;
-            fused_atom_partner[i] = -1;
-        }
-        for (i = 0; i < num_atoms; i++) {
-            for (int j = i + 1; j < num_atoms; j++) {
-                if(is_fused_ring_pivot(ring_result, out_at, i, j)) {
-                    fused_atom_partner[i] = j;
-                    fused_atom_partner[j] = i;
-                }
-            }
-        }
 
-        find_atropisomeric_atoms_and_bonds(out_at, num_atoms, ring_result, orig_inp_data, fused_atom_partner);
+        int ret_ai = find_atropisomeric_atoms_and_bonds(out_at, num_atoms, ring_result, orig_inp_data);
 
         //map values to orig_inp_data
         if (orig_inp_data->is_atropisomer) {

@@ -5,6 +5,16 @@ extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mode.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/atropisomers.h"
+}
+
+TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__null_parameters) {
+
+    find_atropisomeric_atoms_and_bonds(nullptr,
+                                       0,
+                                       nullptr,
+                                       nullptr);
+
 }
 
 TEST(test_atropisomers, test_dummy_1_atropisomer)
