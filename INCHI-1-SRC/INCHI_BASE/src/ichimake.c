@@ -3906,7 +3906,6 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     MarkRingSystemsInp(out_at, num_atoms, 0);
 
     orig_inp_data->is_atropisomer = 0;
-    orig_inp_data->is_enantiomeric_atropisomer = 0;
     if (ip->Atropisomers) {
         RingSystems *ring_result = find_rings(out_at, num_atoms);
 

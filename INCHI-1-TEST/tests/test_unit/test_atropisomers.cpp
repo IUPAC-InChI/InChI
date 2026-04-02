@@ -10,11 +10,44 @@ extern "C"
 
 TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__null_parameters) {
 
-    find_atropisomeric_atoms_and_bonds(nullptr,
-                                       0,
-                                       nullptr,
-                                       nullptr);
+    int ret = find_atropisomeric_atoms_and_bonds(nullptr,
+                                                 0,
+                                                 nullptr,
+                                                 nullptr);
 
+
+    EXPECT_EQ(ret, 0);
+
+}
+
+TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__atoms_below_min_valence) {
+
+    const int num_atoms = 2;
+    inp_ATOM atoms[2] = {};
+
+    atoms[0].valence      = 1;
+    atoms[0].neighbor[0]  = 1;
+    atoms[0].bond_type[0] = 1;
+    atoms[0].x = 0.0; atoms[0].y = 0.0; atoms[0].z = 0.0;
+
+    atoms[1].valence      = 1;
+    atoms[1].neighbor[0]  = 0;
+    atoms[1].bond_type[0] = 1;
+    atoms[1].x = 1.5; atoms[1].y = 0.0; atoms[1].z = 0.0;
+
+    RingSystems *ring_result = find_rings(atoms, num_atoms);
+    ASSERT_NE(ring_result, nullptr);
+
+    ORIG_ATOM_DATA orig_data = {};
+
+    int ret = find_atropisomeric_atoms_and_bonds(atoms, num_atoms, ring_result, &orig_data);
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(atoms[0].bAtropisomeric, 0);
+    EXPECT_EQ(atoms[1].bAtropisomeric, 0);
+    EXPECT_EQ(orig_data.is_atropisomer, 0);
+
+    free_ring_system(ring_result);
 }
 
 TEST(test_atropisomers, test_dummy_1_atropisomer)

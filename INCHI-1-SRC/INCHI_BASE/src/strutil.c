@@ -7192,12 +7192,22 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
         }
 
         if (ret == 1) {
-            if (orig_inp_data->is_enantiomeric_atropisomer == 1) {
-                inchi->Stereo->nCompInv2Abs = 1; //m1
+            if (aux->nOrigAtNosInCanonOrd &&
+                aux->nOrigAtNosInCanonOrdInv &&
+                aux->nNumberOfAtoms > 0)
+            {
+                int orderings_differ = memcmp(aux->nOrigAtNosInCanonOrd,
+                                              aux->nOrigAtNosInCanonOrdInv,
+                                              sizeof(aux->nOrigAtNosInCanonOrd[0]) *
+                                                     aux->nNumberOfAtoms);
+                if (orderings_differ != 0) {
+                    inchi->Stereo->nCompInv2Abs = -1; /* m1: enantiomeric */
+                } else {
+                    inchi->Stereo->nCompInv2Abs = 1;  /* m0: achiral or diastereomeric */
+                }
             } else {
                 inchi->Stereo->nCompInv2Abs = -1;
             }
-
         }
     }
 

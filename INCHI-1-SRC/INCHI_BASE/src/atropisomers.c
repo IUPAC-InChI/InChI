@@ -165,9 +165,6 @@ int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
                 printf(">>> FOUND atropisomer (higher score): atom id %2d atom id %2d  is planar %d  --> score %2d (%d)\n", atom_id1, atom_id2, is_planar, score, both_atoms_in_same_small_ring);
                 orig_inp_data->is_atropisomer = 1;
 
-                //TODO this rule is not enough for setting the flag
-                orig_inp_data->is_enantiomeric_atropisomer = ((nof_wedge_bonds_i > 0) && (nof_wedge_bonds_j > 0));
-
                 out_at[atom_id1].bAtropisomeric = 1;
                 out_at[atom_id2].bAtropisomeric = 1;
             }
