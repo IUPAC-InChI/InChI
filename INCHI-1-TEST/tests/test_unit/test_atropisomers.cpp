@@ -45,7 +45,7 @@ TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__atoms_below_min_vale
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(atoms[0].bAtropisomeric, 0);
     EXPECT_EQ(atoms[1].bAtropisomeric, 0);
-    EXPECT_EQ(orig_data.is_atropisomer, 0);
+    EXPECT_EQ(orig_data.bAtropisomer, 0);
 
     free_ring_system(ring_result);
 }

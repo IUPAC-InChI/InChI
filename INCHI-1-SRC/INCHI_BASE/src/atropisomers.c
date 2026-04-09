@@ -163,7 +163,7 @@ int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
 
             if (is_atropisomer == 1) {
                 printf(">>> FOUND atropisomer (higher score): atom id %2d atom id %2d  is planar %d  --> score %2d (%d)\n", atom_id1, atom_id2, is_planar, score, both_atoms_in_same_small_ring);
-                orig_inp_data->is_atropisomer = 1;
+                orig_inp_data->bAtropisomer = 1;
 
                 out_at[atom_id1].bAtropisomeric = 1;
                 out_at[atom_id2].bAtropisomeric = 1;

@@ -463,7 +463,7 @@ typedef struct tagOrigAtom
     int valid_polymer;
     int n_zy;               /* number of non-polymeric pseudoatoms (Zy)             */
 
-    int is_atropisomer;     /* flag indicating whether the structure is an atropisomer; it is set to 1 if the structure has been identified as an atropisomer during input processing, and 0 otherwise */
+    int bAtropisomer;     /* flag indicating whether the structure is an atropisomer; it is set to 1 if the structure has been identified as an atropisomer during input processing, and 0 otherwise */
 
 } ORIG_ATOM_DATA;
 
