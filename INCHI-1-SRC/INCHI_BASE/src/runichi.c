@@ -361,6 +361,13 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
                 maxINChI = 2;  /* Update to indicate reconnected InChI has been generated */
             }
         }
+
+        else if (nRet != _IS_FATAL && nRet != _IS_ERROR)
+        {
+            maxINChI = 1;
+        }
+
+        goto after_structure_generation;
     }
 
 
@@ -482,6 +489,8 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
             maxINChI = 2;
         }
     }
+
+after_structure_generation:
 
     if ( nRet != _IS_FATAL && nRet != _IS_ERROR )
     {
@@ -1846,7 +1855,7 @@ int CreateOneComponentINChI(CANON_GLOBALS* pCG,
 #endif
 
     InchiTimeGet( &ulTStart );
-  
+
     bOrigCoord =
         !(ip->bINChIOutputOptions & (INCHI_OUT_NO_AUX_INFO | INCHI_OUT_SHORT_AUX_INFO));
 
