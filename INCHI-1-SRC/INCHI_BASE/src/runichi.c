@@ -325,6 +325,13 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
             printf("\n");
         }*/
 
+        /* Preserve SDF output in Molecular Inorganics mode if requested */
+        ret1 = OrigAtData_SaveMolfile(orig_inp_data, sd, ip, num_inp, out_file);
+        if (ret1)
+        {
+            goto exit_function;
+        }
+
         /*printf("Molecular inorganics preprocessing completed successfully.\n");*/
         nRet1 = CreateOneStructureINChI(pCG, ic, sd, ip, szTitle,
             pINChI, pINChI_Aux, INCHI_BAS,
@@ -367,6 +374,16 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
             maxINChI = 1;
         }
 
+        /*
+         * InChI is already generated via the Molecular Inorganics-specific path.
+         * Skip the standard structure-generation path to prevent duplicate
+         * CreateOneStructureINChI() calls, which previously caused redundant
+         * allocations and AddressSanitizer-reported memory leaks.
+         *
+         * Note: pOrigStruct intentionally remains NULL in Molecular Inorganics
+         * mode because OrigAtData_StoreNativeInput() is bypassed here; therefore
+         * AuxInfo reversibility layers (/rA, /rB, /rC) are not generated.
+         */
         goto after_structure_generation;
     }
 
