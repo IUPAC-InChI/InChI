@@ -226,73 +226,52 @@ solely from the simple connectivity information in the input structure.
 They entirely ignore pi-electrons and charge as well as stereochemical,
 tautomeric and isotopic information.
 
-1. **Main Layer**
-   1. Chemical Forumal
+#### 1. Main Layer
 
-        ```text
-        For a compounds composed of a single component, this is the conventional Hill-sorted elemental formula. For compounds containing multiple components, the Hill-sorted formulas of the individual components are sorted according to the guidelines in Figure 1 and separated by dots.
-        ```
+##### 1.1 Chemical Forumal
 
-   2. Connections
+For a compounds composed of a single component, this is the conventional Hill-sorted elemental formula. For compounds containing multiple components, the Hill-sorted formulas of the individual components are sorted according to the guidelines in Figure 1 and separated by dots.
 
-        ```text
-        This lists the bonds between the atoms in the structure, partitioned into as many as three sublayers. The first represents all bonds other than those to non-bridging H-atoms, the second represents bonds of all immobile H-atoms, and the third provides locations of any mobile H-atoms. The last sublayer represents H-atoms that can be found at more than one location in a compound due to well-known varieties of isomerization. It identifies the groups of atoms that share one or more mobile hydrogen atoms In addition to hydrogen atoms, mobile H groups may contain mobile negative charges.  These charges are included in the charge layer.
-        ```
+##### 1.2 Connections
 
-2. Charge Layer
+This lists the bonds between the atoms in the structure, partitioned into as many as three sublayers. The first represents all bonds other than those to non-bridging H-atoms, the second represents bonds of all immobile H-atoms, and the third provides locations of any mobile H-atoms. The last sublayer represents H-atoms that can be found at more than one location in a compound due to well-known varieties of isomerization. It identifies the groups of atoms that share one or more mobile hydrogen atoms In addition to hydrogen atoms, mobile H groups may contain mobile negative charges.  These charges are included in the charge layer.
 
-    ```text
-    This represents net charge (surplus of protons over electrons) and does not depend on the contents of other layers. It may appear in as many as two sublayers:
-    ```
+#### 2. Charge Layer
 
-   1. Component Charge
+This represents net charge (surplus of protons over electrons) and does not depend on the contents of other layers. It may appear in as many as two sublayers:
 
-        ```text
-        The net charges of the components are represented in this layer as independent tags. By design, the InChI does not distinguish between structures that differ only in the formal positions of their electrons.
-        ```
+##### 2.1 Component Charge
 
-   2. Protons
+The net charges of the components are represented in this layer as independent tags. By design, the InChI does not distinguish between structures that differ only in the formal positions of their electrons.
 
-        ```text
-        The number of protons removed from or added to the substance so that a given component may be represented without regard to its degree of protonation.
-        ```
+##### 2.2 Protons
 
-3. Stereochemical Layer
+The number of protons removed from or added to the substance so that a given component may be represented without regard to its degree of protonation.
 
-    ```text
-    This is composed of two sublayers: the first accounts for double bond, sp² stereochemistry and the second for tetrahedral stereochemistry and allenes. Note that the first sublayer is independent of the second, but not vice-versa.
-    ```
+#### 3. Stereochemical Layer
 
-   1. Double Bond sp&#178; (*Z*/*E*) Stereo
+This is composed of two sublayers: the first accounts for double bond, sp² stereochemistry and the second for tetrahedral stereochemistry and allenes. Note that the first sublayer is independent of the second, but not vice-versa.
 
-        ```text
-        Expression of this stereo configuration is easily done in 2-dimensional drawings. When double bonds are rigid, stereoisomerism is readily represented without ambiguity. However, in alternating bond systems, some non-rigid bonds may be formally drawn as double. Bonds in these systems, when discovered by InChI algorithms, are not assigned stereo labels. Also, to avoid needless stereodescriptors in aromatic and other small rings, no sp² stereoisomerism information is generated in rings containing 7 or fewer members.
-        ```
+##### 3.1 Double Bond sp&#178; (*Z*/*E*) Stereo
 
-   2. Tetrahedral Stereo
+Expression of this stereo configuration is easily done in 2-dimensional drawings. When double bonds are rigid, stereoisomerism is readily represented without ambiguity. However, in alternating bond systems, some non-rigid bonds may be formally drawn as double. Bonds in these systems, when discovered by InChI algorithms, are not assigned stereo labels. Also, to avoid needless stereodescriptors in aromatic and other small rings, no sp² stereoisomerism information is generated in rings containing 7 or fewer members.
 
-        ```text
-        Tetrahedral (typically, sp³) stereochemistry is readily represented using conventional wedge/hatch (out/in) bonds commonly employed in 2D drawings. Relative tetrahedral stereochemistry is represented first, optionally followed by a tag to indicate absolute stereochemistry. When a stereocenter configuration is not known to the structure author, an ‘unknown’ descriptor may be specified, which will then appear in the stereo layer. If a possible stereocenter is found, but no stereo information is provided, it will be represented in a stereolayer by a not-given (‘undefined’) flag.
-        In InChI Software since v. 1.04 (2011) a question mark (‘?’) is used, by default, for both ‘undefined’ and ‘unknown’ flags. However, in a non-standard InChI generated with option ‘SLUUD’ turned On,  the symbol ‘u’ is used to indicate explicitly entered ‘unknown’ stereo (while ‘?’ is retained for ‘undefined’).
-        ```
+##### 3.2 Tetrahedral Stereo
 
-4. Isotopic Layer
+Tetrahedral (typically, sp³) stereochemistry is readily represented using conventional wedge/hatch (out/in) bonds commonly employed in 2D drawings. Relative tetrahedral stereochemistry is represented first, optionally followed by a tag to indicate absolute stereochemistry. When a stereocenter configuration is not known to the structure author, an ‘unknown’ descriptor may be specified, which will then appear in the stereo layer. If a possible stereocenter is found, but no stereo information is provided, it will be represented in a stereolayer by a not-given (‘undefined’) flag.
+In InChI Software since v. 1.04 (2011) a question mark (‘?’) is used, by default, for both ‘undefined’ and ‘unknown’ flags. However, in a non-standard InChI generated with option ‘SLUUD’ turned On,  the symbol ‘u’ is used to indicate explicitly entered ‘unknown’ stereo (while ‘?’ is retained for ‘undefined’).
 
-    ```text
-    This is a layer in which different isotopically labeled atoms are identified. Exchangeable isotopic hydrogen atoms (deuterium and tritium) are listed separately. The layer also holds any changes in stereochemistry caused by the presence of isotopes.
-    ```
+#### 4. Isotopic Layer
 
-5. Fixed H-Layer
+This is a layer in which different isotopically labeled atoms are identified. Exchangeable isotopic hydrogen atoms (deuterium and tritium) are listed separately. The layer also holds any changes in stereochemistry caused by the presence of isotopes.
 
-    ```text
-    When potentially mobile H atoms are detected and the user specifies that they should be immobile (tautomerism not allowed), this layer binds these H atoms to the atoms specified in the input structure. When this, in effect, causes a change in earlier layers, appropriate changes are added to this layer (earlier layers 1-4 are not affected).
-    ```
+#### 5. Fixed H-Layer
 
-6. Polymer Layer
+When potentially mobile H atoms are detected and the user specifies that they should be immobile (tautomerism not allowed), this layer binds these H atoms to the atoms specified in the input structure. When this, in effect, causes a change in earlier layers, appropriate changes are added to this layer (earlier layers 1-4 are not affected).
 
-    ```text
-    InChI Software v. 1.05 added a new experimental  polymer ('/z') layer. This is modification layer which is optionally built "above" the other layers and does not affect their content. For more details, see Section IV.f below.
-    ```
+#### 6. Polymer Layer
+
+InChI Software v. 1.05 added a new experimental  polymer ('/z') layer. This is modification layer which is optionally built "above" the other layers and does not affect their content. For more details, see Section IV.f below.
 
 ### InChI Structure
 
@@ -431,102 +410,34 @@ generation process (serialization).
 | ![image1](./assets/png/image1.png) | | |
 | or | ![image3](./assets/png/image3.png) | ![image4](./assets/png/image4.png) |
 | ![image2](./assets/png/image2.png) | | |
+**Figure 3**
 
+| Input Structure | Normalized Structure | Canonical Numbering |
+| -------- | ------- | ------- |
+|![image5](./assets/png/image5.png)|![image6](./assets/png/image6.png)|![image7](./assets/png/image7.png)|
+**Figure 4**
 
+| Input Structure | Normalized Structure | Canonical Numbering |
+| -------- | ------- | ------- |
+|![image8](./assets/png/image8.png)|![image9](./assets/png/image9.png)|![image10](./assets/png/image10.png)|
+**Figure 5**
 
-<table>
-<tbody>
-<tr class="odd">
-<td>Input Structure</td>
-<td>Normalized Structure</td>
-<td>Canonical Numbering</td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image5.wmf" style="width:0.88542in;height:1in" /></td>
-<td><img src="./attachments/$myfilename/media/image6.wmf" style="width:0.88542in;height:0.82292in" /></td>
-<td><img src="./attachments/$myfilename/media/image7.wmf" style="width:0.76042in;height:0.88542in" /></td>
-</tr>
-<tr class="odd">
-<td><strong>Figure 4</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-<table>
-<tbody>
-<tr class="odd">
-<td>Input Structure</td>
-<td>Normalized Structure</td>
-<td>Canonical Numbering</td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image8.wmf" style="width:1.625in;height:0.86458in" /></td>
-<td><img src="./attachments/$myfilename/media/image9.wmf" style="width:1.5625in;height:0.79167in" /></td>
-<td><img src="./attachments/$myfilename/media/image10.wmf" style="width:1.1875in;height:0.75in" /></td>
-</tr>
-<tr class="odd">
-<td><strong>Figure 5</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-
-<table>
-<tbody>
-<tr class="odd">
-<td>Input Structures</td>
-<td>Normalized Structure</td>
-<td>Canonical Numbering</td>
-</tr>
-<tr class="even">
-<td><p><img src="./attachments/$myfilename/media/image11.wmf" style="width:1.52083in;height:0.72917in" /></p>
-<p><img src="./attachments/$myfilename/media/image12.wmf" style="width:1.52083in;height:0.72917in" /></p></td>
-<td><img src="./attachments/$myfilename/media/image13.wmf" style="width:1.60417in;height:0.77083in" /></td>
-<td><img src="./attachments/$myfilename/media/image14.wmf" style="width:1.66667in;height:0.875in" /></td>
-</tr>
-<tr class="odd">
-<td><strong>Figure 6</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Input Structures | Normalized Structure | Canonical Numbering |
+| -------- | ------- | ------- |
+|![image11](./assets/png/image11.png)| | |
+| or |![image13](./assets/png/image13.png)|![image14](./assets/png/image14.png)| 
+|![image12](./assets/png/image12.png)| | |
+**Figure 6**
 
 ‘Munchnones’ serve to illustrate the many different ways that certain
 structures may be represented, the last being the normalized form used
 for the InChI
 
-<table>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image15.wmf" style="width:1.05208in;height:0.90625in" /></td>
-<td><img src="./attachments/$myfilename/media/image16.wmf" style="width:1.01042in;height:0.92708in" /></td>
-<td><img src="./attachments/$myfilename/media/image17.wmf" style="width:1.17708in;height:0.89583in" /></td>
-<td><img src="./attachments/$myfilename/media/image18.wmf" style="width:1.04167in;height:0.86458in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image19.wmf" style="width:1.05208in;height:0.94792in" /></td>
-<td><img src="./attachments/$myfilename/media/image20.wmf" style="width:1.11458in;height:0.92708in" /></td>
-<td><img src="./attachments/$myfilename/media/image21.wmf" style="width:1.07292in;height:0.90625in" /></td>
-<td><img src="./attachments/$myfilename/media/image22.wmf" style="width:1.17708in;height:0.88542in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 7</strong></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| | | | |
+| -------- | ------- | ------- | ------- |
+|![image15](./assets/png/image15.png)| ![image16](./assets/png/image16.png) | ![image17](./assets/png/image17.png) | ![image18](./assets/png/image18.png) |
+|![image19](./assets/png/image19.png)| ![image20](./assets/png/image20.png) | ![image21](./assets/png/image21.png) | ![image22](./assets/png/image22.png) |
+**Figure 7**
 
 **While bond orders are not used in the representation, hydrogen atoms
 are required. If there is ambiguity concerning the number of H-atoms in
