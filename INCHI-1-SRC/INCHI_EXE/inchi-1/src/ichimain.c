@@ -48,8 +48,8 @@
 #include <ctype.h>
 #include <locale.h>
 
-#ifndef COMPILE_ANSI_ONLY
-#include "conio.h"
+#if !defined(COMPILE_ANSI_ONLY) && defined(_WIN32)
+#include <conio.h>
 #ifndef TARGET_LIB_FOR_WINCHI
 #include <windows.h>
 #endif
