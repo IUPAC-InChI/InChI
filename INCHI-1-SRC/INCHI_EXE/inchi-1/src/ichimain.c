@@ -49,7 +49,7 @@
 #include <locale.h>
 
 #ifndef COMPILE_ANSI_ONLY
-#include <conio.h>
+#include "conio.h"
 #ifndef TARGET_LIB_FOR_WINCHI
 #include <windows.h>
 #endif
