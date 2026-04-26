@@ -40,7 +40,7 @@
 
 /* Draw input atom -- Win32 specific */
 
-#include "mode.h"
+#include "../../../INCHI_BASE/src/mode.h"
 
 #ifndef COMPILE_ANSI_ONLY
 

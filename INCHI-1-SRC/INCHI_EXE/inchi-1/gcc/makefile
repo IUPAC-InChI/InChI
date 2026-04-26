@@ -154,9 +154,11 @@ $(P_BASE)/runichi4.c	\
 $(P_BASE)/sha2.c	\
 $(P_BASE)/strutil.c	\
 $(P_BASE)/util.c	\
+$(P_BASE)/permutation_util.c	\
 $(P_MAIN)/dispstru.c	\
 $(P_BASE)/mol2atom.c	\
 $(P_MAIN)/ichimain.c	\
+$(P_MAIN)/inchi_main_cli.c	\
 $(P_BASE)/bcf_s.c
 #
 INCHI_OBJS = ichi_bns.o	\
@@ -205,6 +207,8 @@ sha2.o	\
 strutil.o	\
 util.o	\
 dispstru.o	\
+inchi_main_cli.o	\
+permutation_util.o	\
 ichimain.o	\
 bcf_s.o	  
 $(INCHI_EXECUTABLE_PATHNAME) : $(INCHI_OBJS)
