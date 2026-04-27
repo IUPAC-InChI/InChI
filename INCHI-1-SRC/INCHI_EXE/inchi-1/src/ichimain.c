@@ -2,7 +2,6 @@
  * International Chemical Identifier (InChI)
  * Version 1
  * Software version 1.07
- * April 30, 2024
  *
  * MIT License
  *
@@ -50,12 +49,11 @@
 #include <locale.h>
 
 #if !defined(COMPILE_ANSI_ONLY) && defined(_WIN32)
-#include <conio.h>
+#include "conio.h"
 #ifndef TARGET_LIB_FOR_WINCHI
 #include <windows.h>
 #endif
 #endif
-
 #include "../../../INCHI_BASE/src/mode.h"
 
 #if( BUILD_WITH_AMI == 1 && defined( _MSC_VER ) && MSC_AMI == 1 )
@@ -84,6 +82,21 @@
 
 #include "../../../INCHI_BASE/src/bcf_s.h"
 #include "../../../INCHI_BASE/src/permutation_util.h"
+
+ /*  Console-specific */
+
+#ifndef TARGET_LIB_FOR_WINCHI
+/* COVERS THE CODE FROM HERE TO THE END OF FILE */
+
+
+/* Enable/disable internal tests */
+
+/* Uncomment for INCHI_LIB testing only */
+/*#define TEST_FPTRS*/
+
+/* Windows-console-mode specific */
+
+// int bInterrupted = 0;
 
  /*  Console-specific */
 
@@ -169,7 +182,7 @@ void eat_keyboard_input(void)
 #endif /* end of !COMPILE_ANSI_ONLY */
 
 
-#ifndef TARGET_LIB_FOR_WINCHI
+// #ifndef TARGET_LIB_FOR_WINCHI
 /* COVERS THE CODE FROM HERE TO THE END OF FILE */
 
 
@@ -217,49 +230,6 @@ int WasInterrupted(void)
 #endif
 #endif /* ifndef COMPILE_ANSI_ONLY */
 #endif /* if( defined( _WIN32 ) && defined( _CONSOLE ) ) */
-
-
-
-/****************************************************************************/
-int main(int argc, char* argv[])
-{
-#ifdef GHI100_FIX
-#if ((SPRINTF_FLAG != 1) && (SPRINTF_FLAG != 2))
-    setlocale(LC_ALL, "en-US"); /* djb-rwth: setting all locales to "en-US" */
-#endif
-#endif
-
-    /*************************/
-#if ( BUILD_WITH_AMI == 1 )
-/*************************/
-
-/**** IF IN AMI MODE, main() STARTS HERE ****/
-    int i, ret = 0, ami = 0;  /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
-
-    /* Check if multiple inputs expected */
-    for (i = 1; i < argc; i++)
-    {
-        if (argv[i][0] == INCHI_OPTION_PREFX)
-        {
-            if (!inchi_stricmp(argv[i] + 1, "AMI"))
-            {
-                ami = 1;
-                break;
-            }
-        }
-    }
-
-    if (ami)
-    {
-        ret = ProcessMultipleInputFiles(argc, argv); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
-    }
-    else
-    {
-        ret = ProcessSingleInputFile(argc, argv); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
-    }
-
-    return 0;
-}
 
 
 /****************************************************************************/
@@ -522,7 +492,8 @@ exit_ami:
 /****************************************************************************/
 int ProcessSingleInputFile(int argc, char* argv[])
 {
-    /**************************************/
+
+/**************************************/
 #endif /* #if ( BUILD_WITH_AMI == 1 ) */
 /**************************************/
 
@@ -623,7 +594,7 @@ int ProcessSingleInputFile(int argc, char* argv[])
 #endif
 
     sd->bUserQuit = 0;
-    /* djb-rwth: fixing coverity ID #499552 */
+    /* djb-rwth: fixing coverity CID #499552 */
     sd->num_components[0] = 0;
     sd->num_components[1] = 0;
 #if ( defined( _WIN32 ) && defined( _CONSOLE ) && !defined( COMPILE_ANSI_ONLY ) )
@@ -816,7 +787,7 @@ int ProcessSingleInputFile(int argc, char* argv[])
     /*************************************************************/
 
 
-    while (!sd->bUserQuit && !bInterrupted)
+    while (!sd->bUserQuit ) //&& !bInterrupted
     {
         int do_renumbering = 0;
         int next_action;
@@ -1078,7 +1049,7 @@ void emit_empty_inchi(INPUT_PARMS* ip,
     }
     inchi_ios_flush(pout);
 }
-#endif  /* ifndef TARGET_LIB_FOR_WINCHI */
+
 
 
 /*****************************************************************************/

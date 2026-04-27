@@ -25,6 +25,7 @@ include_directories(${P_BASE} ${P_CURRENT})
 add_executable(inchi-1)
 
 target_sources(inchi-1 PRIVATE
+	inchi_main_cli.c
 	ichimain.c
 	dispstru.c
 	dispstru.h

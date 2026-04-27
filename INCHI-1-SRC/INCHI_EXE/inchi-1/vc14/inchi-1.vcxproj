@@ -69,6 +69,7 @@
     <ClCompile Include="..\..\..\INCHI_BASE\src\util.c" />
     <ClCompile Include="..\src\dispstru.c" />
     <ClCompile Include="..\src\ichimain.c" />
+    <ClCompile Include="..\src\inchi_main_cli.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\INCHI_BASE\src\bcf_s.h" />

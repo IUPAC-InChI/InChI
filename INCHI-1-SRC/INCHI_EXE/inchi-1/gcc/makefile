@@ -158,6 +158,7 @@ $(P_BASE)/permutation_util.c	\
 $(P_MAIN)/dispstru.c	\
 $(P_BASE)/mol2atom.c	\
 $(P_MAIN)/ichimain.c	\
+$(P_MAIN)/inchi_main_cli.c	\
 $(P_BASE)/bcf_s.c
 #
 INCHI_OBJS = ichi_bns.o	\
@@ -208,6 +209,7 @@ util.o	\
 dispstru.o	\
 permutation_util.o	\
 ichimain.o	\
+inchi_main_cli.o	\
 bcf_s.o	  
 $(INCHI_EXECUTABLE_PATHNAME) : $(INCHI_OBJS)
 	$(LINKER) $(LINKER_OPTIONS) -o $(INCHI_EXECUTABLE_PATHNAME) $(INCHI_OBJS) -lm
