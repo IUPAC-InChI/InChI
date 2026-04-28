@@ -1,0 +1,187 @@
+name: Test for unit test coverage regression
+
+on:
+  pull_request:
+    branches: [ dev ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-coverage-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install build dependencies
+        run: |
+          sudo ./INCHI-1-TEST/install_build_dependencies.sh
+
+      - name: Generate coverage report
+        uses: ./.github/actions/generate_coverage_report
+
+      - name: Test for unit test regression
+        run: |
+          set -euo pipefail
+
+          cd CMake_build/coverage_build
+
+          BASE_SUMMARY_URL="https://iupac-inchi.github.io/InChI/coverage/summary.txt"
+          BASE_SUMMARY_FILE="$(mktemp)"
+          PR_SUMMARY_FILE="coverage_reports/summary.txt"
+          COVERAGE_REPORT_MD="coverage_reports/coverage_report.md"
+
+          mkdir -p coverage_reports
+          trap 'rm -f "$BASE_SUMMARY_FILE"' EXIT
+
+          extract_pct() {
+            local metric="$1"
+            local file="$2"
+
+            awk -v metric="$metric" '
+              $0 ~ "^[[:space:]]*" metric "\\.*:" {
+                if (match($0, /[0-9]+([.][0-9]+)?%/)) {
+                  value = substr($0, RSTART, RLENGTH - 1)
+                  print value
+                }
+                exit
+              }
+            ' "$file"
+          }
+
+          lcov --summary coverage.lcov \
+            --branch-coverage \
+            --ignore-errors inconsistent > "$PR_SUMMARY_FILE"
+
+          PR_LINES="$(extract_pct lines "$PR_SUMMARY_FILE")"
+          PR_BRANCHES="$(extract_pct branches "$PR_SUMMARY_FILE")"
+
+          if [[ -z "$PR_LINES" || -z "$PR_BRANCHES" ]]; then
+            echo "Unable to parse PR coverage metrics from $PR_SUMMARY_FILE"
+            cat "$PR_SUMMARY_FILE"
+            exit 1
+          fi
+
+          BASE_AVAILABLE=false
+          BASE_LINES=""
+          BASE_BRANCHES=""
+
+          if curl -fsSL --max-time 10 "$BASE_SUMMARY_URL" -o "$BASE_SUMMARY_FILE"; then
+            BASE_LINES="$(extract_pct lines "$BASE_SUMMARY_FILE")"
+            BASE_BRANCHES="$(extract_pct branches "$BASE_SUMMARY_FILE")"
+
+            if [[ -n "$BASE_LINES" && -n "$BASE_BRANCHES" ]]; then
+              BASE_AVAILABLE=true
+            else
+              echo "Base summary fetched, but required metrics were incomplete."
+            fi
+          else
+            echo "Base summary fetch failed."
+          fi
+
+          BASE_LINES_DISPLAY="N/A"
+          BASE_BRANCHES_DISPLAY="N/A"
+          DIFF_LINES="N/A"
+          DIFF_BRANCHES="N/A"
+
+          if [[ "$BASE_AVAILABLE" == true ]]; then
+            BASE_LINES_DISPLAY="$BASE_LINES"
+            BASE_BRANCHES_DISPLAY="$BASE_BRANCHES"
+            DIFF_LINES="$(awk -v pr="$PR_LINES" -v base="$BASE_LINES" 'BEGIN {printf "%+.2f", pr-base}')"
+            DIFF_BRANCHES="$(awk -v pr="$PR_BRANCHES" -v base="$BASE_BRANCHES" 'BEGIN {printf "%+.2f", pr-base}')"
+          fi
+
+          {
+            echo "### Coverage Regression Summary"
+            echo
+            echo "| Metric | PR (%) | Base (%) | Difference (pp) |"
+            echo "| --- | ---: | ---: | ---: |"
+            echo "| Lines | ${PR_LINES} | ${BASE_LINES_DISPLAY} | ${DIFF_LINES} |"
+            echo "| Branches | ${PR_BRANCHES} | ${BASE_BRANCHES_DISPLAY} | ${DIFF_BRANCHES} |"
+            echo
+            echo "Find details on the base coverage at https://iupac-inchi.github.io/InChI/coverage/index.html"
+          } > "$COVERAGE_REPORT_MD"
+
+          if [[ "$BASE_AVAILABLE" == false ]]; then
+            echo "Base coverage metrics unavailable. Cannot check for regression."
+            exit 1
+          fi
+
+          FAIL=false
+          if awk -v pr="$PR_LINES" -v base="$BASE_LINES" 'BEGIN {exit !(pr < base)}'; then
+            echo "Line coverage regression: ${PR_LINES}% < base ${BASE_LINES}%"
+            FAIL=true
+          fi
+          if awk -v pr="$PR_BRANCHES" -v base="$BASE_BRANCHES" 'BEGIN {exit !(pr < base)}'; then
+            echo "Branch coverage regression: ${PR_BRANCHES}% < base ${BASE_BRANCHES}%"
+            FAIL=true
+          fi
+          if [[ "$FAIL" == true ]]; then
+            exit 1
+          fi
+
+          echo "Coverage OK: lines ${PR_LINES}% >= base ${BASE_LINES}%, branches ${PR_BRANCHES}% >= base ${BASE_BRANCHES}%"
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-reports-${{ github.run_id }}
+          path: CMake_build/coverage_build/coverage_reports/
+          retention-days: 30
+
+      - name: Post sticky PR comment (same-repo only)
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('CMake_build/coverage_build/coverage_reports/coverage_report.md', 'utf8');
+
+            // Build artifact link
+            const runId = context.runId;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId}`;
+            const artifactLink = `Find details on this PR's coverage by downloading [coverage-reports-${runId}](${runUrl}) and opening **html/index.html**`;
+
+            const body = `## Unit Test Coverage Report\n\n${report}\n\n${artifactLink}`;
+            const identifier = '<!-- InChI Unit Test Coverage Report -->';
+            const bodyWithId = `${identifier}\n${body}`;
+
+            // Search for existing comment with the identifier
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+
+            const existingComment = comments.find(comment =>
+              comment.body.includes(identifier)
+            );
+
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: bodyWithId,
+              });
+              console.log('Updated existing comment:', existingComment.id);
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: bodyWithId,
+              });
+              console.log('Created new comment');
+            }
