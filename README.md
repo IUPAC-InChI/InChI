@@ -90,7 +90,7 @@ Please write your comments in the header files where possible.
 The Doxygen documentation syntax is quite powerful: you can include formulas, tables, and diagrams.
 For details see <https://www.doxygen.nl/manual>.
 
-The documentation is [built on every push](.github/workflows/deploy_docs.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/>.
+The documentation is [built on every push](.github/workflows/deploy_pages.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/docs/index.html>.
 That is, your comments will automatically be rendered to HTML and served as online documentation.
 
 ## Code quality
@@ -102,6 +102,10 @@ InChI is integrated into [Coverity Scan](https://scan.coverity.com/projects/inch
 ### OSS-Fuzz continuous fuzzing
 
 InChI is integrated into [Google OSS-Fuzz](https://github.com/google/oss-fuzz/tree/master/projects/inchi), which runs continuous fuzz testing against the library. Fuzzing-related bugs are tracked at the [OSS-Fuzz issue tracker](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=inchi).
+
+### Code coverage
+
+The unit test coverage is [evaluated on every push](.github/workflows/deploy_pages.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/coverage/index.html>. Every PR against the default branch is [tested for unit test coverage regressions](.github/workflows/test_coverage_regression.yml).
 
 ## Contents of this repository
 
