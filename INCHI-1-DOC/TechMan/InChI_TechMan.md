@@ -509,262 +509,51 @@ were selected to illustrate the concepts on small structures.
 
 ### Step 1. Alter the structure drawing
 
-<table>
-<thead>
-<tr class="header">
-<th><strong>Table 1. Altering the structure drawing</strong></th>
-<th></th>
-<th></th>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>type</td>
-<td>Input fragment</td>
-<td></td>
-<td>Fixed fragment</td>
-<td>note</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image23.wmf" style="width:0.61458in;height:0.32292in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image24.wmf" style="width:0.58333in;height:0.32292in" /></td>
-<td>X is any atom except H</td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image25.wmf" style="width:0.61458in;height:0.3125in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image26.wmf" style="width:0.59375in;height:0.32292in" /></td>
-<td>X is any atom except H</td>
-</tr>
-<tr class="even">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image27.wmf" style="width:0.83333in;height:0.32292in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image28.wmf" style="width:0.70833in;height:0.21875in" /></td>
-<td>X=N, P, As, Sb, O, S, Se, Te</td>
-</tr>
-<tr class="odd">
-<td>Example of 3</td>
-<td><img src="./attachments/$myfilename/media/image29.wmf" style="width:0.6875in;height:0.59375in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image30.wmf" style="width:0.63542in;height:0.48958in" /></td>
-<td>X = O, Y = C</td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td><img src="./attachments/$myfilename/media/image31.wmf" style="width:0.875in;height:0.48958in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image32.wmf" style="width:0.95833in;height:0.46875in" /></td>
-<td><p>X=O, S, Se, Te</p>
-<p>Y=S, Se, Te</p></td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td><img src="./attachments/$myfilename/media/image33.wmf" style="width:0.90625in;height:0.51042in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image34.wmf" style="width:0.95833in;height:0.52083in" /></td>
-<td>X=O, S, Se, Te</td>
-</tr>
-<tr class="even">
-<td>6</td>
-<td><img src="./attachments/$myfilename/media/image35.wmf" style="width:0.92708in;height:0.30208in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image36.wmf" style="width:0.92708in;height:0.30208in" />.</td>
-<td>Hal = F, Cl, Br, I, At</td>
-</tr>
-<tr class="odd">
-<td>Example of 6</td>
-<td><img src="./attachments/$myfilename/media/image37.wmf" style="width:1.05208in;height:1.09375in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image38.wmf" style="width:1.0625in;height:1.09375in" /></td>
-<td></td>
-</tr>
-<tr class="even">
-<td>7</td>
-<td><img src="./attachments/$myfilename/media/image39.wmf" style="width:0.78125in;height:0.30208in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image40.wmf" style="width:0.83333in;height:0.29167in" /></td>
-<td><p>X = S, Y = O</p>
-<p>X = Se, Y = S, O</p>
-<p>X = Te, Y = O, S, Se<br />
-<br />
-(applicable if valence of X exceeds 6, in originally drawn form)</p></td>
-</tr>
-<tr class="odd">
-<td>Example of 7</td>
-<td><img src="./attachments/$myfilename/media/image41.wmf" style="width:0.96875in;height:1.09375in" /></td>
-<td></td>
-<td><img src="./attachments/$myfilename/media/image42.wmf" style="width:0.98958in;height:1.10417in" /></td>
-<td></td>
-</tr>
-<tr class="even">
-<td>8</td>
-<td><img src="./attachments/$myfilename/media/image43.wmf" style="width:1.04167in;height:0.84375in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image44.wmf" style="width:1.04167in;height:0.69792in" /><br />
-<img src="./attachments/$myfilename/media/image45.wmf" style="width:1.08333in;height:0.69792in" /></td>
-<td>X = C, S</td>
-</tr>
-</tbody>
-</table>
+| **Table 1. Altering the structure drawing** | | | | 
+| :--- | :--- | :--- |
+| type | Input fragment | | Fixed fragment | note |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | ![](./assets/png/image23.png) | → | ![](./assets/png/image24.png) | X is any atom except H |
+| 2 | ![](./assets/png/image25.png) | → | ![](./assets/png/image26.png) | X is any atom except H |
+| 3 | ![](./assets/png/image27.png) | → | ![](./assets/png/image28.png) | X=N, P, As, Sb, O, S, Se, Te |
+| Example of 3 | ![](./assets/png/image29.png) | → | ![](./assets/png/image30.png) | X = O, Y = C |
+| 4 | ![](./assets/png/image31.png) | → | ![](./assets/png/image32.png) | X=O, S, Se, Te<br>Y=S, Se, Te |
+| 5 | ![](./assets/png/image33.png) | → | ![](./assets/png/image34.png) | X=O, S, Se, Te |
+| 6 | ![](./assets/png/image35.png) | → | ![](./assets/png/image36.png). | Hal = F, Cl, Br, I, At |
+| Example of 6 | ![](./assets/png/image37.png) | → | ![](./assets/png/image38.png) | |
+| 7 | ![](./assets/png/image39.png) | → | ![](./assets/png/image40.png) | X = S, Y = O<br>X = Se, Y = S, O<br>X = Te, Y = O, S, Se<br><br>(applicable if valence of X exceeds 6, in originally drawn form) |
+| Example of 7 | ![](./assets/png/image41.png) | | ![](./assets/png/image42.png) | |
+| 8 | ![](./assets/png/image43.png) | → | ![](./assets/png/image44.png)<br>![](./assets/png/image45.png) | X = C, S |
 
-<table>
-<thead>
-<tr class="header">
-<th><strong>Table 2. Replacing Ion Pairs with increased order of bonds</strong></th>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>2-1. Terminal Fragments (Roman numbers in parentheses are formal valences)</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td></td>
-<td><strong>Input and fixed fragments</strong></td>
-<td><strong>Comments</strong></td>
-</tr>
-<tr class="odd">
-<td>1</td>
-<td></td>
-<td><p>N=N,P,As,Sb;</p>
-<p>O=O,S,Se,Te</p></td>
-</tr>
-<tr class="even">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image46.wmf" style="width:2.72917in;height:0.55208in" /></td>
-<td><p>N=N,P,As;</p>
-<p>O=O,S,Se,Te</p></td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image47.wmf" style="width:2.66667in;height:0.3125in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td><img src="./attachments/$myfilename/media/image48.wmf" style="width:2.25in;height:0.3125in" /></td>
-<td>Same as above; N<sup>+</sup> has not more than 3 bonds</td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td><img src="./attachments/$myfilename/media/image49.wmf" style="width:2.30208in;height:0.3125in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="even">
-<td>6</td>
-<td><img src="./attachments/$myfilename/media/image50.wmf" style="width:2.66667in;height:0.3125in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="odd">
-<td>7</td>
-<td><img src="./attachments/$myfilename/media/image51.wmf" style="width:2.34375in;height:0.3125in" /></td>
-<td><p>Same as above; in addition,</p>
-<p>N<strong><sup>-</sup></strong> may be also Sb<strong><sup>-</sup></strong></p></td>
-</tr>
-<tr class="even">
-<td>8</td>
-<td><img src="./attachments/$myfilename/media/image52.wmf" style="width:2.38542in;height:0.32292in" /></td>
-<td><p>N=N,P,As,Sb;</p>
-<p>O=O,S,Se,Te</p></td>
-</tr>
-<tr class="odd">
-<td>9</td>
-<td></td>
-<td>Same as above</td>
-</tr>
-<tr class="even">
-<td>10</td>
-<td></td>
-<td>P=P,As,Sb; O=O,S,Se,Te</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>2-2. Non-terminal fragments - 2 atoms</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image53.wmf" style="width:2.45833in;height:0.32292in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image54.wmf" style="width:2.47917in;height:0.33333in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="even">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image55.wmf" style="width:2.44792in;height:0.32292in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="odd">
-<td>4</td>
-<td><img src="./attachments/$myfilename/media/image56.wmf" style="width:2.44792in;height:0.33333in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="even">
-<td>5</td>
-<td><img src="./attachments/$myfilename/media/image57.wmf" style="width:2.5in;height:0.33333in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="odd">
-<td>6</td>
-<td><img src="./attachments/$myfilename/media/image58.wmf" style="width:2.45833in;height:0.32292in" /></td>
-<td><p>N=N,P,As;</p>
-<p>O=O,S,Se,Te</p></td>
-</tr>
-<tr class="even">
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><strong>2-3. Non-terminal fragments - 3 atoms</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image59.wmf" style="width:2.86458in;height:0.3125in" /></td>
-<td>Same as above</td>
-</tr>
-<tr class="even">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image60.wmf" style="width:2.8125in;height:0.38542in" /></td>
-<td><p>N=N,P,As,Sb;</p>
-<p>O=O,S,Se,Te</p></td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image61.wmf" style="width:2.85417in;height:1.02083in" /></td>
-<td>Same as above</td>
-</tr>
-</tbody>
-</table>
+| **Table 2. Replacing Ion Pairs with increased order of bonds** | | |
+| :--- | :--- | :--- |
+| **2-1. Terminal Fragments (Roman numbers in parentheses are formal valences)** | | |
+| | **Input and fixed fragments** | **Comments** |
+| 1 | | N=N,P,As,Sb;<br>O=O,S,Se,Te |
+| 2 | ![](./assets/png/image46.png) | N=N,P,As;<br>O=O,S,Se,Te |
+| 3 | ![](./assets/png/image47.png) | Same as above |
+| 4 | ![](./assets/png/image48.png) | Same as above; N<sup>+</sup> has not more than 3 bonds |
+| 5 | ![](./assets/png/image49.png) | Same as above |
+| 6 | ![](./assets/png/image50.png) | Same as above |
+| 7 | ![](./assets/png/image51.png) | Same as above; in addition,<br>N**<sup>-</sup>** may be also Sb**<sup>-</sup>** |
+| 8 | ![](./assets/png/image52.png) | N=N,P,As,Sb;<br>O=O,S,Se,Te |
+| 9 | | Same as above |
+| 10 | | P=P,As,Sb; O=O,S,Se,Te |
+| | | |
+| **2-2. Non-terminal fragments - 2 atoms** | | |
+| | | |
+| 1 | ![](./assets/png/image53.png) | Same as above |
+| 2 | ![](./assets/png/image54.png) | Same as above |
+| 3 | ![](./assets/png/image55.png) | Same as above |
+| 4 | ![](./assets/png/image56.png) | Same as above |
+| 5 | ![](./assets/png/image57.png) | Same as above |
+| 6 | ![](./assets/png/image58.png) | N=N,P,As;<br>O=O,S,Se,Te |
+| | | |
+| **2-3. Non-terminal fragments - 3 atoms** | | |
+| | | |
+| 1 | ![](./assets/png/image59.png) | Same as above |
+| 2 | ![](./assets/png/image60.png) | N=N,P,As,Sb;<br>O=O,S,Se,Te |
+| 3 | ![](./assets/png/image61.png) | Same as above |
 
 ### Step 2. Disconnect “salts”
 
@@ -784,103 +573,22 @@ lowest valence known to InChI (See Appendix 1).
 
 Metals are all elements except these:
 
-<table>
-<thead>
-<tr class="header">
-<th><strong>Table 3. Non-metals</strong></th>
-<th></th>
-<th></th>
-<th></th>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>IIIA</td>
-<td>IVA</td>
-<td>VA</td>
-<td>VIA</td>
-<td>VIIA</td>
-<td>VIIIA</td>
-</tr>
-<tr class="even">
-<td>13</td>
-<td>14</td>
-<td>15</td>
-<td>16</td>
-<td>17</td>
-<td>18</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td>H</td>
-<td>He</td>
-</tr>
-<tr class="even">
-<td>B</td>
-<td>C</td>
-<td>N</td>
-<td>O</td>
-<td>F</td>
-<td>Ne</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td>Si</td>
-<td>P</td>
-<td>S</td>
-<td>Cl</td>
-<td>Ar</td>
-</tr>
-<tr class="even">
-<td></td>
-<td>Ge</td>
-<td>As</td>
-<td>Se</td>
-<td>Br</td>
-<td>Kr</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td></td>
-<td></td>
-<td>Te</td>
-<td>I</td>
-<td>Xe</td>
-</tr>
-<tr class="even">
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td>At</td>
-<td>Rn</td>
-</tr>
-</tbody>
-</table>
+| **Table 3. Non-metals** | | | | | |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| IIIA | IVA | VA | VIA | VIIA | VIIIA |
+| 13 | 14 | 15 | 16 | 17 | 18 |
+| | | | | H | He |
+| B | C | N | O | F | Ne |
+| | Si | P | S | Cl | Ar |
+| | Ge | As | Se | Br | Kr |
+| | | | Te | I | Xe |
+| | | | | At | Rn |
 
 “Acid” is one of the following three:
 
-<table>
-<thead>
-<tr class="header">
-<th>HX (X=F, Cl, Br, I)</th>
-<th><img src="./attachments/$myfilename/media/image62.wmf" style="width:0.91667in;height:0.53125in" /></th>
-<th><img src="./attachments/$myfilename/media/image63.wmf" style="width:0.83333in;height:0.20833in" /></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Figure 8. Acid definition</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| HX (X=F, Cl, Br, I) | ![](./assets/png/image62.png) | ![](./assets/png/image63.png) |
+| :--- | :--- | :--- |
+| **Figure 8. Acid definition** | | |
 
 Upon disconnection atom X or O of the acid receives a single negative
 charge; the charge of the metal is incremented.
@@ -890,76 +598,15 @@ and HX.
 
 Several examples are shown in the Table 4:
 
-<table>
-<thead>
-<tr class="header">
-<th><strong>Table 4. Examples of salt disconnection</strong></th>
-<th></th>
-<th></th>
-<th></th>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>connected</td>
-<td></td>
-<td>disconnected</td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td>NH<sub>4</sub>OC</td>
-<td>→</td>
-<td>NH<sub>3</sub></td>
-<td>+</td>
-<td>HOC</td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td>NH<sub>4</sub>X</td>
-<td>→</td>
-<td>NH<sub>3</sub></td>
-<td>+</td>
-<td>HX (X=F, Cl, Br, I)</td>
-</tr>
-<tr class="even">
-<td></td>
-<td>Below M is a metal</td>
-<td></td>
-<td>“acid” anion</td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image64.wmf" style="width:0.85417in;height:0.54167in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image65.wmf" style="width:0.30208in;height:0.22917in" /></td>
-<td>+</td>
-<td><img src="./attachments/$myfilename/media/image66.wmf" style="width:0.66667in;height:0.61458in" /></td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td><img src="./attachments/$myfilename/media/image67.wmf" style="width:0.97917in;height:0.21875in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image65.wmf" style="width:0.3125in;height:0.23958in" /></td>
-<td>+</td>
-<td><img src="./attachments/$myfilename/media/image68.wmf" style="width:0.79167in;height:0.3125in" /></td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td>MX</td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image69.wmf" style="width:0.3125in;height:0.23958in" /></td>
-<td>+</td>
-<td>X<strong><sup>−</sup></strong> (X=F, Cl, Br, I)</td>
-</tr>
-</tbody>
-</table>
+| **Table 4. Examples of salt disconnection** | | | | | |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| | connected | | disconnected | | |
+| 1 | NH<sub>4</sub>-O-C | → | NH<sub>3</sub> | + | HO-C |
+| 2 | NH<sub>4</sub>-X | → | NH<sub>3</sub> | + | HX (X=F, Cl, Br, I) |
+| | Below M is a metal | | “acid” anion | | |
+| 3 | ![](./assets/png/image64.png) | → | ![](./assets/png/image65.png) | + | ![](./assets/png/image66.png) |
+| 4 | ![](./assets/png/image67.png) | → | ![](./assets/png/image65.png) | + | ![](./assets/png/image68.png) |
+| 5 | M-X | → | ![](./assets/png/image69.png) | + | X<sup>−</sup> (X=F, Cl, Br, I) |
 
 Note that inorganic acids do not fit the salt definition. For example,
 sodium nitrate is treated as a coordination compound, so may be
@@ -988,146 +635,36 @@ attempting this change the algorithm detects bonds highlighted with red
 in the table below and marks them as fixed. The order of these bonds
 will not be allowed to change.
 
-<table>
-<thead>
-<tr class="header">
-<th><strong>Table 5. Rules for fixing bonds (bonds to be fixed are in bold red)</strong></th>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image70.wmf" style="width:1.59375in;height:0.80208in" /></td>
-<td>X ≠ O</td>
-</tr>
-<tr class="even">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image71.wmf" style="width:0.67708in;height:0.83333in" /></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image72.wmf" style="width:1.53125in;height:0.55208in" /></td>
-<td><p>X, Y – any</p>
-<p>N = N, P, As, Sb</p></td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td><img src="./attachments/$myfilename/media/image73.wmf" style="width:0.78125in;height:0.91667in" /></td>
-<td><p>X, Y ≠ O;</p>
-<p>O = O, S, Se, Te;</p>
-<p>N = N, P, As, Sb</p></td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td><img src="./attachments/$myfilename/media/image74.wmf" style="width:0.78125in;height:0.91667in" /></td>
-<td><p>X, Y ≠ O or N;</p>
-<p>O = O, S, Se, Te;</p>
-<p>N = N, P, As; central N (valence=5) may also be Sb</p></td>
-</tr>
-<tr class="even">
-<td>6</td>
-<td><img src="./attachments/$myfilename/media/image75.wmf" style="width:1.32292in;height:1.07292in" /></td>
-<td>N = N, P, As; central N (valence=5) may also be Sb</td>
-</tr>
-<tr class="odd">
-<td>7</td>
-<td><img src="./attachments/$myfilename/media/image76.wmf" style="width:1.83333in;height:0.92708in" /></td>
-<td><p>S = S, Se, Te;</p>
-<p>O = O, S, Se, Te;</p>
-<p>X ≠ terminal O</p></td>
-</tr>
-<tr class="even">
-<td>8</td>
-<td><img src="./attachments/$myfilename/media/image77.wmf" style="width:1.75in;height:0.92708in" /></td>
-<td><p>N = N, P, As,</p>
-<p>the two N are same elements and do not belong to the same ring system;</p>
-<p>X ≠ N, P, As, Sb that has H or charge = -1</p></td>
-</tr>
-<tr class="odd">
-<td>9</td>
-<td><img src="./attachments/$myfilename/media/image78.wmf" style="width:0.71875in;height:0.80208in" /></td>
-<td><p>S = S, Se, Te; X, Y ≠ O, S, Se, Te</p>
-<p>if atoms Z and X are same and the two atoms belong to the same ring system then do not fix the bond.</p></td>
-</tr>
-<tr class="even">
-<td>10</td>
-<td><img src="./attachments/$myfilename/media/image79.wmf" style="width:1.95833in;height:0.92708in" /></td>
-<td><p>S = S, Se, Te;</p>
-<p>O = O, S, Se, Te;</p>
-<p>X is not a terminal atom</p></td>
-</tr>
-<tr class="odd">
-<td>11</td>
-<td><img src="./attachments/$myfilename/media/image80.wmf" style="width:1.95833in;height:0.8125in" /></td>
-<td><p>S = S, Se, Te;</p>
-<p>O = O, S, Se, Te;</p>
-<p>X, Y are not terminal atoms</p>
-<p>If atom Y is a terminal atom and X is not a terminal atom then only S-X bond is fixed.</p></td>
-</tr>
-<tr class="even">
-<td>12</td>
-<td><img src="./attachments/$myfilename/media/image81.wmf" style="width:2.02083in;height:0.96875in" /></td>
-<td><p>S = S, Se, Te;</p>
-<p>O = O, S, Se, Te;</p>
-<p>X is not a terminal atom</p></td>
-</tr>
-<tr class="odd">
-<td>13</td>
-<td><img src="./attachments/$myfilename/media/image82.wmf" style="width:2.02083in;height:0.89583in" /></td>
-<td><p>S = S, Se, Te;</p>
-<p>O = O, S, Se, Te;</p>
-<p>X, Y are not terminal atoms</p>
-<p>If atom Y is a terminal atom and X is not a terminal atom then only S-X bond is fixed.</p></td>
-</tr>
-</tbody>
-</table>
+| **Table 5. Rules for fixing bonds (bonds to be fixed are in bold red)** | | |
+| :--- | :--- | :--- |
+| 1 | ![](./assets/png/image70.png) | X ≠ O |
+| 2 | ![](./assets/png/image71.png) | |
+| 3 | ![](./assets/png/image72.png) | X, Y – any<br>N = N, P, As, Sb |
+| 4 | ![](./assets/png/image73.png) | X, Y ≠ O;<br>O = O, S, Se, Te;<br>N = N, P, As, Sb |
+| 5 | ![](./assets/png/image74.png) | X, Y ≠ O or N;<br>O = O, S, Se, Te;<br>N = N, P, As; central N (valence=5) may also be Sb |
+| 6 | ![](./assets/png/image75.png) | N = N, P, As; central N (valence=5) may also be Sb |
+| 7 | ![](./assets/png/image76.png) | S = S, Se, Te;<br>O = O, S, Se, Te;<br>X ≠ terminal O |
+| 8 | ![](./assets/png/image77.png) | N = N, P, As,<br>the two N are same elements and do not belong to the same ring system;<br>X ≠ N, P, As, Sb that has H or charge = -1 |
+| 9 | ![](./assets/png/image78.png) | S = S, Se, Te; X, Y ≠ O, S, Se, Te<br>if atoms Z and X are same and the two atoms belong to the same ring system then do not fix the bond. |
+| 10 | ![](./assets/png/image79.png) | S = S, Se, Te;<br>O = O, S, Se, Te;<br>X is not a terminal atom |
+| 11 | ![](./assets/png/image80.png) | S = S, Se, Te;<br>O = O, S, Se, Te;<br>X, Y are not terminal atoms<br>If atom Y is a terminal atom and X is not a terminal atom then only S-X bond is fixed. |
+| 12 | ![](./assets/png/image81.png) | S = S, Se, Te;<br>O = O, S, Se, Te;<br>X is not a terminal atom |
+| 13 | ![](./assets/png/image82.png) | S = S, Se, Te;<br>O = O, S, Se, Te;<br>X, Y are not terminal atoms<br>If atom Y is a terminal atom and X is not a terminal atom then only S-X bond is fixed. |
 
 Elimination of radicals can be illustrated as follows:
 
-<table>
-<thead>
-<tr class="header">
-<th><img src="./attachments/$myfilename/media/image83.wmf" style="width:1.54167in;height:0.54167in" /></th>
-<th>→</th>
-<th><img src="./attachments/$myfilename/media/image84.wmf" style="width:1.6875in;height:0.53125in" /></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Figure 9a. Radical cancellation</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image83.png) | → | ![](./assets/png/image84.png) |
+| :--- | :--- | :--- |
+| **Figure 9a. Radical cancellation** | | |
 
 The conversion of aromatic bonds to alternating single and double bonds
 is done through radical cancellation, for example:
 
-<table>
-<tbody>
-<tr class="odd">
-<td>1. Input structure<br />
-(“aromatic” bonds are highlighted in blue)</td>
-<td><img src="./attachments/$myfilename/media/image85.wmf" style="width:3.47708in;height:1.30208in" /></td>
-</tr>
-<tr class="even">
-<td>2. Intermediate formal “radical” structure</td>
-<td><img src="./attachments/$myfilename/media/image86.wmf" style="width:3.27292in;height:1.22569in" /></td>
-</tr>
-<tr class="odd">
-<td>3. The result after the radical cancellation</td>
-<td><img src="./attachments/$myfilename/media/image87.wmf" style="width:3.27292in;height:1.22014in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 9b. Aromatic bonds conversion to alternating</strong></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| 1. Input structure<br>(“aromatic” bonds are highlighted in blue) | ![](./assets/png/image85.png) |
+| :--- | :--- |
+| 2. Intermediate formal “radical” structure | ![](./assets/png/image86.png) |
+| 3. The result after the radical cancellation | ![](./assets/png/image87.png) |
+| **Figure 9b. Aromatic bonds conversion to alternating** | |
 
 Note-1. No message is issued if radical cancellation does not remove all
 radicals created during the aromatic bond conversion to single and
@@ -1183,22 +720,9 @@ class="underline">O</span>=Y−a=b−c=d−N&lt; + H<sup>+</sup>
 
 More aggressive transformations are also possible, for example
 
-<table>
-<thead>
-<tr class="header">
-<th><img src="./attachments/$myfilename/media/image88.wmf" style="width:2.17708in;height:0.63542in" /></th>
-<th>→</th>
-<th><img src="./attachments/$myfilename/media/image89.wmf" style="width:3.05208in;height:0.4375in" /></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Figure 10. Example of ‘hard’ proton removal</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image88.png) | → | ![](./assets/png/image89.png) |
+| :--- | :--- | :--- |
+| **Figure 10. Example of ‘hard’ proton removal** | | |
 
 During this process:
 
@@ -1303,108 +827,19 @@ complications that arise from ambiguities introduced at step 5 during
 of charged atoms resembling results of heterolytic dissociation. Below
 are examples of such ambiguities.
 
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th>Input structure</th>
-<th></th>
-<th>Ambiguous results of proton removal</th>
-<th></th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image90.wmf" style="width:1.22917in;height:0.61458in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image91.wmf" style="width:1.60417in;height:0.625in" /></td>
-<td>or</td>
-<td><img src="./attachments/$myfilename/media/image92.wmf" style="width:1.66667in;height:0.63542in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>1a</td>
-<td></td>
-<td>1b</td>
-<td></td>
-<td>1c</td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image93.wmf" style="width:1.35417in;height:0.65625in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image94.wmf" style="width:1.71875in;height:0.64583in" /></td>
-<td>or</td>
-<td><img src="./attachments/$myfilename/media/image95.wmf" style="width:1.59375in;height:0.59375in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>2a</td>
-<td></td>
-<td>2b</td>
-<td></td>
-<td>2c</td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image96.wmf" style="width:1.35417in;height:1.05208in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image97.wmf" style="width:1.71875in;height:1.13542in" /></td>
-<td>or</td>
-<td><img src="./attachments/$myfilename/media/image98.wmf" style="width:1.79167in;height:1.13542in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>3a</td>
-<td></td>
-<td>3b</td>
-<td></td>
-<td>3c</td>
-</tr>
-<tr class="odd">
-<td>4</td>
-<td><img src="./attachments/$myfilename/media/image99.wmf" style="width:1.34375in;height:0.64583in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image100.wmf" style="width:1.47917in;height:0.72917in" /></td>
-<td>or</td>
-<td><img src="./attachments/$myfilename/media/image101.wmf" style="width:1.66667in;height:0.77083in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>4a</td>
-<td></td>
-<td>4b</td>
-<td></td>
-<td>4c</td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td><img src="./attachments/$myfilename/media/image102.wmf" style="width:0.97917in;height:0.65625in" /></td>
-<td>→</td>
-<td><img src="./attachments/$myfilename/media/image103.wmf" style="width:1.10417in;height:0.66667in" /></td>
-<td>or</td>
-<td><img src="./attachments/$myfilename/media/image104.wmf" style="width:1.16667in;height:0.71875in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>5a</td>
-<td></td>
-<td>5b</td>
-<td></td>
-<td>5c</td>
-</tr>
-<tr class="odd">
-<td><strong>Figure 11.</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| | Input structure | | Ambiguous results of proton removal | | |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | ![](./assets/png/image90.png) | → | ![](./assets/png/image91.png) | or | ![](./assets/png/image92.png) |
+| | 1a | | 1b | | 1c |
+| 2 | ![](./assets/png/image93.png) | → | ![](./assets/png/image94.png) | or | ![](./assets/png/image95.png) |
+| | 2a | | 2b | | 2c |
+| 3 | ![](./assets/png/image96.png) | → | ![](./assets/png/image97.png) | or | ![](./assets/png/image98.png) |
+| | 3a | | 3b | | 3c |
+| 4 | ![](./assets/png/image99.png) | → | ![](./assets/png/image100.png) | or | ![](./assets/png/image101.png) |
+| | 4a | | 4b | | 4c |
+| 5 | ![](./assets/png/image102.png) | → | ![](./assets/png/image103.png) | or | ![](./assets/png/image104.png) |
+| | 5a | | 5b | | 5c |
+| **Figure 11.** | | | | | |
 
 Rows 1, 2, 4, and 5 illustrate “hard” proton removal ambiguities, row 3
 illustrates incomplete “simple” removal of protons; structures 3b and 3c
@@ -1428,130 +863,31 @@ have adopted the straightforward varieties of H-transfer tautomerism
 listed in Table 6 (see also reference 1) and illustrated in Figures 12
 and 13 using Guanine as an example.
 
-<table>
-<tbody>
-<tr class="odd">
-<td><strong>Table 6</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><p>M=Q<strong>−</strong>ZH ↔︎ MH<strong>−</strong>Q=Z,</p>
-<p>or</p>
-<p>M=Q<strong>−</strong>Z<strong><sup>-</sup></strong> ↔︎ M<strong><sup>-</sup>−</strong>Q=Z</p></td>
-<td>M, Z = N<sup>III</sup>, O<sup>II</sup>, S<sup>II</sup>, Se<sup>II</sup>, Te<sup>II</sup> (Roman superscripts designate chemical valence)</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td></td>
-<td>Q = C, N, S, P, Sb, As, Se, Te, Br, Cl, I</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>H = hydrogen, deuterium, or tritium</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><p>The “=” bond may be a double bond, a bond in the alternating single/double bond ring, or a “tautomeric” bond (shown in blue)</p>
-<p>Below H atom can be replaced with a negative charge</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image105.wmf" style="width:0.90625in;height:0.88542in" /></td>
-<td>↔︎</td>
-<td><img src="./attachments/$myfilename/media/image106.wmf" style="width:0.91667in;height:0.88542in" /></td>
-<td></td>
-<td><img src="./attachments/$myfilename/media/image107.wmf" style="width:1.03125in;height:1.08333in" /></td>
-<td>↔︎</td>
-<td><img src="./attachments/$myfilename/media/image108.wmf" style="width:1.14583in;height:1.22917in" /></td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image109.wmf" style="width:0.86458in;height:0.84375in" /></td>
-<td>↔︎</td>
-<td><img src="./attachments/$myfilename/media/image110.wmf" style="width:0.875in;height:0.85417in" /></td>
-<td></td>
-<td><img src="./attachments/$myfilename/media/image111.wmf" style="width:0.84375in;height:0.73958in" /></td>
-<td>↔︎</td>
-<td><img src="./attachments/$myfilename/media/image112.wmf" style="width:0.85417in;height:0.76042in" /></td>
-</tr>
-</tbody>
-</table>
+| **Table 6** | | | | | | |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| M=Q**−**ZH ↔︎ MH**−**Q=Z,<br>or<br>M=Q**−**Z**<sup>-</sup>** ↔︎ M**<sup>-</sup>−Q=Z | M, Z = N<sup>III</sup>, O<sup>II</sup>, S<sup>II</sup>, Se<sup>II</sup>, Te<sup>II</sup> (Roman superscripts designate chemical valence) | | | | | |
+| | Q = C, N, S, P, Sb, As, Se, Te, Br, Cl, I | | | | | |
+| | H = hydrogen, deuterium, or tritium | | | | | |
+| The “=” bond may be a double bond, a bond in the alternating single/double bond ring, or a “tautomeric” bond (shown in blue)<br>Below H atom can be replaced with a negative charge | | | | | | |
+| ![](./assets/png/image105.png) | ↔︎ | ![](./assets/png/image106.png) | | ![](./assets/png/image107.png) | ↔︎ | ![](./assets/png/image108.png) |
+| ![](./assets/png/image109.png) | ↔︎ | ![](./assets/png/image110.png) | | ![](./assets/png/image111.png) | ↔︎ | ![](./assets/png/image112.png) |
 
 *Guanine example.*
 
-<table>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image113.wmf" style="width:1.35417in;height:1.13542in" /></td>
-<td><img src="./attachments/$myfilename/media/image114.wmf" style="width:1.30208in;height:1.08333in" /></td>
-<td><img src="./attachments/$myfilename/media/image115.wmf" style="width:1.36458in;height:1.23958in" /></td>
-<td><img src="./attachments/$myfilename/media/image116.wmf" style="width:1.30208in;height:1.0625in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 12.</strong> Tautomeric structures of Guanine (not all possible are shown)</td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image113.png) | ![](./assets/png/image114.png) | ![](./assets/png/image115.png) | ![](./assets/png/image116.png) |
+| :--- | :--- | :--- | :--- |
+| **Figure 12.** Tautomeric structures of Guanine (not all possible are shown) | | | |
 
-<table>
-<tbody>
-<tr class="odd">
-<td>Input Structure</td>
-<td>Normalized structure</td>
-<td>Canonical numbering</td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image117.wmf" style="width:1.22917in;height:0.875in" /></td>
-<td><img src="./attachments/$myfilename/media/image118.wmf" style="width:1.63542in;height:1.16667in" /></td>
-<td><img src="./attachments/$myfilename/media/image119.wmf" style="width:1.47917in;height:1.17708in" /></td>
-</tr>
-<tr class="odd">
-<td></td>
-<td>donors and receptors of H and changeable bonds are highlighted</td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 13</strong>. Guanine normalization and canonical numbering</td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Input Structure | Normalized structure | Canonical numbering |
+| :--- | :--- | :--- |
+| ![](./assets/png/image117.png) | ![](./assets/png/image118.png) | ![](./assets/png/image119.png) |
+| | donors and receptors of H and changeable bonds are highlighted | |
+| **Figure 13**. Guanine normalization and canonical numbering | | |
 
 InChI for Guanine (optional fixed H layer included) is
 
-<table>
-<tbody>
-<tr class="odd">
-<td><strong>InChI=1/C5H5N5O/c6-5-9-3-2(4(11)10-5)7-1-8-3/h1H,(H4,6,7,8,9,10,11)/f/h8,10H,6H2</strong></td>
-</tr>
-</tbody>
-</table>
+| **InChI=1/C5H5N5O/c6-5-9-3-2(4(11)10-5)7-1-8-3/h1H,(H4,6,7,8,9,10,11)/f/h8,10H,6H2** |
+| :--- |
 
 The same InChI of Guanine with added annotations {in curly braces} is
 
@@ -1590,22 +926,9 @@ charges may occur.
 
 Hypothetical structures on Fig. 14a-14c serve as an illustration.
 
-<table>
-<thead>
-<tr class="header">
-<th><img src="./attachments/$myfilename/media/image120.wmf" style="width:1.61458in;height:0.70833in" /></th>
-<th><img src="./attachments/$myfilename/media/image121.wmf" style="width:1.89583in;height:0.78125in" /></th>
-<th><img src="./attachments/$myfilename/media/image122.wmf" style="width:1.89583in;height:0.77083in" /></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Figure 14a</strong></td>
-<td><strong>Figure 14b</strong></td>
-<td><strong>Figure 14c</strong></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image120.png) | ![](./assets/png/image121.png) | ![](./assets/png/image122.png) |
+| :--- | :--- | :--- |
+| **Figure 14a** | **Figure 14b** | **Figure 14c** |
 
 Structure 14b was obtained from 14a by formally moving the positive
 charge from left to right along an alternating bond path. This allows
@@ -1639,27 +962,10 @@ fictitious double bonds (red) point to the atom-donors of H or negative
 charge; in the mobile positive charge group fictitious single bonds
 point to positively charged atoms.
 
-<table>
-<thead>
-<tr class="header">
-<th><img src="./attachments/$myfilename/media/image123.wmf" style="width:1.73958in;height:1.03125in" /></th>
-<th><img src="./attachments/$myfilename/media/image124.wmf" style="width:1.82292in;height:1.05208in" /></th>
-<th><img src="./attachments/$myfilename/media/image125.wmf" style="width:1.67708in;height:0.95833in" /></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Figure 15a</strong></td>
-<td><strong>Figure 15b</strong></td>
-<td><strong>Figure 15c</strong></td>
-</tr>
-<tr class="even">
-<td>Internal representation of structures from Figures 14a-14c.</td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image123.png) | ![](./assets/png/image124.png) | ![](./assets/png/image125.png) |
+| :--- | :--- | :--- |
+| **Figure 15a** | **Figure 15b** | **Figure 15c** |
+| Internal representation of structures from Figures 14a-14c. | | |
 
 After the discovery of a new mobile group it is added to the structure.
 This results in the discovery of changeable bonds. In case of the
@@ -1682,20 +988,9 @@ Step 6 and illustrated on Fig. 11, structures 3b and 3c) can be found in
 a hypothetical zwitterionic structure that may be drawn in more than one
 way:
 
-<table>
-<thead>
-<tr class="header">
-<th><img src="./attachments/$myfilename/media/image126.wmf" style="width:1.57292in;height:1.23958in" /></th>
-<th><img src="./attachments/$myfilename/media/image127.wmf" style="width:1.47917in;height:1.23958in" /></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Figure 16a</strong></td>
-<td><strong>Figure 16b</strong></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image126.png) | ![](./assets/png/image127.png) |
+| :--- | :--- |
+| **Figure 16a** | **Figure 16b** |
 
 To avoid the ambiguity due to “hard” removal of protons or uncertain
 location of acidic hydrogen atoms the structure is tested for formal
@@ -1756,49 +1051,12 @@ migration of positive charges between atoms N along paths of alternating
 bonds. An example of a pair of structures that differ by the positive
 charge location is on Fig. 16c and 16f.
 
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th>Input Structure</th>
-<th></th>
-<th>Step 5 result</th>
-<th>Canonical numbering</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image128.wmf" style="width:1.47917in;height:0.625in" /></td>
-<td><p>→</p>
-<p>(hard)</p></td>
-<td><img src="./attachments/$myfilename/media/image129.wmf" style="width:1.34375in;height:0.57292in" /></td>
-<td><img src="./attachments/$myfilename/media/image130.wmf" style="width:1.64583in;height:0.6875in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td><strong>Figure 16c</strong></td>
-<td></td>
-<td><strong>Figure 16d</strong></td>
-<td><strong>Figure 16e</strong></td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image131.wmf" style="width:1.47917in;height:0.63542in" /></td>
-<td><p>→</p>
-<p>(simple)</p></td>
-<td><img src="./attachments/$myfilename/media/image132.wmf" style="width:1.35417in;height:0.58333in" /></td>
-<td><img src="./attachments/$myfilename/media/image130.wmf" style="width:1.64583in;height:0.6875in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td><strong>Figure 16f</strong></td>
-<td></td>
-<td><strong>Figure 16g</strong></td>
-<td><strong>Figure 16h</strong></td>
-</tr>
-</tbody>
-</table>
+| | Input Structure | | Step 5 result | Canonical numbering |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | ![](./assets/png/image128.png) | →<br>(hard) | ![](./assets/png/image129.png) | ![](./assets/png/image130.png) |
+| | **Figure 16c** | | **Figure 16d** | **Figure 16e** |
+| 2 | ![](./assets/png/image131.png) | →<br>(simple) | ![](./assets/png/image132.png) | ![](./assets/png/image130.png) |
+| | **Figure 16f** | | **Figure 16g** | **Figure 16h** |
 
 These structures should have same identifiers. Unfortunately, they
 don’t. Step 5 of the normalization produces seemingly identical
@@ -1811,54 +1069,21 @@ structure 16f. The identifiers for 16c, 16f, and 16g are:
 
 .
 
-<table>
-<thead>
-<tr class="header">
-<th>16c</th>
-<th><strong>InChI=1S/C9H9N3OS/c1-12(2)9-10-5-3-7(13)8(14)4-6(5)11-9/h3-4H,1-2H3,(H,10,11,13,14)/p+1</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>16f</td>
-<td><strong>InChI=1S/C9H9N3OS/c1-12(2)9-10-5-3-7(13)8(14)4-6(5)11-9/h3-4H,1-2H3,(H,10,11)/p+1</strong></td>
-</tr>
-<tr class="even">
-<td>16g</td>
-<td><strong>InChI=1S/C9H9N3OS/c1-12(2)9-10-5-3-7(13)8(14)4-6(5)11-9/h3-4H,1-2H3,(H,10,11)</strong></td>
-</tr>
-</tbody>
-</table>
+| 16c | **InChI=1S/C9H9N3OS/c1-12(2)9-10-5-3-7(13)8(14)4-6(5)11-9/h3-4H,1-2H3,(H,10,11,13,14)/p+1** |
+| :--- | :--- |
+| 16f | **InChI=1S/C9H9N3OS/c1-12(2)9-10-5-3-7(13)8(14)4-6(5)11-9/h3-4H,1-2H3,(H,10,11)/p+1** |
+| 16g | **InChI=1S/C9H9N3OS/c1-12(2)9-10-5-3-7(13)8(14)4-6(5)11-9/h3-4H,1-2H3,(H,10,11)** |
 
 c. Isotopic Layer (I)
 ---------------------
 
 This is the most straightforward structural layer to compute.
 
-<table>
-<tbody>
-<tr class="odd">
-<td>Input Structure</td>
-<td>Normalized Structure</td>
-<td>Canonical Numbering</td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image133.wmf" style="width:0.875in;height:0.80208in" /></td>
-<td><img src="./attachments/$myfilename/media/image134.wmf" style="width:0.96875in;height:0.8125in" /></td>
-<td><img src="./attachments/$myfilename/media/image135.wmf" style="width:0.92708in;height:0.8125in" /></td>
-</tr>
-<tr class="odd">
-<td>InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H/i1+1,4+1D</td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 17</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Input Structure | Normalized Structure | Canonical Numbering |
+| :--- | :--- | :--- |
+| ![](./assets/png/image133.png) | ![](./assets/png/image134.png) | ![](./assets/png/image135.png) |
+| InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H/i1+1,4+1D | | |
+| **Figure 17** | | |
 
 The isotopic layer is /i1+1,4+1D. It contains canonical atom number
 followed by the isotopic shift (13 – 12 = +1) followed by isotopic
@@ -1872,49 +1097,15 @@ the isotopic layer. The same is done to isotopic hydrogen atoms that may
 be subject to heterolytic bond dissociation in aqueous solution (for
 example, D in R-SD)
 
-<table>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image136.wmf" style="width:4.10417in;height:0.95833in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 18.</strong> Tautomeric structures of isotopic urea</td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image136.png) |
+| :--- |
+| **Figure 18.** Tautomeric structures of isotopic urea |
 
-<table>
-<tbody>
-<tr class="odd">
-<td>Input Structure</td>
-<td>Normalized Structure</td>
-<td>Canonical Numbering</td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image137.wmf" style="width:0.95833in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image138.wmf" style="width:1.20833in;height:0.64583in" /></td>
-<td><img src="./attachments/$myfilename/media/image139.wmf" style="width:0.65625in;height:0.69792in" /></td>
-</tr>
-<tr class="odd">
-<td><p>InChI=1S/CH4N2O/c2-1(3)4/h(H4,2,3,4)/i/hD2</p>
-<ul>
-<li><blockquote>
-<p>Mobile H group (a,b,c) has 4 H located at atoms 2, 3, 4:: /h(H4,2,3,4)</p>
-</blockquote></li>
-<li><blockquote>
-<p>2 isotopic hydrogen atoms D belong to the whole structure: /i/hD2</p>
-</blockquote></li>
-</ul></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 19</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Input Structure | Normalized Structure | Canonical Numbering |
+| :--- | :--- | :--- |
+| ![](./assets/png/image137.png) | ![](./assets/png/image138.png) | ![](./assets/png/image139.png) |
+| InChI=1S/CH4N2O/c2-1(3)4/h(H4,2,3,4)/i/hD2<br>Mobile H group (a,b,c) has 4 H located at atoms 2, 3, 4:: /h(H4,2,3,4)<br>2 isotopic hydrogen atoms D belong to the whole structure: /i/hD2 | | |
+| **Figure 19** | | |
 
 Also note that there are, in effect, two possible isotopic layer
 representations, one that is applied to the Main layer with mobile H and
@@ -1922,13 +1113,8 @@ another to Main without mobile H or to the fixed-H layer. The optional
 fixed H layer for the same urea structure is /f/h2-3H2/i2D2; the full
 identifier is
 
-<table>
-<tbody>
-<tr class="odd">
-<td>InChI=1/CH4N2O/c2-1(3)4/h(H4,2,3,4)/i/hD2/f/h2-3H2/i2D2</td>
-</tr>
-</tbody>
-</table>
+| InChI=1/CH4N2O/c2-1(3)4/h(H4,2,3,4)/i/hD2/f/h2-3H2/i2D2 |
+| :--- |
 
 **d. Stereochemical Layer (S)**
 -------------------------------
@@ -1971,38 +1157,12 @@ connects.
 Both systems assume that the narrow end of the bond is in the plane of
 the drawing. Figure 20 illustrates the difference.
 
-<table>
-<thead>
-<tr class="header">
-<th>Input structure</th>
-<th>Canonical numbering and sp<sup>3</sup> parities</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image140.wmf" style="width:1.30208in;height:0.80208in" /></td>
-<td><img src="./attachments/$myfilename/media/image141.wmf" style="width:1.26042in;height:0.875in" /></td>
-<td><img src="./attachments/$myfilename/media/image142.wmf" style="width:1.20833in;height:0.84375in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>(a) “perspective” system</td>
-<td>(b) Narrow end of wedge points to stereocenter (default)</td>
-</tr>
-<tr class="odd">
-<td><p>(a) InChI=1S/C4H10O2/c1-3(5)4(2)6/h3-6H,1-2H3/t3-,4-/m0/s1</p>
-<p>(b) InChI=1S/C4H10O2/c1-3(5)4(2)6/h3-6H,1-2H3/t3-,4?/m0/s1</p></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 20.</strong> Two systems of wedged/hatched bond interpretation</td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Input structure | Canonical numbering and sp<sup>3</sup> parities | |
+| :--- | :--- | :--- |
+| ![](./assets/png/image140.png) | ![](./assets/png/image141.png) | ![](./assets/png/image142.png) |
+| | (a) “perspective” system | (b) Narrow end of wedge points to stereocenter (default) |
+| (a) InChI=1S/C4H10O2/c1-3(5)4(2)6/h3-6H,1-2H3/t3-,4-/m0/s1<br>(b) InChI=1S/C4H10O2/c1-3(5)4(2)6/h3-6H,1-2H3/t3-,4?/m0/s1 | | |
+| **Figure 20.** Two systems of wedged/hatched bond interpretation | | |
 
 On Fig. 20, ‘(?)’ means not-given (‘undefined’) stereo, (-) is a
 well-defined parity (see next paragraph) calculated by InChI. The
@@ -2046,38 +1206,11 @@ double bonds capable of supporting *Z/E* isomerism employs pi-electron
 information derived from the input connection table along with atom
 coordinates.
 
-<table>
-<tbody>
-<tr class="odd">
-<td>Double bonds treated as possibly stereogenic</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image143.wmf" style="width:0.69792in;height:0.78125in" /></td>
-<td><img src="./attachments/$myfilename/media/image144.wmf" style="width:0.6875in;height:0.77083in" /></td>
-<td><img src="./attachments/$myfilename/media/image145.wmf" style="width:0.69792in;height:0.78125in" /></td>
-<td><img src="./attachments/$myfilename/media/image146.wmf" style="width:0.69792in;height:0.52083in" /></td>
-<td><img src="./attachments/$myfilename/media/image147.wmf" style="width:0.6875in;height:0.77083in" /></td>
-</tr>
-<tr class="odd">
-<td>Only one of two atoms connected by a possibly stereogenic double bond is shown</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 21</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Double bonds treated as possibly stereogenic | | | | |
+| :--- | :--- | :--- | :--- | :--- |
+| ![](./assets/png/image143.png) | ![](./assets/png/image144.png) | ![](./assets/png/image145.png) | ![](./assets/png/image146.png) | ![](./assets/png/image147.png) |
+| Only one of two atoms connected by a possibly stereogenic double bond is shown | | | | |
+| **Figure 21** | | | | |
 
 In alternating single/double bond cyclic systems, bond-finding
 algorithms determine whether a formal double bond can exist between each
@@ -2092,76 +1225,18 @@ reality one or both double bonds are in place of a single bond or a
 bond/charge resonance. The rules for stereogenic bond recognition are
 summarized in Table 7. Recognized stereogenic bonds are drawn in blue.
 
-<table>
-<tbody>
-<tr class="odd">
-<td><strong>Table 7.</strong> Stereogenic bonds in =N= fragments</td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>Input Fragment(s)</td>
-<td>Normalized Fragment</td>
-<td>Interpreted for Stereogenic bond detection as</td>
-</tr>
-<tr class="odd">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image148.wmf" style="width:0.97917in;height:0.63542in" /></td>
-<td><img src="./attachments/$myfilename/media/image149.wmf" style="width:0.97917in;height:0.63542in" /></td>
-<td><img src="./attachments/$myfilename/media/image150.wmf" style="width:0.97917in;height:0.63542in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td><img src="./attachments/$myfilename/media/image151.wmf" style="width:0.97917in;height:0.64583in" /></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image152.wmf" style="width:0.85417in;height:0.65625in" /></td>
-<td><img src="./attachments/$myfilename/media/image153.wmf" style="width:0.85417in;height:0.65625in" /></td>
-<td><img src="./attachments/$myfilename/media/image154.wmf" style="width:0.85417in;height:0.65625in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td><img src="./attachments/$myfilename/media/image155.wmf" style="width:0.85417in;height:0.65625in" /></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td><img src="./attachments/$myfilename/media/image156.wmf" style="width:1.22917in;height:0.71875in" /></td>
-<td><img src="./attachments/$myfilename/media/image157.wmf" style="width:1.22917in;height:0.71875in" /></td>
-<td>No stereobond detected</td>
-</tr>
-<tr class="even">
-<td></td>
-<td><img src="./attachments/$myfilename/media/image158.wmf" style="width:1.22917in;height:0.71875in" /></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>4</td>
-<td><img src="./attachments/$myfilename/media/image159.wmf" style="width:0.97917in;height:0.75in" /></td>
-<td><img src="./attachments/$myfilename/media/image160.wmf" style="width:0.97917in;height:0.73958in" /></td>
-<td><img src="./attachments/$myfilename/media/image161.wmf" style="width:1.21875in;height:0.9375in" /></td>
-</tr>
-<tr class="even">
-<td></td>
-<td><img src="./attachments/$myfilename/media/image162.wmf" style="width:0.97917in;height:0.73958in" /></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td></td>
-<td><img src="./attachments/$myfilename/media/image163.wmf" style="width:1.22917in;height:0.94792in" /></td>
-<td>No stereobond detected</td>
-</tr>
-</tbody>
-</table>
+| **Table 7.** Stereogenic bonds in =N= fragments | | | |
+| :--- | :--- | :--- | :--- |
+| | Input Fragment(s) | Normalized Fragment | Interpreted for Stereogenic bond detection as |
+| 1 | ![](./assets/png/image148.png) | ![](./assets/png/image149.png) | ![](./assets/png/image150.png) |
+| | ![](./assets/png/image151.png) | | |
+| 2 | ![](./assets/png/image152.png) | ![](./assets/png/image153.png) | ![](./assets/png/image154.png) |
+| | ![](./assets/png/image155.png) | | |
+| 3 | ![](./assets/png/image156.png) | ![](./assets/png/image157.png) | No stereobond detected |
+| | ![](./assets/png/image158.png) | | |
+| 4 | ![](./assets/png/image159.png) | ![](./assets/png/image160.png) | ![](./assets/png/image161.png) |
+| | ![](./assets/png/image162.png) | | |
+| 5 | | ![](./assets/png/image163.png) | No stereobond detected |
 
 In some structures, after fixing the location of a double bond,
 completion of alternating bonds in the remaining structure is not
@@ -2178,43 +1253,17 @@ the proposed simplification could not distinguish *Z*- from *E*-
 isomers. It, in effect, presumes that these species rapidly
 interconvert:
 
-<table>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image164.wmf" style="width:1.11458in;height:0.29167in" /></td>
-<td><img src="./attachments/$myfilename/media/image165.wmf" style="width:1.15625in;height:0.30208in" /></td>
-<td><img src="./attachments/$myfilename/media/image166.wmf" style="width:0.77083in;height:0.54167in" /></td>
-<td><img src="./attachments/$myfilename/media/image167.wmf" style="width:0.78125in;height:0.5625in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 22</strong></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image164.png) | ![](./assets/png/image165.png) | ![](./assets/png/image166.png) | ![](./assets/png/image167.png) |
+| :--- | :--- | :--- | :--- |
+| **Figure 22** | | | |
 
 This approximation allows the representation of stereoisomers that
 contain these uncertain stereo-bonds along with clearly-defined stereo
 features, such as:
 
-<table>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image168.wmf" style="width:1in;height:0.73958in" /></td>
-<td><img src="./attachments/$myfilename/media/image169.wmf" style="width:1.0625in;height:0.78125in" /></td>
-<td><img src="./attachments/$myfilename/media/image170.wmf" style="width:0.84375in;height:0.79167in" /></td>
-<td><img src="./attachments/$myfilename/media/image171.wmf" style="width:0.79167in;height:0.73958in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 23</strong></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image168.png) | ![](./assets/png/image169.png) | ![](./assets/png/image170.png) | ![](./assets/png/image171.png) |
+| :--- | :--- | :--- | :--- |
+| **Figure 23** | | | |
 
 These species would generate the same InChI.
 
@@ -2228,55 +1277,13 @@ Stereochemical descriptors will be processed for tetrahedral atoms such
 as C, Si and Ge. Currently InChI recognizes only the following atoms as
 capable of supporting sp<sup>3</sup> stereochemistry:
 
-<table>
-<tbody>
-<tr class="odd">
-<td><strong>Table 8.</strong> Atoms treated as possibly stereogenic</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image172.wmf" style="width:0.65625in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image173.wmf" style="width:0.66667in;height:0.66667in" /></td>
-<td><img src="./attachments/$myfilename/media/image174.wmf" style="width:0.70833in;height:0.70833in" /></td>
-<td><img src="./attachments/$myfilename/media/image175.wmf" style="width:0.67708in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image176.wmf" style="width:0.65625in;height:0.67708in" /></td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image177.wmf" style="width:0.65625in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image178.wmf" style="width:0.65625in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image179.wmf" style="width:0.66667in;height:0.66667in" /></td>
-<td><img src="./attachments/$myfilename/media/image180.wmf" style="width:0.64583in;height:0.69792in" /></td>
-<td><img src="./attachments/$myfilename/media/image181.wmf" style="width:0.63542in;height:0.6875in" /></td>
-</tr>
-<tr class="even">
-<td><img src="./attachments/$myfilename/media/image182.wmf" style="width:0.625in;height:0.6875in" /></td>
-<td><img src="./attachments/$myfilename/media/image183.wmf" style="width:0.66667in;height:0.65625in" /></td>
-<td><img src="./attachments/$myfilename/media/image184.wmf" style="width:0.52083in;height:0.57292in" /></td>
-<td><img src="./attachments/$myfilename/media/image185.wmf" style="width:0.52083in;height:0.59375in" /></td>
-<td><img src="./attachments/$myfilename/media/image186.wmf" style="width:0.64583in;height:0.61458in" /></td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image187.wmf" style="width:0.6875in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image188.wmf" style="width:0.6875in;height:0.65625in" /></td>
-<td><img src="./attachments/$myfilename/media/image189.wmf" style="width:0.48958in;height:0.59375in" /></td>
-<td><img src="./attachments/$myfilename/media/image190.wmf" style="width:0.55208in;height:0.5625in" /></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><p>An atom or positive ion <strong>N</strong>, <strong>P</strong>, <strong>As</strong>, <strong>S</strong>, or <strong>Se</strong> is not treated as stereogenic if it has</p>
-<p>(a) A terminal <strong>H</strong> atom neighbor or</p>
-<p>(b) At least two terminal neighbors, <strong>−XH<em><sub>m</sub></em></strong> and <strong>−XH<em><sub>n</sub></em></strong>, (<em>n</em>+<em>m</em>&gt;0) connected by any kind of bond, where <strong>X</strong> is <strong>O, S, Se, Te,</strong> or <strong>N</strong>.</p>
-<p>Since InChI Software v. 1.02-standard (2009), phosphines and arsines are always treated as stereogenic even with H atom neighbors.</p></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| **Table 8.** Atoms treated as possibly stereogenic | | | | |
+| :--- | :--- | :--- | :--- | :--- |
+| ![](./assets/png/image172.png) | ![](./assets/png/image173.png) | ![](./assets/png/image174.png) | ![](./assets/png/image175.png) | ![](./assets/png/image176.png) |
+| ![](./assets/png/image177.png) | ![](./assets/png/image178.png) | ![](./assets/png/image179.png) | ![](./assets/png/image180.png) | ![](./assets/png/image181.png) |
+| ![](./assets/png/image182.png) | ![](./assets/png/image183.png) | ![](./assets/png/image184.png) | ![](./assets/png/image185.png) | ![](./assets/png/image186.png) |
+| ![](./assets/png/image187.png) | ![](./assets/png/image188.png) | ![](./assets/png/image189.png) | ![](./assets/png/image190.png) | |
+| An atom or positive ion **N**, **P**, **As**, **S**, or **Se** is not treated as stereogenic if it has<br>(a) A terminal **H** atom neighbor or<br>(b) At least two terminal neighbors, **−XH*<sub>m</sub>*** and **−XH*<sub>n</sub>***, (*n*+*m*>0) connected by any kind of bond, where **X** is **O, S, Se, Te,** or **N**.<br>Since InChI Software v. 1.02-standard (2009), phosphines and arsines are always treated as stereogenic even with H atom neighbors. | | | | |
 
 The correctness of a drawing depicting stereogenic elements deserves
 special consideration. In InChI the following rules are used for
@@ -2284,129 +1291,23 @@ two-dimensional drawings:
 
 **Table 9.** Definition of 2D drawing correctness (4 ligands)
 
-<table>
-<thead>
-<tr class="header">
-<th>ok</th>
-<th>warning</th>
-<th>undefined</th>
-<th>ok</th>
-<th>ok</th>
-<th>ok</th>
-<th>ok</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image191.wmf" style="width:0.58333in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image192.wmf" style="width:0.58333in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image193.wmf" style="width:0.70833in;height:0.80208in" /></td>
-<td><img src="./attachments/$myfilename/media/image194.wmf" style="width:0.67708in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image195.wmf" style="width:0.6875in;height:0.6875in" /></td>
-<td><img src="./attachments/$myfilename/media/image196.wmf" style="width:0.6875in;height:0.6875in" /></td>
-<td><img src="./attachments/$myfilename/media/image197.wmf" style="width:0.66667in;height:0.66667in" /></td>
-</tr>
-<tr class="even">
-<td>undefined</td>
-<td>undef</td>
-<td>undefined</td>
-<td>ok</td>
-<td>warning</td>
-<td>ok</td>
-<td>warning</td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image198.wmf" style="width:0.67708in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image199.wmf" style="width:0.6875in;height:0.6875in" /></td>
-<td><img src="./attachments/$myfilename/media/image200.wmf" style="width:0.67708in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image201.wmf" style="width:0.6875in;height:0.6875in" /></td>
-<td><img src="./attachments/$myfilename/media/image202.wmf" style="width:0.8125in;height:0.65625in" /></td>
-<td><img src="./attachments/$myfilename/media/image203.wmf" style="width:0.67708in;height:0.67708in" /></td>
-<td><img src="./attachments/$myfilename/media/image204.wmf" style="width:0.67708in;height:0.67708in" /></td>
-</tr>
-<tr class="even">
-<td>undefined</td>
-<td>warn: bonds inside 180º sector (examples)</td>
-<td></td>
-<td>ok</td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image205.wmf" style="width:0.6875in;height:0.6875in" /></td>
-<td><img src="./attachments/$myfilename/media/image206.wmf" style="width:0.42708in;height:0.70833in" /></td>
-<td><img src="./attachments/$myfilename/media/image207.wmf" style="width:0.53125in;height:0.64583in" /></td>
-<td><img src="./attachments/$myfilename/media/image208.wmf" style="width:0.58333in;height:0.69792in" /></td>
-<td><img src="./attachments/$myfilename/media/image209.wmf" style="width:0.5625in;height:0.70833in" /></td>
-<td></td>
-<td><img src="./attachments/$myfilename/media/image210.wmf" style="width:0.71875in;height:0.63542in" /></td>
-</tr>
-</tbody>
-</table>
+| ok | warning | undefined | ok | ok | ok | ok |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| ![](./assets/png/image191.png) | ![](./assets/png/image192.png) | ![](./assets/png/image193.png) | ![](./assets/png/image194.png) | ![](./assets/png/image195.png) | ![](./assets/png/image196.png) | ![](./assets/png/image197.png) |
+| undefined | undef | undefined | ok | warning | ok | warning |
+| ![](./assets/png/image198.png) | ![](./assets/png/image199.png) | ![](./assets/png/image200.png) | ![](./assets/png/image201.png) | ![](./assets/png/image202.png) | ![](./assets/png/image203.png) | ![](./assets/png/image204.png) |
+| undefined | warn: bonds inside 180º sector (examples) | | ok | | | |
+| ![](./assets/png/image205.png) | ![](./assets/png/image206.png) | ![](./assets/png/image207.png) | ![](./assets/png/image208.png) | ![](./assets/png/image209.png) | | ![](./assets/png/image210.png) |
 
 **Table 10.** Definition of 2D drawing correctness (3 ligands)
 
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th>ok</th>
-<th>undefined</th>
-<th>ok</th>
-<th>undefined</th>
-<th>undefined</th>
-<th>undefined</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>input</td>
-<td><img src="./attachments/$myfilename/media/image211.wmf" style="width:0.67708in;height:0.60417in" /></td>
-<td><img src="./attachments/$myfilename/media/image212.wmf" style="width:0.67708in;height:0.40625in" /></td>
-<td><img src="./attachments/$myfilename/media/image213.wmf" style="width:0.67708in;height:0.40625in" /></td>
-<td><img src="./attachments/$myfilename/media/image214.wmf" style="width:0.54167in;height:0.4375in" /></td>
-<td><img src="./attachments/$myfilename/media/image215.wmf" style="width:0.66667in;height:0.59375in" /></td>
-<td><img src="./attachments/$myfilename/media/image216.wmf" style="width:0.35417in;height:0.55208in" /></td>
-</tr>
-<tr class="even">
-<td>interpre­ted as</td>
-<td><img src="./attachments/$myfilename/media/image217.wmf" style="width:0.67708in;height:0.64583in" /></td>
-<td><img src="./attachments/$myfilename/media/image218.wmf" style="width:0.64583in;height:0.69792in" /></td>
-<td><img src="./attachments/$myfilename/media/image219.wmf" style="width:0.625in;height:0.6875in" /></td>
-<td><img src="./attachments/$myfilename/media/image220.wmf" style="width:0.51042in;height:0.5625in" /></td>
-<td><img src="./attachments/$myfilename/media/image221.wmf" style="width:0.66667in;height:0.58333in" /></td>
-<td><img src="./attachments/$myfilename/media/image222.wmf" style="width:0.65625in;height:0.60417in" /></td>
-</tr>
-<tr class="odd">
-<td></td>
-<td>ok</td>
-<td>ok</td>
-<td>ok</td>
-<td>ok</td>
-<td>undefined</td>
-<td>undefined</td>
-</tr>
-<tr class="even">
-<td>input</td>
-<td><img src="./attachments/$myfilename/media/image223.wmf" style="width:0.67708in;height:0.61458in" /></td>
-<td><img src="./attachments/$myfilename/media/image224.wmf" style="width:0.39583in;height:0.53125in" /></td>
-<td><img src="./attachments/$myfilename/media/image225.wmf" style="width:0.42708in;height:0.54167in" /></td>
-<td><img src="./attachments/$myfilename/media/image226.wmf" style="width:0.38542in;height:0.65625in" /></td>
-<td><img src="./attachments/$myfilename/media/image227.wmf" style="width:0.375in;height:0.66667in" /></td>
-<td><img src="./attachments/$myfilename/media/image228.wmf" style="width:0.65625in;height:0.57292in" /></td>
-</tr>
-<tr class="odd">
-<td>interpre­ted as</td>
-<td><img src="./attachments/$myfilename/media/image229.wmf" style="width:0.67708in;height:0.59375in" /></td>
-<td><img src="./attachments/$myfilename/media/image230.wmf" style="width:0.67708in;height:0.58333in" /></td>
-<td><img src="./attachments/$myfilename/media/image231.wmf" style="width:0.67708in;height:0.55208in" /></td>
-<td><img src="./attachments/$myfilename/media/image232.wmf" style="width:0.61458in;height:0.61458in" /></td>
-<td><img src="./attachments/$myfilename/media/image233.wmf" style="width:0.5625in;height:0.61458in" /></td>
-<td><img src="./attachments/$myfilename/media/image234.wmf" style="width:0.65625in;height:0.58333in" /></td>
-</tr>
-</tbody>
-</table>
+| | ok | undefined | ok | undefined | undefined | undefined |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **input** | ![](./assets/png/image211.png) | ![](./assets/png/image212.png) | ![](./assets/png/image213.png) | ![](./assets/png/image214.png) | ![](./assets/png/image215.png) | ![](./assets/png/image216.png) |
+| **interpreted as** | ![](./assets/png/image217.png) | ![](./assets/png/image218.png) | ![](./assets/png/image219.png) | ![](./assets/png/image220.png) | ![](./assets/png/image221.png) | ![](./assets/png/image222.png) |
+| | **ok** | **ok** | **ok** | **ok** | **undefined** | **undefined** |
+| **input** | ![](./assets/png/image223.png) | ![](./assets/png/image224.png) | ![](./assets/png/image225.png) | ![](./assets/png/image226.png) | ![](./assets/png/image227.png) | ![](./assets/png/image228.png) |
+| **interpreted as** | ![](./assets/png/image229.png) | ![](./assets/png/image230.png) | ![](./assets/png/image231.png) | ![](./assets/png/image232.png) | ![](./assets/png/image233.png) | ![](./assets/png/image234.png) |
 
 The parity of a stereogenic atom is calculated as a volume of an
 oriented tetrahedron. A wide end of a wedge bond is lifted at an angle
@@ -2431,69 +1332,26 @@ unknown stereochemical descriptors can be employed (Figure 24 – left
 structure is absolute, the C-BrC2H stereocenter in the right structure
 is unknown):
 
-<table>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image235.wmf" style="width:1.14583in;height:0.91667in" /></td>
-<td><img src="./attachments/$myfilename/media/image236.wmf" style="width:1.15625in;height:0.88542in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 24</strong></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image235.png) | ![](./assets/png/image236.png) |
+| :--- | :--- |
+| **Figure 24** | |
 
 Representing relative stereochemistry of the whole structure is
 illustrated for tartaric acid in Fig 25, where it is known that the
 structure is described by either structure 1 or 2.
 
-<table>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>Structure</td>
-<td>Normalized Structure</td>
-<td>Canonical numbering and parities</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td><img src="./attachments/$myfilename/media/image237.wmf" style="width:1.125in;height:0.83333in" /></td>
-<td><img src="./attachments/$myfilename/media/image238.wmf" style="width:1.07292in;height:0.75in" /></td>
-<td><img src="./attachments/$myfilename/media/image239.wmf" style="width:1.33333in;height:0.97917in" /></td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td><img src="./attachments/$myfilename/media/image240.wmf" style="width:1.02083in;height:0.76042in" /></td>
-<td><img src="./attachments/$myfilename/media/image241.wmf" style="width:1.17708in;height:0.82292in" /></td>
-<td><img src="./attachments/$myfilename/media/image242.wmf" style="width:1.32292in;height:0.96875in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 25</strong></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| | Structure | Normalized Structure | Canonical numbering and parities |
+| :--- | :--- | :--- | :--- |
+| 1 | ![](./assets/png/image237.png) | ![](./assets/png/image238.png) | ![](./assets/png/image239.png) |
+| 2 | ![](./assets/png/image240.png) | ![](./assets/png/image241.png) | ![](./assets/png/image242.png) |
+| **Figure 25** | | | |
 
 The identifiers for these structures (case of absolute stereochemistry)
 are
 
-<table>
-<thead>
-<tr class="header">
-<th>1</th>
-<th><strong>InChI=1S/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/m1/s1</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>2</td>
-<td><strong>InChI=1S/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/m0/s1</strong></td>
-</tr>
-</tbody>
-</table>
+| 1 | **InChI=1S/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/m1/s1** |
+| :--- | :--- |
+| 2 | **InChI=1S/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/m0/s1** |
 
 InChI considers both enantiomers and selects the one that has the
 “smaller” identifier. /m0 signifies that the selected one has exactly
@@ -2505,20 +1363,9 @@ To identify relative stereochemistry the /m segment of the identifier is
 dropped. As the result the identifiers (case of relative
 stereochemistry) are the same:
 
-<table>
-<thead>
-<tr class="header">
-<th>1</th>
-<th><strong>InChI=1/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/s2</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>2</td>
-<td><strong>InChI=1/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/s2</strong></td>
-</tr>
-</tbody>
-</table>
+| 1 | **InChI=1/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/s2** |
+| :--- | :--- |
+| 2 | **InChI=1/C4H6O6/c5-1(3(7)8)2(6)4(9)10/h1-2,5-6H,(H,7,8)(H,9,10)/t1-,2-/s2** |
 
 /s2 means relative stereochemistry was requested.
 
@@ -2541,40 +1388,13 @@ up to current).
 Cumulenes are treated as double bonds. The following rules are used to
 recognize allenes and cumulenes:
 
-<table>
-<tbody>
-<tr class="odd">
-<td><strong>Cumulenes treated as possibly stereogenic</strong></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td>Terminal atoms</td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image143.wmf" style="width:0.69792in;height:0.78125in" /></td>
-<td><img src="./attachments/$myfilename/media/image144.wmf" style="width:0.6875in;height:0.77083in" /></td>
-<td><img src="./attachments/$myfilename/media/image145.wmf" style="width:0.69792in;height:0.78125in" /></td>
-</tr>
-<tr class="even">
-<td>Middle atoms</td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image243.wmf" style="width:0.875in;height:0.21875in" /></td>
-<td><img src="./attachments/$myfilename/media/image244.wmf" style="width:0.875in;height:0.21875in" /></td>
-<td><img src="./attachments/$myfilename/media/image245.wmf" style="width:0.875in;height:0.21875in" /></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 26</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| **Cumulenes treated as possibly stereogenic** |  |  |
+| :--- | :--- | :--- |
+| Terminal atoms |  |  |
+| ![](./assets/png/image143.png) | ![](./assets/png/image144.png) | ![](./assets/png/image145.png) |
+| Middle atoms |  |  |
+| ![](./assets/png/image243.png) | ![](./assets/png/image244.png) | ![](./assets/png/image245.png) |
+| **Figure 26** |  |  |
 
 Only cumulenes that have 3 double bonds and allenes that have 2 double
 bonds are treated as possibly stereogenic. Canonicalization of allene
@@ -2589,74 +1409,22 @@ switching its neighbors only its parity changed, from <sup>4</sup>4(‑)
 to <sup>4</sup>4(+) \[Fig. 27(c)\]. Therefore this atom is considered
 stereogenic.
 
-<table>
-<thead>
-<tr class="header">
-<th>Input structure</th>
-<th>Canonical numbering and sp<sup>3</sup> parities</th>
-<th>Numbering switched bet­ween atoms 1 and 2 and corresponding parities</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><img src="./attachments/$myfilename/media/image246.wmf" style="width:1.17708in;height:1.0625in" /></td>
-<td><img src="./attachments/$myfilename/media/image247.wmf" style="width:0.95833in;height:1.14583in" /></td>
-<td><img src="./attachments/$myfilename/media/image248.wmf" style="width:0.95833in;height:1.14583in" /></td>
-</tr>
-<tr class="even">
-<td><strong>(a)</strong></td>
-<td><strong>(b)</strong></td>
-<td><strong>(c)</strong></td>
-</tr>
-<tr class="odd">
-<td><p>(b) InChI =1/C6H12/c1-4-5(2)6(4)3/h4-6H,1-3H3/t4-,5-,6-</p>
-<p>(c) Switched =1/C6H12/c1-4-5(2)6(4)3/h4-6H,1-3H3/t4+,5-,6-</p></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 27.</strong> Switching neighbors of a possibly stereogenic atom</td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Input structure | Canonical numbering and sp<sup>3</sup> parities | Numbering switched bet­ween atoms 1 and 2 and corresponding parities |
+| :--- | :--- | :--- |
+| ![](./assets/png/image246.png) | ![](./assets/png/image247.png) | ![](./assets/png/image248.png) |
+| **(a)** | **(b)** | **(c)** |
+| (b) InChI =1/C6H12/c1-4-5(2)6(4)3/h4-6H,1-3H3/t4-,5-,6-<br>(c) Switched =1/C6H12/c1-4-5(2)6(4)3/h4-6H,1-3H3/t4+,5-,6- |  |  |
+| **Figure 27.** Switching neighbors of a possibly stereogenic atom |  |  |
 
 Another example of the same rule applied to stereogenic double bonds is
 on Fig. 28.
 
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th>Input structure</th>
-<th>Canonical numbering and double bond parities</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>(a)</td>
-<td><img src="./attachments/$myfilename/media/image249.wmf" style="width:1.29167in;height:0.875in" /></td>
-<td><img src="./attachments/$myfilename/media/image250.wmf" style="width:1.32292in;height:1.09375in" /></td>
-</tr>
-<tr class="even">
-<td>(b)</td>
-<td><img src="./attachments/$myfilename/media/image251.wmf" style="width:1.08333in;height:1.14583in" /></td>
-<td><img src="./attachments/$myfilename/media/image252.wmf" style="width:1.07292in;height:1.25in" /></td>
-</tr>
-<tr class="odd">
-<td><p>(a) InChI=1S/C9H12/c1-4-7-8(5-2)9(7)6-3/h4-6H,1-3H3/b7-4-,8-5-,9-6-</p>
-<p>(b) InChI=1S/C9H12/c1-4-7-8(5-2)9(7)6-3/h4-6H,1-3H3/b7-4-,8-5+,9-6-</p></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 28</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+|  | Input structure | Canonical numbering and double bond parities |
+| :--- | :--- | :--- |
+| (a) | ![](./assets/png/image249.png) | ![](./assets/png/image250.png) |
+| (b) | ![](./assets/png/image251.png) | ![](./assets/png/image252.png) |
+| (a) InChI=1S/C9H12/c1-4-7-8(5-2)9(7)6-3/h4-6H,1-3H3/b7-4-,8-5-,9-6-<br>(b) InChI=1S/C9H12/c1-4-7-8(5-2)9(7)6-3/h4-6H,1-3H3/b7-4-,8-5+,9-6- |  |  |
+| **Figure 28** |  |  |
 
 This (as well as Fig. 27) illustrates the limitation in using parities
 to mark individual stereogenic atoms or bonds and application of the
@@ -2698,32 +1466,11 @@ always assigned and is always (‑),this is not a limitation of the InChI:
 the purpose of InChI is to provide an identifier, and not to reveal the
 true stereochemistry of the submitted structure.
 
-<table>
-<thead>
-<tr class="header">
-<th><img src="./attachments/$myfilename/media/image253.wmf" style="width:1.30208in;height:1.29167in" /></th>
-<th><img src="./attachments/$myfilename/media/image254.wmf" style="width:1.26042in;height:1.26042in" /></th>
-<th><img src="./attachments/$myfilename/media/image255.wmf" style="width:1.29167in;height:1.34375in" /></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Structure (a)</td>
-<td>Structure (b)</td>
-<td>Canonical numbering</td>
-</tr>
-<tr class="even">
-<td>InChI=1S/C13H20/c1-2-10-5-6-12-8-7-11-4-3-9(1)13(10,11)12/h9-12H,1-8H2/t9-,10-,11+,12+,13-</td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td><strong>Figure 29</strong></td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| ![](./assets/png/image253.png) | ![](./assets/png/image254.png) | ![](./assets/png/image255.png) |
+| :--- | :--- | :--- |
+| Structure (a) | Structure (b) | Canonical numbering |
+| InChI=1S/C13H20/c1-2-10-5-6-12-8-7-11-4-3-9(1)13(10,11)12/h9-12H,1-8H2/t9-,10-,11+,12+,13- |  |  |
+| **Figure 29** |  |  |
 
 C<sub>2v</sub> and S<sub>4</sub> examples can easily be obtained from
 the structure on Fig. 29 by isotopic substitution or adding 2 or 4
@@ -2755,6 +1502,8 @@ This makes splitting the identifier into layers meaningful. Fig. 30
 shows the canonicalization flowchart. As can be seen, the first layer of
 the Identifier is actually a hydrogenless chemical formula and
 connections (including bridging hydrogen atoms).
+
+**Figure 30.** Canonicalization order flowchart (except stereochemistry)
 
 Notes.
 
@@ -3057,30 +1806,10 @@ closely follow Molfile data layout.
 -   For copolymers, use the representations with disconnected CRUs (I
     not II below).
 
-<table>
-<thead>
-<tr class="header">
-<th></th>
-<th>Correct<br />
-(disconnected presentation of copolymer, all CRUs are in brackets, star atom connections in component CRU)</th>
-<th>I</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td><p>Incorrect</p>
-<p>(connected presentation of copolymer, mix of star atom and specific end group in connections of same CRU)</p></td>
-<td>II</td>
-</tr>
-<tr class="even">
-<td></td>
-<td><p>v. 1.05: Incorrect (considered as structure-based represenation of copolymer with missing brackets at the two CRU’s).</p>
-<p>v. 1.06: correct if <em>NPZZ</em> option active. Considered as source-based presentation of copolymer of the monomers which contain pseudo element atoms.</p></td>
-<td>III</td>
-</tr>
-</tbody>
-</table>
+|  | Correct<br>(disconnected presentation of copolymer, all CRUs are in brackets, star atom connections in component CRU) | I |
+| :--- | :--- | :--- |
+|  | Incorrect<br>(connected presentation of copolymer, mix of star atom and specific end group in connections of same CRU) | II |
+|  | v. 1.05: Incorrect (considered as structure-based represenation of copolymer with missing brackets at the two CRU’s).<br>v. 1.06: correct if *NPZZ* option active. Considered as source-based presentation of copolymer of the monomers which contain pseudo element atoms. | III |
 
  g. Zz (star, pseudo element) atoms
 ----------------------------------
@@ -3130,13 +1859,9 @@ emphasize this, appearance of Zz atoms, both in non-polymer and polymer
 context, is considered experimental feature and corresponding InChI
 receives prefix "InChI=1B".
 
-<table>
-<tbody>
-<tr class="odd">
-<td></td>
-</tr>
-</tbody>
-</table>
+|  |
+| :--- |
+|  |
 
  **V. HASHED REPRESENTATION (InChIKey)**
 =======================================
@@ -3245,115 +1970,26 @@ Here
 
 The exact layout is presented below:
 
-<table>
-<thead>
-<tr class="header">
-<th>Char</th>
-<th>Protons</th>
-<th>Char</th>
-<th>Protons</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>N</td>
-<td>0</td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td>M</td>
-<td>-1</td>
-<td>O</td>
-<td>+1</td>
-</tr>
-<tr class="odd">
-<td>L</td>
-<td>-2</td>
-<td>P</td>
-<td>+2</td>
-</tr>
-<tr class="even">
-<td>K</td>
-<td>-3</td>
-<td>Q</td>
-<td>+3</td>
-</tr>
-<tr class="odd">
-<td>J</td>
-<td>-4</td>
-<td>R</td>
-<td>+4</td>
-</tr>
-<tr class="even">
-<td>I</td>
-<td>-5</td>
-<td>S</td>
-<td>+5</td>
-</tr>
-<tr class="odd">
-<td>H</td>
-<td>-6</td>
-<td>T</td>
-<td>+6</td>
-</tr>
-<tr class="even">
-<td>G</td>
-<td>-7</td>
-<td>U</td>
-<td>+7</td>
-</tr>
-<tr class="odd">
-<td>F</td>
-<td>-8</td>
-<td>V</td>
-<td>+8</td>
-</tr>
-<tr class="even">
-<td>E</td>
-<td>-9</td>
-<td>W</td>
-<td>+9</td>
-</tr>
-<tr class="odd">
-<td>D</td>
-<td>-10</td>
-<td>X</td>
-<td>+10</td>
-</tr>
-<tr class="even">
-<td>C</td>
-<td>-11</td>
-<td>Y</td>
-<td>+11</td>
-</tr>
-<tr class="odd">
-<td>B</td>
-<td>-12</td>
-<td>Z</td>
-<td>+12</td>
-</tr>
-<tr class="even">
-<td>A</td>
-<td>&lt; -12 or &gt; +12</td>
-<td></td>
-<td></td>
-</tr>
-</tbody>
-</table>
+| Char | Protons | Char | Protons |
+| :--- | :--- | :--- | :--- |
+| N | 0 |  |  |
+| M | -1 | O | +1 |
+| L | -2 | P | +2 |
+| K | -3 | Q | +3 |
+| J | -4 | R | +4 |
+| I | -5 | S | +5 |
+| H | -6 | T | +6 |
+| G | -7 | U | +7 |
+| F | -8 | V | +8 |
+| E | -9 | W | +9 |
+| D | -10 | X | +10 |
+| C | -11 | Y | +11 |
+| B | -12 | Z | +12 |
+| A | < -12 or > +12 |  |  |
 
 An example (standard) InChIKey is shown below.
 
-<table>
-<tbody>
-<tr class="odd">
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 31.</strong> Standard InChIKey for caffeine.</td>
-</tr>
-</tbody>
-</table>
+**Figure 31.** Standard InChIKey for caffeine.
 
 InChIKey inherits some layered structure from InChI. The first block is
 always the same for the same molecular skeleton. All isotopic
@@ -3377,16 +2013,7 @@ standard InChI strings for neutral, zwitterionic, anionic and cationic
 states of glycine (its neutral and zwitterionic states do not differ in
 total number of protons so they have the same InChI/InChIKey):
 
-<table>
-<tbody>
-<tr class="odd">
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 32</strong></td>
-</tr>
-</tbody>
-</table>
+**Figure 32**
 
 c. Hash calculation and collision resistance
 --------------------------------------------
@@ -3463,16 +2090,7 @@ molecule (one of stereoisomers is shown below, Figure 33) has 24
 tetrahedral stereocenters and 2 stereogenic double bonds – that is, far
 beyond the capacity of InChIKey’s 2<sup>nd</sup> block hash.
 
-<table>
-<tbody>
-<tr class="odd">
-<td></td>
-</tr>
-<tr class="even">
-<td><strong>Figure 33</strong></td>
-</tr>
-</tbody>
-</table>
+**Figure 33**
 
 A full exploration of Spongistatin I stereoisomers and corresponding
 InChIKeys was performed by generating stereoisomers and computing their
@@ -3485,83 +2103,21 @@ numbers of non-unique InChIKeys vs. theoretical estimate for number of
 collisions (doublets).** For the observed values the number of samplings
 used for averaging is given in parentheses.
 
-<table>
-<thead>
-<tr class="header">
-<th><strong>Number of isomers in dataset</strong></th>
-<th><strong>Number of non-unique keys, found</strong></th>
-<th><strong>Theor. number of collisions (doublets)</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>50,000</td>
-<td>0.006 (500)</td>
-<td>0.009</td>
-</tr>
-<tr class="even">
-<td>100,000</td>
-<td>0.024 (250)</td>
-<td>0.036</td>
-</tr>
-<tr class="odd">
-<td>250,000</td>
-<td>0.13 (100)</td>
-<td>0.23</td>
-</tr>
-<tr class="even">
-<td>370,000</td>
-<td>0.51 (100)</td>
-<td>0.50</td>
-</tr>
-<tr class="odd">
-<td>500,000</td>
-<td>0.90 (100)</td>
-<td>0.91</td>
-</tr>
-<tr class="even">
-<td>1,000,000</td>
-<td>3.6 (50)</td>
-<td>3.6</td>
-</tr>
-<tr class="odd">
-<td>2,000,000</td>
-<td>14.4 (50)</td>
-<td>14.6</td>
-</tr>
-<tr class="even">
-<td>3,000,000</td>
-<td>33.1 (50)</td>
-<td>32.7</td>
-</tr>
-<tr class="odd">
-<td>4,000,000</td>
-<td>59.2 (50)</td>
-<td>58.2</td>
-</tr>
-<tr class="even">
-<td>8,000,000</td>
-<td>234.2 (50)</td>
-<td>232.8</td>
-</tr>
-<tr class="odd">
-<td>16,000,000</td>
-<td>928.9 (40)</td>
-<td>931.3</td>
-</tr>
-<tr class="even">
-<td>32,000,000</td>
-<td>3753.1 (30)</td>
-<td>3725.3</td>
-</tr>
-<tr class="odd">
-<td>67,108,864<br />
-(full set of 2<sup>26</sup> isomers)</td>
-<td>16565*</td>
-<td>16384</td>
-</tr>
-</tbody>
-</table>
+| **Number of isomers in dataset** | **Number of non-unique keys, found** | **Theor. number of collisions (doublets)** |
+| :--- | :--- | :--- |
+| 50,000 | 0.006 (500) | 0.009 |
+| 100,000 | 0.024 (250) | 0.036 |
+| 250,000 | 0.13 (100) | 0.23 |
+| 370,000 | 0.51 (100) | 0.50 |
+| 500,000 | 0.90 (100) | 0.91 |
+| 1,000,000 | 3.6 (50) | 3.6 |
+| 2,000,000 | 14.4 (50) | 14.6 |
+| 3,000,000 | 33.1 (50) | 32.7 |
+| 4,000,000 | 59.2 (50) | 58.2 |
+| 8,000,000 | 234.2 (50) | 232.8 |
+| 16,000,000 | 928.9 (40) | 931.3 |
+| 32,000,000 | 3753.1 (30) | 3725.3 |
+| 67,108,864<br>(full set of 2<sup>26</sup> isomers) | 16565* | 16384 |
 
 \* All collisions are double except for 2 triplets
 
@@ -3576,83 +2132,21 @@ number of collisions (doublets).**
 For the observed values the number of samplings used for averaging is
 given in parentheses.
 
-<table>
-<thead>
-<tr class="header">
-<th><strong>Number of isomers in dataset</strong></th>
-<th><strong>Number of non-unique keys, found</strong></th>
-<th><em><strong>Theor. number of collisions (doublets)</strong></em></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>50,000</td>
-<td>0.016 (500)</td>
-<td><em>0.009</em></td>
-</tr>
-<tr class="even">
-<td>100,000</td>
-<td>0.064 (250)</td>
-<td><em>0.036</em></td>
-</tr>
-<tr class="odd">
-<td>250,000</td>
-<td>0.29 (100)</td>
-<td><em>0.23</em></td>
-</tr>
-<tr class="even">
-<td>370,000</td>
-<td>0.56 (100)</td>
-<td><em>0.50</em></td>
-</tr>
-<tr class="odd">
-<td>500,000</td>
-<td>0.96 (100)</td>
-<td><em>0.91</em></td>
-</tr>
-<tr class="even">
-<td>1,000,000</td>
-<td>3.7 (50)</td>
-<td><em>3.6</em></td>
-</tr>
-<tr class="odd">
-<td>2,000,000</td>
-<td>14.9 (50)</td>
-<td><em>14.6</em></td>
-</tr>
-<tr class="even">
-<td>3,000,000</td>
-<td>33.2 (50)</td>
-<td><em>32.7</em></td>
-</tr>
-<tr class="odd">
-<td>4,000,000</td>
-<td>58.0 (50)</td>
-<td><em>58.2</em></td>
-</tr>
-<tr class="even">
-<td>8,000,000</td>
-<td>231.2 (50)</td>
-<td><em>232.8</em></td>
-</tr>
-<tr class="odd">
-<td>16,000,000</td>
-<td>930.5 (40)</td>
-<td><em>931.3</em></td>
-</tr>
-<tr class="even">
-<td>32,000,000</td>
-<td>3702.1 (30)</td>
-<td><em>3725.3</em></td>
-</tr>
-<tr class="odd">
-<td><em>67,108,864<br />
-(full set of 2<sup>26</sup> isomers)</em></td>
-<td><em>16328*</em></td>
-<td><em>16384</em></td>
-</tr>
-</tbody>
-</table>
+| **Number of isomers in dataset** | **Number of non-unique keys, found** | *<strong>Theor. number of collisions (doublets)</strong>* |
+| :--- | :--- | :--- |
+| 50,000 | 0.016 (500) | *0.009* |
+| 100,000 | 0.064 (250) | *0.036* |
+| 250,000 | 0.29 (100) | *0.23* |
+| 370,000 | 0.56 (100) | *0.50* |
+| 500,000 | 0.96 (100) | *0.91* |
+| 1,000,000 | 3.7 (50) | *3.6* |
+| 2,000,000 | 14.9 (50) | *14.6* |
+| 3,000,000 | 33.2 (50) | *32.7* |
+| 4,000,000 | 58.0 (50) | *58.2* |
+| 8,000,000 | 231.2 (50) | *232.8* |
+| 16,000,000 | 930.5 (40) | *931.3* |
+| 32,000,000 | 3702.1 (30) | *3725.3* |
+| *67,108,864<br>(full set of 2<sup>26</sup> isomers)* | *16328** | *16384* |
 
 \* All collisions are double except for 2 triplets
 
