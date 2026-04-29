@@ -30,7 +30,6 @@ jobs:
       - name: Test for unit test regression
         run: |
           set -euo pipefail
-
           cd CMake_build/coverage_build
 
           BASE_SUMMARY_URL="https://iupac-inchi.github.io/InChI/coverage/summary.txt"
@@ -56,61 +55,57 @@ jobs:
             ' "$file"
           }
 
-          PROBLEMS=()
+          parse_metrics() {
+            local prefix="$1"
+            local file="$2"
+            local parse_error="$3"
+            local lines branches
 
+            lines="$(extract_pct lines "$file")"
+            branches="$(extract_pct branches "$file")"
+
+            if [[ -n "$lines" && -n "$branches" ]]; then
+              printf -v "${prefix}_LINES" '%s' "$lines"
+              printf -v "${prefix}_BRANCHES" '%s' "$branches"
+              printf -v "${prefix}_AVAILABLE" 'true'
+            else
+              PROBLEMS+=("$parse_error")
+            fi
+          }
+
+          pct_diff() { awk -v pr="$1" -v base="$2" 'BEGIN {printf "%+.2f", pr-base}'; }
+          is_lt() { awk -v pr="$1" -v base="$2" 'BEGIN {exit !(pr < base)}'; }
+
+          PROBLEMS=()
           PR_AVAILABLE=false
+          BASE_AVAILABLE=false
           PR_LINES=""
           PR_BRANCHES=""
+          BASE_LINES=""
+          BASE_BRANCHES=""
 
-          if lcov --summary coverage.lcov \
-            --branch-coverage \
-            --ignore-errors inconsistent > "$PR_SUMMARY_FILE"; then
-            PR_LINES="$(extract_pct lines "$PR_SUMMARY_FILE")"
-            PR_BRANCHES="$(extract_pct branches "$PR_SUMMARY_FILE")"
-
-            if [[ -n "$PR_LINES" && -n "$PR_BRANCHES" ]]; then
-              PR_AVAILABLE=true
-            else
-              PROBLEMS+=("Unable to parse PR coverage metrics from $PR_SUMMARY_FILE")
-            fi
+          if lcov --summary coverage.lcov --branch-coverage --ignore-errors inconsistent > "$PR_SUMMARY_FILE"; then
+            parse_metrics PR "$PR_SUMMARY_FILE" "Unable to parse PR coverage metrics from $PR_SUMMARY_FILE"
           else
             PROBLEMS+=("Unable to generate PR coverage summary from coverage.lcov")
           fi
 
-          BASE_AVAILABLE=false
-          BASE_LINES=""
-          BASE_BRANCHES=""
-
           if curl -fsSL --max-time 10 "$BASE_SUMMARY_URL" -o "$BASE_SUMMARY_FILE"; then
-            BASE_LINES="$(extract_pct lines "$BASE_SUMMARY_FILE")"
-            BASE_BRANCHES="$(extract_pct branches "$BASE_SUMMARY_FILE")"
-
-            if [[ -n "$BASE_LINES" && -n "$BASE_BRANCHES" ]]; then
-              BASE_AVAILABLE=true
-            else
-              PROBLEMS+=("Base summary fetched, but required metrics were incomplete")
-            fi
+            parse_metrics BASE "$BASE_SUMMARY_FILE" "Base summary fetched, but required metrics were incomplete"
           else
             PROBLEMS+=("Base summary fetch failed from $BASE_SUMMARY_URL")
           fi
 
-          PR_LINES_DISPLAY="N/A"
-          PR_BRANCHES_DISPLAY="N/A"
-          BASE_LINES_DISPLAY="N/A"
-          BASE_BRANCHES_DISPLAY="N/A"
+          PR_LINES_DISPLAY="${PR_LINES:-N/A}"
+          PR_BRANCHES_DISPLAY="${PR_BRANCHES:-N/A}"
+          BASE_LINES_DISPLAY="${BASE_LINES:-N/A}"
+          BASE_BRANCHES_DISPLAY="${BASE_BRANCHES:-N/A}"
           DIFF_LINES="N/A"
           DIFF_BRANCHES="N/A"
 
-          if [[ "$PR_AVAILABLE" == true ]]; then
-            PR_LINES_DISPLAY="$PR_LINES"
-            PR_BRANCHES_DISPLAY="$PR_BRANCHES"
-          fi
-
           if [[ "$PR_AVAILABLE" == true && "$BASE_AVAILABLE" == true ]]; then
-            BASE_LINES_DISPLAY="$BASE_LINES"
-            BASE_BRANCHES_DISPLAY="$BASE_BRANCHES"
-            DIFF_LINES="$(awk -v pr="$PR_LINES" -v base="$BASE_LINES" 'BEGIN {printf "%+.2f", pr-base}')"
-            DIFF_BRANCHES="$(awk -v pr="$PR_BRANCHES" -v base="$BASE_BRANCHES" 'BEGIN {printf "%+.2f", pr-base}')"
+            DIFF_LINES="$(pct_diff "$PR_LINES" "$BASE_LINES")"
+            DIFF_BRANCHES="$(pct_diff "$PR_BRANCHES" "$BASE_BRANCHES")"
           fi
 
           {
@@ -124,9 +119,7 @@ jobs:
               echo
               echo "### Problems"
               echo
-              for problem in "${PROBLEMS[@]}"; do
-                echo "- ${problem}"
-              done
+              printf -- "- %s\n" "${PROBLEMS[@]}"
             fi
             echo
             echo "Find details on the base coverage at https://iupac-inchi.github.io/InChI/coverage/index.html"
@@ -138,11 +131,11 @@ jobs:
           fi
 
           FAIL=false
-          if awk -v pr="$PR_LINES" -v base="$BASE_LINES" 'BEGIN {exit !(pr < base)}'; then
+          if is_lt "$PR_LINES" "$BASE_LINES"; then
             echo "Line coverage regression: ${PR_LINES}% < base ${BASE_LINES}%"
             FAIL=true
           fi
-          if awk -v pr="$PR_BRANCHES" -v base="$BASE_BRANCHES" 'BEGIN {exit !(pr < base)}'; then
+          if is_lt "$PR_BRANCHES" "$BASE_BRANCHES"; then
             echo "Branch coverage regression: ${PR_BRANCHES}% < base ${BASE_BRANCHES}%"
             FAIL=true
           fi
