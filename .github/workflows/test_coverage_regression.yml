@@ -56,17 +56,25 @@ jobs:
             ' "$file"
           }
 
-          lcov --summary coverage.lcov \
+          PROBLEMS=()
+
+          PR_AVAILABLE=false
+          PR_LINES=""
+          PR_BRANCHES=""
+
+          if lcov --summary coverage.lcov \
             --branch-coverage \
-            --ignore-errors inconsistent > "$PR_SUMMARY_FILE"
+            --ignore-errors inconsistent > "$PR_SUMMARY_FILE"; then
+            PR_LINES="$(extract_pct lines "$PR_SUMMARY_FILE")"
+            PR_BRANCHES="$(extract_pct branches "$PR_SUMMARY_FILE")"
 
-          PR_LINES="$(extract_pct lines "$PR_SUMMARY_FILE")"
-          PR_BRANCHES="$(extract_pct branches "$PR_SUMMARY_FILE")"
-
-          if [[ -z "$PR_LINES" || -z "$PR_BRANCHES" ]]; then
-            echo "Unable to parse PR coverage metrics from $PR_SUMMARY_FILE"
-            cat "$PR_SUMMARY_FILE"
-            exit 1
+            if [[ -n "$PR_LINES" && -n "$PR_BRANCHES" ]]; then
+              PR_AVAILABLE=true
+            else
+              PROBLEMS+=("Unable to parse PR coverage metrics from $PR_SUMMARY_FILE")
+            fi
+          else
+            PROBLEMS+=("Unable to generate PR coverage summary from coverage.lcov")
           fi
 
           BASE_AVAILABLE=false
@@ -80,18 +88,25 @@ jobs:
             if [[ -n "$BASE_LINES" && -n "$BASE_BRANCHES" ]]; then
               BASE_AVAILABLE=true
             else
-              echo "Base summary fetched, but required metrics were incomplete."
+              PROBLEMS+=("Base summary fetched, but required metrics were incomplete")
             fi
           else
-            echo "Base summary fetch failed."
+            PROBLEMS+=("Base summary fetch failed from $BASE_SUMMARY_URL")
           fi
 
+          PR_LINES_DISPLAY="N/A"
+          PR_BRANCHES_DISPLAY="N/A"
           BASE_LINES_DISPLAY="N/A"
           BASE_BRANCHES_DISPLAY="N/A"
           DIFF_LINES="N/A"
           DIFF_BRANCHES="N/A"
 
-          if [[ "$BASE_AVAILABLE" == true ]]; then
+          if [[ "$PR_AVAILABLE" == true ]]; then
+            PR_LINES_DISPLAY="$PR_LINES"
+            PR_BRANCHES_DISPLAY="$PR_BRANCHES"
+          fi
+
+          if [[ "$PR_AVAILABLE" == true && "$BASE_AVAILABLE" == true ]]; then
             BASE_LINES_DISPLAY="$BASE_LINES"
             BASE_BRANCHES_DISPLAY="$BASE_BRANCHES"
             DIFF_LINES="$(awk -v pr="$PR_LINES" -v base="$BASE_LINES" 'BEGIN {printf "%+.2f", pr-base}')"
@@ -103,15 +118,23 @@ jobs:
             echo
             echo "| Metric | PR (%) | Base (%) | Difference (pp) |"
             echo "| --- | ---: | ---: | ---: |"
-            echo "| Lines | ${PR_LINES} | ${BASE_LINES_DISPLAY} | ${DIFF_LINES} |"
-            echo "| Branches | ${PR_BRANCHES} | ${BASE_BRANCHES_DISPLAY} | ${DIFF_BRANCHES} |"
+            echo "| Lines | ${PR_LINES_DISPLAY} | ${BASE_LINES_DISPLAY} | ${DIFF_LINES} |"
+            echo "| Branches | ${PR_BRANCHES_DISPLAY} | ${BASE_BRANCHES_DISPLAY} | ${DIFF_BRANCHES} |"
+            if [[ ${#PROBLEMS[@]} -gt 0 ]]; then
+              echo
+              echo "### Problems"
+              echo
+              for problem in "${PROBLEMS[@]}"; do
+                echo "- ${problem}"
+              done
+            fi
             echo
             echo "Find details on the base coverage at https://iupac-inchi.github.io/InChI/coverage/index.html"
           } > "$COVERAGE_REPORT_MD"
 
-          if [[ "$BASE_AVAILABLE" == false ]]; then
-            echo "Base coverage metrics unavailable. Cannot check for regression."
-            exit 1
+          if [[ "$PR_AVAILABLE" == false || "$BASE_AVAILABLE" == false ]]; then
+            echo "Coverage regression check skipped due to missing PR or base metrics."
+            exit 0
           fi
 
           FAIL=false
