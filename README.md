@@ -8,6 +8,7 @@
 [![InChI - Web Demo](https://img.shields.io/badge/InChI-Web_Demo-2ea44f)](https://iupac-inchi.github.io/InChI-Web-Demo/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/32621/badge.svg)](https://scan.coverity.com/projects/inchi)
 [![OSS-Fuzz Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/inchi.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=inchi)
+[![SourceForge Issues](https://img.shields.io/badge/SourceForge-Issues-orange?logo=sourceforge)](https://sourceforge.net/p/inchi/_list/tickets/)
 
 <img src="./INCHI-1-DOC/assets/inchi-wheel.png" width="300" height="300" />
 
@@ -57,6 +58,10 @@ If you encounter a bug, we kindly request you to [create an issue](https://githu
 You are welcome to contribute to this project. To do so, you may [submit a pull request](https://github.com/IUPAC-InChI/InChI/pulls):
 
 ![git-flow](./INCHI-1-DOC/assets/git_flow.svg)
+
+## Legacy SourceForge tickets
+
+Prior to the migration to GitHub, bug reports and feature requests for InChI were tracked on SourceForge. The archive of these old tickets is available at the [InChI SourceForge issue tracker](https://sourceforge.net/p/inchi/_list/tickets/) and may be useful as a historical reference. Please use the [GitHub issue tracker](https://github.com/IUPAC-InChI/InChI/issues) for new reports.
 
 ## Source code documentation
 
