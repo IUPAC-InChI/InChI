@@ -7,6 +7,7 @@
 [![Good reads](https://img.shields.io/badge/Goodreads-372213?style=flat&logo=goodreads&logoColor=white)](https://www.inchi-trust.org/inchi-overview-papers-presentations/?wpv_aux_current_post_id=4309&wpv_aux_parent_post_id=4309&wpv_view_count=4473)
 [![InChI - Web Demo](https://img.shields.io/badge/InChI-Web_Demo-2ea44f)](https://iupac-inchi.github.io/InChI-Web-Demo/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/32621/badge.svg)](https://scan.coverity.com/projects/inchi)
+[![OSS-Fuzz Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/inchi.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=inchi)
 
 <img src="./INCHI-1-DOC/assets/inchi-wheel.png" width="300" height="300" />
 
@@ -86,6 +87,16 @@ For details see <https://www.doxygen.nl/manual>.
 
 The documentation is [built on every push](.github/workflows/deploy_docs.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/>.
 That is, your comments will automatically be rendered to HTML and served as online documentation.
+
+## Code quality
+
+### Coverity static analysis
+
+InChI is integrated into [Coverity Scan](https://scan.coverity.com/projects/inchi) for continuous static analysis.
+
+### OSS-Fuzz continuous fuzzing
+
+InChI is integrated into [Google OSS-Fuzz](https://github.com/google/oss-fuzz/tree/master/projects/inchi), which runs continuous fuzz testing against the library. Fuzzing-related bugs are tracked at the [OSS-Fuzz issue tracker](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=inchi).
 
 ## Contents of this repository
 
