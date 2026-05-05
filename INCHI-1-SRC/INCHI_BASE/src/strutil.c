@@ -7102,6 +7102,159 @@ int invert_parities(const INChI *inchi,
     return 0;
 }
 
+int cmp_AT_NUMB(const void *a1, const void *a2)
+{
+    AT_NUMB n1 = *(const AT_NUMB *)a1;
+    AT_NUMB n2 = *(const AT_NUMB *)a2;
+
+    return (int)n1 - (int)n2;
+}
+
+/**
+ * @brief Set t- and m-layers object for atropisomer stereochemistry
+ *
+ * @param orig_inp_data Pointer to original input atom data
+ * @param inchi Pointer to INChI structure
+ * @param aux Pointer to INChI auxiliary data
+ * @return int
+ */
+int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+                                const INChI *inchi,
+                                const INChI_Aux *aux)
+{
+    int ret = 0;
+
+    if (orig_inp_data == NULL)
+    {
+        return ret;
+    }
+
+    if (inchi == NULL || aux == NULL)
+    {
+        return ret;
+    }
+
+    if (aux->nOrigAtNosInCanonOrd == NULL ||
+        aux->nNumberOfAtoms <= 0) {
+        return ret;
+    }
+
+    //TODO
+    // - t layer parities for atropisomers
+    //    -> t-parity[atom] = 1 (-)
+    //    -> should parity be set to (+) ???
+    // - m layer for atropisomers
+    //    -> enantiomeric atropisomers: m1 (inchi->Stereo->nCompInv2Abs = -1; //m1) (are mirror images)
+    //    -> diastereomeric atropisomers: m0 (inchi->Stereo->nCompInv2Abs = 1; //m0) ???
+    //        -> rules?
+
+    if (orig_inp_data->bAtropisomer) {
+        // printf(">>>>> TODO set t- and m-layers for atropisomers\n");
+
+        for (int i = 0; i < orig_inp_data->num_inp_atoms; i++) {
+            if (orig_inp_data->at[i].bAtropisomeric) {
+
+                // printf("atom id %d, is_atropisomer %d\n", i + 1, orig_inp_data->at[i].bAtropisomeric);
+
+                AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, i + 1);
+                int parity_idx = get_parity_idx_from_canonical_atom_number(canon_atom_num,
+                                                                           inchi->Stereo->nNumber,
+                                                                           inchi->Stereo->nNumberOfStereoCenters);
+                if (parity_idx == -1) {
+                    parity_idx = inchi->Stereo->nNumberOfStereoCenters;
+                    inchi->Stereo->nNumberOfStereoCenters++;
+
+                    inchi->Stereo->nNumber[parity_idx] = canon_atom_num;
+
+                    inchi->Stereo->t_parity[parity_idx] = 1; //AB_PARITY_ODD;
+
+
+                    ret = 1;
+
+                }
+
+            }
+        }
+
+        for (int i = 0; i < inchi->Stereo->nNumberOfStereoCenters; i++) {
+            int min_idx = i;
+            for (int j = i + 1; j < inchi->Stereo->nNumberOfStereoCenters; j++) {
+                if (inchi->Stereo->nNumber[j] < inchi->Stereo->nNumber[min_idx]) {
+                    min_idx = j;
+                }
+            }
+            if (min_idx != i) {
+                // Swap nNumber
+                int tmp_num = inchi->Stereo->nNumber[i];
+                inchi->Stereo->nNumber[i] = inchi->Stereo->nNumber[min_idx];
+                inchi->Stereo->nNumber[min_idx] = tmp_num;
+                // Swap t_parity to keep association
+                int tmp_parity = inchi->Stereo->t_parity[i];
+                inchi->Stereo->t_parity[i] = inchi->Stereo->t_parity[min_idx];
+                inchi->Stereo->t_parity[min_idx] = tmp_parity;
+
+            }
+        }
+
+        /* Mixed classical + atropisomeric: inverting only the axis gives a diastereomer */
+        int has_classical = 0;
+        for (int i = 0; i < inchi->Stereo->nNumberOfStereoCenters; i++) {
+            AT_NUMB canon = inchi->Stereo->nNumber[i];
+            if (canon < 1 || canon > (AT_NUMB)aux->nNumberOfAtoms) continue;
+            /* nOrigAtNosInCanonOrd[canon-1] is 1-based original atom number */
+            int orig_0based = (int)aux->nOrigAtNosInCanonOrd[canon - 1] - 1;
+            if (orig_0based < 0 || orig_0based >= orig_inp_data->num_inp_atoms) continue;
+            if (!orig_inp_data->at[orig_0based].bAtropisomeric) {
+                has_classical = 1;
+                break;
+            }
+        }
+        if (has_classical) {
+            inchi->Stereo->nCompInv2Abs = 1; /* m0: diastereomeric */
+            return ret;
+        }
+
+        /* Primary m-layer determination: compare canonical orderings
+        * at atropisomeric positions in the normal vs. inverted structure */
+        if (aux->nOrigAtNosInCanonOrdInv) {
+            int atrop_orderings_differ = 0;
+            for (int i = 0; i < orig_inp_data->num_inp_atoms; i++) {
+                if (!orig_inp_data->at[i].bAtropisomeric) continue;
+                int cn = get_canonical_atom_number(aux, i + 1);
+                if (cn <= 0 || cn > aux->nNumberOfAtoms) continue;
+                if (aux->nOrigAtNosInCanonOrd[cn - 1] !=
+                    aux->nOrigAtNosInCanonOrdInv[cn - 1]) {
+                    atrop_orderings_differ = 1;
+                    break;
+                }
+            }
+            inchi->Stereo->nCompInv2Abs = atrop_orderings_differ ? -1 : 1;
+            return ret;
+        }
+
+        /* Fallback: count atropisomeric axes with a defined parity.
+        * Odd count => net chirality => enantiomeric (m1). */
+        int n_atrop_defined = 0;
+        for (int i = 0; i < inchi->Stereo->nNumberOfStereoCenters; i++) {
+            AT_NUMB canon = inchi->Stereo->nNumber[i];
+            if (canon < 1 || canon > (AT_NUMB)aux->nNumberOfAtoms) continue;
+            int orig_0based = (int)aux->nOrigAtNosInCanonOrd[canon - 1] - 1;
+            if (orig_0based < 0 || orig_0based >= orig_inp_data->num_inp_atoms) continue;
+            if (!orig_inp_data->at[orig_0based].bAtropisomeric) continue;
+            if (inchi->Stereo->t_parity[i] == AB_PARITY_ODD ||
+                inchi->Stereo->t_parity[i] == AB_PARITY_EVEN) {
+                n_atrop_defined++;
+            }
+        }
+        /* Two atoms per axis, so divide by 2 */
+        inchi->Stereo->nCompInv2Abs = ((n_atrop_defined / 2) % 2 == 1) ? -1 : 1;
+
+    }
+
+
+    return ret;
+}
+
 /**
  * @brief Set the enhanced stereochemistry information for t- and m-layers
  *

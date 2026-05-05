@@ -1117,6 +1117,53 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_differing_AND_groups_of_s
     FreeINCHI(poutput);
 }
 
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_abs_center_test_1)
+{
+    const char *molblock =
+        "test mol                                 \n"
+        "  -INDIGO-02232607492D                   \n"
+        "                                         \n"
+        "  0  0  0  0  0  0  0  0  0  0  0 V3000  \n"
+        "M  V30 BEGIN CTAB                        \n"
+        "M  V30 COUNTS 7 6 0 0 0                  \n"
+        "M  V30 BEGIN ATOM                        \n"
+        "M  V30 1 O 7.38571 -6.2125 0.0 0         \n"
+        "M  V30 2 C 8.25174 -5.7125 0.0 0         \n"
+        "M  V30 3 C 9.11776 -6.2125 0.0 0 CFG=1   \n"
+        "M  V30 4 C 9.98379 -5.7125 0.0 0 CFG=2   \n"
+        "M  V30 5 Cl 9.11776 -7.2125 0.0 0        \n"
+        "M  V30 6 C 10.8498 -6.2125 0.0 0         \n"
+        "M  V30 7 Br 9.98379 -4.7125 0.0 0        \n"
+        "M  V30 END ATOM                          \n"
+        "M  V30 BEGIN BOND                        \n"
+        "M  V30 1 1 1 2                           \n"
+        "M  V30 2 1 2 3                           \n"
+        "M  V30 3 1 3 4                           \n"
+        "M  V30 4 1 3 5 CFG=1                     \n"
+        "M  V30 5 1 4 6                           \n"
+        "M  V30 6 1 4 7 CFG=1                     \n"
+        "M  V30 END BOND                          \n"
+        "M  V30 BEGIN COLLECTION                  \n"
+        "M  V30 MDLV30/STEABS ATOMS=(2 3 4)       \n"
+        "M  V30 END COLLECTION                    \n"
+        "M  V30 END CTAB                          \n"
+        "M  END                                   \n";
+
+
+    char options[] = "-EnhancedStereochemistry";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    const char expected_inchi[] = "InChI=1B/C4H8BrClO/c1-3(5)4(6)2-7/h3-4,7H,2H2,1H3/t3-,4-/m0/s1(3,4)";
+
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+
+    FreeINCHI(poutput);
+}
+
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
 {
 

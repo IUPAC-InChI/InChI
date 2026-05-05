@@ -26,6 +26,8 @@ add_executable(inchi-1)
 
 target_sources(inchi-1 PRIVATE
 	main.c
+	${P_BASE}/atropisomers.h
+	${P_BASE}/atropisomers.c
 	${P_BASE}/ichimain.c
 	${P_BASE}/dispstru.c
 	${P_BASE}/dispstru.h
@@ -102,6 +104,8 @@ target_sources(inchi-1 PRIVATE
 	${P_BASE}/permutation_util.c
 	${P_BASE}/readinch.c
 	${P_BASE}/readinch.h
+	${P_BASE}/ring_detection.c
+	${P_BASE}/ring_detection.h
 	${P_BASE}/runichi.c
 	${P_BASE}/runichi2.c
 	${P_BASE}/runichi3.c

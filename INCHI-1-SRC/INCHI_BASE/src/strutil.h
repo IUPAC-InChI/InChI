@@ -125,6 +125,18 @@ extern "C"
                                       const INChI_Aux *aux);
 
     /**
+     * @brief Set t- and m-layers object for atropisomer stereochemistry
+     *
+     * @param orig_inp_data Pointer to original input atom data
+     * @param inchi Pointer to INChI structure
+     * @param aux Pointer to INChI auxiliary data
+     * @return int
+     */
+    int set_Atropisomer_t_m_layers(const ORIG_ATOM_DATA *orig_inp_data,
+                                   const INChI *inchi,
+                                   const INChI_Aux *aux);
+
+    /**
      * @brief Get the canonical atom number object
      *
      * @param aux Pointer to INChI_Aux data structure

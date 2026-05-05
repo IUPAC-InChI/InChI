@@ -54,6 +54,9 @@
 
 #include "bcf_s.h"
 
+#include "atropisomers.h"
+#include "ring_detection.h"
+
 /*
     Local functions
 */
@@ -3901,6 +3904,25 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     /*fix_odd_things( num_atoms, out_at );*/
 #if ( FIND_RING_SYSTEMS == 1 )
     MarkRingSystemsInp(out_at, num_atoms, 0);
+
+    orig_inp_data->bAtropisomer = 0;
+    if (ip->Atropisomers) {
+        RingSystems *ring_result = find_rings(out_at, num_atoms);
+
+        // print_ring_result(ring_result);
+
+        int ret_ai = find_atropisomeric_atoms_and_bonds(out_at, num_atoms, ring_result, orig_inp_data);
+
+        //map values to orig_inp_data
+        if (orig_inp_data->bAtropisomer) {
+            for (i = 0; i < num_atoms; i++) {
+                orig_inp_data->at[i].bAtropisomeric = out_at[i].bAtropisomeric;
+            }
+        }
+
+        free_ring_system(ring_result);
+    }
+
 #endif
     /*  duplicate the preprocessed structure so that all supplied out_norm_data[]->at buffers are filled */
     if (out_at != out_norm_data[TAUT_YES]->at && out_norm_data[TAUT_YES]->at)

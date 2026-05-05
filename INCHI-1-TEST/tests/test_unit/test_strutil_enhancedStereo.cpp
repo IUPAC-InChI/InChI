@@ -109,8 +109,7 @@ TEST(test_strutil_enhancedStereo, test_set_EnhancedStereo_t_m_layers_1)
     int found_num_bonds = 0;
     int found_num_isotopic = 0;
 
-    inp_ATOM *at = CreateInpAtom(num_at);
-    INChI *inchi = Alloc_INChI(at, num_at, &found_num_bonds, &found_num_isotopic, 0);
+    INChI *inchi = Alloc_INChI(orig_inp_data->at, num_at, &found_num_bonds, &found_num_isotopic, 0);
 
     AT_NUMB at_tmp[] = {0,1,2,3,4,5,6,7,8};
     S_CHAR parity_tmp[] = {2,1,1,2,2,1,2,2,1};
@@ -151,7 +150,6 @@ TEST(test_strutil_enhancedStereo, test_set_EnhancedStereo_t_m_layers_1)
     inchi_free(orig_inp_data);
     Free_INChI_Aux(&pAux);
     Free_INChI(&inchi);
-    FreeInpAtom(&at);
 
     inchi_ios_free_str(&input_stream);
 

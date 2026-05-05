@@ -54,6 +54,8 @@ target_sources(libinchi PRIVATE
 	${P_IXA}/ixa_read_mol.c
 	${P_IXA}/ixa_status.c
 	${P_IXA}/ixa_status.h
+	${P_BASE}/atropisomers.h
+	${P_BASE}/atropisomers.c
 	${P_BASE}/bcf_s.h
 	${P_BASE}/bcf_s.c
 	${P_BASE}/extr_ct.h
@@ -127,6 +129,8 @@ target_sources(libinchi PRIVATE
 	${P_BASE}/permutation_util.c
 	${P_BASE}/readinch.c
 	${P_BASE}/readinch.h
+	${P_BASE}/ring_detection.c
+	${P_BASE}/ring_detection.h
 	${P_BASE}/runichi.c
 	${P_BASE}/runichi2.c
 	${P_BASE}/runichi3.c
