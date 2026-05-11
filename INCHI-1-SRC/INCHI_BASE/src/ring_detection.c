@@ -59,7 +59,9 @@ void determine_ring_hierarchy(RingSystems* rs) {
             if (is_subset(&rs->rings[i], &rs->rings[j])) {
                 rs->rings[i].parent_id = rs->rings[j].id;
 
-                rs->rings[j].child_ids = (int*)inchi_realloc(rs->rings[j].child_ids, (rs->rings[j].child_count + 1) * sizeof(int));
+                int *tmp = (int*)inchi_realloc(rs->rings[j].child_ids, (rs->rings[j].child_count + 1) * sizeof(int));
+                if (tmp == NULL) return;
+                rs->rings[j].child_ids = tmp;
                 rs->rings[j].child_ids[rs->rings[j].child_count] = rs->rings[i].id;
                 rs->rings[j].child_count++;
             }
@@ -256,7 +258,7 @@ void free_ring_system(RingSystems *rs) {
     inchi_free(rs);
 }
 
-int sub_ring_counter(RingSystems* rs, const Ring *r, int *ring_counter) {
+void sub_ring_counter(RingSystems* rs, const Ring *r, int *ring_counter) {
     if (r->child_count == 0) {
         ring_counter[r->id] = 1;
     } else {
@@ -302,7 +304,9 @@ void *create_new_ring(RingSystems *rs,
                       int path_len) {
 
 
-    rs->rings = (Ring*)inchi_realloc(rs->rings, (rs->count + 1) * sizeof(Ring));
+    Ring *tmp_rings = (Ring*)inchi_realloc(rs->rings, (rs->count + 1) * sizeof(Ring));
+    if (tmp_rings == NULL) return NULL;
+    rs->rings = tmp_rings;
 
     Ring *r = &rs->rings[rs->count];
 
@@ -318,8 +322,10 @@ void *create_new_ring(RingSystems *rs,
         r->atom_ids[i] = path[i];
 
         rs->atom_to_ring_mapping[path[i]].atom_id = path[i];
-        rs->atom_to_ring_mapping[path[i]].ring_ids = (int*)inchi_realloc(rs->atom_to_ring_mapping[path[i]].ring_ids,
+        int *tmp_ids = (int*)inchi_realloc(rs->atom_to_ring_mapping[path[i]].ring_ids,
             (rs->atom_to_ring_mapping[path[i]].ring_count + 1) * sizeof(int));
+        if (tmp_ids == NULL) return NULL;
+        rs->atom_to_ring_mapping[path[i]].ring_ids = tmp_ids;
         rs->atom_to_ring_mapping[path[i]].ring_ids[rs->atom_to_ring_mapping[path[i]].ring_count] = r->id;
         rs->atom_to_ring_mapping[path[i]].ring_count++;
 

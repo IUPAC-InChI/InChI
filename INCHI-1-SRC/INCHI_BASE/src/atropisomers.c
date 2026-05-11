@@ -131,7 +131,7 @@ int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
             score += has_double_bond_i * 2;
             score += has_double_bond_j * 2;
 
-            score += (fused_atom_partner[atom_id1] != j && fused_atom_partner[atom_id2] != i);
+            score += (fused_atom_partner[atom_id1] != atom_id2 && fused_atom_partner[atom_id2] != i);
             score += (fused_atom_partner[atom_id1] == -1 || fused_atom_partner[atom_id2] == -1);
 
             int both_atoms_in_same_small_ring = are_atoms_in_same_small_ring(out_at,

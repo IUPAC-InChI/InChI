@@ -7139,6 +7139,10 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
         return ret;
     }
 
+    if (inchi->Stereo == NULL) {
+        return ret;
+    }
+
     //TODO
     // - t layer parities for atropisomers
     //    -> t-parity[atom] = 1 (-)
@@ -7156,12 +7160,17 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
 
                 // printf("atom id %d, is_atropisomer %d\n", i + 1, orig_inp_data->at[i].bAtropisomeric);
 
-                AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, i + 1);
+                int canon_num_raw = get_canonical_atom_number(aux, i + 1);
+                if (canon_num_raw <= 0) continue;
+                AT_NUMB canon_atom_num = (AT_NUMB)canon_num_raw;
                 int parity_idx = get_parity_idx_from_canonical_atom_number(canon_atom_num,
                                                                            inchi->Stereo->nNumber,
                                                                            inchi->Stereo->nNumberOfStereoCenters);
                 if (parity_idx == -1) {
                     parity_idx = inchi->Stereo->nNumberOfStereoCenters;
+                    if (parity_idx >= aux->nNumberOfAtoms) {
+                        continue;
+                    }
                     inchi->Stereo->nNumberOfStereoCenters++;
 
                     inchi->Stereo->nNumber[parity_idx] = canon_atom_num;
