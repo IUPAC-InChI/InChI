@@ -107,6 +107,12 @@ InChI is integrated into [Google OSS-Fuzz](https://github.com/google/oss-fuzz/tr
 
 The unit test coverage is [evaluated on every push](.github/workflows/deploy_pages.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/coverage/index.html>. Every PR against the default branch is [tested for unit test coverage regressions](.github/workflows/test_coverage_regression.yml).
 
+### Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).  
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. 
+
 ## Contents of this repository
 
 ### INCHI-1-DOC
