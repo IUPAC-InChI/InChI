@@ -1600,7 +1600,7 @@ Quick examples:
 
 InChI for styrene-butadiene block copolymer, source-based representation
 
-<img src="./attachments/$myfilename/media/image256.png" style="width:3.01693in;height:3.46697in" />
+![](./assets/png/image256.png)
 
 InChI=1B/C8H8.C4H6/c1-2-8-6-4-3-5-7-8;1-3-4-2/h2-7H,1H2;3-4H,1-2H2/z200-9-12;200-1-8;330-1-12
 
@@ -1608,7 +1608,7 @@ InChIKey=MTAZNLWOLGHBHU-ZNVYRHKRBA-N
 
 InChI for Nylon-6, structure-based representation
 
-<img src="./attachments/$myfilename/media/image257.png" style="width:3.39196in;height:1.8835in" />
+![](./assets/png/image257.png)
 
 InChI=1B/C6H11NOZz2/c8-6(7-10)4-2-1-3-5-9/h1-5H2,(H,7,8)/z101-1-8(10-7,9-5)
 
@@ -1842,7 +1842,7 @@ To allow usage of Zz atoms out of polymer context, option *NPZZ* should
 be specified. Shown below is the example of using non-polymeric Zz for
 adenosinediphosphoribosyl group, structure CHEBI:22259
 
-<img src="./attachments/$myfilename/media/image263.png" style="width:3.725in;height:2.35749in" />
+![](./assets/png/image263.png)
 
 InChI=1B/C15H22N5O13P2Zz/c16-12-7-13(18-3-17-12)20(4-19-7)14-10(23)8(21)5(31-14)1-29-34(25,26)33-35(27,28)30-2-6-9(22)11(24)15(36)32-6/h3-6,8-11,14-15,21-24H,1-2H2,(H,25,26)(H,27,28)(H2,16,17,18)/t5-,6-,8-,9-,10-,11-,14-/m1/s1
 InChIKey=HGZGKBRIZICMCZ-UQZBLMPMBA-N
