@@ -16,7 +16,7 @@ jobs:
     outputs:
       matrix: ${{ steps.define_matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Verify build matrix
         # The build matrix is used to interpolate commands and inputs throughout the remainder of the workflow.
@@ -43,9 +43,9 @@ jobs:
       RELEASE_DIR: inchi-${{ matrix.slug }}-${{ github.sha }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.12'
 
@@ -79,7 +79,7 @@ jobs:
           shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
 
       - name: Upload CMake configurations
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: CMake-configurations-${{ matrix.slug }}-${{ github.sha }}
           path: |
@@ -94,7 +94,7 @@ jobs:
           cp ${{ matrix.main_path }} ${{ env.RELEASE_DIR }}
 
       - id: upload-unsigned-artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ env.RELEASE_DIR }}
           path: ${{ env.RELEASE_DIR }}
@@ -111,7 +111,7 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: ${{ env.RELEASE_DIR }}-signed
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: runner.os == 'Windows'
         with:
           name: ${{ env.RELEASE_DIR }}-signed
@@ -126,14 +126,14 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         # git repository needs to be checked out (including tags, hence `fetch-depth: 0`),
         # otherwise the `--verify-tag` flag to `gh release create` fails.
         with:
           fetch-depth: 0
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.1.0
         with:
           path: release_artifacts
           pattern: inchi-*
@@ -142,7 +142,7 @@ jobs:
         run: zip -r release_artifacts.zip release_artifacts
 
       - name: Download CMake configurations
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.1.0
         with:
           path: cmake_configurations
           pattern: CMake-configurations-*

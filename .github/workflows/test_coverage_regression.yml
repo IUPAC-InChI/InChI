@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install build dependencies
         run: |
@@ -146,7 +146,7 @@ jobs:
           echo "Coverage OK: lines ${PR_LINES}% >= base ${BASE_LINES}%, branches ${PR_BRANCHES}% >= base ${BASE_BRANCHES}%"
 
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: coverage-reports-${{ github.run_id }}
@@ -155,7 +155,7 @@ jobs:
 
       - name: Post sticky PR comment (same-repo only)
         if: always() && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');
