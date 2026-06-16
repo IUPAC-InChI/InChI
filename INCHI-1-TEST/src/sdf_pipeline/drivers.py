@@ -51,18 +51,18 @@ def regression(
             number_of_consumer_processes=number_of_consumer_processes,
         ):
             molfile_id = consumer_result.molfile_id
-            assert (
-                molfile_id not in processed_molfile_ids
-            ), f"Molfile ID {molfile_id} has been processed multiple times."
+            assert molfile_id not in processed_molfile_ids, (
+                f"Molfile ID {molfile_id} has been processed multiple times."
+            )
             processed_molfile_ids.add(molfile_id)
 
             reference_query = reference_db.execute(
                 "SELECT result FROM results WHERE molfile_id = ?",
                 (molfile_id,),
             ).fetchone()
-            assert (
-                reference_query
-            ), f"Couldn't find molfile ID {molfile_id} in reference."
+            assert reference_query, (
+                f"Couldn't find molfile ID {molfile_id} in reference."
+            )
             reference_result = reference_query[0]
 
             current_result = json.dumps(consumer_result.result)
@@ -95,9 +95,9 @@ def regression(
             - processed_molfile_ids
         )
 
-        assert (
-            not unprocessed_molfile_ids
-        ), f"Reference contains molfile IDs that haven't been processed: {unprocessed_molfile_ids}."
+        assert not unprocessed_molfile_ids, (
+            f"Reference contains molfile IDs that haven't been processed: {unprocessed_molfile_ids}."
+        )
 
     reference_db.close()
 
