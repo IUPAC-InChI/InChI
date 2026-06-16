@@ -1,0 +1,17 @@
+# this root-level pyproject.toml will cascade to all
+# python code in each section of the project
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+# See https://docs.astral.sh/ruff/rules
+extend-select = [
+    "F", # pyflakes
+    "I", # isort
+]
+ignore = [
+    "F403",  # FIXME ignore issues with star imports
+    "F405",  # FIXME ignore issues with star imports
+    "E722",  # FIXME do not use bare excepts
+]
