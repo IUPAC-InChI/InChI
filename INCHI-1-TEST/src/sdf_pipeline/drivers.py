@@ -9,13 +9,15 @@ See also https://blog.rtwilson.com/a-python-sqlite3-context-manager-gotcha/.
 
 """
 
-import sqlite3
 import json
-from typing import Callable, Any
+import sqlite3
+from datetime import datetime
 from functools import partial
 from pathlib import Path
-from datetime import datetime
+from typing import Any, Callable
+
 from pydantic import BaseModel, Field
+
 from sdf_pipeline import core, logger
 
 

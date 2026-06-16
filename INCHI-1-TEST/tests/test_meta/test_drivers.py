@@ -1,19 +1,19 @@
-import pytest
+import json
+import logging
 import re
 import sqlite3
-import logging
-import json
+from functools import partial, reduce
 from operator import add
-from functools import reduce
 from pathlib import Path
-from functools import partial
-from sdf_pipeline import drivers, core
+
+import pytest
 from consumers import (
-    regression_consumer,
     invariance_consumer,
     raising_consumer,
+    regression_consumer,
     segfaulting_consumer,
 )
+from sdf_pipeline import core, drivers
 
 
 def _get_mcule_id(molfile: str) -> str:

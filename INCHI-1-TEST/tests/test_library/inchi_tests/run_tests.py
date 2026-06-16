@@ -1,14 +1,16 @@
-import os
+import importlib
 import logging
 import multiprocessing
+import os
 import sys
-import importlib
-from functools import partial
 from datetime import datetime
+from functools import partial
 from pathlib import Path
+
 from sdf_pipeline import drivers
-from inchi_tests.utils import get_current_time, get_progress, get_config_args
-from inchi_tests.consumers import regression_consumer, invariance_consumer
+
+from inchi_tests.consumers import invariance_consumer, regression_consumer
+from inchi_tests.utils import get_config_args, get_current_time, get_progress
 
 
 def main(test, inchi_lib_path, data_config) -> None:

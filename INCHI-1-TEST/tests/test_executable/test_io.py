@@ -1,9 +1,9 @@
 import re
-import pytest
 from pathlib import Path
+
+import pytest
 from helpers import parse_inchi_from_executable_output
 from sdf_pipeline.utils import select_records_from_gzipped_sdf
-
 
 ID_PATTERN = re.compile(r"> <ID>\n(.*?)\n\$\$\$\$", re.DOTALL)
 

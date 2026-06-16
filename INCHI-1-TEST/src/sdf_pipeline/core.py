@@ -1,8 +1,9 @@
 import multiprocessing
-from queue import Empty
-from typing import Callable, TYPE_CHECKING
 from collections.abc import Generator
 from pathlib import Path
+from queue import Empty
+from typing import TYPE_CHECKING, Callable
+
 from sdf_pipeline import logger, utils
 
 if TYPE_CHECKING:

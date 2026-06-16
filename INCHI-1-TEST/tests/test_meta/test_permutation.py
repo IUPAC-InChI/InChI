@@ -1,7 +1,8 @@
-import pytest
 import random
-from sdf_pipeline.utils import permute_molblock
+
+import pytest
 from rdkit import Chem
+from sdf_pipeline.utils import permute_molblock
 
 molblocks = [
     """

@@ -2,9 +2,7 @@
 Yet another Python (3) to InChI Software Library interface
 """
 
-import os
 import sys
-import string
 from ctypes import *
 
 

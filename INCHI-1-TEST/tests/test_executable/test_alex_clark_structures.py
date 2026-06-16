@@ -1,8 +1,9 @@
-import pytest
+import tempfile
 from pathlib import Path
+
+import pytest
 from helpers import parse_inchi_from_executable_output
 from sdf_pipeline.utils import read_records_from_gzipped_sdf
-import tempfile
 
 
 @pytest.fixture

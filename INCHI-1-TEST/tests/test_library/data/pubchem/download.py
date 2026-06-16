@@ -1,7 +1,7 @@
-import subprocess
 import shlex
-from .utils import get_dataset_arg, DOWNLOAD_PATHS, PUBCHEM_DIR
+import subprocess
 
+from .utils import DOWNLOAD_PATHS, PUBCHEM_DIR, get_dataset_arg
 
 if __name__ == "__main__":
     dataset = get_dataset_arg()

@@ -1,11 +1,13 @@
+import importlib
 import json
 import sys
-import importlib
-from pathlib import Path
-from difflib import SequenceMatcher
 from collections import defaultdict
+from difflib import SequenceMatcher
+from pathlib import Path
 from typing import Callable, Final, TextIO
+
 from sdf_pipeline.utils import select_records_from_gzipped_sdf
+
 from inchi_tests.utils import get_config_args
 
 

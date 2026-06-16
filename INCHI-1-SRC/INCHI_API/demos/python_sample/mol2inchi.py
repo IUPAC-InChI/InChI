@@ -1,8 +1,8 @@
+import gzip
 import os
 import sys
-import string
-import gzip
 from optparse import OptionParser
+
 from yapyinchi import *
 
 

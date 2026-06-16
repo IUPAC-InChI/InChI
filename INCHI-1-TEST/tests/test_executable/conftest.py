@@ -1,9 +1,10 @@
-import pytest
 import subprocess
+from dataclasses import dataclass
+from pathlib import Path
 from sys import platform
 from typing import Callable
-from pathlib import Path
-from dataclasses import dataclass
+
+import pytest
 
 
 def pytest_addoption(parser):

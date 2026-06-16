@@ -1,12 +1,11 @@
 import gzip
 import random
 from pathlib import Path
-from typing import Generator, Callable
+from typing import Callable, Generator
 
 try:
     # Optional import of RDKit.
-    from rdkit import Chem
-    from rdkit import RDLogger
+    from rdkit import Chem, RDLogger
 
     # Suppress RDKit console output.
     RDLogger.DisableLog("rdApp.*")

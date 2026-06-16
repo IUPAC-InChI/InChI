@@ -6,12 +6,12 @@ where 128+n means "Fatal error signal 'n'", see https://tldp.org/LDP/abs/html/ex
 and 11 means "SIGSEGV", i.e., segfault, see wikipedia.org/wiki/Signal_(IPC)#POSIX_signals.
 """
 
-import threading
 import ctypes
+import threading
 from pathlib import Path
+
 from inchi_tests.inchi_api import make_inchi_from_molfile_text
 from sdf_pipeline.utils import read_records_from_gzipped_sdf
-
 
 SDF_PATH = Path("INCHI-1-TEST/tests/test_library/data/ci/inchi.sdf.gz")
 INCHI_LIB_PATH = (

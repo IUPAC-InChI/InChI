@@ -1,8 +1,10 @@
 import ctypes
 import random
 from typing import Callable
+
 from sdf_pipeline import drivers, utils
-from inchi_tests.inchi_api import make_inchi_from_molfile_text, get_inchi_key_from_inchi
+
+from inchi_tests.inchi_api import get_inchi_key_from_inchi, make_inchi_from_molfile_text
 
 
 def regression_consumer(

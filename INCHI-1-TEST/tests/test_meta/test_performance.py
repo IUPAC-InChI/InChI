@@ -1,9 +1,10 @@
-import pytest
 import timeit
-from pathlib import Path
 from functools import partial
-from sdf_pipeline import drivers, core
+from pathlib import Path
+
+import pytest
 from consumers import busy_consumer, regression_consumer
+from sdf_pipeline import core, drivers
 
 
 def _get_pubchem_id(molfile: str) -> str:

@@ -1,7 +1,8 @@
 import hashlib
-from inchi_tests.utils import get_progress
-from .utils import get_dataset_arg, PUBCHEM_DIR
 
+from inchi_tests.utils import get_progress
+
+from .utils import PUBCHEM_DIR, get_dataset_arg
 
 if __name__ == "__main__":
     dataset = get_dataset_arg()

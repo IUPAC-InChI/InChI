@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
 
-
 DATASETS = ["compound", "compound3d", "substance"]
 DOWNLOAD_PATHS = {
     "compound": "Compound/CURRENT-Full",

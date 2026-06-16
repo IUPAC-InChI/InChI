@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+
 from inchi_tests.config_models import DataConfig
 
 

@@ -1,5 +1,6 @@
 from typing import Callable
-from pydantic import BaseModel, FilePath, DirectoryPath
+
+from pydantic import BaseModel, DirectoryPath, FilePath
 
 
 class DataConfig(BaseModel):

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from inchi_tests.config_models import DataConfig
 from inchi_tests.utils import get_molfile_id_pubchem
 
