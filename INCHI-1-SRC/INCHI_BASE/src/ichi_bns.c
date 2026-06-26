@@ -5428,8 +5428,50 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
         /* (here pair(s) of radicals could have disappeared from the atoms) */
         if (IS_BNS_ERROR( ret ))
         {
-            bError = ret;
-            goto exit_function;
+            /* Issue #154/#82: aromatic ions (e.g. tropylium C7H7(+),
+               cyclopentadienyl C5H5(-)) cannot be kekulized while every aromatic
+               ring atom is required to carry a localized double bond: the
+               charge-bearing ring atom contributes to the pi system via an empty
+               orbital (cation) or lone pair (anion), not a double bond, so a
+               perfect double-bond matching does not exist and the conversion fails
+               with BNS_ALTBOND_ERR. Relax exactly those charge centers: a
+               2-coordinate aromatic ring atom whose charge gives it spare valence
+               beyond its two ring sigma-bonds is allowed to forgo the assumed
+               double bond, with one implicit H taking that valence unit instead
+               (chem_bonds_valence-- paired with num_H++ keeps total valence and the
+               formula correct). Then rebuild the network and retry the conversion
+               once. Atoms that already kekulize never reach this path, so neutral
+               and net-zero (e.g. N-oxide) aromatics are unaffected. */
+            if (ret == BNS_ALTBOND_ERR)
+            {
+                int ia, num_relaxed = 0;
+                for (ia = 0; ia < num_atoms; ia++)
+                {
+                    if (at[ia].charge &&
+                         at[ia].num_H == 0 &&
+                         at[ia].valence == 2 &&
+                         at[ia].chem_bonds_valence > at[ia].valence &&
+                         0 == nBondsValToMetal( at, ia ))
+                    {
+                        at[ia].chem_bonds_valence--;
+                        at[ia].num_H++;
+                        num_relaxed++;
+                    }
+                }
+                if (num_relaxed)
+                {
+                    ret = ReInitBnStruct( pBNS, at, num_atoms, 1 );
+                    if (!IS_BNS_ERROR( ret ))
+                    {
+                        ret = BnsAdjustFlowBondsRad( pBNS, pBD, at, num_atoms );
+                    }
+                }
+            }
+            if (IS_BNS_ERROR( ret ))
+            {
+                bError = ret;
+                goto exit_function;
+            }
         }
         pBNS->tot_st_flow += 2 * ret;
 
