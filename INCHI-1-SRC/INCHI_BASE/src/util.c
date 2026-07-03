@@ -406,13 +406,21 @@ int if_skip_add_H( int nPeriodicNum )
 ****************************************************************************/
 int get_el_valence( int nPeriodicNum, int charge, int val_num )
 {
-    if ( charge < MIN_ATOM_CHARGE || charge > MAX_ATOM_CHARGE || val_num >= MAX_NUM_VALENCES )
+    int idx = ( nPeriodicNum > 1 ) ? nPeriodicNum + 1 : 0;
+
+    /* Bounds-check every index before touching ElData[].cValence[][].
+     * The original code guarded only the upper bound of val_num and the
+     * charge range; a negative nPeriodicNum/val_num or an element number
+     * beyond the table would read out of bounds. Return 0 (no known
+     * valence) for any out-of-range input. */
+    if ( nPeriodicNum < 0 || idx > nElDataLen ||
+         val_num < 0 || val_num >= MAX_NUM_VALENCES ||
+         charge < MIN_ATOM_CHARGE || charge > MAX_ATOM_CHARGE )
     {
         return 0;
     }
 
-    return
-        ElData[nPeriodicNum > 1 ? nPeriodicNum + 1 : 0].cValence[NEUTRAL_STATE + charge][val_num];
+    return ElData[idx].cValence[NEUTRAL_STATE + charge][val_num];
 }
 
 

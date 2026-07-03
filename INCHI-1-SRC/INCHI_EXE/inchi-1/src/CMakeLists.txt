@@ -25,12 +25,12 @@ include_directories(${P_BASE} ${P_CURRENT})
 add_executable(inchi-1)
 
 target_sources(inchi-1 PRIVATE
-	main.c
+	inchi_main_cli.c
 	${P_BASE}/atropisomers.h
 	${P_BASE}/atropisomers.c
-	${P_BASE}/ichimain.c
-	${P_BASE}/dispstru.c
-	${P_BASE}/dispstru.h
+	ichimain.c
+	dispstru.c
+	dispstru.h
 	${P_BASE}/bcf_s.h
 	${P_BASE}/bcf_s.c
 	${P_BASE}/extr_ct.h

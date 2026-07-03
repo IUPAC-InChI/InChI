@@ -2,7 +2,7 @@
 name = "inchi_tests"
 version = "1.0.0"
 requires-python = ">=3.11,<3.13"
-dependencies = ["pydantic == 2.11.5", "pytest == 8.3.5"]
+dependencies = ["pydantic == 2.11.5", "pytest == 9.0.3"]
 
 [project.optional-dependencies]
 # FIXME: Don't force numpy major version as soon as https://github.com/IUPAC-InChI/InChI/issues/35 is resolved.

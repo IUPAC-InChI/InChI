@@ -176,7 +176,7 @@ string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAG
 set_target_properties(libinchi PROPERTIES PREFIX "")
 
 
-target_link_options(libinchi PRIVATE
+target_link_options(libinchi PUBLIC
     "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:C,ARMClang,AppleClang,Clang,GNU,LCC>>:-fsanitize=address>"
 )
 

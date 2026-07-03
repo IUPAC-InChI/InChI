@@ -1,0 +1,114 @@
+name: Bug report
+description: Report a defect in InChI
+title: "fix: <short summary>"
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much as
+        you can — [minimal reproductions](https://en.wikipedia.org/wiki/Minimal_reproducible_example) are gold.
+
+        Note: many "experimental" flags (`KET`, `15T`, `PT_*`, `InChI2Struct`,
+        `InChI2InChI`, polymer options, …) are documented as not fully
+        functional. If your report is about one of those, please mention it.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One- or two-sentence description of the problem.
+      placeholder: "Generating InChI for molecule X produces wrong stereo layer."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Exact commands, options, or API calls. Attach a sample MOL/SDF file or
+        the input InChI string if you can share one.
+      placeholder: |
+        1. `inchi-1 sample.mol sample.txt -STDIO`
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: structure
+    attributes:
+      label: Structure
+      description: |
+        Paste the input structure that triggers the bug — e.g. a MOL/SDF block,
+        an InChI string, or SMILES. This is rendered as a code block, so paste
+        the raw text directly (no need to attach a file for small structures).
+      render: text
+      placeholder: |
+        Molecule from ChemDraw
+          ...
+
+          5  4  0  0  0  0  0  0  0  0999 V2000
+            ...
+        M  END
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Output InChI/InChIKey, error/log output, screenshots.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: InChI version
+      description: Software version or git commit.
+      placeholder: "1.07 (or commit 2339cd7)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: artifact
+    attributes:
+      label: Affected artifact
+      description: Which build is affected?
+      options:
+        - inchi-1 (standalone CLI)
+        - libinchi (classic inchi_* API)
+        - libinchi (IXA API)
+        - WebDemo (web UI)
+        - Not sure / both
+    validations:
+      required: true
+
+  - type: input
+    id: toolchain
+    attributes:
+      label: Compiler / toolchain
+      description: Compiler and version used to build.
+      placeholder: "gcc 13.2 / clang 18 / MSVC 19.40"
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Ubuntu 24.04 / macOS 15 / Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Anything else that helps us reproduce or understand the issue.

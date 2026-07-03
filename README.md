@@ -7,6 +7,8 @@
 [![Good reads](https://img.shields.io/badge/Goodreads-372213?style=flat&logo=goodreads&logoColor=white)](https://www.inchi-trust.org/inchi-overview-papers-presentations/?wpv_aux_current_post_id=4309&wpv_aux_parent_post_id=4309&wpv_view_count=4473)
 [![InChI - Web Demo](https://img.shields.io/badge/InChI-Web_Demo-2ea44f)](https://iupac-inchi.github.io/InChI-Web-Demo/)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/32621/badge.svg)](https://scan.coverity.com/projects/inchi)
+[![OSS-Fuzz Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/inchi.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=inchi)
+[![SourceForge Issues](https://img.shields.io/badge/SourceForge-Issues-orange?logo=sourceforge)](https://sourceforge.net/p/inchi/_list/tickets/)
 
 <img src="./INCHI-1-DOC/assets/inchi-wheel.png" width="300" height="300" />
 
@@ -57,6 +59,10 @@ You are welcome to contribute to this project. To do so, you may [submit a pull 
 
 ![git-flow](./INCHI-1-DOC/assets/git_flow.svg)
 
+## Legacy SourceForge tickets
+
+Prior to the migration to GitHub, bug reports and feature requests for InChI were tracked on SourceForge. The archive of these old tickets is available at the [InChI SourceForge issue tracker](https://sourceforge.net/p/inchi/_list/tickets/) and may be useful as a historical reference. Please use the [GitHub issue tracker](https://github.com/IUPAC-InChI/InChI/issues) for new reports.
+
 ## Source code documentation
 
 We've started documenting the source code with [Doxygen](https://www.doxygen.nl/index.html).
@@ -84,8 +90,28 @@ Please write your comments in the header files where possible.
 The Doxygen documentation syntax is quite powerful: you can include formulas, tables, and diagrams.
 For details see <https://www.doxygen.nl/manual>.
 
-The documentation is [built on every push](.github/workflows/deploy_docs.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/>.
+The documentation is [built on every push](.github/workflows/deploy_pages.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/docs/index.html>.
 That is, your comments will automatically be rendered to HTML and served as online documentation.
+
+## Code quality
+
+### Coverity static analysis
+
+InChI is integrated into [Coverity Scan](https://scan.coverity.com/projects/inchi) for continuous static analysis.
+
+### OSS-Fuzz continuous fuzzing
+
+InChI is integrated into [Google OSS-Fuzz](https://github.com/google/oss-fuzz/tree/master/projects/inchi), which runs continuous fuzz testing against the library. Fuzzing-related bugs are tracked at the [OSS-Fuzz issue tracker](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=inchi).
+
+### Code coverage
+
+The unit test coverage is [evaluated on every push](.github/workflows/deploy_pages.yml) to the default branch of this repository and hosted at <https://iupac-inchi.github.io/InChI/coverage/index.html>. Every PR against the default branch is [tested for unit test coverage regressions](.github/workflows/test_coverage_regression.yml).
+
+### Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).  
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. 
 
 ## Contents of this repository
 
@@ -300,7 +326,7 @@ On UNIX-based OSs/Apple macOS/Microsoft Windows, `InChI` sub-projects can be com
 
 Support for native/default Apple macOS `Clang` compiler is now provided with _64-bit_ versions of `makefile` files (thanks to [John Mayfield](https://github.com/johnmay/) for his assistance with this matter).
 
-If `makefile/makefile32` is used for compiling `libinchi` on Microsoft Windows, `libinchi.dll` is now generated instead of `libinchi.so`. Also. please make sure to read [the notes](#libgcc_32) regarding the required `libgcc_s_dw2-1.dll` for running _32-bit_ executables on Microsoft Windows operating system in certain environments.
+If `makefile/makefile32` is used for compiling `libinchi` on Microsoft Windows, `libinchi.dll` is now generated instead of `libinchi.so`. Also, please make sure to read [the notes](#libgcc_32) regarding the required `libgcc_s_dw2-1.dll` for running _32-bit_ executables on Microsoft Windows operating system in certain environments.
 
 #### Additional notes
 

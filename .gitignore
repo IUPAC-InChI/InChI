@@ -30,3 +30,6 @@ inchi_mol_test_*/
 core.*[0-9]
 CMake_build/
 INCHI-1-SRC/INCHI_API/libinchi/src/build/
+.codegraph/
+.planning/
+CLAUDE.md

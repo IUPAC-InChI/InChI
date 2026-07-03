@@ -1,0 +1,37 @@
+name: "Generate coverage reports"
+description: "Build with coverage enabled, run unit tests, and generate LCOV HTML report."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build with coverage enabled
+      run: |
+        cmake -B CMake_build/coverage_build \
+          -S . \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DCOVERAGE=ON
+        cmake --build CMake_build/coverage_build
+      shell: bash
+
+    - name: Run unit tests
+      run: |
+        cd CMake_build/coverage_build/INCHI-1-TEST/tests/test_unit
+        ctest --output-on-failure
+      shell: bash
+
+    - name: Generate coverage report
+      run: |
+        cd CMake_build/coverage_build
+
+        lcov --capture \
+        --directory ./INCHI-1-SRC \
+        --output-file coverage.lcov \
+        --branch-coverage
+
+        genhtml coverage.lcov \
+        --output-directory coverage_reports/html \
+        --title "InChI Unit Test Coverage" \
+        --legend \
+        --branch-coverage \
+        --ignore-errors inconsistent
+      shell: bash

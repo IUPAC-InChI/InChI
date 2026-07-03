@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
 set(P_BASE "${CMAKE_SOURCE_DIR}/INCHI-1-SRC/INCHI_BASE/src")
+set(P_CLI "${CMAKE_SOURCE_DIR}/INCHI-1-SRC/INCHI_EXE/inchi-1/src")
 file(GLOB BASE_SOURCES CONFIGURE_DEPENDS
      "${P_BASE}/*.c"
      "${P_BASE}/*.h"
+     "${P_CLI}/*.c"
+     "${P_CLI}/*.h"
 )
 add_library(test_dependencies STATIC ${BASE_SOURCES})
 target_compile_definitions(test_dependencies PUBLIC TARGET_EXE_STANDALONE)

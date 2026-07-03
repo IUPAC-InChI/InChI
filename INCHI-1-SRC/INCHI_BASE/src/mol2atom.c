@@ -1046,10 +1046,26 @@ void calculate_valences(MOL_FMT_DATA *mfdata,
 
                 if (!is_el_a_metal(at[a1].el_number) && additional_H)
                 {
-                    /*If the atom is a non - metal and has coordination bonds, adjust valence* /
-                    /* (@fbaensch) : Get new valence based on element number, charge, and valence defined in input file */
-                    newValence = get_el_valence(at[a1].el_number, at[a1].charge, mfdata->ctab.atoms[a1].valence);
-                    newValence += additional_H;
+                    /* (@fbaensch) Non-metal donor of one or more coordinative (type 9)
+                     * bonds. Treat the MOLfile VAL field as the donor's covalent
+                     * valence VALUE (consistent with the else-branch below), falling
+                     * back to the element's standard valence when VAL is 0. Then add
+                     * one unit per coordinative bond so the dative bonds do not consume
+                     * hydrogen-filling slots: num_H = base_val - (covalent bonds present).
+                     *
+                     * NOTE for input authors: a type-9 bond models a NEUTRAL lone-pair
+                     * donor. For a coordinative bond to an ANIONIC donor (e.g. the O of
+                     * an M-OH), set the donor's covalent valence via the VAL field
+                     * (and/or its formal charge); otherwise the donor is completed to
+                     * its neutral valence (e.g. O -> H2O). A genuinely ionic M-O(H)
+                     * bond such as NaOH is best drawn with a plain single bond - the
+                     * standard metal disconnection already yields Na+ + OH-. */
+                    int base_val = mfdata->ctab.atoms[a1].valence;
+                    if (!base_val)
+                    {
+                        base_val = get_el_valence(at[a1].el_number, at[a1].charge, 0);
+                    }
+                    newValence = base_val + additional_H;
                 }
                 else
                 {

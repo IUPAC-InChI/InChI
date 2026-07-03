@@ -1,0 +1,92 @@
+name: Deploy Unit Test Coverage and Source Documentation to GitHub Pages
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install build dependencies
+        run: |
+          sudo ./INCHI-1-TEST/install_build_dependencies.sh
+
+      - name: Generate coverage report
+        uses: ./.github/actions/generate_coverage_report
+
+      - name: Generate coverage summary
+        run: |
+          cd CMake_build/coverage_build
+
+          lcov --summary coverage.lcov \
+          --branch-coverage \
+          --ignore-errors inconsistent > coverage_reports/summary.txt
+
+      - name: Build documentation with Doxygen
+        run: |
+          doxygen Doxyfile
+
+      - name: Stage combined Pages artifact
+        run: |
+          mkdir -p site_root/docs
+          mkdir -p site_root/coverage
+
+          cp -r INCHI-1-DOC/doxygen/html/* site_root/docs/
+          cp -r CMake_build/coverage_build/coverage_reports/html/* site_root/coverage/
+          cp -r CMake_build/coverage_build/coverage_reports/summary.txt site_root/coverage/
+
+          # Create an index page with links to coverage and source documentation
+          cat > site_root/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>InChI Documentation</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; }
+                  h1 { color: #333; }
+                  .section { margin: 20px 0; }
+                  a { color: #0066cc; text-decoration: none; }
+                  a:hover { text-decoration: underline; }
+              </style>
+          </head>
+          <body>
+              <h1>InChI Documentation</h1>
+              <div class="section">
+                  <h2><a href="docs/index.html">Source Documentation (Doxygen)</a></h2>
+              </div>
+              <div class="section">
+                  <h2><a href="coverage/index.html">Unit Test Coverage (LCOV)</a></h2>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site_root
+          retention-days: 30
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

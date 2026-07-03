@@ -111,7 +111,39 @@ extern "C"
     int getElValenceforMolecularInorganics(int nPeriodicNum, int charge, int val_num);
     /* Function retrieves element type value for molecular inorganics functionality*/
     int getElTypeforMolecularInorganics(int nPeriodicNum);
-  
+
+    /**
+     * @nnuk
+     *
+     * @brief Determine whether a metal-ligand bond must always be preserved
+     *        during Molecular Inorganics preprocessing. The metal ligand
+     *        bond must always be kept when the neighbour is another metal
+     *        atom or the bond is Coordinative bond or the bond type is
+     *        greater than 1.
+     *
+     *        Some description on
+     *        how InChI sees the bond types:
+     *        Bond type 1 = Single Bond
+     *        Bond type 2 = Double Bond
+     *        Bond type 3 = Triple Bond
+     *        Bond type 4 = Aromatic Bond
+     *        Bond type 9 = Coordinative Bond
+     *
+     *
+     * @param at         Input atom array.
+     * @param metal_idx  Index of the metal atom.
+     * @param neigh_idx  Index of the neighboring atom.
+     * @param bond_pos   Position of the bond in the metal neighbor list.
+     *
+     * @return int
+     *  1 if the bond must be preserved.
+     *  0 if the bond may still be evaluated for disconnection.
+     */
+    int MolecularInorganicsKeepBond(inp_ATOM* at,
+                                    int metal_idx,
+                                    int neigh_idx,
+                                    int bond_pos);
+
     /**
      * @brief Set the enhanced stereochemistry for t- and m-layers
      *

@@ -6389,6 +6389,15 @@ int shouldBondBeCut(int atom1, int atom2)
 {
     int index1, index2, binaryValue;
 
+    /* Bounds-check the 1-based periodic numbers before indexing the
+     * NUM_ELEMENTS x NUM_ELEMENTS table. An out-of-range value (e.g. a
+     * pseudo-atom with el_number 0, or a number beyond the table) would
+     * otherwise read out of bounds. Default to 0 = keep the bond. */
+    if (atom1 < 1 || atom1 > NUM_ELEMENTS || atom2 < 1 || atom2 > NUM_ELEMENTS)
+    {
+        return 0;
+    }
+
     /* Get the indices corresponding to the atomic numbers */
     index1 = atom1 - 1;
     index2 = atom2 - 1;
@@ -6425,6 +6434,101 @@ void updateNeighborListMolecularInorganics(inp_ATOM *at, int atom_idx, int neigh
             at[atom_idx].valence--; /* Reduce the valence (number of neighbors) */
 
             break;
+        }
+    }
+}
+
+/************************************************************************
+ * @nnuk
+ * @brief Determine whether a metal-ligand bond must always be preserved
+ *        during Molecular Inorganics preprocessing.
+ ***********************************************************************/
+int MolecularInorganicsKeepBond(inp_ATOM *at, int metal_idx, int neigh_idx, int bond_pos)
+{
+    int bond_type = at[metal_idx].bond_type[bond_pos];
+
+    if (is_el_a_metal(at[neigh_idx].el_number) || (bond_type > 1 && bond_type != COORDINATIVE_BOND))
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+/*****************************************************************************
+ * Convert coordinative (type 9) bonds into normal single bonds.
+ *
+ * A coordinative bond is the zero-order, charge-separated equivalent of a
+ * single bond: the two bonded atoms carry equal and opposite formal charges
+ * (e.g. M(+) ... L(-)). Realizing it as a single bond turns the donated lone
+ * pair into the shared bonding pair, so the +/- charges cancel. This routine
+ * performs that change in place: every COORDINATIVE_BOND becomes
+ * BOND_TYPE_SINGLE and, when the two atoms carry opposite-sign charges, each is
+ * moved one step toward neutral (one charge pair neutralized per bond).
+ *
+ * Only type-9 bonds are touched. A plain single bond is left alone even when
+ * its endpoints carry opposite formal charges: there the charges are an
+ * intrinsic part of the single-bond Lewis structure, not the zero-order
+ * artifact of a dative bond, so cancelling them would corrupt a self-consistent
+ * depiction (and leave the atoms at unusual valences).
+ *
+ * Each undirected bond is processed exactly once, from its lower-indexed
+ * endpoint (the j > i guard), so a multiply-charged pair (e.g. M(2+)-L(2-))
+ * cannot have its charges cancelled once from each stored half-bond.
+ *****************************************************************************/
+static void ConvertCoordinativeBondsToSingle(inp_ATOM *at, int num_atoms)
+{
+    int i, k, k2, j;
+
+    for (i = 0; i < num_atoms; i++)
+    {
+        for (k = 0; k < at[i].valence; k++)
+        {
+            j = at[i].neighbor[k];
+            if (j < 0 || j >= num_atoms)
+            {
+                continue;
+            }
+
+            /* Visit each undirected bond once, from the lower-indexed atom, so
+             * a multiply-charged pair cannot be neutralized once from each end. */
+            if (j <= i)
+            {
+                continue;
+            }
+
+            /* Only coordinative (type 9) bonds are converted; plain single
+             * bonds keep their intrinsic formal charges untouched. */
+            if (at[i].bond_type[k] != COORDINATIVE_BOND)
+            {
+                continue;
+            }
+
+            /* Realize the bond as single on both endpoints so the rest of the
+             * pipeline sees a plain single bond from either atom. */
+            at[i].bond_type[k] = BOND_TYPE_SINGLE;
+
+            for (k2 = 0; k2 < at[j].valence; k2++)
+            {
+                if (at[j].neighbor[k2] == i)
+                {
+                    at[j].bond_type[k2] = BOND_TYPE_SINGLE;
+                    break;
+                }
+            }
+
+            /* Cancel the paired +/- charges: the lone pair becomes the bonding
+             * pair, so each atom moves one unit toward neutral. */
+            if (at[i].charge > 0 && at[j].charge < 0)
+            {
+                at[i].charge--;
+                at[j].charge++;
+            }
+            else if (at[i].charge < 0 && at[j].charge > 0)
+            {
+                at[i].charge++;
+                at[j].charge--;
+            }
         }
     }
 }
@@ -6472,7 +6576,7 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     int i, j, n, k, t;
     int binaryValue;
     int disconnectDecision;
-    int neighbor_idx, neigh_pos;
+    int neigh_pos;
     int num_metals, current_component;
 
     /* memory allocation */
@@ -6499,6 +6603,50 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
             DisconnectAmmoniumSalt(at, j, piO, pk, num_explicit_H);
         }
     }
+
+    /* Disconnect charge-separated metal-ligand bonds, preserving the drawn
+     * formal charges. A metal and ligand carrying opposite formal charges
+     * across a single (type 1) or coordinative (type 9) bond depict an ionic
+     * interaction (e.g. M(2+) ... L(2-)) and must split into the drawn ions
+     * regardless of the metal's nominal valence or the presence of other
+     * metals in the same component - the heuristics in the disconnection loop
+     * below would otherwise keep these bonds connected. DisconnectInpAtBond
+     * also decrements valence and chem_bonds_valence on both atoms (a type-9
+     * bond counts as single), so no charge is added or removed here: each ion
+     * keeps exactly the charge drawn in the input. Higher-order bonds (e.g. a
+     * drawn M=O double bond) are genuine covalent bonds and are left intact. */
+    for (i = 0; i < num_at; i++)
+    {
+        for (k = 0; k < at[i].valence; )
+        {
+            j = at[i].neighbor[k];
+
+            /* Process each undirected bond once, from its lower-indexed atom,
+             * and only charge-separated metal/non-metal single or coordinative
+             * bonds. */
+            if (j <= i || j >= num_at ||
+                (at[i].bond_type[k] != COORDINATIVE_BOND &&
+                 at[i].bond_type[k] != BOND_TYPE_SINGLE) ||
+                is_el_a_metal(at[i].el_number) == is_el_a_metal(at[j].el_number) ||
+                !((at[i].charge > 0 && at[j].charge < 0) ||
+                  (at[i].charge < 0 && at[j].charge > 0)))
+            {
+                k++;
+                continue;
+            }
+
+            DisconnectInpAtBond(at, nOldCompNumber, i, k);
+            num_disconnected++;
+            ip->bMolecularInorganicsReconnectedInChI = 1;
+            /* neighbor k was removed; the next neighbor shifted into its slot,
+             * so do not advance k here. */
+        }
+    }
+
+    /* Realize the remaining (uncharged) coordinative (type 9) bonds as single
+     * bonds, so the rest of the pipeline treats them like the equivalent
+     * single-bonded structure. */
+    ConvertCoordinativeBondsToSingle(at, num_at);
 
     /* Function call to Mark ring systems */
     MarkRingSystemsInp(at, num_at, 0);
@@ -6658,7 +6806,7 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
                     ligand_elem_array[ligand_type_count++] = neigh_elem;
                 }
 
-                if (at[i].bond_type[n] > 1 || is_el_a_metal(at[neigh_idx].el_number))
+                if (MolecularInorganicsKeepBond(at, i, neigh_idx, n))
                 {
                     must_keep_neighbor = 1;
                 }
@@ -6695,11 +6843,11 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
         /* Proceed with electronegativity and disconnection logic */
         for (n = at[i].valence - 1; n >= 0; n--)
         {
-            neighbor_idx = at[i].neighbor[n];
+            int neighbor_idx = at[i].neighbor[n];
 
             /* Check if the neighboring atom has more than 1 bond connected to the metal atom or
              * if the neighbour is also a metal atom. In both cases no disconnection has to be done */
-            if (at[i].bond_type[n] > 1 || is_el_a_metal(at[neighbor_idx].el_number))
+            if (MolecularInorganicsKeepBond(at, i, neighbor_idx, n))
             {
                 ip->bMolecularInorganicsReconnectedInChI = 1;
                 continue; /* Skip disconnection for this bond */

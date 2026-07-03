@@ -13,7 +13,7 @@ jobs:
     container: python:3.12
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: setup
         run: ./.devcontainer/post_create_commands.sh
@@ -39,7 +39,9 @@ jobs:
 
   test_musl_gcc:
     runs-on: ubuntu-24.04
-    container: alpine:latest
+    # FIXME: Unpin the alpine version. It's pinned to keep the Python version from advancing beyond 3.12.
+    # The latter is necessary due to https://github.com/IUPAC-InChI/InChI/issues/35.
+    container: alpine:3.23
 
     steps:
       - name: Install build and test environment
@@ -48,7 +50,7 @@ jobs:
 
       # We need to install git before checking out the repository.
       # Otherwise, the repository will be downloaded using the GitHub REST API instead of git.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Show Python version
         run: |

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: InChI Technical Manual
+    url: https://github.com/IUPAC-InChI/InChI/blob/dev/INCHI-1-DOC/InChI_TechMan.pdf
+    about: The InChI Technical Manual (PDF) — algorithm and format reference.
+  - name: InChI Trust
+    url: https://www.inchi-trust.org/
+    about: The InChI Trust — governance and general information.
+  - name: IUPAC InChI homepage
+    url: https://iupac.org/who-we-are/divisions/division-details/inchi/
+    about: IUPAC InChI Subcommittee and project information.

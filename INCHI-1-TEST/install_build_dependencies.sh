@@ -1,4 +1,4 @@
 #!/bin/bash
 
 apt update
-apt install -y cmake doxygen graphviz gdb
+apt install -y cmake doxygen graphviz gdb lcov

@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a new capability for InChI
+title: "feat: <short summary>"
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Motivation
+      description: What can't you do today, or what is painful?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would you like InChI to behave?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches, workarounds, related tools.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Sample files, links to specifications, related issues.
