@@ -49,8 +49,6 @@ void determine_ring_hierarchy(RingSystems* rs) {
     for (int i = 0; i < rs->count; i++) {
         rs->rings[i].parent_id = -1;
 
-        int smallest_parent_size = 1e6;
-
         for (int j = 0; j < rs->count; j++) {
             if (i == j) {
                 continue;
@@ -189,9 +187,6 @@ int are_atoms_in_same_small_ring(const inp_ATOM* atoms,
         return 0;
     }
 
-    const inp_ATOM atom1 = atoms[atom_id1];
-    const inp_ATOM atom2 = atoms[atom_id2];
-
     for (int i = 0; i < rs->atom_to_ring_mapping[atom_id1].ring_count; i++) {
         int ring_id1 = rs->atom_to_ring_mapping[atom_id1].ring_ids[i];
         if (rs->rings[ring_id1].size <= max_ring_size) {
@@ -278,10 +273,14 @@ void determine_fused_rings(RingSystems* rs) {
         return;
     }
 
+    int *ring_counter = (int *)inchi_calloc(rs->count, sizeof(int));
+    if (ring_counter == NULL) {
+        return;
+    }
+
     for (int i = 0; i < rs->count; i++) {
         Ring *cur_ring = &rs->rings[i];
 
-        int ring_counter[rs->count];
         for (int j = 0; j < rs->count; j++) {
             ring_counter[j] = 0;
         }
@@ -296,16 +295,18 @@ void determine_fused_rings(RingSystems* rs) {
 
         cur_ring->nof_atomic_rings = count;
     }
+
+    inchi_free(ring_counter);
 }
 
-void *create_new_ring(RingSystems *rs,
-                      inp_ATOM *atoms,
-                      int *path,
-                      int path_len) {
+void create_new_ring(RingSystems *rs,
+                     inp_ATOM *atoms,
+                     int *path,
+                     int path_len) {
 
 
     Ring *tmp_rings = (Ring*)inchi_realloc(rs->rings, (rs->count + 1) * sizeof(Ring));
-    if (tmp_rings == NULL) return NULL;
+    if (tmp_rings == NULL) return;
     rs->rings = tmp_rings;
 
     Ring *r = &rs->rings[rs->count];
@@ -324,7 +325,7 @@ void *create_new_ring(RingSystems *rs,
         rs->atom_to_ring_mapping[path[i]].atom_id = path[i];
         int *tmp_ids = (int*)inchi_realloc(rs->atom_to_ring_mapping[path[i]].ring_ids,
             (rs->atom_to_ring_mapping[path[i]].ring_count + 1) * sizeof(int));
-        if (tmp_ids == NULL) return NULL;
+        if (tmp_ids == NULL) return;
         rs->atom_to_ring_mapping[path[i]].ring_ids = tmp_ids;
         rs->atom_to_ring_mapping[path[i]].ring_ids[rs->atom_to_ring_mapping[path[i]].ring_count] = r->id;
         rs->atom_to_ring_mapping[path[i]].ring_count++;
@@ -333,7 +334,6 @@ void *create_new_ring(RingSystems *rs,
         for (int j = i + 1; j < path_len; j++) {
             // prev, i, next
             int prev_atom_id = path[i - 1 < 0 ? path_len - 1 : i - 1];
-            int cur_atom_id = path[i];
             int next_atom_id = path[i + 1 >= path_len ? 0 : i + 1];
             int other_atom_id = path[j];
             for (int k = 0; k < atom.valence; k++) {
@@ -347,7 +347,6 @@ void *create_new_ring(RingSystems *rs,
         }
     }
 
-    rs->rings[rs->count] = *r;
     rs->count++;
 }
 
@@ -454,9 +453,6 @@ int is_fused_ring_pivot(const RingSystems *rs,
             }
             if (found_atom1 && found_atom2) {
                 if (r->nof_atomic_rings == 2) {
-                    // printf("atom1 %d atom2 %d ring id %d nof atomic rings %d\n",
-                    //     atom_id1, atom_id2, r->id, r->nof_atomic_rings);
-                    // print_ring(r);
                     int count = 0;
                     for (int j = 0; j < r->child_count; j++) {
                         const Ring *child_ring = &rs->rings[r->child_ids[j]];
@@ -465,10 +461,6 @@ int is_fused_ring_pivot(const RingSystems *rs,
                         }
                     }
                     if (count == r->child_count) {
-                        // printf("atom1 %d atom2 %d ring id %d nof atomic rings %d\n",
-                        //     atom_id1, atom_id2, r->id, r->nof_atomic_rings);
-                        // print_ring(r);
-                        // printf(">>> Found pivot atom pair: %d, %d\n", atom_id1, atom_id2);
                         return 1;
                     }
                 }
@@ -492,8 +484,8 @@ RingSystems *find_rings(inp_ATOM* atoms,
     rs->num_atoms = num_atoms;
     rs->atom_to_ring_mapping = (Atom2RingMapping*)inchi_calloc(num_atoms, sizeof(Atom2RingMapping));
 
-    int visited[num_atoms];
-    int path[num_atoms];
+    int *visited = (int*)inchi_calloc(num_atoms, sizeof(int));
+    int *path = (int*)inchi_calloc(num_atoms, sizeof(int));
     int **adj = (int**)inchi_calloc(num_atoms, sizeof(int*));
 
     for (int i = 0; i < num_atoms; ++i) {
@@ -519,6 +511,8 @@ RingSystems *find_rings(inp_ATOM* atoms,
         inchi_free(adj[i]);
     }
     inchi_free(adj);
+    inchi_free(visited);
+    inchi_free(path);
 
     return rs;
 }

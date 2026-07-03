@@ -20,9 +20,11 @@ int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
         return ret;
     }
 
-    int fused_atom_partner[num_atoms];
+    int *fused_atom_partner = (int *)inchi_malloc(num_atoms * sizeof(int));
+    if (fused_atom_partner == NULL) {
+        return ret;
+    }
     for (int i = 0; i < num_atoms; i++) {
-        // out_at[i].fused_partner_atom_id = -1;
         fused_atom_partner[i] = -1;
     }
     for (int i = 0; i < num_atoms; i++) {
@@ -116,9 +118,13 @@ int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
                     has_double_bond_j = 1;
                 }
                 if (atom_id1 != atom_j.neighbor[k]) {
+                    /* Use the first qualifying substituent so the planarity
+                       test input is deterministic (was overwritten each pass,
+                       keeping only the last neighbor). */
                     at_coord[3][0] = out_at[atom_j.neighbor[k]].x;
                     at_coord[3][1] = out_at[atom_j.neighbor[k]].y;
                     at_coord[3][2] = out_at[atom_j.neighbor[k]].z;
+                    break;
                 }
             }
 
@@ -141,41 +147,40 @@ int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
                                                                         6);
 
             score += (both_atoms_in_same_small_ring == 0);
-
-            // printf("are atom in small ring? %d %d\n", atom_in_same_small_ring, (atom_in_same_small_ring == 1) * 10);
             score -= (both_atoms_in_same_small_ring == 1) * 20;
 
             int is_planar = are_4at_in_one_plane(at_coord, 0.03);
 
+            /* Provisional heuristic: the weights above accumulate evidence that
+               the i-j single bond is a hindered-rotation (atropisomeric) axis.
+               A score above ATROP_SCORE_HIGH is accepted outright; a borderline
+               score is accepted only when the axis environment is non-planar.
+               These thresholds are empirical and will be revisited together with
+               true axis-parity determination. */
+            const int ATROP_SCORE_HIGH = 10;
+            const int ATROP_SCORE_BORDERLINE = 9;
+
             int is_atropisomer = 0;
 
-            if (score > 10) {
+            if (score > ATROP_SCORE_HIGH) {
                 is_atropisomer = 1;
                 ret = 1;
-            } else if (score > 9) {
+            } else if (score > ATROP_SCORE_BORDERLINE) {
                 if (is_planar == 0) {
                     is_atropisomer = 1;
                     ret = 1;
-                } else {
-                    // TODO are more tests/rules needed??
                 }
             }
 
             if (is_atropisomer == 1) {
-                printf(">>> FOUND atropisomer (higher score): atom id %2d atom id %2d  is planar %d  --> score %2d (%d)\n", atom_id1, atom_id2, is_planar, score, both_atoms_in_same_small_ring);
                 orig_inp_data->bAtropisomer = 1;
 
                 out_at[atom_id1].bAtropisomeric = 1;
                 out_at[atom_id2].bAtropisomeric = 1;
             }
-
-            // printf(">>> is atropisomer\n");
-            // printf("infos: atom %d with atom %d; bond type %d; bond stereo %d\n",
-            //         atom_id1, atom_id2, atom_i.bond_type[j], atom_i.bond_stereo[j]);
-            // printf("atom type %d %d\n", atom_i.el_number, atom_j.el_number);
-            // printf("has double bond %d %d\n", has_double_bond_i, has_double_bond_j);
-            // printf("fused pivot atoms %d %d\n", fused_atom_partner[atom_id1], fused_atom_partner[atom_id2]);
         }
     }
+
+    inchi_free(fused_atom_partner);
     return ret;
 }

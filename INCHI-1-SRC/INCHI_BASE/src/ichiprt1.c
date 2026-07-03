@@ -1622,8 +1622,12 @@ int OutputINChI1( CANON_GLOBALS *pCG,
                 if (ip->Atropisomers)
                 {
                     if (set_Atropisomer_t_m_layers(orig_inp_data, pINChI, pINChI_Aux)) {
-                        io.sDifSegs[io.nCurINChISegment][DIFS_t_SATOMS] = DIFV_OUTPUT_FILL_T;
-                        io.sDifSegs[io.nCurINChISegment][DIFS_m_SP3INV] = DIFV_OUTPUT_FILL_T;
+                        /* The /t and /m stereo segments live in the main layer.
+                           Mark DIFL_M explicitly: io.nCurINChISegment is not set
+                           until the output phase below (~line 1693), so using it
+                           here indexes sDifSegs out of bounds. */
+                        io.sDifSegs[DIFL_M][DIFS_t_SATOMS] = DIFV_OUTPUT_FILL_T;
+                        io.sDifSegs[DIFL_M][DIFS_m_SP3INV] = DIFV_OUTPUT_FILL_T;
                     }
                 }
 

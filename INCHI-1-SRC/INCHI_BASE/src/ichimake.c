@@ -3913,10 +3913,19 @@ int  Create_INChI(CANON_GLOBALS* pCG,
 
         int ret_ai = find_atropisomeric_atoms_and_bonds(out_at, num_atoms, ring_result, orig_inp_data);
 
-        //map values to orig_inp_data
+        /* Map the per-atom flags back to the original atom order. out_at was
+           renumbered by remove_terminal_HDT() (heavy atoms shift down by the
+           number of preceding explicit terminal H), so out_at[i] does not
+           generally correspond to orig_inp_data->at[i]; use the preserved
+           original atom number instead. */
         if (orig_inp_data->bAtropisomer) {
             for (i = 0; i < num_atoms; i++) {
-                orig_inp_data->at[i].bAtropisomeric = out_at[i].bAtropisomeric;
+                if (out_at[i].bAtropisomeric) {
+                    int orig_idx = (int) out_at[i].orig_at_number - 1;
+                    if (orig_idx >= 0 && orig_idx < orig_inp_data->num_inp_atoms) {
+                        orig_inp_data->at[orig_idx].bAtropisomeric = out_at[i].bAtropisomeric;
+                    }
+                }
             }
         }
 

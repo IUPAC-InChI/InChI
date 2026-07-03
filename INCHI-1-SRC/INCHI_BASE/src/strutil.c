@@ -7250,14 +7250,6 @@ int invert_parities(const INChI *inchi,
     return 0;
 }
 
-int cmp_AT_NUMB(const void *a1, const void *a2)
-{
-    AT_NUMB n1 = *(const AT_NUMB *)a1;
-    AT_NUMB n2 = *(const AT_NUMB *)a2;
-
-    return (int)n1 - (int)n2;
-}
-
 /**
  * @brief Set t- and m-layers object for atropisomer stereochemistry
  *
@@ -7301,12 +7293,9 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
     //        -> rules?
 
     if (orig_inp_data->bAtropisomer) {
-        // printf(">>>>> TODO set t- and m-layers for atropisomers\n");
 
         for (int i = 0; i < orig_inp_data->num_inp_atoms; i++) {
             if (orig_inp_data->at[i].bAtropisomeric) {
-
-                // printf("atom id %d, is_atropisomer %d\n", i + 1, orig_inp_data->at[i].bAtropisomeric);
 
                 int canon_num_raw = get_canonical_atom_number(aux, i + 1);
                 if (canon_num_raw <= 0) continue;

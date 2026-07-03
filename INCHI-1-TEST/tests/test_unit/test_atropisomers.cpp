@@ -95,6 +95,7 @@ TEST(test_atropisomers, test_dummy_1_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -169,6 +170,7 @@ TEST(test_atropisomers, test_dummy_2_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -236,6 +238,7 @@ TEST(test_atropisomers, test_dummy_3_atropismer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C20H16O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-11,18,21-22H,12H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -317,6 +320,7 @@ TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C20H28N2O2/c1-5-17(23)22(14-10-7-6-8-11-14)18-15(19(21)24)12-9-13-16(18)20(2,3)4/h5,9,12-14H,1,6-8,10-11H2,2-4H3,(H2,21,24)";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -407,6 +411,7 @@ TEST(test_atropisomers, test_dummy_5_no_atropisomer_no_wedge_bonds)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C23H21FN6O3/c1-12-15(11-28(2)27-12)13-6-14-17(7-19(13)32-4)26-9-18-21(14)30(23(31)29(18)3)22-16(24)8-25-10-20(22)33-5/h6-11H,1-5H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
@@ -510,6 +515,7 @@ TEST(test_atropisomers, test_dummy_6_two_atropisomer_bonds)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C25H10Br6Cl4/c26-12-3-1-4-13(27)17(12)19-16(32)8-7-10(23(19)33)9-11-21(30)24(34)20(25(35)22(11)31)18-14(28)5-2-6-15(18)29/h1-8H,9H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
@@ -559,6 +565,7 @@ TEST(test_atropisomers, test_dummy_7_no_atropisomer_1)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C12H10Br2/c1-7-3-4-8(2)12-10(14)6-5-9(13)11(7)12/h3-6H,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -620,6 +627,7 @@ TEST(test_atropisomers, test_dummy_8_no_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C18H14O/c1-11-7-8-13-9-10-19-18-15-6-4-3-5-14(15)12(2)16(11)17(13)18/h3-10H,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -663,6 +671,7 @@ TEST(test_atropisomers, test_dummy_9_no_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C9H9NO/c1-6-3-4-11-9-8(6)7(2)5-10-9/h3-5H,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -711,6 +720,7 @@ TEST(test_atropisomers, test_dummy_10_no_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C13H10/c1-3-7-12-10(5-1)9-11-6-2-4-8-13(11)12/h1-8H,9H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -824,6 +834,7 @@ TEST(test_atropisomers, test_dummy_11_no_atropisomer_3_fragments)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C16H10.C14H10.C13H10/c1-3-11-7-9-13-5-2-6-14-10-8-12(4-1)15(11)16(13)14;1-3-7-13-11(5-1)9-10-12-6-2-4-8-14(12)13;1-3-7-12-10(5-1)9-11-6-2-4-8-13(11)12/h1-10H;1-10H;1-8H,9H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -876,6 +887,7 @@ TEST(test_atropisomers, test_dummy_12_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C15H14/c1-3-10-14-12(6-1)8-5-9-13-7-2-4-11-15(13)14/h1-4,6-7,10-11H,5,8-9H2";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -975,6 +987,7 @@ TEST(test_atropisomers, test_dummy_13_atropisomer_Caryophyllene)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C15H24/c1-11-6-5-7-12(2)13-10-15(3,4)14(13)9-8-11/h6,13-14H,2,5,7-10H2,1,3-4H3/b11-6+/t13-,14-/m1/s1";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
@@ -1042,6 +1055,7 @@ TEST(test_atropisomers, test_dummy_14_atropisomer)
     char options[] = "-Atropisomers";
     inchi_Output output;
     inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
