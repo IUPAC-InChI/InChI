@@ -5,6 +5,7 @@ extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mode.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/extr_ct.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/atropisomers.h"
 }
 
@@ -1264,5 +1265,91 @@ TEST(test_atropisomers, predicate_is_order_independent) {
     EXPECT_EQ(ret, 1);
     EXPECT_EQ(at[4].bAtropisomeric, 1);
     EXPECT_EQ(at[5].bAtropisomeric, 1);
+    free_ring_system(rs);
+}
+
+TEST(test_atropisomers, parity_flat_no_wedge_is_undefined) {
+    // Planar (z=0) axis, no wedge bonds -> handedness undefined.
+    const int n = 6;
+    inp_ATOM at[6] = {};
+    double xs[6] = {0, 1, -0.5, -0.5, 1.5, 1.5};
+    double ys[6] = {0, 0,  0.9, -0.9, 0.9, -0.9};
+    for (int i = 0; i < n; i++) { at[i].x = xs[i]; at[i].y = ys[i]; at[i].z = 0.0; }
+    link_bond(at, 0, 1, 1);
+    link_bond(at, 0, 2, 1); link_bond(at, 0, 3, 1);
+    link_bond(at, 1, 4, 1); link_bond(at, 1, 5, 1);
+
+    S_CHAR z1[3] = {}, z2[3] = {};
+    int p = atrop_axis_parity(at, 0, 1, z1, z2);
+    EXPECT_EQ(p, AB_PARITY_UNDF);
+}
+
+TEST(test_atropisomers, parity_wedged_axis_is_defined_and_flips_with_wedge) {
+    // A twisted-biphenyl-like geometry: ring "A" substituents (2,3) sit in the
+    // atom0-atom1 axis's xy-plane, ring "B" substituents (4,5) are rotated 90
+    // degrees into the xz-plane. Mirroring which of (4,5) is above/below the
+    // axis plane swaps the handedness of the twist.
+    //
+    // NB deviates from the brief's bond_stereo-wedge encoding: with the axis
+    // otherwise flat, half_stereo_bond_parity() only feeds a wedge's synthetic
+    // z into *that atom's own* half-bond-parity calc (see get_z_coord());
+    // triple_prod_char()'s "axis" vector is built from literal (x,y,z)
+    // coordinates and is blind to bond_stereo, and with this skeleton's
+    // symmetry the wedge's contribution canceled out, collapsing both wedge
+    // directions onto the same (UNDF) result. Giving ring B a literal
+    // out-of-plane twist (verified experimentally to push the primitives'
+    // dot product past MIN_DOT_PROD) is what actually exercises them.
+    const int n = 6;
+    double xs[6] = {0, 1, -0.5, -0.5, 1.5, 1.5};
+    double ys[6] = {0, 0,  0.9, -0.9, 0,    0};
+
+    auto build = [&](double z4, double z5) {
+        static inp_ATOM at[6];
+        memset(at, 0, sizeof(at));
+        double zs[6] = {0, 0, 0, 0, z4, z5};
+        for (int i = 0; i < n; i++) {
+            at[i].x = xs[i]; at[i].y = ys[i]; at[i].z = zs[i];
+            // half_stereo_bond_parity() screens the central atom's element via
+            // bCanAtomHaveAStereoBond(), which only accepts C/Si/Ge/N; a zeroed
+            // inp_ATOM has an empty elname and is rejected outright.
+            strcpy(at[i].elname, "C");
+        }
+        link_bond(at, 0, 1, 1);
+        link_bond(at, 0, 2, 1); link_bond(at, 0, 3, 1);
+        link_bond(at, 1, 4, 1); link_bond(at, 1, 5, 1);
+        return at;
+    };
+
+    S_CHAR z1[3] = {}, z2[3] = {};
+    inp_ATOM *up   = build(0.9, -0.9);
+    int pu = atrop_axis_parity(up, 0, 1, z1, z2);
+    inp_ATOM *down = build(-0.9, 0.9);
+    int pd = atrop_axis_parity(down, 0, 1, z1, z2);
+
+    EXPECT_TRUE(pu == AB_PARITY_ODD || pu == AB_PARITY_EVEN);
+    EXPECT_TRUE(pd == AB_PARITY_ODD || pd == AB_PARITY_EVEN);
+    EXPECT_NE(pu, pd); // enantiomeric wedge -> opposite parity
+}
+
+TEST(test_atropisomers, detector_populates_axis_record) {
+    const int n = 6;
+    inp_ATOM at[6] = {};
+    for (int i = 0; i < n; i++) { at[i].x = (double)i; at[i].y = 0.0; at[i].z = 0.0; }
+    link_bond(at, 0, 1, 1);
+    link_bond(at, 0, 2, 1); link_bond(at, 0, 3, 1);
+    link_bond(at, 1, 4, 1); link_bond(at, 1, 5, 1);
+    for (int i = 0; i < n; i++) at[i].orig_at_number = (AT_NUMB)(i + 1);
+
+    RingSystems *rs = find_rings(at, n);
+    ASSERT_NE(rs, nullptr);
+    ORIG_ATOM_DATA orig = {};
+    find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+
+    ASSERT_EQ(orig.num_atrop_axes, 1);
+    ASSERT_NE(orig.atrop_axes, nullptr);
+    EXPECT_EQ(orig.atrop_axes[0].at1, 0);
+    EXPECT_EQ(orig.atrop_axes[0].at2, 1);
+
+    if (orig.atrop_axes) inchi_free(orig.atrop_axes);
     free_ring_system(rs);
 }

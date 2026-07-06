@@ -99,7 +99,7 @@ static int dot_prodchar3( const S_CHAR a[], const S_CHAR b[] );
 static double triple_prod( double a[], double b[], double c[], double *sine_value );
 static double triple_prod_and_min_abs_sine( double at_coord[][3], double *min_sine );
 static int are_3_vect_in_one_plane( double at_coord[][3], double min_sine );
-static int triple_prod_char( inp_ATOM *at, int at_1, int i_next_at_1, S_CHAR *z_dir1,
+int triple_prod_char( inp_ATOM *at, int at_1, int i_next_at_1, S_CHAR *z_dir1,
                                            int at_2, int i_next_at_2, S_CHAR *z_dir2 );
 
 static int CompDble( const void *a1, const void *a2, void * );
@@ -110,7 +110,7 @@ static double triple_prod_and_min_abs_sine2( double at_coord[][3], double centra
 static int bInpAtomHasRequirdNeigh( inp_ATOM *at, int cur_at, int RequirdNeighType, int NumDbleBonds, int bStereoAtZz );
 static int bIsSuitableHeteroInpAtom( inp_ATOM  *at );
 static int bIsOxide( inp_ATOM  *at, int cur_at );
-static int half_stereo_bond_parity( inp_ATOM *at, int cur_at, inp_ATOM *at_removed_H, int num_removed_H, S_CHAR *z_dir,
+int half_stereo_bond_parity( inp_ATOM *at, int cur_at, inp_ATOM *at_removed_H, int num_removed_H, S_CHAR *z_dir,
                                    int bPointedEdgeStereo, int vABParityUnknown );
 static int get_allowed_stereo_bond_type( int bond_type );
 static int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE nMode );

@@ -408,6 +408,17 @@ typedef struct OAD_V3000
                         /* sterac[k][2..] - member atom numbers                      */
 } OAD_V3000;
 
+/* Atropisomer candidate axis record (geometric axial parity), see atropisomers.c/.h. */
+typedef struct tagATROP_AXIS {
+    int    at1;          /* 0-based index into out_at */
+    int    at2;
+    AT_NUMB orig_at1;    /* out_at[at1].orig_at_number (for Sub-project B mapping) */
+    AT_NUMB orig_at2;
+    S_CHAR parity;       /* AB_PARITY_ODD / AB_PARITY_EVEN / AB_PARITY_UNDF */
+    S_CHAR z_dir1[3];
+    S_CHAR z_dir2[3];
+} ATROP_AXIS;
+
 /**
  * @brief Structure describing original atom data
  *
@@ -464,6 +475,9 @@ typedef struct tagOrigAtom
     int n_zy;               /* number of non-polymeric pseudoatoms (Zy)             */
 
     int bAtropisomer;     /* flag indicating whether the structure is an atropisomer; it is set to 1 if the structure has been identified as an atropisomer during input processing, and 0 otherwise */
+
+    ATROP_AXIS *atrop_axes;   /* detected candidate axes; NULL if none. Owned here. */
+    int         num_atrop_axes;
 
 } ORIG_ATOM_DATA;
 

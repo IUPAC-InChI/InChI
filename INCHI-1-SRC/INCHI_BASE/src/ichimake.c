@@ -3930,6 +3930,12 @@ int  Create_INChI(CANON_GLOBALS* pCG,
         }
 
         free_ring_system(ring_result);
+
+        if (orig_inp_data->atrop_axes) {
+            inchi_free(orig_inp_data->atrop_axes);
+            orig_inp_data->atrop_axes = NULL;
+            orig_inp_data->num_atrop_axes = 0;
+        }
     }
 
 #endif

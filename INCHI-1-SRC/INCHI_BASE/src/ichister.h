@@ -78,6 +78,13 @@ extern "C" {
     int get_opposite_sb_atom( inp_ATOM *at, int cur_atom, int icur2nxt,
                               int *pnxt_atom, int *pinxt2cur, int *pinxt_sb_parity_ord );
 
+    /* Allene/atropisomer stereo primitives, used by atropisomers.c to compute
+       geometric axial parity. */
+    int triple_prod_char( inp_ATOM *at, int at_1, int i_next_at_1, S_CHAR *z_dir1,
+                          int at_2, int i_next_at_2, S_CHAR *z_dir2 );
+    int half_stereo_bond_parity( inp_ATOM *at, int cur_at, inp_ATOM *at_removed_H, int num_removed_H,
+                                 S_CHAR *z_dir, int bPointedEdgeStereo, int vABParityUnknown );
+
 #define PES_BIT_POINT_EDGE_STEREO    1
 #define PES_BIT_PHOSPHINE_STEREO     2
 #define PES_BIT_ARSINE_STEREO        4
