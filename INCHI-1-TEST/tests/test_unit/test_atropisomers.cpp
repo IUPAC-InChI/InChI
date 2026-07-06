@@ -1192,3 +1192,77 @@ TEST(test_atropisomers, test_dummy_15_test_file_1)
         }
     }
 }
+
+// Helper: link a single bond a<->b (0-based) with a bond type, appending to each
+// atom's neighbor/bond_type arrays and bumping valence.
+static void link_bond(inp_ATOM *at, int a, int b, int btype) {
+    at[a].neighbor[at[a].valence] = (AT_NUMB)b;
+    at[a].bond_type[at[a].valence] = (S_CHAR)btype;
+    at[a].valence++;
+    at[b].neighbor[at[b].valence] = (AT_NUMB)a;
+    at[b].bond_type[at[b].valence] = (S_CHAR)btype;
+    at[b].valence++;
+}
+
+TEST(test_atropisomers, predicate_acyclic_3plus3_single_bond_is_candidate) {
+    // Atoms 0-1 central single bond; 0 also -> 2,3 ; 1 also -> 4,5 (all terminal).
+    const int n = 6;
+    inp_ATOM at[6] = {};
+    for (int i = 0; i < n; i++) { at[i].x = (double)i; at[i].y = 0.0; at[i].z = 0.0; }
+    link_bond(at, 0, 1, 1);
+    link_bond(at, 0, 2, 1); link_bond(at, 0, 3, 1);
+    link_bond(at, 1, 4, 1); link_bond(at, 1, 5, 1);
+
+    RingSystems *rs = find_rings(at, n);
+    ASSERT_NE(rs, nullptr);
+    ORIG_ATOM_DATA orig = {};
+    int ret = find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+
+    EXPECT_EQ(ret, 1);
+    EXPECT_EQ(orig.bAtropisomer, 1);
+    EXPECT_EQ(at[0].bAtropisomeric, 1);
+    EXPECT_EQ(at[1].bAtropisomeric, 1);
+    EXPECT_EQ(at[2].bAtropisomeric, 0); // terminal, valence 1
+    free_ring_system(rs);
+}
+
+TEST(test_atropisomers, predicate_single_bond_in_small_ring_is_not_candidate) {
+    // 6-membered ring of single bonds (0..5), each ring atom also gets one
+    // terminal substituent so ring atoms reach valence 3. No bond should qualify:
+    // every 3+3 single bond lies in the size-6 ring.
+    const int n = 12;
+    inp_ATOM at[12] = {};
+    for (int i = 0; i < n; i++) { at[i].x = (double)i; at[i].y = 0.0; at[i].z = 0.0; }
+    for (int i = 0; i < 6; i++) link_bond(at, i, (i + 1) % 6, 1); // ring
+    for (int i = 0; i < 6; i++) link_bond(at, i, 6 + i, 1);       // substituents
+
+    RingSystems *rs = find_rings(at, n);
+    ASSERT_NE(rs, nullptr);
+    ORIG_ATOM_DATA orig = {};
+    int ret = find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(orig.bAtropisomer, 0);
+    free_ring_system(rs);
+}
+
+TEST(test_atropisomers, predicate_is_order_independent) {
+    // Same graph as the acyclic test but atoms declared in a permuted order:
+    // central bond is 4-5, substituents 0,1 on 4 and 2,3 on 5.
+    const int n = 6;
+    inp_ATOM at[6] = {};
+    for (int i = 0; i < n; i++) { at[i].x = (double)i; at[i].y = 0.0; at[i].z = 0.0; }
+    link_bond(at, 4, 5, 1);
+    link_bond(at, 4, 0, 1); link_bond(at, 4, 1, 1);
+    link_bond(at, 5, 2, 1); link_bond(at, 5, 3, 1);
+
+    RingSystems *rs = find_rings(at, n);
+    ASSERT_NE(rs, nullptr);
+    ORIG_ATOM_DATA orig = {};
+    int ret = find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+
+    EXPECT_EQ(ret, 1);
+    EXPECT_EQ(at[4].bAtropisomeric, 1);
+    EXPECT_EQ(at[5].bAtropisomeric, 1);
+    free_ring_system(rs);
+}
