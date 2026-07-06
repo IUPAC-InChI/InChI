@@ -213,3 +213,49 @@ def test_Ferrocene_heavy_atoms(molfile_Ferrocene_heavy_atoms, run_inchi_exe):
     result = run_inchi_exe(molfile_Ferrocene_heavy_atoms)
 
     assert "Cannot process aromatic bonds" not in result.log
+
+
+def _molfile_methyl_cyclopentadienyl_anion(charged_atom):
+    """Methylcyclopentadienyl anion [C5H4-CH3]- with the -1 formal charge placed on
+    ring atom `charged_atom` (1-5; atom 1 carries the methyl). Every placement denotes
+    the same delocalized anion, so all must yield one identical, placement-independent
+    InChI (schatzsc, PR #234)."""
+    return f"""
+  test
+
+  6  6  0  0  0  0  0  0  0  0999 V2000
+   -0.6348    0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.6348   -0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.1498   -0.6674    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6348    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.1498    0.6674    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.4200    0.8000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  4  0
+  2  3  4  0
+  3  4  4  0
+  4  5  4  0
+  5  1  4  0
+  1  6  1  0
+M  CHG  1   {charged_atom}  -1
+M  END
+"""
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="#154 (schatzsc on PR #234): the charged-ion relaxation acts on the specific "
+    "atom charged in the molfile, before InChI's mobile-charge normalization, so the "
+    "result is placement-dependent (and -9986s for most placements). A delocalized "
+    "anion must give one placement-independent InChI; needs the aromaticity rework.",
+)
+def test_MethylCyclopentadienyl_anion_charge_placement_invariance(run_inchi_exe):
+    """All -1 placements on the methylcyclopentadienyl ring are the same molecule and
+    must produce a single identical InChI (no hallucinated isomers, no -9986)."""
+    inchis = set()
+    for charged_atom in (1, 2, 3, 4, 5):
+        result = run_inchi_exe(_molfile_methyl_cyclopentadienyl_anion(charged_atom))
+        assert "Cannot process aromatic bonds" not in result.log, (
+            f"charge on ring atom {charged_atom} failed with -9986"
+        )
+        inchis.add(parse_inchi_from_executable_output(result.output))
+    assert len(inchis) == 1, f"charge placement changed the InChI: {sorted(inchis)}"
