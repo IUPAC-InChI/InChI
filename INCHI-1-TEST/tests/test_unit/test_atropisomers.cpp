@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <fstream>
+#include <cstring>
 
 extern "C"
 {
@@ -7,6 +8,99 @@ extern "C"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mode.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/extr_ct.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/atropisomers.h"
+}
+
+// Shared molblock fixtures (also used by the recall_* tests below).
+static const char *k_dummy1_molblock =
+    "atropisomer test mol                                                                  \n"
+    "  Ketcher  2192614182D 1   1.00000     0.00000     0                      \n"
+    "                                                                          \n"
+    " 16 17  0  0  1  0  0  0  0  0999 V2000                                   \n"
+    "    6.7160   -7.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    5.8500   -7.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    4.9840   -7.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    4.9840   -8.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    5.8500   -9.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    6.7160   -8.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    6.7160   -5.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    5.8500   -6.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    4.9840   -5.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    4.9840   -4.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    6.7160   -4.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    5.8500   -4.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    7.5821   -6.4750    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    4.1179   -6.4750    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    4.1179   -7.4749    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    7.5821   -7.4750    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "  1  6  1  0  0  0  0                                                     \n"
+    "  1  2  2  0  0  0  0                                                     \n"
+    "  2  3  1  1  0  0  0                                                     \n"
+    "  2  8  1  0  0  0  0                                                     \n"
+    "  3  4  2  0  0  0  0                                                     \n"
+    "  5  4  1  0  0  0  0                                                     \n"
+    "  5  6  2  0  0  0  0                                                     \n"
+    "  8  7  1  1  0  0  0                                                     \n"
+    "  7 11  2  0  0  0  0                                                     \n"
+    "  8  9  2  0  0  0  0                                                     \n"
+    "  9 10  1  0  0  0  0                                                     \n"
+    " 10 12  2  0  0  0  0                                                     \n"
+    " 12 11  1  0  0  0  0                                                     \n"
+    "  7 13  1  0  0  0  0                                                     \n"
+    "  9 14  1  0  0  0  0                                                     \n"
+    "  3 15  1  0  0  0  0                                                     \n"
+    "  1 16  1  0  0  0  0                                                     \n"
+    "M  END                                                                    \n";
+
+static const char *k_dummy12_molblock =
+    "atropisomer test mol                                                      \n"
+    "  Ketcher  2272615132D 1   1.00000     0.00000     0                      \n"
+    "                                                                          \n"
+    " 15 17  0  0  1  0  0  0  0  0999 V2000                                   \n"
+    "    5.4357   -3.2991    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    7.1745   -3.2986    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    6.3067   -2.7965    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    7.1745   -4.3043    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    5.4357   -4.3088    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    6.3090   -4.8062    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    5.4357   -6.6150    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    7.1745   -6.6145    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    6.3067   -6.1125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    7.1745   -7.6203    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    5.4357   -7.6248    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    6.3090   -8.1222    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    8.0449   -6.1125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    8.0452   -4.8059    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "    8.2722   -5.4088    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
+    "  3  1  2  0     0  0                                                     \n"
+    "  1  5  1  0     0  0                                                     \n"
+    "  5  6  2  0     0  0                                                     \n"
+    "  6  4  1  1     0  0                                                     \n"
+    "  4  2  2  0     0  0                                                     \n"
+    "  9  7  1  1     0  0                                                     \n"
+    "  7 11  2  0     0  0                                                     \n"
+    " 12 10  2  0     0  0                                                     \n"
+    " 10  8  1  0     0  0                                                     \n"
+    "  8  9  2  0     0  0                                                     \n"
+    "  6  9  1  0     0  0                                                     \n"
+    "  8 13  1  0     0  0                                                     \n"
+    "  4 14  1  0     0  0                                                     \n"
+    " 14 15  1  0     0  0                                                     \n"
+    " 13 15  1  0     0  0                                                     \n"
+    "  3  2  1  1     0  0                                                     \n"
+    " 12 11  1  1     0  0                                                     \n"
+    "M  END                                                                    \n";
+
+// Runs a molblock through MakeINCHIFromMolfileText with -Atropisomers and
+// reports whether the InChI version token is the atropisomer flag "1B"
+// (vs. the plain "1S").
+static bool inchi_has_atrop_flag(const char *molblock) {
+    inchi_Output out;
+    memset(&out, 0, sizeof(out));
+    char opts[] = "-Atropisomers";
+    MakeINCHIFromMolfileText(molblock, opts, &out);
+    bool flagged = out.szInChI && strncmp(out.szInChI, "InChI=1B/", 9) == 0;
+    FreeINCHI(&out);
+    return flagged;
 }
 
 TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__null_parameters) {
@@ -53,45 +147,7 @@ TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__atoms_below_min_vale
 
 TEST(test_atropisomers, test_dummy_1_atropisomer)
 {
-    const char *molblock =
-        "atropisomer test mol                                                                  \n"
-        "  Ketcher  2192614182D 1   1.00000     0.00000     0                      \n"
-        "                                                                          \n"
-        " 16 17  0  0  1  0  0  0  0  0999 V2000                                   \n"
-        "    6.7160   -7.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    5.8500   -7.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    4.9840   -7.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    4.9840   -8.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    5.8500   -9.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    6.7160   -8.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    6.7160   -5.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    5.8500   -6.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    4.9840   -5.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    4.9840   -4.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    6.7160   -4.9750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    5.8500   -4.4750    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    7.5821   -6.4750    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    4.1179   -6.4750    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    4.1179   -7.4749    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    7.5821   -7.4750    0.0000 Br  0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "  1  6  1  0  0  0  0                                                     \n"
-        "  1  2  2  0  0  0  0                                                     \n"
-        "  2  3  1  1  0  0  0                                                     \n"
-        "  2  8  1  0  0  0  0                                                     \n"
-        "  3  4  2  0  0  0  0                                                     \n"
-        "  5  4  1  0  0  0  0                                                     \n"
-        "  5  6  2  0  0  0  0                                                     \n"
-        "  8  7  1  1  0  0  0                                                     \n"
-        "  7 11  2  0  0  0  0                                                     \n"
-        "  8  9  2  0  0  0  0                                                     \n"
-        "  9 10  1  0  0  0  0                                                     \n"
-        " 10 12  2  0  0  0  0                                                     \n"
-        " 12 11  1  0  0  0  0                                                     \n"
-        "  7 13  1  0  0  0  0                                                     \n"
-        "  9 14  1  0  0  0  0                                                     \n"
-        "  3 15  1  0  0  0  0                                                     \n"
-        "  1 16  1  0  0  0  0                                                     \n"
-        "M  END                                                                    \n";
+    const char *molblock = k_dummy1_molblock;
 
     char options[] = "-Atropisomers";
     inchi_Output output;
@@ -846,44 +902,7 @@ TEST(test_atropisomers, test_dummy_11_no_atropisomer_3_fragments)
 
 TEST(test_atropisomers, test_dummy_12_atropisomer)
 {
-    const char *molblock =
-        "atropisomer test mol                                                      \n"
-        "  Ketcher  2272615132D 1   1.00000     0.00000     0                      \n"
-        "                                                                          \n"
-        " 15 17  0  0  1  0  0  0  0  0999 V2000                                   \n"
-        "    5.4357   -3.2991    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    7.1745   -3.2986    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    6.3067   -2.7965    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    7.1745   -4.3043    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    5.4357   -4.3088    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    6.3090   -4.8062    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    5.4357   -6.6150    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    7.1745   -6.6145    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    6.3067   -6.1125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    7.1745   -7.6203    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    5.4357   -7.6248    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    6.3090   -8.1222    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    8.0449   -6.1125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    8.0452   -4.8059    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "    8.2722   -5.4088    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0     \n"
-        "  3  1  2  0     0  0                                                     \n"
-        "  1  5  1  0     0  0                                                     \n"
-        "  5  6  2  0     0  0                                                     \n"
-        "  6  4  1  1     0  0                                                     \n"
-        "  4  2  2  0     0  0                                                     \n"
-        "  9  7  1  1     0  0                                                     \n"
-        "  7 11  2  0     0  0                                                     \n"
-        " 12 10  2  0     0  0                                                     \n"
-        " 10  8  1  0     0  0                                                     \n"
-        "  8  9  2  0     0  0                                                     \n"
-        "  6  9  1  0     0  0                                                     \n"
-        "  8 13  1  0     0  0                                                     \n"
-        "  4 14  1  0     0  0                                                     \n"
-        " 14 15  1  0     0  0                                                     \n"
-        " 13 15  1  0     0  0                                                     \n"
-        "  3  2  1  1     0  0                                                     \n"
-        " 12 11  1  1     0  0                                                     \n"
-        "M  END                                                                    \n";
+    const char *molblock = k_dummy12_molblock;
 
     char options[] = "-Atropisomers";
     inchi_Output output;
@@ -895,6 +914,14 @@ TEST(test_atropisomers, test_dummy_12_atropisomer)
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
+}
+
+TEST(test_atropisomers, recall_biaryl_dummy1_is_flagged) {
+    EXPECT_TRUE(inchi_has_atrop_flag(k_dummy1_molblock));
+}
+
+TEST(test_atropisomers, recall_bridged_ring_biaryl_dummy12_is_flagged) {
+    EXPECT_TRUE(inchi_has_atrop_flag(k_dummy12_molblock));
 }
 
 TEST(test_atropisomers, test_dummy_13_atropisomer_Caryophyllene)
