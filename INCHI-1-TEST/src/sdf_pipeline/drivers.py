@@ -68,7 +68,11 @@ def regression(
             current_result = json.dumps(consumer_result.result)
             if current_result != reference_result:
                 expected_failure = molfile_id in expected_failures
-                exit_code = 0 if expected_failure else 1
+                # Never reset the exit code: once an unexpected failure has
+                # occurred the run must fail, regardless of any later expected
+                # failures.
+                if not expected_failure:
+                    exit_code = 1
                 log_entry = json.dumps(
                     {
                         "time": consumer_result.time,
@@ -158,7 +162,10 @@ def invariance(
         if n_variants == 1:
             continue
         expected_failure = consumer_result.molfile_id in expected_failures
-        exit_code = 0 if expected_failure else 1
+        # Never reset the exit code: once an unexpected failure has occurred the
+        # run must fail, regardless of any later expected failures.
+        if not expected_failure:
+            exit_code = 1
         if n_variants == 0:
             logger.info(
                 f"invariance test didn't run: molfile ID {consumer_result.molfile_id} from {sdf_path.name} could not be read."
