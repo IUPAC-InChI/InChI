@@ -1095,8 +1095,10 @@ TEST(test_atropisomers, test_dummy_14_atropisomer)
 TEST(test_atropisomers, test_dummy_15_test_file_1)
 {
 
-    const char* inchi_filename = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/atropisomers_test_file_1_v2.sdf";
-    // const char* inchi_filename = "/workspaces/InChI/INCHI-1-TEST/tests/test_unit/fixtures/atropisomers_test_file_1.sdf";
+#ifndef FIXTURES_DIR
+#define FIXTURES_DIR "../../../../../INCHI-1-TEST/tests/test_unit/fixtures"
+#endif
+    const char* inchi_filename = FIXTURES_DIR "/atropisomers_test_file_1_v2.sdf";
 
     std::ifstream file_inchi(inchi_filename, std::ios::binary);
     ASSERT_TRUE(file_inchi.is_open());
