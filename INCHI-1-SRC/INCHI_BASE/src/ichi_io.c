@@ -648,15 +648,18 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
             }
             /* output */
             /* djb-rwth: fixing oss-fuzz issue #67676 */
-            my_va_start(argList, lpszFormat);
-            size_t remainingLength = ios->s.nAllocatedLength - ios->s.nUsedLength;
-            ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, remainingLength, lpszFormat, argList);
-            va_end(argList);
-            if (ret >= 0)
             {
+                size_t remainingLength = (size_t)(ios->s.nAllocatedLength - ios->s.nUsedLength);
+                my_va_start(argList, lpszFormat);
+                ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, remainingLength, lpszFormat, argList);
+                va_end(argList);
+                if (ret < 0 || (size_t)ret >= remainingLength)
+                {
+                    return -1; /* error or truncation */
+                }
                 ios->s.nUsedLength += ret;
+                return ret;
             }
-            return ret;
         }
         return -1;
     }
