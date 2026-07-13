@@ -35,7 +35,7 @@ TEST(permutation_util_testing, test_OrigAtData_Permute)
 
     INCHI_IOSTREAM input_stream;
     inchi_ios_init(&input_stream, INCHI_IOS_TYPE_STRING, nullptr);
-    inchi_ios_print_nodisplay(&input_stream, MOLTEXT);
+    inchi_ios_print_nodisplay(&input_stream, "%s", MOLTEXT);
 
     ORIG_ATOM_DATA atom_data{};
     INCHI_MODE input_atom_flags = 0;
@@ -125,18 +125,20 @@ TEST(permutation_util_testing, test_PermuteMolfileText_happy_path)
 
     EXPECT_STRNE(permuted_moltext, MOLTEXT);
 
-    printf("Original molfile:\n%s\n", MOLTEXT);
-    printf("Permuted molfile:\n%s\n", permuted_moltext);
-
     char options[] = "-DoNotAddH";
     inchi_Output original_output;
     inchi_Output *original_poutput = &original_output;
     inchi_Output permuted_output;
     inchi_Output *permuted_poutput = &permuted_output;
+    memset(original_poutput, 0, sizeof(*original_poutput));
+    memset(permuted_poutput, 0, sizeof(*permuted_poutput));
 
     ASSERT_EQ(MakeINCHIFromMolfileText(MOLTEXT, options, original_poutput), 1);
     ASSERT_EQ(MakeINCHIFromMolfileText(permuted_moltext, options, permuted_poutput), 1);
     ASSERT_STREQ(original_poutput->szInChI, permuted_poutput->szInChI);
+
+    FreeINCHI(original_poutput);
+    FreeINCHI(permuted_poutput);
 }
 
 TEST(permutation_util_testing, test_PermuteMolfileText_empty_moltext)
