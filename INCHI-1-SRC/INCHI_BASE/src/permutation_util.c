@@ -250,7 +250,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
     if (OrigAtData_Duplicate(&permuted_atom_data, &atom_data) != 0)
         goto exit;
 
-    permutation_mapping = malloc(num_atoms * sizeof(int));
+    permutation_mapping = inchi_malloc(num_atoms * sizeof(int));
     if (!permutation_mapping)
         goto exit;
 
@@ -288,7 +288,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
 exit:
     inchi_ios_close(&input_stream);
     inchi_ios_close(&output_stream);
-    free(permutation_mapping);
+    inchi_free(permutation_mapping);
     FreeOrigAtData(&permuted_atom_data);
     FreeOrigAtData(&atom_data);
 
