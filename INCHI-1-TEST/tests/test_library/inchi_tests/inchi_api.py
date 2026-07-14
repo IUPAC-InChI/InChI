@@ -96,6 +96,13 @@ def permute_molfile_text(inchi_lib: ctypes.CDLL, molfile: str) -> tuple[int, str
     MOLTEXT_SIZE = len(moltext) + 1 + 1024  # null terminator + extra space
     permuted_molfile_buffer = ctypes.create_string_buffer(MOLTEXT_SIZE)
 
+    inchi_lib.PermuteMolfileText.argtypes = [
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_size_t,
+    ]
+    inchi_lib.PermuteMolfileText.restype = ctypes.c_int
+
     exit_code: int = inchi_lib.PermuteMolfileText(
         ctypes.c_char_p(moltext),
         permuted_molfile_buffer,
