@@ -97,6 +97,23 @@ int fix_aromatic_oxygen_and_sulfur( inp_ATOM *atom );
 int huckel_pi_contribution( inp_ATOM *at, int i );
 
 /**
+ * @brief Test whether a ring atom is a Hückel electron source needing relaxation.
+ *
+ * True when atom @p i cannot carry a localized ring double bond and therefore
+ * blocks kekulization of an odd aromatic ring: its ring coordination
+ * (@c valence minus the number of metal neighbors) is 2, it has no implicit H,
+ * its @c chem_bonds_valence exceeds its @c valence (spare valence left by the
+ * unresolved aromatic system), and it is either charged or a doublet radical.
+ * Metal neighbors are counted, not excluded, so connected organometallic rings
+ * (e.g. ferrocene Cp) qualify.
+ *
+ * @param at Atom array.
+ * @param i  Index of the candidate ring atom.
+ * @return 1 if @p i is an electron source to relax; 0 otherwise.
+ */
+int is_aromatic_electron_source( inp_ATOM *at, int i );
+
+/**
  * @brief Test whether an atom is an unsaturated but non-aromatic carbon.
  *
  * True when @c at[i] is a neutral, non-radical carbon of total valence 4 that

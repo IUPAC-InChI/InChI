@@ -86,6 +86,33 @@ int huckel_pi_contribution( inp_ATOM *at, int i )
 
 
 /****************************************************************************/
+/* Number of atom i's neighbors that are metal atoms. */
+static int count_metal_neighbors( inp_ATOM *at, int i )
+{
+    int k, n = 0;
+    for (k = 0; k < at[i].valence; k++)
+    {
+        if (is_el_a_metal( at[at[i].neighbor[k]].el_number ))
+        {
+            n++;
+        }
+    }
+    return n;
+}
+
+/****************************************************************************/
+int is_aromatic_electron_source( inp_ATOM *at, int i )
+{
+    int ring_coordination = (int) at[i].valence - count_metal_neighbors( at, i );
+
+    return ring_coordination == 2 &&
+           at[i].num_H == 0 &&
+           at[i].chem_bonds_valence > at[i].valence &&
+           ( at[i].charge != 0 || at[i].radical == RADICAL_DOUBLET );
+}
+
+
+/****************************************************************************/
 int check_arom_chain( inp_ATOM *at,
                       int cur /* first*/,
                       int from,
