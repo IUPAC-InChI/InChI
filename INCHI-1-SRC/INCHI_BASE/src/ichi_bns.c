@@ -58,6 +58,7 @@ Normalization related procedures
 #include "util.h"
 #include "ichister.h"
 #include "ichi_bns.h"
+#include "aromaticity.h"
 
 #include "bcf_s.h"
 
@@ -5428,8 +5429,31 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
         /* (here pair(s) of radicals could have disappeared from the atoms) */
         if (IS_BNS_ERROR( ret ))
         {
-            bError = ret;
-            goto exit_function;
+            /* Issue #154/#82: aromatic carbon ions (tropylium C7H7+, cyclopropenyl
+               C3H3+, cyclopentadienyl C5H5-), neutral odd-ring radicals (C5H5.),
+               and connected organometallic aromatics (ferrocene Cp under
+               MolecularInorganics) cannot be kekulized while every aromatic ring
+               atom is required to carry a localized double bond: the electron-
+               source atom contributes to the pi system via an empty orbital
+               (cation), lone pair (anion) or SOMO (radical), not a double bond, so
+               no perfect matching exists and BnsAdjustFlowBondsRad fails with
+               BNS_ALTBOND_ERR. Relax those sources (see aromaticity.c), rebuild the
+               network, and retry the conversion once. Structures that already
+               kekulize never reach this path, so existing InChIs are unaffected. */
+            if (ret == BNS_ALTBOND_ERR &&
+                 relax_aromatic_electron_sources( at, num_atoms ) > 0)
+            {
+                ret = ReInitBnStruct( pBNS, at, num_atoms, 1 );
+                if (!IS_BNS_ERROR( ret ))
+                {
+                    ret = BnsAdjustFlowBondsRad( pBNS, pBD, at, num_atoms );
+                }
+            }
+            if (IS_BNS_ERROR( ret ))
+            {
+                bError = ret;
+                goto exit_function;
+            }
         }
         pBNS->tot_st_flow += 2 * ret;
 
