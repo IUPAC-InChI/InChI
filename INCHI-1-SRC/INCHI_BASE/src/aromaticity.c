@@ -113,6 +113,23 @@ int is_aromatic_electron_source( inp_ATOM *at, int i )
 
 
 /****************************************************************************/
+int relax_aromatic_electron_sources( inp_ATOM *at, int num_atoms )
+{
+    int i, num_relaxed = 0;
+    for (i = 0; i < num_atoms; i++)
+    {
+        if (is_aromatic_electron_source( at, i ))
+        {
+            at[i].chem_bonds_valence--;
+            at[i].num_H++;
+            num_relaxed++;
+        }
+    }
+    return num_relaxed;
+}
+
+
+/****************************************************************************/
 int check_arom_chain( inp_ATOM *at,
                       int cur /* first*/,
                       int from,

@@ -176,6 +176,22 @@ int check_arom_chain( inp_ATOM *at, int cur, int from, int last, int len );
 int replace_arom_bonds( inp_ATOM *at, int num_atoms, inp_ATOM *at2, int num_atoms2 );
 
 /**
+ * @brief Relax Hückel electron-source ring atoms so an odd aromatic ring kekulizes.
+ *
+ * For every atom for which @c is_aromatic_electron_source is true, moves one
+ * valence unit from an assumed ring double bond to an implicit hydrogen
+ * (@c chem_bonds_valence-- paired with @c num_H++). Total valence and formula
+ * are preserved; charge and radical state are untouched. Intended to run only
+ * after the balanced-network kekulizer returns @c BNS_ALTBOND_ERR; the caller
+ * rebuilds the network and retries the conversion once.
+ *
+ * @param at        Atom array (modified in place).
+ * @param num_atoms Number of atoms in @p at.
+ * @return Number of atoms relaxed (0 if none matched).
+ */
+int relax_aromatic_electron_sources( inp_ATOM *at, int num_atoms );
+
+/**
  * @brief Mark alternating (aromatic) bonds via the balanced-network kekulizer.
  *
  * Thin convenience wrapper around mark_alt_bonds_and_taut_groups() invoked

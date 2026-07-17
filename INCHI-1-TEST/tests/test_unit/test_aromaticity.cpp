@@ -358,3 +358,37 @@ TEST(test_aromaticity, electron_source_true_for_radical_carbon)
     a[1].el_number = EL_NUMBER_C;
     EXPECT_EQ(is_aromatic_electron_source(a, 0), 1);
 }
+
+// ---- relax_aromatic_electron_sources ---------------------------------------
+
+TEST(test_aromaticity, relax_moves_valence_unit_to_H_on_source)
+{
+    inp_ATOM a[2]{};
+    a[0].el_number = EL_NUMBER_C;
+    a[0].valence = 2;
+    a[0].neighbor[0] = 1; a[0].neighbor[1] = 1;
+    a[0].chem_bonds_valence = 3;
+    a[0].num_H = 0;
+    a[0].charge = -1;
+    a[1].el_number = EL_NUMBER_C;
+
+    EXPECT_EQ(relax_aromatic_electron_sources(a, 2), 1);
+    EXPECT_EQ(a[0].chem_bonds_valence, 2); // decremented
+    EXPECT_EQ(a[0].num_H, 1);              // incremented
+    EXPECT_EQ(a[0].charge, -1);            // charge untouched
+}
+
+TEST(test_aromaticity, relax_leaves_non_sources_untouched)
+{
+    inp_ATOM a[2]{};
+    a[0].el_number = EL_NUMBER_C;          // ordinary CH: has H -> not a source
+    a[0].valence = 2;
+    a[0].neighbor[0] = 1; a[0].neighbor[1] = 1;
+    a[0].chem_bonds_valence = 3;
+    a[0].num_H = 1;
+    a[1].el_number = EL_NUMBER_C;
+
+    EXPECT_EQ(relax_aromatic_electron_sources(a, 2), 0);
+    EXPECT_EQ(a[0].chem_bonds_valence, 3); // unchanged
+    EXPECT_EQ(a[0].num_H, 1);
+}
