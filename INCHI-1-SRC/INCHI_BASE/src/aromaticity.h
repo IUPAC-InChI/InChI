@@ -82,6 +82,21 @@ struct tagCANON_GLOBALS;
 int fix_aromatic_oxygen_and_sulfur( inp_ATOM *atom );
 
 /**
+ * @brief π-electron contribution of a ring atom to its conjugated system.
+ *
+ * Hückel counting for the electron-source cases this module handles: a cationic
+ * center donates 0 (empty p orbital), an anionic center donates 2 (in-ring lone
+ * pair), a doublet-radical center donates 1 (SOMO), and any other neutral atom
+ * donates 1 (its share of a ring double bond). Heteroatom-specific lone-pair
+ * rules (pyridine/pyrrole/furan) are deferred to a later increment.
+ *
+ * @param at Atom array.
+ * @param i  Index of the ring atom.
+ * @return Number of π electrons the atom donates (0, 1, or 2).
+ */
+int huckel_pi_contribution( inp_ATOM *at, int i );
+
+/**
  * @brief Test whether an atom is an unsaturated but non-aromatic carbon.
  *
  * True when @c at[i] is a neutral, non-radical carbon of total valence 4 that

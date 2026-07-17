@@ -260,3 +260,37 @@ TEST(test_aromaticity, replace_arom_bonds_resolves_when_reference_indexing_diffe
     FreeInpAtom(&at);
     FreeInpAtom(&at2);
 }
+
+// ---- huckel_pi_contribution ------------------------------------------------
+
+TEST(test_aromaticity, huckel_pi_contribution_cation_donates_zero)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';
+    a.charge = 1;               // tropylium / cyclopropenyl carbon
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 0);
+}
+
+TEST(test_aromaticity, huckel_pi_contribution_anion_donates_two)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';
+    a.charge = -1;              // cyclopentadienyl carbanion
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 2);
+}
+
+TEST(test_aromaticity, huckel_pi_contribution_radical_donates_one)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';
+    a.charge = 0;
+    a.radical = RADICAL_DOUBLET; // cyclopentadienyl radical center (SOMO)
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 1);
+}
+
+TEST(test_aromaticity, huckel_pi_contribution_ordinary_carbon_donates_one)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';           // neutral non-radical: one ring double bond
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 1);
+}

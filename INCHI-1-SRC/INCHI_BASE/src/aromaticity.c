@@ -67,6 +67,25 @@ int fix_aromatic_oxygen_and_sulfur( inp_ATOM *atom )
 
 
 /****************************************************************************/
+int huckel_pi_contribution( inp_ATOM *at, int i )
+{
+    if (at[i].charge > 0)
+    {
+        return 0; /* cationic center: empty p orbital */
+    }
+    if (at[i].charge < 0)
+    {
+        return 2; /* anionic center: in-ring lone pair */
+    }
+    if (at[i].radical == RADICAL_DOUBLET)
+    {
+        return 1; /* radical center: singly occupied MO */
+    }
+    return 1;     /* ordinary conjugated atom: one ring double bond */
+}
+
+
+/****************************************************************************/
 int check_arom_chain( inp_ATOM *at,
                       int cur /* first*/,
                       int from,
