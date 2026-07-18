@@ -329,6 +329,7 @@ TEST(test_aromaticity, electron_source_false_for_neutral_CH)
 // Ring coordination = 3 - 1 metal = 2 -> still a source.
 TEST(test_aromaticity, electron_source_true_for_metal_bonded_anion_carbon)
 {
+    const U_CHAR EL_NUMBER_FE = 26; /* iron atomic number; no EL_NUMBER_FE in util.h */
     inp_ATOM a[4]{};
     a[0].el_number = EL_NUMBER_C;
     a[0].valence = 3;                 // 2 ring + 1 metal
@@ -340,7 +341,7 @@ TEST(test_aromaticity, electron_source_true_for_metal_bonded_anion_carbon)
     a[0].chem_bonds_valence = 4;      // > valence
     a[1].el_number = EL_NUMBER_C;
     a[2].el_number = EL_NUMBER_C;
-    a[3].el_number = ((U_CHAR)26);    // Fe (atomic number 26) -- metal neighbor
+    a[3].el_number = EL_NUMBER_FE;    // Fe (atomic number 26) -- metal neighbor
     EXPECT_EQ(is_aromatic_electron_source(a, 0), 1);
 }
 

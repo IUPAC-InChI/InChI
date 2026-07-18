@@ -89,6 +89,7 @@ int fix_aromatic_oxygen_and_sulfur( inp_ATOM *atom );
  * pair), a doublet-radical center donates 1 (SOMO), and any other neutral atom
  * donates 1 (its share of a ring double bond). Heteroatom-specific lone-pair
  * rules (pyridine/pyrrole/furan) are deferred to a later increment.
+ * It is not yet invoked by the engine; it documents the π-electron rules for the deferred heteroaromatic increment and is currently exercised only by unit tests.
  *
  * @param at Atom array.
  * @param i  Index of the ring atom.
