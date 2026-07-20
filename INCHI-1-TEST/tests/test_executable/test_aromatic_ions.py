@@ -241,13 +241,6 @@ M  END
 """
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#154 (schatzsc on PR #234): the charged-ion relaxation acts on the specific "
-    "atom charged in the molfile, before InChI's mobile-charge normalization, so the "
-    "result is placement-dependent (and -9986s for most placements). A delocalized "
-    "anion must give one placement-independent InChI; needs the aromaticity rework.",
-)
 def test_MethylCyclopentadienyl_anion_charge_placement_invariance(run_inchi_exe):
     """All -1 placements on the methylcyclopentadienyl ring are the same molecule and
     must produce a single identical InChI (no hallucinated isomers, no -9986)."""
