@@ -5410,6 +5410,11 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
         {
             memcpy( at_arom_snapshot, at, num_atoms * sizeof( at_arom_snapshot[0] ) );
         }
+        else
+        {
+            bError = BNS_OUT_OF_RAM; /* consistent with the other allocation sites */
+            goto exit_function;
+        }
     }
 
     /* Allocate Balanced Network Data Strucures; replace Alternating bonds with Single */
@@ -5503,6 +5508,28 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
                         SetForbiddenEdges( pBNS, at, num_atoms, BNS_EDGE_FORBIDDEN_MASK, nebend, ebend );
 #endif
                         ret = BnsAdjustFlowBondsRad( pBNS, pBD, at, num_atoms );
+#ifdef FIX_AROM_RADICAL
+                        /* Issue #154: restoring the pre-search snapshot above
+                           re-installed the FIX_AROM_RADICAL-neutralized state
+                           (radical cleared, one implicit H added). Mirror the
+                           normal path's restoration (see the n_arom_radicals block
+                           earlier) so any stored aromatic doublet radical is put
+                           back into at[] for the output; otherwise a structure that
+                           has BOTH a neutralized aromatic radical and a charged
+                           electron source reaching this retry would lose the radical
+                           (mis-encoded as an extra implicit H). */
+                        if (stored_radicals)
+                        {
+                            for (i = 0; i < num_atoms; i++)
+                            {
+                                if (stored_radicals[i])
+                                {
+                                    at[i].radical = stored_radicals[i];
+                                    at[i].num_H--;
+                                }
+                            }
+                        }
+#endif
                     }
                     else
                     {
