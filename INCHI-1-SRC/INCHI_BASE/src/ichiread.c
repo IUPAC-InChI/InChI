@@ -8499,7 +8499,8 @@ int ParseSegmentMobileH(const char* str,
                         p = q;
                     }
                 }
-                if (curAtom > nxtAtom || nxtAtom > numCtAtoms || p > pTaut)
+                if (curAtom <= 0 || curAtom > nxtAtom ||
+                    nxtAtom > numCtAtoms || p > pTaut)
                 {
                     ret = RI_ERR_SYNTAX; /* syntax error */
                     goto exit_function;
@@ -8612,7 +8613,7 @@ int ParseSegmentMobileH(const char* str,
 #endif
                     }
                     /* consitency check */
-                    if (!curAtom || curAtom > numCtAtoms ||
+                    if (curAtom <= 0 || curAtom > numCtAtoms ||
                         nxtAtom < curAtom || nxtAtom > numCtAtoms)
                     {
                         ret = RI_ERR_SYNTAX; /* syntax error */
