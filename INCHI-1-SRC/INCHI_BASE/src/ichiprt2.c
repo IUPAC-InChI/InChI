@@ -2373,31 +2373,41 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         inchi_strbuf_init(&tmpbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
 
         // s1
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_abs,
-                                        orig_inp_data->v3000->lists_steabs,
-                                        orig_inp_data->v3000->n_steabs,
-                                        nCtMode,
-                                        bOverflow);
+        int len_abs = MakeEnhStereoString( pAux,
+                                           &tmpbuf,
+                                           x_abs,
+                                           orig_inp_data->v3000->lists_steabs,
+                                           orig_inp_data->v3000->n_steabs,
+                                           nCtMode,
+                                           bOverflow);
 
         // s2
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_rel,
-                                        orig_inp_data->v3000->lists_sterel,
-                                        orig_inp_data->v3000->n_sterel,
-                                        nCtMode,
-                                        bOverflow);
+        int len_rel = MakeEnhStereoString( pAux,
+                                           &tmpbuf,
+                                           x_rel,
+                                           orig_inp_data->v3000->lists_sterel,
+                                           orig_inp_data->v3000->n_sterel,
+                                           nCtMode,
+                                           bOverflow);
 
         // s3
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_rac,
-                                        orig_inp_data->v3000->lists_sterac,
-                                        orig_inp_data->v3000->n_sterac,
-                                        nCtMode,
-                                        bOverflow);
+        int len_rac = MakeEnhStereoString( pAux,
+                                           &tmpbuf,
+                                           x_rac,
+                                           orig_inp_data->v3000->lists_sterac,
+                                           orig_inp_data->v3000->n_sterac,
+                                           nCtMode,
+                                           bOverflow);
+
+        tot_len += len_abs + len_rel + len_rac;
+
+        // A component whose only enhanced-stereo collection is ABS says nothing
+        // beyond standard absolute stereo, so it reduces to the bare "1" (SAbs).
+        if (len_abs > 0 && len_rel == 0 && len_rac == 0) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_abs;
+            tot_len += MakeDelim( x_abs, &tmpbuf, bOverflow );
+        }
 
         int found = 0;
         for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {

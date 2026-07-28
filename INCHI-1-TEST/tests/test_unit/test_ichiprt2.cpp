@@ -380,6 +380,94 @@ TEST(test_ichiprt2, MakeSlayerString_basic)
     Free_INChI(&inchi);
 }
 
+/* ES-R11 / SPEC 1 §5.C+§6: a component whose only collection is ABS carries no
+   information beyond standard absolute stereo, so /s reduces to a bare "1". */
+TEST(test_ichiprt2, MakeSlayerString_abs_only_reduces_to_bare_s1)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 3, 1, 2, 3}; // [unused, n_atoms, orig atoms 1,2,3]
+    int *lists_abs[1] = {group_abs};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 0;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
+    pAux->nNumberOfAtoms = 3;
+    pAux->nOrigAtNosInCanonOrd[0] = 1;
+    pAux->nOrigAtNosInCanonOrd[1] = 2;
+    pAux->nOrigAtNosInCanonOrd[2] = 3;
+
+    INCHI_SORT sorts = {0};
+    sorts.pINChI[0] = &dummy_inchi;
+    sorts.pINChI_Aux[0] = pAux;
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    int len = MakeSlayerString(&oad, &sorts, &strbuf, OUT_TN, 1, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "1");
+    EXPECT_EQ(len, 1);
+
+    inchi_strbuf_close(&strbuf);
+    Free_INChI_Aux(&pAux);
+}
+
+/* Guard against over-reduction: ABS alongside AND keeps the full grouping. */
+TEST(test_ichiprt2, MakeSlayerString_abs_plus_rac_not_reduced)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 2, 1, 2};
+    int group_rac[] = {0, 1, 3};
+    int *lists_abs[1] = {group_abs};
+    int *lists_rac[1] = {group_rac};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 0;
+    v3000.n_sterac = 1;
+    v3000.lists_sterac = lists_rac;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
+    pAux->nNumberOfAtoms = 3;
+    pAux->nOrigAtNosInCanonOrd[0] = 1;
+    pAux->nOrigAtNosInCanonOrd[1] = 2;
+    pAux->nOrigAtNosInCanonOrd[2] = 3;
+
+    INCHI_SORT sorts = {0};
+    sorts.pINChI[0] = &dummy_inchi;
+    sorts.pINChI_Aux[0] = pAux;
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    int len = MakeSlayerString(&oad, &sorts, &strbuf, OUT_TN, 1, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "1(1,2)3(3)");
+    EXPECT_EQ(len, 10);
+
+    inchi_strbuf_close(&strbuf);
+    Free_INChI_Aux(&pAux);
+}
+
 /*
  * Runs MakeSlayerString over `n_components` components whose /s substrings are
  * all distinct: component i maps original atom 2 -> canonical 1 and original
