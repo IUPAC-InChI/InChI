@@ -2237,6 +2237,9 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
 
     int **enh_stereo_canon = (int**)inchi_calloc(nof_stereo_groups, sizeof(int*));
 
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map(pAux, &map_size);
+
     // Converts the original atom numbers in the enhanced stereochemistry groups to canonical atom numbers
     // and sorts the atoms within each group based on their canonical atom numbers. This ensures that the order of
     // atoms in the string representation is consistent and does not depend on the order of atoms in the input data.
@@ -2253,7 +2256,7 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         for (int j = 0; j < nof_atoms; j++)  {
 
             int orig_atom_num = atom_numbers[j];
-            int canon_atom_num = get_canonical_atom_number(pAux, orig_atom_num);
+            int canon_atom_num = lookup_canonical_atom_number(orig_to_canon, map_size, pAux, orig_atom_num);
             if (canon_atom_num != -1) {
                 count_found_atoms++;
             } else {
@@ -2267,6 +2270,10 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         if (nof_atoms > 1) {
             qsort(&enh_stereo_canon[i][2], nof_atoms, sizeof(int), compare_ints);
         }
+    }
+
+    if (orig_to_canon != NULL) {
+        inchi_free(orig_to_canon);
     }
 
     // Sorts the enhanced stereochemistry groups based on the canonical atom number of the first atom in the group.
@@ -2401,12 +2408,19 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
             }
         }
         if (!found) {
+            int stored = 0;
             for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
                 if (dictionary[i] == NULL) {
                     dictionary[i] = strdup(tmpbuf.pStr);
                     counts[i] = 1;
+                    stored = 1;
                     break;
                 }
+            }
+            if (!stored) {
+                /* More distinct /s substrings than the dictionary holds: flag the
+                   overflow instead of silently dropping this component. */
+                *bOverflow = 1;
             }
         }
         inchi_strbuf_close(&tmpbuf);

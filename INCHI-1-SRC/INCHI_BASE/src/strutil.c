@@ -5040,6 +5040,82 @@ int get_canonical_atom_number( const INChI_Aux *aux,
 }
 
 /**
+ * @brief Build a reverse (original -> canonical) atom number map
+ *
+ * Replaces repeated get_canonical_atom_number() linear scans in the enhanced
+ * stereo loops. Entry [orig] holds the canonical number, 0 means "not present";
+ * on duplicate original numbers the lowest canonical number wins, matching
+ * get_canonical_atom_number().
+ *
+ * @param aux Pointer to INChI auxiliary data
+ * @param map_size Receives the number of entries in the returned map (0 on failure)
+ * @return Newly allocated map (free with inchi_free), or NULL if unavailable
+ */
+int *make_orig_to_canon_map( const INChI_Aux *aux,
+                             int *map_size )
+{
+    if (map_size != NULL) {
+        *map_size = 0;
+    }
+
+    if (aux == NULL || aux->nOrigAtNosInCanonOrd == NULL || aux->nNumberOfAtoms <= 0) {
+        return NULL;
+    }
+
+    int max_orig = 0;
+    for (int canon_num = 1; canon_num <= aux->nNumberOfAtoms; canon_num++) {
+        int orig_atom_num = (int)aux->nOrigAtNosInCanonOrd[canon_num - 1];
+        if (orig_atom_num > max_orig) {
+            max_orig = orig_atom_num;
+        }
+    }
+
+    int size = max_orig + 1;
+    int *map = (int *)inchi_calloc( (size_t)size, sizeof(int) );
+    if (map == NULL) {
+        return NULL;
+    }
+
+    for (int canon_num = 1; canon_num <= aux->nNumberOfAtoms; canon_num++) {
+        int orig_atom_num = (int)aux->nOrigAtNosInCanonOrd[canon_num - 1];
+        if (orig_atom_num > 0 && map[orig_atom_num] == 0) {
+            map[orig_atom_num] = canon_num;
+        }
+    }
+
+    if (map_size != NULL) {
+        *map_size = size;
+    }
+
+    return map;
+}
+
+/**
+ * @brief Get the canonical atom number via a reverse map, with scan fallback
+ *
+ * @param map Map from make_orig_to_canon_map(), or NULL
+ * @param map_size Number of entries in map
+ * @param aux Pointer to INChI auxiliary data (used when map is NULL)
+ * @param orig_atom_num Original atom number
+ * @return Returns the canonical atom number, or -1 if not found
+ */
+int lookup_canonical_atom_number( const int *map,
+                                  int map_size,
+                                  const INChI_Aux *aux,
+                                  int orig_atom_num )
+{
+    if (map == NULL) {
+        return get_canonical_atom_number( aux, orig_atom_num );
+    }
+
+    if (orig_atom_num < 1 || orig_atom_num >= map_size || map[orig_atom_num] == 0) {
+        return -1;
+    }
+
+    return map[orig_atom_num];
+}
+
+/**
  * @brief Get the parity idx from canonical atom number object
  *
  * @param canon_atom_num Canonical atom number
@@ -5103,13 +5179,16 @@ int invert_parities(const INChI *inchi,
 
     S_CHAR *t_parity = inchi->Stereo->t_parity;
 
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+
     for (int i = 0; i < nof_lists; i++) {
         int nof_atoms = list_atoms[i][1];
 
         AT_NUMB min_c_atom_num = (AT_NUMB)INT_MAX;
         for (int j = 0; j < nof_atoms; j++) {
             int orig_atom_num = list_atoms[i][2 + j];
-            AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, orig_atom_num);
+            AT_NUMB canon_atom_num = (AT_NUMB)lookup_canonical_atom_number(orig_to_canon, map_size, aux, orig_atom_num);
             if (canon_atom_num < min_c_atom_num) {
                 min_c_atom_num = canon_atom_num;
             }
@@ -5130,7 +5209,7 @@ int invert_parities(const INChI *inchi,
 
             for (int j = 0; j < nof_atoms; j++) {
                 int orig_atom_num = list_atoms[i][2 + j];
-                AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, orig_atom_num);
+                AT_NUMB canon_atom_num = (AT_NUMB)lookup_canonical_atom_number(orig_to_canon, map_size, aux, orig_atom_num);
                 int parity_idx = get_parity_idx_from_canonical_atom_number(canon_atom_num,
                                                                             inchi->Stereo->nNumber,
                                                                             inchi->Stereo->nNumberOfStereoCenters);
@@ -5151,6 +5230,11 @@ int invert_parities(const INChI *inchi,
             }
         }
     }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
     return 0;
 }
 

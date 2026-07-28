@@ -135,6 +135,30 @@ extern "C"
                                    int orig_atom_num);
 
     /**
+     * @brief Build a reverse (original -> canonical) atom number map
+     *
+     * @param aux Pointer to INChI_Aux data structure
+     * @param map_size Receives the number of entries in the returned map (0 on failure)
+     * @return Newly allocated map (free with inchi_free), or NULL if unavailable
+     */
+    int *make_orig_to_canon_map( const INChI_Aux *aux,
+                                 int *map_size );
+
+    /**
+     * @brief Get the canonical atom number via a reverse map, with scan fallback
+     *
+     * @param map Map from make_orig_to_canon_map(), or NULL to scan aux directly
+     * @param map_size Number of entries in map
+     * @param aux Pointer to INChI_Aux data structure
+     * @param orig_atom_num Original atom number
+     * @return Returns canonical atom number if found, -1 if not
+     */
+    int lookup_canonical_atom_number( const int *map,
+                                      int map_size,
+                                      const INChI_Aux *aux,
+                                      int orig_atom_num );
+
+    /**
      * @brief Get the parity index from canonical atom number
      *
      * @param canon_atom_num Canonical atom number

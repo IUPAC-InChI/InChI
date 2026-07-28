@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <string>
+#include <vector>
+
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichiprt2.c"
@@ -375,4 +378,97 @@ TEST(test_ichiprt2, MakeSlayerString_basic)
     FreeInpAtom(&atoms);
     Free_INChI_Aux(&pAux);
     Free_INChI(&inchi);
+}
+
+/*
+ * Runs MakeSlayerString over `n_components` components whose /s substrings are
+ * all distinct: component i maps original atom 2 -> canonical 1 and original
+ * atom 1 -> canonical (i+2), so its substring is "1(i+2)2(1)". Both an ABS and
+ * a REL group are present so the ABS-only reduction (ES-R11) does not collapse
+ * them to one shared substring.
+ */
+static void RunSlayerDistinctComponents(int n_components,
+                                        int *bOverflow,
+                                        std::string *out)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 1, 1}; // [unused, n_atoms, orig atom 1]
+    int group_rel[] = {0, 1, 2}; // [unused, n_atoms, orig atom 2]
+    int *lists_abs[1] = {group_abs};
+    int *lists_rel[1] = {group_rel};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 1;
+    v3000.lists_sterel = lists_rel;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    // Only used by GET_II() to pick the TAUT_NON slot; never dereferenced further.
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INCHI_SORT *sorts = (INCHI_SORT *)inchi_calloc(n_components, sizeof(INCHI_SORT));
+    std::vector<INChI_Aux *> auxes(n_components, nullptr);
+
+    for (int i = 0; i < n_components; i++)
+    {
+        int num_at = i + 2;
+        INChI_Aux *pAux = Alloc_INChI_Aux(num_at, 0, 0, 0);
+        pAux->nNumberOfAtoms = num_at;
+        for (int j = 0; j < num_at; j++)
+        {
+            pAux->nOrigAtNosInCanonOrd[j] = 0;
+        }
+        pAux->nOrigAtNosInCanonOrd[0] = 2;           // canonical 1      -> orig 2
+        pAux->nOrigAtNosInCanonOrd[num_at - 1] = 1;  // canonical num_at -> orig 1
+
+        auxes[i] = pAux;
+        sorts[i].pINChI[0] = &dummy_inchi;
+        sorts[i].pINChI_Aux[0] = pAux;
+    }
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    *bOverflow = 0;
+
+    MakeSlayerString(&oad, sorts, &strbuf, OUT_TN, n_components, 0, bOverflow);
+
+    *out = strbuf.pStr ? strbuf.pStr : "";
+
+    inchi_strbuf_close(&strbuf);
+    for (int i = 0; i < n_components; i++)
+    {
+        Free_INChI_Aux(&auxes[i]);
+    }
+    inchi_free(sorts);
+}
+
+TEST(test_ichiprt2, MakeSlayerString_dictionary_exactly_full_no_overflow)
+{
+    int bOverflow = 0;
+    std::string out;
+
+    RunSlayerDistinctComponents(ENH_STEREO_DICT_SIZE, &bOverflow, &out);
+
+    EXPECT_EQ(bOverflow, 0);
+    // All ENH_STEREO_DICT_SIZE distinct substrings emitted, separated by ';'
+    EXPECT_EQ(std::count(out.begin(), out.end(), ';'), ENH_STEREO_DICT_SIZE - 1);
+    EXPECT_NE(out.find("1(2)2(1)"), std::string::npos);
+    EXPECT_NE(out.find("1(" + std::to_string(ENH_STEREO_DICT_SIZE + 1) + ")2(1)"),
+              std::string::npos);
+}
+
+/* ES-R14 / SPEC 1 §5.A: more distinct /s substrings than the fixed dictionary
+   holds must raise the overflow flag, not silently drop a component. */
+TEST(test_ichiprt2, MakeSlayerString_dictionary_overflow_sets_flag)
+{
+    int bOverflow = 0;
+    std::string out;
+
+    RunSlayerDistinctComponents(ENH_STEREO_DICT_SIZE + 1, &bOverflow, &out);
+
+    EXPECT_NE(bOverflow, 0);
 }
