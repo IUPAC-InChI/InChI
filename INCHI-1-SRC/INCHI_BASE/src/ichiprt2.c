@@ -2353,13 +2353,23 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     // INChI        *pINChI = NULL;
     INChI_Aux    *pAux = NULL;
 
-    char **dictionary = (char**)inchi_calloc(ENH_STEREO_DICT_SIZE, sizeof(char*));
-    int *counts = (int*)inchi_calloc(ENH_STEREO_DICT_SIZE, sizeof(int));
-
-    for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-        dictionary[i] = NULL;
-        counts[i] = 0;
+    if (num_components < 1) {
+        return 0;
     }
+
+    /* At most one distinct /s substring per component, so the component count is
+       an exact upper bound for the dictionary - no cap, no growing. */
+    char **dictionary = (char**)inchi_calloc(num_components, sizeof(char*));
+    int *counts = (int*)inchi_calloc(num_components, sizeof(int));
+
+    if (dictionary == NULL || counts == NULL) {
+        inchi_free(dictionary);
+        inchi_free(counts);
+        *bOverflow = 1;
+        return 0;
+    }
+
+    int n_entries = 0;
 
     INCHI_IOS_STRING tmpbuf  = {0};
 
@@ -2410,47 +2420,36 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         }
 
         int found = 0;
-        for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-            if (dictionary[i] && strcmp(tmpbuf.pStr, dictionary[i]) == 0) {
+        for (int i = 0; i < n_entries; i++) {
+            if (strcmp(tmpbuf.pStr, dictionary[i]) == 0) {
                 counts[i]++;
                 found = 1;
                 break;
             }
         }
         if (!found) {
-            int stored = 0;
-            for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-                if (dictionary[i] == NULL) {
-                    dictionary[i] = strdup(tmpbuf.pStr);
-                    counts[i] = 1;
-                    stored = 1;
-                    break;
-                }
-            }
-            if (!stored) {
-                /* More distinct /s substrings than the dictionary holds: flag the
-                   overflow instead of silently dropping this component. */
+            dictionary[n_entries] = strdup(tmpbuf.pStr);
+            if (dictionary[n_entries] == NULL) {
                 *bOverflow = 1;
+            } else {
+                counts[n_entries] = 1;
+                n_entries++;
             }
         }
         inchi_strbuf_close(&tmpbuf);
     }
 
     // String deduplication based on dictionary and counts
-    int count = 0;
-    for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-        if (dictionary[i]) {
-            if (count > 0) {
-                tot_len += MakeDelim( ";", strbuf, bOverflow );
-            }
-            if (counts[i] > 1) {
-                tot_len = inchi_strbuf_printf(strbuf, "%d*%s", counts[i], dictionary[i]);
-            } else {
-                tot_len = inchi_strbuf_printf(strbuf, "%s", dictionary[i]);
-            }
-            inchi_free(dictionary[i]);
-            count++;
+    for (int i = 0; i < n_entries; i++) {
+        if (i > 0) {
+            tot_len += MakeDelim( ";", strbuf, bOverflow );
         }
+        if (counts[i] > 1) {
+            tot_len = inchi_strbuf_printf(strbuf, "%d*%s", counts[i], dictionary[i]);
+        } else {
+            tot_len = inchi_strbuf_printf(strbuf, "%s", dictionary[i]);
+        }
+        inchi_free(dictionary[i]);
     }
 
     inchi_free(dictionary);

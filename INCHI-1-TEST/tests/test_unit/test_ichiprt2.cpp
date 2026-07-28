@@ -534,29 +534,80 @@ static void RunSlayerDistinctComponents(int n_components,
     inchi_free(sorts);
 }
 
-TEST(test_ichiprt2, MakeSlayerString_dictionary_exactly_full_no_overflow)
+/* ES-R14 / SPEC 1 §5.A: the /s substring dictionary is sized from the component
+   count, so no component is ever dropped, whatever the structure's size. There
+   used to be a fixed 100-slot cap that silently swallowed the excess. */
+TEST(test_ichiprt2, MakeSlayerString_keeps_every_distinct_component)
 {
-    int bOverflow = 0;
-    std::string out;
+    for (int n_components : {1, 2, 100, 101, 250})
+    {
+        int bOverflow = 0;
+        std::string out;
 
-    RunSlayerDistinctComponents(ENH_STEREO_DICT_SIZE, &bOverflow, &out);
+        RunSlayerDistinctComponents(n_components, &bOverflow, &out);
 
-    EXPECT_EQ(bOverflow, 0);
-    // All ENH_STEREO_DICT_SIZE distinct substrings emitted, separated by ';'
-    EXPECT_EQ(std::count(out.begin(), out.end(), ';'), ENH_STEREO_DICT_SIZE - 1);
-    EXPECT_NE(out.find("1(2)2(1)"), std::string::npos);
-    EXPECT_NE(out.find("1(" + std::to_string(ENH_STEREO_DICT_SIZE + 1) + ")2(1)"),
-              std::string::npos);
+        EXPECT_EQ(bOverflow, 0) << "n_components " << n_components;
+        // Every substring is distinct here, so all of them are emitted, ';'-joined
+        EXPECT_EQ(std::count(out.begin(), out.end(), ';'), n_components - 1)
+            << "n_components " << n_components;
+        EXPECT_NE(out.find("1(2)2(1)"), std::string::npos)
+            << "n_components " << n_components;
+        EXPECT_NE(out.find("1(" + std::to_string(n_components + 1) + ")2(1)"),
+                  std::string::npos)
+            << "n_components " << n_components;
+    }
 }
 
-/* ES-R14 / SPEC 1 §5.A: more distinct /s substrings than the fixed dictionary
-   holds must raise the overflow flag, not silently drop a component. */
-TEST(test_ichiprt2, MakeSlayerString_dictionary_overflow_sets_flag)
+/* Repeated components must still collapse to count*substring, not one entry
+   per component. */
+TEST(test_ichiprt2, MakeSlayerString_deduplicates_identical_components)
 {
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 1, 1};
+    int group_rel[] = {0, 1, 2};
+    int *lists_abs[1] = {group_abs};
+    int *lists_rel[1] = {group_rel};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 1;
+    v3000.lists_sterel = lists_rel;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    const int n_components = 3;
+    INCHI_SORT *sorts = (INCHI_SORT *)inchi_calloc(n_components, sizeof(INCHI_SORT));
+    std::vector<INChI_Aux *> auxes(n_components, nullptr);
+
+    for (int i = 0; i < n_components; i++)
+    {
+        INChI_Aux *pAux = Alloc_INChI_Aux(2, 0, 0, 0);
+        pAux->nNumberOfAtoms = 2;
+        pAux->nOrigAtNosInCanonOrd[0] = 2;
+        pAux->nOrigAtNosInCanonOrd[1] = 1;
+        auxes[i] = pAux;
+        sorts[i].pINChI[0] = &dummy_inchi;
+        sorts[i].pINChI_Aux[0] = pAux;
+    }
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
     int bOverflow = 0;
-    std::string out;
 
-    RunSlayerDistinctComponents(ENH_STEREO_DICT_SIZE + 1, &bOverflow, &out);
+    MakeSlayerString(&oad, sorts, &strbuf, OUT_TN, n_components, 0, &bOverflow);
 
-    EXPECT_NE(bOverflow, 0);
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "3*1(2)2(1)");
+
+    inchi_strbuf_close(&strbuf);
+    for (int i = 0; i < n_components; i++)
+    {
+        Free_INChI_Aux(&auxes[i]);
+    }
+    inchi_free(sorts);
 }
