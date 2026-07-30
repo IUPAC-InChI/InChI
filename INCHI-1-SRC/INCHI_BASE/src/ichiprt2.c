@@ -2428,10 +2428,12 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
             }
         }
         if (!found) {
-            dictionary[n_entries] = strdup(tmpbuf.pStr);
+            size_t len = strlen(tmpbuf.pStr);
+            dictionary[n_entries] = (char*)inchi_calloc(len + 1, sizeof(char));
             if (dictionary[n_entries] == NULL) {
                 *bOverflow = 1;
             } else {
+                memcpy(dictionary[n_entries], tmpbuf.pStr, len + 1);
                 counts[n_entries] = 1;
                 n_entries++;
             }
