@@ -214,7 +214,8 @@ const char *EquString( int EquVal );
                              int              **enh_stereo,
                              int              nof_stereo_groups,
                              int              nCtMode,
-                             int              *bOverflow );
+                             int              *bOverflow,
+                             int              *num_groups_used );
     int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
                           INCHI_SORT       *pINChISort,
                           INCHI_IOS_STRING *strbuf,

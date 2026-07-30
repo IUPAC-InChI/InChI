@@ -2216,10 +2216,15 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
                          int              **enh_stereo,
                          int              nof_stereo_groups,
                          int              nCtMode,
-                         int              *bOverflow )
+                         int              *bOverflow,
+                         int              *num_groups_used )
 {
     int tot_len = 0;
     int count_added = 0;
+
+    if (num_groups_used != NULL) {
+        *num_groups_used = 0;
+    }
 
     if (pAux == NULL) {
         return 0;
@@ -2288,6 +2293,9 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         int nof_found_atoms = enh_stereo_canon[i][1];
 
         if (nof_found_atoms > 0) {
+            if (num_groups_used != NULL) {
+                (*num_groups_used)++;
+            }
             tot_len += MakeDelim( "(", strbuf, bOverflow );
             for (int j = 0; j < nof_found_atoms; j++)  {
                 tot_len += MakeNumber_EnhStereo( enh_stereo_canon[i][j + 2], "", strbuf, nCtMode, bOverflow );
@@ -2383,31 +2391,37 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         inchi_strbuf_init(&tmpbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
 
         // s1
+        int num_groups_abs = 0;
         int len_abs = MakeEnhStereoString( pAux,
                                            &tmpbuf,
                                            x_abs,
                                            orig_inp_data->v3000->lists_steabs,
                                            orig_inp_data->v3000->n_steabs,
                                            nCtMode,
-                                           bOverflow);
+                                           bOverflow,
+                                           &num_groups_abs);
 
         // s2
+        int num_groups_rel = 0;
         int len_rel = MakeEnhStereoString( pAux,
                                            &tmpbuf,
                                            x_rel,
                                            orig_inp_data->v3000->lists_sterel,
                                            orig_inp_data->v3000->n_sterel,
                                            nCtMode,
-                                           bOverflow);
+                                           bOverflow,
+                                           &num_groups_rel);
 
         // s3
+        int num_groups_rac = 0;
         int len_rac = MakeEnhStereoString( pAux,
                                            &tmpbuf,
                                            x_rac,
                                            orig_inp_data->v3000->lists_sterac,
                                            orig_inp_data->v3000->n_sterac,
                                            nCtMode,
-                                           bOverflow);
+                                           bOverflow,
+                                           &num_groups_rac);
 
         tot_len += len_abs + len_rel + len_rac;
 
@@ -2417,6 +2431,21 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
             inchi_strbuf_reset(&tmpbuf);
             tot_len -= len_abs;
             tot_len += MakeDelim( x_abs, &tmpbuf, bOverflow );
+        }
+        // ES-R17: a component whose only enhanced-stereo collection is a single
+        // OR group carries no grouping information beyond plain relative stereo,
+        // so it reduces to the bare "2" (SRel); analogously a single AND group
+        // reduces to the bare "3" (SRac). Multiple OR/AND groups on the same
+        // component are left grouped, since the grouping itself is meaningful.
+        else if (len_rel > 0 && len_abs == 0 && len_rac == 0 && num_groups_rel == 1) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_rel;
+            tot_len += MakeDelim( x_rel, &tmpbuf, bOverflow );
+        }
+        else if (len_rac > 0 && len_abs == 0 && len_rel == 0 && num_groups_rac == 1) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_rac;
+            tot_len += MakeDelim( x_rac, &tmpbuf, bOverflow );
         }
 
         int found = 0;
