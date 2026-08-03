@@ -748,7 +748,8 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
                         int k, nnum;
                         num_list[0] = n_coll;
                         nnum = num_list[1];
-                        for (k = 2; k < nnum; k++)
+                        /* atoms occupy num_list[2 .. nnum+1] */
+                        for (k = 2; k < nnum + 2; k++)
                         {
                             num_list[k] =
                                 get_actual_atom_number(num_list[k],
