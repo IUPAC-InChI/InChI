@@ -204,6 +204,361 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_abs_only_reduces_to_s1)
     FreeINCHI(poutput);
 }
 
+/* SPEC 1 gate G7 / ES-R18: a single OR (resp. AND) collection covering every
+   stereocentre reduces to the bare /s2 (resp. /s3) and carries no /m at all —
+   such a component has no absolute reference for /m to point at. Apart from the
+   version prefix the whole string is then byte-identical to the corresponding
+   -SRel / -SRac output, which is the [STRING-ALG] "only OR" / "only AND" edge
+   table. Before the ES-R18 fix a spurious /m0 was emitted here. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_and_only_omit_m_layer)
+{
+    const std::string molblock_head =
+        "enhanc_stereo_or_and_only                         \n"
+        "  ACD/LABS08242216132D                            \n"
+        "                                                  \n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000           \n"
+        "M  V30 BEGIN CTAB                                 \n"
+        "M  V30 COUNTS 18 17 0 0 1                         \n"
+        "M  V30 BEGIN ATOM                                 \n"
+        "M  V30 1 C 3424.1946 -1936.7935 0 0               \n"
+        "M  V30 2 C 3352.3145 -1895.2935 0 0               \n"
+        "M  V30 3 C 3280.4346 -1936.7935 0 0               \n"
+        "M  V30 4 C 3208.5542 -1895.2935 0 0               \n"
+        "M  V30 5 C 3136.6743 -1936.7935 0 0               \n"
+        "M  V30 6 C 3064.7944 -1895.2935 0 0               \n"
+        "M  V30 7 Br 3136.6743 -2019.7935 0 0              \n"
+        "M  V30 8 Cl 3208.5542 -1812.2935 0 0              \n"
+        "M  V30 9 Cl 3280.4346 -2019.7935 0 0              \n"
+        "M  V30 10 Cl 3352.3145 -1812.2935 0 0             \n"
+        "M  V30 11 Cl 3424.1946 -2019.7935 0 0             \n"
+        "M  V30 12 C 3496.075 -1895.2935 0 0               \n"
+        "M  V30 13 C 3567.9548 -1936.7942 0 0              \n"
+        "M  V30 14 C 3639.835 -1895.2944 0 0               \n"
+        "M  V30 15 C 3711.7148 -1936.7942 0 0              \n"
+        "M  V30 16 Cl 3639.835 -1812.2944 0 0              \n"
+        "M  V30 17 Cl 3567.9548 -2019.7942 0 0             \n"
+        "M  V30 18 Cl 3496.075 -1812.2937 0 0              \n"
+        "M  V30 END ATOM                                   \n"
+        "M  V30 BEGIN BOND                                 \n"
+        "M  V30 1 1 1 2                                    \n"
+        "M  V30 2 1 1 11 CFG=3                             \n"
+        "M  V30 3 1 1 12                                   \n"
+        "M  V30 4 1 2 3                                    \n"
+        "M  V30 5 1 2 10 CFG=1                             \n"
+        "M  V30 6 1 3 4                                    \n"
+        "M  V30 7 1 3 9 CFG=1                              \n"
+        "M  V30 8 1 4 5                                    \n"
+        "M  V30 9 1 4 8 CFG=1                              \n"
+        "M  V30 10 1 5 6                                   \n"
+        "M  V30 11 1 5 7 CFG=1                             \n"
+        "M  V30 12 1 12 13                                 \n"
+        "M  V30 13 1 12 18 CFG=3                           \n"
+        "M  V30 14 1 13 14                                 \n"
+        "M  V30 15 1 13 17 CFG=1                           \n"
+        "M  V30 16 1 14 15                                 \n"
+        "M  V30 17 1 14 16 CFG=1                           \n"
+        "M  V30 END BOND                                   \n"
+        "M  V30 BEGIN COLLECTION                           \n";
+    const std::string molblock_tail =
+        "M  V30 END COLLECTION                             \n"
+        "M  V30 END CTAB                                   \n"
+        "M  END                                            \n";
+
+    const char *skeleton = "InChI=1B/C10H14BrCl7/c1-3(11)5(13)7(15)9(17)10(18)8(16)"
+                           "6(14)4(2)12/h3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-";
+
+    struct EnhStereoOnlyCase
+    {
+        const char *collection;
+        const char *ref_option;
+        const char *expected_s_layer;
+    };
+    const EnhStereoOnlyCase cases[] = {
+        { "M  V30 MDLV30/STEREL1 ATOMS=(8 1 2 3 4 5 12 13 14)\n", "-SRel", "/s2" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(8 1 2 3 4 5 12 13 14)\n", "-SRac", "/s3" },
+    };
+
+    for (const EnhStereoOnlyCase &c : cases)
+    {
+        const std::string molblock = molblock_head + c.collection + molblock_tail;
+        const std::string expected_enh = std::string(skeleton) + c.expected_s_layer;
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 0);
+        EXPECT_STREQ(poutput->szInChI, expected_enh.c_str());
+        /* ES-R18: no /m segment anywhere in the string */
+        EXPECT_EQ(strstr(poutput->szInChI, "/m"), nullptr);
+        const std::string enh = poutput->szInChI;
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        FreeINCHI(poutput);
+
+        char options_ref[16];
+        snprintf(options_ref, sizeof(options_ref), "%s", c.ref_option);
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_ref, poutput), 0);
+        const std::string ref = poutput->szInChI;
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        FreeINCHI(poutput);
+
+        /* identical apart from the version prefix: 1B vs the plain non-standard 1 */
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")));
+    }
+}
+
+/* ES-R18, per component: the collection lists are structure-wide, so an ABS
+   collection on one component must not keep /m alive on an OR/AND-only sibling.
+   Two disconnected fragments, STEABS on one and STEREL1 on the other, must give
+   the '.' placeholder for the OR-only component and a digit for the ABS one.
+   Before the per-component fix this emitted /m11 for both. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_m_layer_is_per_component)
+{
+    const char *molblock_head =
+        "mixed_abs_plus_rel_components                \n"
+        "  Hand-built: comp A = STEABS/STERAC1, comp B = STEREL1\n"
+        "                                             \n"
+        "  0  0  0     0  0            999 V3000      \n"
+        "M  V30 BEGIN CTAB                            \n"
+        "M  V30 COUNTS 12 10 0 0 0                    \n"
+        "M  V30 BEGIN ATOM                            \n"
+        "M  V30 1 C 0.0000 0.0000 0 0                 \n"
+        "M  V30 2 C 0.8660 0.5000 0 0 CFG=1           \n"
+        "M  V30 3 C 1.7320 0.0000 0 0 CFG=1           \n"
+        "M  V30 4 C 2.5980 0.5000 0 0                 \n"
+        "M  V30 5 Cl 0.8660 1.5000 0 0                \n"
+        "M  V30 6 Cl 1.7320 -1.0000 0 0               \n"
+        "M  V30 7 C 0.0000 5.0000 0 0                 \n"
+        "M  V30 8 C 0.8660 5.5000 0 0 CFG=1           \n"
+        "M  V30 9 C 1.7320 5.0000 0 0 CFG=1           \n"
+        "M  V30 10 C 2.5980 5.5000 0 0                \n"
+        "M  V30 11 Br 0.8660 6.5000 0 0               \n"
+        "M  V30 12 Br 1.7320 4.0000 0 0               \n"
+        "M  V30 END ATOM                              \n"
+        "M  V30 BEGIN BOND                            \n"
+        "M  V30 1 1 1 2                               \n"
+        "M  V30 2 1 2 3                               \n"
+        "M  V30 3 1 3 4                               \n"
+        "M  V30 4 1 2 5 CFG=1                         \n"
+        "M  V30 5 1 3 6 CFG=1                         \n"
+        "M  V30 6 1 7 8                               \n"
+        "M  V30 7 1 8 9                               \n"
+        "M  V30 8 1 9 10                              \n"
+        "M  V30 9 1 8 11 CFG=1                        \n"
+        "M  V30 10 1 9 12 CFG=1                       \n"
+        "M  V30 END BOND                              \n"
+        "M  V30 BEGIN COLLECTION                      \n";
+    const char *molblock_tail =
+        "M  V30 MDLV30/STEREL1 ATOMS=(2 8 9)          \n"
+        "M  V30 END COLLECTION                        \n"
+        "M  V30 END CTAB                              \n"
+        "M  END                                       \n";
+
+    /* component order is C4H8Br2 (the STEREL1 one) then C4H8Cl2 (the other) */
+    struct PerComponentCase
+    {
+        const char *collection_of_second_component;
+        const char *expected_enh;
+    };
+    const PerComponentCase cases[] = {
+        /* ABS sibling: /m survives, but only as a digit for the ABS component */
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 3)           \n",
+          "InChI=1B/C4H8Br2.C4H8Cl2/c2*1-3(5)4(2)6/h2*3-4H,1-2H3/t2*3-,4-/m.1/s2;1" },
+        /* no ABS anywhere: the whole /m segment disappears */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(2 2 3)          \n",
+          "InChI=1B/C4H8Br2.C4H8Cl2/c2*1-3(5)4(2)6/h2*3-4H,1-2H3/t2*3-,4-/s2;3" },
+    };
+
+    for (const PerComponentCase &c : cases)
+    {
+        const std::string molblock =
+            std::string(molblock_head) + c.collection_of_second_component + molblock_tail;
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 0);
+        EXPECT_STREQ(poutput->szInChI, c.expected_enh);
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        FreeINCHI(poutput);
+    }
+}
+
+/* ES-R18 across the Mobile-H/Fixed-H split: an OR-only component with a mobile-H
+   group must drop /m from the main layer and keep the /f sublayer intact, staying
+   byte-identical to -SRel -FixedH apart from the version prefix. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_only_omits_m_with_mobile_h)
+{
+    const char *molblock =
+        "mobileh_or_only                              \n"
+        "  Hand-built: 2-Cl-3-Br-butanoic acid        \n"
+        "                                             \n"
+        "  0  0  0     0  0            999 V3000      \n"
+        "M  V30 BEGIN CTAB                            \n"
+        "M  V30 COUNTS 8 7 0 0 0                      \n"
+        "M  V30 BEGIN ATOM                            \n"
+        "M  V30 1 C 0.0000 0.0000 0 0                 \n"
+        "M  V30 2 C 0.8660 0.5000 0 0 CFG=1           \n"
+        "M  V30 3 C 1.7320 0.0000 0 0 CFG=1           \n"
+        "M  V30 4 C 2.5980 0.5000 0 0                 \n"
+        "M  V30 5 O 3.4640 0.0000 0 0                 \n"
+        "M  V30 6 O 2.5980 1.5000 0 0                 \n"
+        "M  V30 7 Cl 0.8660 1.5000 0 0                \n"
+        "M  V30 8 Br 1.7320 -1.0000 0 0               \n"
+        "M  V30 END ATOM                              \n"
+        "M  V30 BEGIN BOND                            \n"
+        "M  V30 1 1 1 2                               \n"
+        "M  V30 2 1 2 3                               \n"
+        "M  V30 3 1 3 4                               \n"
+        "M  V30 4 2 4 5                               \n"
+        "M  V30 5 1 4 6                               \n"
+        "M  V30 6 1 2 7 CFG=1                         \n"
+        "M  V30 7 1 3 8 CFG=1                         \n"
+        "M  V30 END BOND                              \n"
+        "M  V30 BEGIN COLLECTION                      \n"
+        "M  V30 MDLV30/STEREL1 ATOMS=(2 2 3)          \n"
+        "M  V30 END COLLECTION                        \n"
+        "M  V30 END CTAB                              \n"
+        "M  END                                       \n";
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    const char expected_enh[] = "InChI=1B/C4H6BrClO2/c1-2(6)3(5)4(7)8/h2-3H,1H3,(H,7,8)/t2-,3+/s2/f/h7H";
+
+    char options_enh[] = "-EnhancedStereochemistry -FixedH";
+    ASSERT_EQ(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, expected_enh);
+    EXPECT_EQ(strstr(poutput->szInChI, "/m"), nullptr);
+    const std::string enh = poutput->szInChI;
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+
+    char options_ref[] = "-SRel -FixedH";
+    ASSERT_EQ(MakeINCHIFromMolfileText(molblock, options_ref, poutput), 0);
+    const std::string ref = poutput->szInChI;
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+
+    EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")));
+}
+
+/* SPEC 1 gate G9: the [BIOVIA] white-paper Appendix B / fig. 22 reference molfile, located in
+   the wild as MDL_white_paper_fig22.v3000.sdf and persisted as datasets/biovia_white_paper_fig22.mol.
+   29 atoms mixing all five collection types in one structure, so it cross-checks the whole
+   grouping pipeline against a third-party authority at once: ABS (15) from STEABS(17), two OR
+   groups (13,14) and (21,23), two AND groups (17) and (18), /m1 present because an ABS
+   collection exists (the ES-R18 negative control), neither the two OR nor the two AND groups
+   reduced (ES-R17 over-reduction guard), and every group's lowest centre normalised to '-'.
+   Molblock inline so the gate does not depend on the fragile fixture path (ES-R15).
+   NB: the upstream file terminates with "M END"; it must be "M  END" or InChI returns error 64. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_biovia_appendix_b)
+{
+    const char *molblock =
+        "\n"
+        "\n"
+        "MDL-Draw12200218542D\n"
+        "  0  0  0  0  0  0              0 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 29 32 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C -0.0544 -0.428 0 0\n"
+        "M  V30 2 C -0.0544 -1.278 0 0 CFG=2\n"
+        "M  V30 3 C -0.7962 -1.6974 0 0\n"
+        "M  V30 4 C -0.7962 -2.544 0 0\n"
+        "M  V30 5 C -0.0703 -2.9817 0 0\n"
+        "M  V30 6 C 0.6716 -2.5622 0 0 CFG=1\n"
+        "M  V30 7 C 0.6716 -1.7051 0 0 CFG=2\n"
+        "M  V30 8 C 1.4208 -1.2852 0 0\n"
+        "M  V30 9 C 1.4093 -2.9942 0 0\n"
+        "M  V30 10 C -1.2907 1.3481 0 0\n"
+        "M  V30 11 C -2.0326 0.9232 0 0\n"
+        "M  V30 12 C -2.0326 0.0734 0 0\n"
+        "M  V30 13 C -1.293 -0.3579 0 0\n"
+        "M  V30 14 C -0.5534 0.9274 0 0\n"
+        "M  V30 15 C -0.5534 0.074 0 0\n"
+        "M  V30 16 N 0.77 -0.3022 0 0\n"
+        "M  V30 17 C 1.1707 0.466 0 0 CFG=1\n"
+        "M  V30 18 C 0.8061 1.2704 0 0\n"
+        "M  V30 19 N -0.0142 1.4289 0 0\n"
+        "M  V30 20 O 1.3356 1.938 0 0\n"
+        "M  V30 21 C -2.7699 1.3485 0 0 CFG=2\n"
+        "M  V30 22 C -2.7699 2.2058 0 0 CFG=2\n"
+        "M  V30 23 C -3.4976 2.6309 0 0 CFG=2\n"
+        "M  V30 24 C -4.2412 2.2104 0 0\n"
+        "M  V30 25 C -4.2412 1.355 0 0\n"
+        "M  V30 26 O -3.4976 3.4805 0 0\n"
+        "M  V30 27 O -2.0178 2.624 0 0\n"
+        "M  V30 28 C 2.0249 0.466 0 0\n"
+        "M  V30 29 C -3.4995 0.9299 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=1\n"
+        "M  V30 2 1 7 8 CFG=1\n"
+        "M  V30 3 1 6 9 CFG=1\n"
+        "M  V30 4 1 2 3\n"
+        "M  V30 5 1 2 7\n"
+        "M  V30 6 1 3 4\n"
+        "M  V30 7 1 4 5\n"
+        "M  V30 8 1 5 6\n"
+        "M  V30 9 1 6 7\n"
+        "M  V30 10 2 1 16\n"
+        "M  V30 11 1 16 17\n"
+        "M  V30 12 1 17 18\n"
+        "M  V30 13 1 19 14\n"
+        "M  V30 14 1 18 19\n"
+        "M  V30 15 2 18 20\n"
+        "M  V30 16 1 21 11 CFG=1\n"
+        "M  V30 17 1 21 22\n"
+        "M  V30 18 1 22 23\n"
+        "M  V30 19 1 23 24\n"
+        "M  V30 20 1 24 25\n"
+        "M  V30 21 1 23 26 CFG=3\n"
+        "M  V30 22 1 22 27 CFG=3\n"
+        "M  V30 23 1 17 28 CFG=1\n"
+        "M  V30 24 1 10 11\n"
+        "M  V30 25 2 10 14\n"
+        "M  V30 26 2 11 12\n"
+        "M  V30 27 1 12 13\n"
+        "M  V30 28 2 13 15\n"
+        "M  V30 29 1 14 15\n"
+        "M  V30 30 1 15 1\n"
+        "M  V30 31 1 25 29\n"
+        "M  V30 32 1 29 21\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n"
+        "M  V30 MDLV30/STEABS ATOMS=(1 17)\n"
+        "M  V30 MDLV30/STEREL2 ATOMS=(2 6 7)\n"
+        "M  V30 MDLV30/STEREL1 ATOMS=(2 22 23)\n"
+        "M  V30 MDLV30/STERAC2 ATOMS=(1 2)\n"
+        "M  V30 MDLV30/STERAC1 ATOMS=(1 21)\n"
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n"
+;
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    const char expected_enh[] =
+        "InChI=1B/C24H34N2O3/c1-13-6-4-7-17(14(13)2)22-19-11-10-16(18-8-5-9-21(27)23(18)28)"
+        "12-20(19)26-24(29)15(3)25-22/h10-15,17-18,21,23,27-28H,4-9H2,1-3H3,(H,26,29)/"
+        "t13-,14-,15-,17-,18-,21-,23+/m1/s1(15)2(13,14)(21,23)3(17)(18)";
+
+    char options_enh[] = "-EnhancedStereochemistry";
+    ASSERT_EQ(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, expected_enh);
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+}
+
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_atropisomer)
 {
     const char *molblock =
@@ -1116,7 +1471,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_differing_AND_groups_of_s
         "M  END                                   \n";
 
     char options[] = "-EnhancedStereochemistry";
-    const char expected_inchi[] = "InChI=1B/C4H8BrClO/c1-3(5)4(6)2-7/h3-4,7H,2H2,1H3/t3-,4-/m0/s3(3)(4)";
+    const char expected_inchi[] = "InChI=1B/C4H8BrClO/c1-3(5)4(6)2-7/h3-4,7H,2H2,1H3/t3-,4-/s3(3)(4)";
 
     inchi_Output output1;
     inchi_Output *poutput1 = &output1;
@@ -1188,7 +1543,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_differing_AND_groups_of_s
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/2C4H8BrClO/c2*1-3(5)4(6)2-7/h2*3-4,7H,2H2,1H3/t2*3-,4-/m00/s2*3(3)(4)";
+    const char expected_inchi[] = "InChI=1B/2C4H8BrClO/c2*1-3(5)4(6)2-7/h2*3-4,7H,2H2,1H3/t2*3-,4-/s2*3(3)(4)";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -1239,15 +1594,15 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
 
     std::vector<std::string> list_expected_inchis = {
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m1/s1",
-        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/m0/s2",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s2",
+        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/s2",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s2",
         "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/m1/s1",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s2(4)(5)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s2(4)(5)",
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s3",
-        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/m0/s3",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s3",
+        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/s3",
         "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s3(4)(5)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s3(4)(5)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5+,6-/m0/s1(4,5)2(6)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5+,6?/m0/s1",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6+/m0/s1(4)2(5,6)",
@@ -1258,18 +1613,18 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
         "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5-,6-,7-/m1/s1(6)2(5,7)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)2(5)(6)",
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m1/s1(4)3(5)",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m0/s3",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/s3",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)3(5,6)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6+/m0/s1(4)3(5,6)",
-        "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5?,6?/m0/s3",
-        "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5?,6-,7?/m0/s3",
+        "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5?,6?/s3",
+        "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5?,6-,7?/s3",
         "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5-,6-,7-/m1/s1(6)3(5,7)",
         "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5-,6-,7+/m1/s1(6)3(5,7)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)3(5)(6)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)2(5)3(6)",
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m1/s1",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m0/s3",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m0/s2",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/s3",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/s2",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2",
     };
 
@@ -1460,7 +1815,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_collections_independent_o
         "M  END                                             \n";
 
     char options[] = "-EnhancedStereochemistry";
-    const char expected_inchi[] = "InChI=1B/C10H14BrCl7/c1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-/m0/s2(3,5,7,9,10)(4,6,8)";
+    const char expected_inchi[] = "InChI=1B/C10H14BrCl7/c1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-/s2(3,5,7,9,10)(4,6,8)";
 
     const char *molblocks[2] = { molblock_1_to_n, molblock_offset };
 

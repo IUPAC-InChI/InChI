@@ -5239,6 +5239,54 @@ int invert_parities(const INChI *inchi,
 }
 
 /**
+ * @brief Does any atom of these collections belong to this component?
+ *
+ * The V3000 collection lists are structure-wide, so a multi-component structure
+ * must ask per component: an atom of another component has no canonical number
+ * in this component's numbering. This is deliberately the same test that
+ * MakeEnhStereoString() applies when deciding which groups reach the /s layer,
+ * so /m and /s agree on which classes the component carries.
+ *
+ * @param aux Pointer to INChI auxiliary data of one component
+ * @param list_atoms Pointer to list of atom lists for abs, rel or rac information
+ * @param nof_lists Number of lists
+ * @return Returns 1 if at least one listed atom belongs to this component, else 0
+ */
+static int component_has_collection_atom( const INChI_Aux *aux,
+                                          int            **list_atoms,
+                                          int              nof_lists )
+{
+    int found = 0;
+    int map_size = 0;
+    int *orig_to_canon;
+
+    if (list_atoms == NULL || nof_lists <= 0) {
+        return 0;
+    }
+
+    orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+
+    for (int i = 0; i < nof_lists && !found; i++) {
+        int nof_atoms = list_atoms[i][1];
+
+        for (int j = 0; j < nof_atoms; j++) {
+            if (lookup_canonical_atom_number( orig_to_canon, map_size, aux,
+                                              list_atoms[i][2 + j] ) != -1) {
+                found = 1;
+                break;
+            }
+        }
+    }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
+    return found;
+}
+
+
+/**
  * @brief Set the enhanced stereochemistry information for t- and m-layers
  *
  * @param orig_inp_data Pointer to original input atom data
@@ -5278,10 +5326,22 @@ int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
     int ret_rac = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
     int ret_rel = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
 
-    if ((orig_inp_data->v3000->n_steabs == 0) &&
-        (orig_inp_data->v3000->n_sterel > 0 ||
-         orig_inp_data->v3000->n_sterac)) {
-        inchi->Stereo->nCompInv2Abs = 1; //m0
+    /* ES-R18: /m states which of the two enantiomers the /t parities describe,
+       so it is meaningful only for a component that has an absolute reference.
+       A component whose centres are all OR/AND has none, so it must not carry
+       /m: zero makes str_StereoAbsInv() emit the '.' placeholder for it, and a
+       structure in which no component keeps a non-zero value drops the /m
+       segment altogether (see OutputINCHI_StereoLayer_EnhancedStereo).
+       Tested per component, not from the structure-wide collection counts: in a
+       multi-component structure an ABS collection on one component must not keep
+       /m alive on an OR/AND-only sibling. */
+    if (!component_has_collection_atom( aux, orig_inp_data->v3000->lists_steabs,
+                                        orig_inp_data->v3000->n_steabs ) &&
+        (component_has_collection_atom( aux, orig_inp_data->v3000->lists_sterel,
+                                        orig_inp_data->v3000->n_sterel ) ||
+         component_has_collection_atom( aux, orig_inp_data->v3000->lists_sterac,
+                                        orig_inp_data->v3000->n_sterac ))) {
+        inchi->Stereo->nCompInv2Abs = 0;
     }
 
     return ret;
