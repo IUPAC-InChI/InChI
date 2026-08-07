@@ -249,6 +249,7 @@ sha2.o	\
 strutil.o	\
 eldata.o	\
 molecular_inorganics_data.o	\
+permutation_util.o	\
 util.o \
 bcf_s.o
 # === InChI Library link rule =========

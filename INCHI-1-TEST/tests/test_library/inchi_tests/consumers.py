@@ -1,8 +1,11 @@
 import ctypes
-import random
 from typing import Callable
-from sdf_pipeline import drivers, utils
-from inchi_tests.inchi_api import make_inchi_from_molfile_text, get_inchi_key_from_inchi
+from sdf_pipeline import drivers
+from inchi_tests.inchi_api import (
+    make_inchi_from_molfile_text,
+    get_inchi_key_from_inchi,
+    permute_molfile_text,
+)
 
 
 def regression_consumer(
@@ -41,14 +44,17 @@ def invariance_consumer(
     n_invariance_runs: int,
 ) -> drivers.ConsumerResult:
     inchi_lib = ctypes.CDLL(inchi_lib_path)
+    libc = ctypes.CDLL(None)
     variants: list[dict[str, str | int]] = []
     inchi_string_variants = set()
     inchi_key_variants = set()
-    random.seed(42)
+
+    # Seed the random number generation that's used for molfile permutation.
+    libc.srand(ctypes.c_uint(0))
 
     for _ in range(n_invariance_runs):
-        molfile_permuted = utils.permute_molblock(molfile)
-        if molfile_permuted is None:
+        _, molfile_permuted = permute_molfile_text(inchi_lib, molfile)
+        if not molfile_permuted:
             # Failure to parse `molfile`,
             # return empty result which will be handled upstream.
             break

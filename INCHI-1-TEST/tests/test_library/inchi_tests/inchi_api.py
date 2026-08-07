@@ -1,4 +1,5 @@
 """`INCHI-1-SRC/INCHI_API/demos/python_sample` stripped to the essentials."""
+
 import ctypes
 
 
@@ -88,3 +89,33 @@ def get_inchi_key_from_inchi(inchi_lib: ctypes.CDLL, inchi: str) -> tuple[int, s
         key = ctypes.cast(szKey, ctypes.c_char_p).value.decode("utf-8").strip()
 
     return exit_code, key
+
+
+def permute_molfile_text(inchi_lib: ctypes.CDLL, molfile: str) -> tuple[int, str]:
+    moltext = molfile.encode("utf-8")
+    MOLTEXT_SIZE = len(moltext) + 1 + 1024  # null terminator + extra space
+    permuted_molfile_buffer = ctypes.create_string_buffer(MOLTEXT_SIZE)
+
+    inchi_lib.PermuteMolfileText.argtypes = [
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_size_t,
+    ]
+    inchi_lib.PermuteMolfileText.restype = ctypes.c_int
+
+    exit_code: int = inchi_lib.PermuteMolfileText(
+        ctypes.c_char_p(moltext),
+        permuted_molfile_buffer,
+        MOLTEXT_SIZE,
+    )
+
+    if exit_code != 0:
+        return exit_code, ""
+
+    permuted_molfile = (
+        ctypes.cast(permuted_molfile_buffer, ctypes.c_char_p)
+        .value.decode("utf-8")
+        .strip()
+    )
+
+    return exit_code, permuted_molfile

@@ -89,4 +89,6 @@ jobs:
         with:
           artifact-name: regression-test-results_musl_gcc
 
-      # FIXME: We don't run invariance test on alpine yet because of difficulties with RDKit installation.
+      - uses: ./.github/actions/invariance_tests
+        with:
+          artifact-name: invariance-test-results_musl_gcc

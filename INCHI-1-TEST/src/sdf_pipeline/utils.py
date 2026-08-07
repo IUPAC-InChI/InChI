@@ -1,18 +1,6 @@
 import gzip
-import random
 from pathlib import Path
 from typing import Generator, Callable
-
-try:
-    # Optional import of RDKit.
-    from rdkit import Chem
-    from rdkit import RDLogger
-
-    # Suppress RDKit console output.
-    RDLogger.DisableLog("rdApp.*")
-
-except ImportError:
-    pass
 
 
 def read_records_from_gzipped_sdf(sdf_path: Path) -> Generator[str, None, None]:
@@ -43,30 +31,3 @@ def select_records_from_gzipped_sdf(
             yield molfile_id, molfile
 
     return None
-
-
-def _permute(indices: list[int]) -> list[int]:
-    # Shuffle without in-place mutation.
-    # See https://docs.python.org/3/library/random.html#random.shuffle.
-    return random.sample(indices, len(indices))
-
-
-def permute_molblock(molblock: str) -> str | None:
-    mol = Chem.MolFromMolBlock(
-        molblock, sanitize=False, removeHs=False, strictParsing=False
-    )
-    if mol is None:
-        return None
-
-    atom_indices = [atom.GetIdx() for atom in mol.GetAtoms()]
-    if not atom_indices:
-        return None
-
-    atom_indices_permuted = _permute(atom_indices)
-    if len(atom_indices) > 1:
-        # Enforce different permutation of atom indices.
-        while atom_indices_permuted == atom_indices:
-            atom_indices_permuted = _permute(atom_indices)
-    mol_permuted = Chem.RenumberAtoms(mol, atom_indices_permuted)
-
-    return Chem.MolToMolBlock(mol_permuted, kekulize=False)

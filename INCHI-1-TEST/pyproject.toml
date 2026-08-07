@@ -4,10 +4,6 @@ version = "1.0.0"
 requires-python = ">=3.11,<3.13"
 dependencies = ["pydantic == 2.11.5", "pytest == 9.0.3"]
 
-[project.optional-dependencies]
-# FIXME: Don't force numpy major version as soon as https://github.com/IUPAC-InChI/InChI/issues/35 is resolved.
-invariance-tests = ["rdkit == 2023.9.6", "numpy < 2.0.0"]
-
 [tool.setuptools.packages.find]
 where = ["src", "tests/test_library"]
 include = ["sdf_pipeline", "inchi_tests"]

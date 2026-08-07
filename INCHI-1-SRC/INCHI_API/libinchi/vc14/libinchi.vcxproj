@@ -271,6 +271,7 @@
     <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt3.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt4.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\molecular_inorganics_data.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\permutation_util.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\readinch.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\runichi.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\runichi2.c" />
@@ -323,6 +324,7 @@
     <ClInclude Include="..\..\..\INCHI_BASE\src\logging.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\mode.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\mol_fmt.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\permutation_util.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\readinch.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\sha2.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\strutil.h" />

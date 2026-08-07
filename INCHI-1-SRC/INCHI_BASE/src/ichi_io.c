@@ -649,8 +649,46 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
             /* output */
             /* djb-rwth: fixing oss-fuzz issue #67676 */
             my_va_start(argList, lpszFormat);
-            ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList); /* djb-rwth: not using vsnprintf due to variable length argument; fixing GHI #71 */
+            size_t remaining_length = (size_t)(ios->s.nAllocatedLength - ios->s.nUsedLength);
+            ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, remaining_length, lpszFormat, argList);
             va_end(argList);
+
+            /* djb-rwth: if vsnprintf fails, try again with + 1 */
+            if (ret < 0 || (size_t)ret >= remaining_length)
+            {
+                long long str_length_extension;
+                if (ret >= 0)
+                {
+                    str_length_extension = (long long)ret + 1;
+                }
+                else
+                {
+                    str_length_extension = (long long)max_len + 1;
+                }
+                long long new_str_length = (long long)ios->s.nAllocatedLength + str_length_extension;
+                char* new_str = (char*)inchi_calloc(new_str_length, sizeof(new_str[0]));
+                if (!new_str)
+                {
+                    return -1;
+                }
+                if (ios->s.pStr)
+                {
+                    if (ios->s.nUsedLength > 0)
+                    {
+                        memcpy(new_str, ios->s.pStr, sizeof(new_str[0]) * ios->s.nUsedLength);
+                    }
+                    inchi_free(ios->s.pStr);
+                }
+                ios->s.pStr = new_str;
+                ios->s.nAllocatedLength += (int)str_length_extension;
+
+                // try printing again
+                my_va_start(argList, lpszFormat);
+                size_t remainingLength2 = (size_t)(ios->s.nAllocatedLength - ios->s.nUsedLength);
+                ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, remainingLength2, lpszFormat, argList);
+                va_end(argList);
+            }
+
             if (ret >= 0)
             {
                 ios->s.nUsedLength += ret;
