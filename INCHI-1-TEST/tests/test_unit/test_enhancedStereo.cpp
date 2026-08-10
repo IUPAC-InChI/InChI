@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <fstream>
+#include <sstream>
 #include <string>
+#include <vector>
 
 extern "C"
 {
@@ -1960,5 +1962,118 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_malformed_collections_are
         }
 
         FreeINCHI(poutput);
+    }
+}
+
+/****************************************************************************
+ enh_stereo_test_file_2.sdf: 35 records, each carrying its own expectations as
+ data tags -- <InChI> for standard output and <InChI_new> for enhanced. The
+ expectations are read from the file rather than duplicated here, so the file
+ stays the single source of truth for what it asserts.
+
+ Both columns are checked, which makes each record a backward-compatibility
+ case as well: the same structure must still give its standard string with the
+ option off.
+****************************************************************************/
+namespace
+{
+struct SdfRecord
+{
+    std::string molblock;          /* CTab only, data tags stripped */
+    std::string expected_standard; /* <InChI>     -- option off */
+    std::string expected_enhanced; /* <InChI_new> -- option on  */
+};
+
+static std::string SdfTagValue(const std::string &record, const std::string &tag)
+{
+    const std::string marker = ">  <" + tag + ">\n";
+    const size_t at = record.find(marker);
+    if (at == std::string::npos)
+    {
+        return "";
+    }
+    const size_t start = at + marker.size();
+    const size_t end = record.find('\n', start);
+    return record.substr(start, end - start);
+}
+
+static std::vector<SdfRecord> ReadSdfWithExpectations(const char *path)
+{
+    std::ifstream in(path, std::ios::binary);
+    EXPECT_TRUE(in.is_open()) << path;
+    std::stringstream buf;
+    buf << in.rdbuf();
+    const std::string content = buf.str();
+
+    std::vector<SdfRecord> records;
+    size_t prev = 0, at;
+    while ((at = content.find("$$$$", prev)) != std::string::npos)
+    {
+        const std::string raw = content.substr(prev, at - prev);
+        prev = at + 4;
+        /* consume the newline that ends the separator line, and nothing more:
+           every record here opens with an EMPTY title line, so trimming
+           leading whitespace would shift the 4-line molfile header up by one
+           and the counts line would be misparsed */
+        if (prev < content.size() && content[prev] == '\n')
+        {
+            prev++;
+        }
+
+        const size_t ctab_end = raw.find("M  END");
+        if (ctab_end == std::string::npos)
+        {
+            continue;
+        }
+
+        SdfRecord r;
+        r.molblock = raw.substr(0, ctab_end + 6) + "\n";
+        r.expected_standard = SdfTagValue(raw, "InChI");
+        r.expected_enhanced = SdfTagValue(raw, "InChI_new");
+        records.push_back(r);
+    }
+
+    return records;
+}
+} // namespace
+
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_2)
+{
+    const std::vector<SdfRecord> records =
+        ReadSdfWithExpectations(FIXTURES_DIR "/enh_stereo_test_file_2.sdf");
+
+    ASSERT_EQ(records.size(), 35u);
+
+    char options_enhanced[] = "-EnhancedStereochemistry";
+    char options_standard[] = "";
+
+    auto check = [](const std::string &molblock, char *options,
+                    const std::string &expected, const std::string &label) {
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+        poutput->szInChI = nullptr;
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+
+        /* < 2 accepts inchi_Ret_OKAY and inchi_Ret_WARNING */
+        EXPECT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 2)
+            << label;
+        EXPECT_STREQ(poutput->szInChI, expected.c_str()) << label;
+
+        FreeINCHI(poutput);
+    };
+
+    for (size_t i = 0; i < records.size(); ++i)
+    {
+        const SdfRecord &r = records[i];
+        const std::string at = " (record " + std::to_string(i + 1) + ")";
+
+        /* a missing tag would read as an empty expectation and let the record
+           pass without asserting anything -- demand both are present */
+        ASSERT_FALSE(r.expected_standard.empty()) << "no <InChI> tag" << at;
+        ASSERT_FALSE(r.expected_enhanced.empty()) << "no <InChI_new> tag" << at;
+
+        check(r.molblock, options_standard, r.expected_standard, "standard" + at);
+        check(r.molblock, options_enhanced, r.expected_enhanced, "enhanced" + at);
     }
 }
