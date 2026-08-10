@@ -8,6 +8,13 @@ extern "C"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mode.h"
 }
 
+/* Absolute path to the fixture directory, supplied by CMake so the tests do not
+   depend on the working directory they happen to be launched from. The literal
+   below is only a fallback for builds that do not define it. */
+#ifndef FIXTURES_DIR
+#define FIXTURES_DIR "../../../../../INCHI-1-TEST/tests/test_unit/fixtures"
+#endif
+
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_molfile_v2)
 {
     const char *molblock =
@@ -1567,8 +1574,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_differing_AND_groups_of_s
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
 {
 
-    const char* inchi_filename = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/enh_stereo_test_file_1.sdf";
-    // const char* inchi_filename = "/workspaces/InChI/INCHI-1-TEST/tests/test_unit/fixtures/enh_stereo_test_file_1.sdf";
+    const char* inchi_filename = FIXTURES_DIR "/enh_stereo_test_file_1.sdf";
 
     std::ifstream file_inchi(inchi_filename, std::ios::binary);
     ASSERT_TRUE(file_inchi.is_open());
