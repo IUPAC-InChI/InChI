@@ -5292,39 +5292,42 @@ static int component_has_collection_atom( const INChI_Aux *aux,
  * @param orig_inp_data Pointer to original input atom data
  * @param inchi Pointer to INChI structure
  * @param aux Pointer to INChI auxiliary data
- * @return Retruns 1 if not V3000, otherwise 0
+ *
+ * Nothing here can fail: the three invert_parities() calls return non-zero
+ * only to say "this collection list is empty", which is the ordinary case for
+ * any structure not carrying all three collection types, and the one
+ * allocation they make degrades to a linear scan when it cannot be served.
+ * There is therefore no status worth returning, and no caller ever read one.
  */
-int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
-                                   const INChI *inchi,
-                                   const INChI_Aux *aux)
+void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+                                    const INChI *inchi,
+                                    const INChI_Aux *aux)
 {
-    int ret = 0;
-
     if (!orig_inp_data->v3000)
     {
-        return 1;
+        return;
     }
 
     if (inchi == NULL || aux == NULL)
     {
-        return 1;
+        return;
     }
 
     if (inchi->Stereo == NULL ||
         inchi->Stereo->t_parity == NULL ||
         inchi->Stereo->nNumber == NULL ||
         inchi->Stereo->nNumberOfStereoCenters <= 0) {
-        return 1;
+        return;
     }
 
     if (aux->nOrigAtNosInCanonOrd == NULL ||
         aux->nNumberOfAtoms <= 0) {
-        return 1;
+        return;
     }
 
-    int ret_abs = invert_parities(inchi, aux, orig_inp_data->v3000->lists_steabs, orig_inp_data->v3000->n_steabs, 1);
-    int ret_rac = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
-    int ret_rel = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_steabs, orig_inp_data->v3000->n_steabs, 1);
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
 
     /* /m states which of the two enantiomers the /t parities describe,
        so it is meaningful only for a component that has an absolute reference.
@@ -5343,8 +5346,6 @@ int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
                                         orig_inp_data->v3000->n_sterac ))) {
         inchi->Stereo->nCompInv2Abs = 0;
     }
-
-    return ret;
 }
 
 /****************************************************************************

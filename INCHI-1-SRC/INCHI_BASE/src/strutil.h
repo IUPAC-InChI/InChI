@@ -118,9 +118,8 @@ extern "C"
      * @param orig_inp_data
      * @param inchi
      * @param aux
-     * @return int
      */
-    int set_EnhancedStereo_t_m_layers(const ORIG_ATOM_DATA *orig_inp_data,
+    void set_EnhancedStereo_t_m_layers(const ORIG_ATOM_DATA *orig_inp_data,
                                       const INChI *inchi,
                                       const INChI_Aux *aux);
 

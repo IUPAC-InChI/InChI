@@ -145,9 +145,19 @@ TEST(test_strutil_enhancedStereo, test_set_EnhancedStereo_t_m_layers_1)
     pAux->nOrigAtNosInCanonOrd[6] = 13;
     pAux->nOrigAtNosInCanonOrd[7] = 14;
 
-    ret = set_EnhancedStereo_t_m_layers(orig_inp_data, inchi, pAux);
+    set_EnhancedStereo_t_m_layers(orig_inp_data, inchi, pAux);
 
-    EXPECT_EQ(ret, 0);
+    /* Each collection whose lowest canonical centre reads '+' (2) is flipped
+       as a whole, so that centre ends up '-' (1). Started from
+       {2,1,1,2,2,1,2,2,1}. */
+    const S_CHAR expected_parity[] = {2, 1, 1, 1, 1, 2, 1, 1, 1};
+    for (int i = 0; i < 9; i++)
+    {
+        EXPECT_EQ(inchi->Stereo->t_parity[i], expected_parity[i]) << "centre " << i;
+    }
+
+    /* the structure has a STEABS collection, so /m survives */
+    EXPECT_EQ(inchi->Stereo->nCompInv2Abs, -1);
 
     FreeOrigAtData(orig_inp_data);
     inchi_free(orig_inp_data);
