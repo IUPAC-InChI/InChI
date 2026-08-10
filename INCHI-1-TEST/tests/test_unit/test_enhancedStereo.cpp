@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <fstream>
+#include <string>
 
 extern "C"
 {
@@ -124,9 +125,9 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_1)
     FreeINCHI(poutput);
 }
 
-/* Gate G6 / ES-R11: an explicit STEABS-only collection must reduce to the bare
-   standard /s1. The whole string, /t and /m included, is byte-identical to the
-   standard InChI for this molfile apart from the 1B prefix (SPEC 1 §2, §5.C). */
+/* An explicit STEABS-only collection must reduce to the bare standard /s1.
+   The whole string, /t and /m included, is byte-identical to the standard
+   InChI for this molfile apart from the 1B prefix. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_abs_only_reduces_to_s1)
 {
     const char *molblock =
@@ -204,12 +205,11 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_abs_only_reduces_to_s1)
     FreeINCHI(poutput);
 }
 
-/* SPEC 1 gate G7 / ES-R18: a single OR (resp. AND) collection covering every
-   stereocentre reduces to the bare /s2 (resp. /s3) and carries no /m at all —
-   such a component has no absolute reference for /m to point at. Apart from the
-   version prefix the whole string is then byte-identical to the corresponding
-   -SRel / -SRac output, which is the [STRING-ALG] "only OR" / "only AND" edge
-   table. Before the ES-R18 fix a spurious /m0 was emitted here. */
+/* A single OR (resp. AND) collection covering every stereocentre reduces to
+   the bare /s2 (resp. /s3) and carries no /m at all — such a component has no
+   absolute reference for /m to point at. Apart from the version prefix the
+   whole string is then byte-identical to the corresponding -SRel / -SRac
+   output. A spurious /m0 was emitted here before the /m fix. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_and_only_omit_m_layer)
 {
     const std::string molblock_head =
@@ -289,7 +289,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_and_only_omit_m_layer)
         char options_enh[] = "-EnhancedStereochemistry";
         ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 0);
         EXPECT_STREQ(poutput->szInChI, expected_enh.c_str());
-        /* ES-R18: no /m segment anywhere in the string */
+        /* no /m segment anywhere in the string */
         EXPECT_EQ(strstr(poutput->szInChI, "/m"), nullptr);
         const std::string enh = poutput->szInChI;
         poutput->szLog = nullptr;
@@ -309,7 +309,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_and_only_omit_m_layer)
     }
 }
 
-/* ES-R18, per component: the collection lists are structure-wide, so an ABS
+/* /m is decided per component: the collection lists are structure-wide, so an ABS
    collection on one component must not keep /m alive on an OR/AND-only sibling.
    Two disconnected fragments, STEABS on one and STEREL1 on the other, must give
    the '.' placeholder for the OR-only component and a digit for the ABS one.
@@ -388,7 +388,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_m_layer_is_per_component)
     }
 }
 
-/* ES-R18 across the Mobile-H/Fixed-H split: an OR-only component with a mobile-H
+/* Across the Mobile-H/Fixed-H split: an OR-only component with a mobile-H
    group must drop /m from the main layer and keep the /f sublayer intact, staying
    byte-identical to -SRel -FixedH apart from the version prefix. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_only_omits_m_with_mobile_h)
@@ -449,14 +449,14 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_only_omits_m_with_mobi
     EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")));
 }
 
-/* SPEC 1 gate G9: the [BIOVIA] white-paper Appendix B / fig. 22 reference molfile, located in
+/* The BIOVIA white-paper Appendix B / fig. 22 reference molfile, located in
    the wild as MDL_white_paper_fig22.v3000.sdf and persisted as datasets/biovia_white_paper_fig22.mol.
    29 atoms mixing all five collection types in one structure, so it cross-checks the whole
    grouping pipeline against a third-party authority at once: ABS (15) from STEABS(17), two OR
    groups (13,14) and (21,23), two AND groups (17) and (18), /m1 present because an ABS
-   collection exists (the ES-R18 negative control), neither the two OR nor the two AND groups
-   reduced (ES-R17 over-reduction guard), and every group's lowest centre normalised to '-'.
-   Molblock inline so the gate does not depend on the fragile fixture path (ES-R15).
+   collection exists (the negative control for omitting /m), neither the two OR nor the two AND
+   groups reduced (the over-reduction guard), and every group's lowest centre normalised to '-'.
+   Molblock inline so the gate does not depend on the fragile relative fixture path.
    NB: the upstream file terminates with "M END"; it must be "M  END" or InChI returns error 64. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_biovia_appendix_b)
 {
@@ -665,13 +665,18 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_3_empty_collection_info)
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0";
+    /* == the standard InChI of this structure, prefix apart: with the
+       collections gone, the enhanced path emits the plain stereo-type
+       digit. It used to drop /s1 altogether. */
+    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    /* The collections name no atom the CTab has, so they are dropped
+       -- as before -- but the caller is now told rather than left guessing. */
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
+    ASSERT_NE(poutput->szMessage, nullptr);
+    EXPECT_NE(strstr(poutput->szMessage, "unknown atom in a stereo collection"), nullptr)
+        << "message was: " << poutput->szMessage;
 
     FreeINCHI(poutput);
 }
@@ -716,13 +721,18 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_3_wrong_atoms_in_collecti
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0";
+    /* == the standard InChI of this structure, prefix apart: with the
+       collections gone, the enhanced path emits the plain stereo-type
+       digit. It used to drop /s1 altogether. */
+    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    /* Atoms -2, 13 and 43 do not exist in a 9-atom CTab. Dropped as
+       before, but the caller is now told rather than left guessing. */
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
+    ASSERT_NE(poutput->szMessage, nullptr);
+    EXPECT_NE(strstr(poutput->szMessage, "unknown atom in a stereo collection"), nullptr)
+        << "message was: " << poutput->szMessage;
 
     FreeINCHI(poutput);
 }
@@ -1110,7 +1120,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_4_mols)
     inchi_Output *poutput = &output;
     const char expected_inchi[] = "InChI=1B/C12H26.2C10H14BrCl7.C9H20/c1-8(2)11(7)12(9(3)4)10(5)6;2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6-8(4)9(5)7(2)3/h8-12H,1-7H3;2*3-10H,1-2H3;7-9H,6H2,1-5H3/t11-;2*3-,4-,5+,6-,7-,8-,9+,10-;8-,9+/m1001/s1;2*1(3,5)2(4)(6,8)3(7,9)(10);1(7)3(8,9)";
     // First component contributes ABS atoms only, so its /s reduces to a bare
-    // "1" (ES-R11); the other components keep their groups.
+    // "1"; the other components keep their groups.
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -1829,6 +1839,119 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_collections_independent_o
 
         EXPECT_LT(MakeINCHIFromMolfileText(molblocks[i], options, poutput), 2);
         EXPECT_STREQ(poutput->szInChI, expected_inchi) << "molblock " << i;
+
+        FreeINCHI(poutput);
+    }
+}
+
+/****************************************************************************
+ End-to-end: a molfile whose stereo collections violate the enhanced
+ stereochemical representation rules must not be laundered into an InChI of a
+ different substance.
+
+ The collections are diagnosed and dropped by the reader, so the enhanced
+ output degrades to the standard string apart from the 1B prefix -- the same
+ thing a structure without any collection block gets.
+
+ Skeleton: RDKit test_data/two_centers_or.mol, three stereocentres (atoms
+ 1, 4, 5); only the COLLECTION block differs between the cases. Well-formed,
+ that file measures /t4-,5-,6+/m1/s1(5)2(4,6).
+****************************************************************************/
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_malformed_collections_are_not_used)
+{
+    const std::string head =
+        "\n"
+        "  Mrv1642508181718082D\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 8 7 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C -5.2222 4.7778 0 0 CFG=2\n"
+        "M  V30 2 Br -6.9685 5.5478 0 0\n"
+        "M  V30 3 C -5.0557 3.2468 0 0\n"
+        "M  V30 4 C -3.9796 5.6874 0 0 CFG=2\n"
+        "M  V30 5 C -2.5705 5.0661 0 0 CFG=1\n"
+        "M  V30 6 F -1.3279 5.9758 0 0\n"
+        "M  V30 7 C -4.1461 7.2184 0 0\n"
+        "M  V30 8 C -2.404 3.5352 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2\n"
+        "M  V30 2 1 1 4\n"
+        "M  V30 3 1 4 5\n"
+        "M  V30 4 1 5 6\n"
+        "M  V30 5 1 4 7 CFG=1\n"
+        "M  V30 6 1 5 8 CFG=1\n"
+        "M  V30 7 1 1 3 CFG=1\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    const std::string tail =
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    /* == the standard InChI of this file, prefix apart */
+    const char expected_inchi[] =
+        "InChI=1B/C6H12BrF/c1-4(5(2)7)6(3)8/h4-6H,1-3H3/t4-,5-,6+/m1/s1";
+
+    struct MalformedCase
+    {
+        const char *what;
+        const char *collection;
+        const char *diagnostic;      /* substring the caller must be told */
+        const char *measured_before; /* what the unvalidated reader produced */
+    };
+    const MalformedCase cases[] = {
+        /* atom 4 declared absolute and racemic at once */
+        {"atom in two collections",
+         "M  V30 MDLV30/STEABS ATOMS=(2 1 4)\n"
+         "M  V30 MDLV30/STERAC1 ATOMS=(2 4 5)\n",
+         "atom 4 is in more than one stereo collection",
+         ".../t4-,5-,6+/m1/s1(4,5)3(4,6)"},
+        /* two ABS collections merged, then reduced away to a bare /s1 --
+           the only case the string alone cannot show, since the laundered
+           output happens to equal the degraded one. Unit-tested in
+           test_mol_fmt; here only the diagnostic distinguishes them. */
+        {"second STEABS collection",
+         "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+         "M  V30 MDLV30/STEABS ATOMS=(2 4 5)\n",
+         "more than one STEABS collection",
+         ".../t4-,5-,6+/m1/s1 (indistinguishable)"},
+        /* emitted (4,4,6) -- not ascending, so not even grammar-conformant */
+        {"atom repeated within one collection",
+         "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+         "M  V30 MDLV30/STEREL1 ATOMS=(3 4 4 5)\n",
+         "atom 4 is listed twice in one stereo collection",
+         ".../t4-,5-,6+/m1/s1(5)2(4,4,6)"},
+        /* one group split over two lines read as two: /t changed, 6+ -> 6- */
+        {"group number 1 used twice",
+         "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+         "M  V30 MDLV30/STEREL1 ATOMS=(1 4)\n"
+         "M  V30 MDLV30/STEREL1 ATOMS=(1 5)\n",
+         "STEREL group number 1 used by more than one collection",
+         ".../t4-,5-,6-/m1/s1(5)2(4)(6)"},
+    };
+
+    for (const MalformedCase &c : cases)
+    {
+        const std::string molblock = head + c.collection + tail;
+
+        char options[] = "-EnhancedStereochemistry";
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput),
+                  inchi_Ret_WARNING)
+            << "case: " << c.what;
+        EXPECT_STREQ(poutput->szInChI, expected_inchi)
+            << "case: " << c.what << " (was " << c.measured_before << ")";
+        EXPECT_NE(poutput->szMessage, nullptr) << "case: " << c.what;
+        if (poutput->szMessage)
+        {
+            EXPECT_NE(strstr(poutput->szMessage, c.diagnostic), nullptr)
+                << "case: " << c.what << "; message was: " << poutput->szMessage;
+        }
 
         FreeINCHI(poutput);
     }
