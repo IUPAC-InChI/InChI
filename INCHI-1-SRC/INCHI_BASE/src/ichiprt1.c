@@ -3484,7 +3484,7 @@ int OutputINCHI_StereoLayer( CANON_GLOBALS    *pCG,
 /**
  * @brief Check whether any component still has an absolute sp3 reference (/m).
  *
- * ES-R18: set_EnhancedStereo_t_m_layers() zeroes nCompInv2Abs for components
+ * set_EnhancedStereo_t_m_layers() zeroes nCompInv2Abs for components
  * whose stereocentres are all OR/AND. The /m segment presence was decided
  * earlier by CompINChILayers() from the pre-normalisation values, so without
  * this check a structure with no ABS collection at all would emit a /m segment
@@ -3610,7 +3610,7 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             }
         }
 
-        /* m-layer; ES-R18: omitted when no component has an ABS reference */
+        /* m-layer; omitted when no component has an ABS reference */
         if ((io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_m_SP3INV] )) && /* djb-rwth: addressing LLVM warning */
             bHasAbsStereoComponent( io->pINChISort, io->bOutType, io->num_components ))
         {

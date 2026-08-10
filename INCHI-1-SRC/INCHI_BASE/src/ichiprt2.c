@@ -2432,7 +2432,7 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
             tot_len -= len_abs;
             tot_len += MakeDelim( x_abs, &tmpbuf, bOverflow );
         }
-        // ES-R17: a component whose only enhanced-stereo collection is a single
+        // A component whose only enhanced-stereo collection is a single
         // OR group carries no grouping information beyond plain relative stereo,
         // so it reduces to the bare "2" (SRel); analogously a single AND group
         // reduces to the bare "3" (SRac). Multiple OR/AND groups on the same

@@ -181,7 +181,7 @@ TEST(test_strutil_enhancedStereo, test_get_canonical_atom_number_1)
 
 }
 
-/* ES-R? / SPEC 1 §5.E: the orig->canon reverse map replaces the linear scan in
+/* The orig->canon reverse map replaces the linear scan in
    the enhanced-stereo hot loops. It must answer exactly like the linear scan. */
 TEST(test_strutil_enhancedStereo, orig_to_canon_map_matches_linear_scan)
 {

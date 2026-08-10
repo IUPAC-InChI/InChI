@@ -5326,7 +5326,7 @@ int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
     int ret_rac = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
     int ret_rel = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
 
-    /* ES-R18: /m states which of the two enantiomers the /t parities describe,
+    /* /m states which of the two enantiomers the /t parities describe,
        so it is meaningful only for a component that has an absolute reference.
        A component whose centres are all OR/AND has none, so it must not carry
        /m: zero makes str_StereoAbsInv() emit the '.' placeholder for it, and a

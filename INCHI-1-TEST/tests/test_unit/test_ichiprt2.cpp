@@ -260,7 +260,7 @@ TEST(test_ichiprt2, MakeEnhStereoString_basic)
     inchi_strbuf_close(&strbuf);
 }
 
-/* ES-R17: num_groups_used must count only collections that contributed at
+/* num_groups_used must count only collections that contributed at
    least one atom to this component, not the total number of collections
    passed in - callers use it to tell "one group, all its atoms missing"
    apart from "one group, present" when deciding whether to reduce to /s2 or
@@ -414,7 +414,7 @@ TEST(test_ichiprt2, MakeSlayerString_basic)
     Free_INChI(&inchi);
 }
 
-/* ES-R11 / SPEC 1 §5.C+§6: a component whose only collection is ABS carries no
+/* A component whose only collection is ABS carries no
    information beyond standard absolute stereo, so /s reduces to a bare "1". */
 TEST(test_ichiprt2, MakeSlayerString_abs_only_reduces_to_bare_s1)
 {
@@ -502,7 +502,7 @@ TEST(test_ichiprt2, MakeSlayerString_abs_plus_rac_not_reduced)
     Free_INChI_Aux(&pAux);
 }
 
-/* ES-R17 / SPEC 1 section 6: a component whose only collection is a single OR
+/* A component whose only collection is a single OR
    group carries no information beyond plain relative stereo, so /s reduces
    to a bare "2". */
 TEST(test_ichiprt2, MakeSlayerString_single_or_reduces_to_bare_s2)
@@ -589,7 +589,7 @@ TEST(test_ichiprt2, MakeSlayerString_single_and_reduces_to_bare_s3)
 }
 
 /* Guard against over-reduction: two independent OR groups on the same
-   component carry real grouping information (SPEC 1 section 5.F) and must
+   component carry real grouping information and must
    stay grouped rather than collapse to a bare "2". Mirrors the real-world
    two_centers_and/or.mol and rdkit_two_and_groups.mol regression cases. */
 TEST(test_ichiprt2, MakeSlayerString_multiple_or_groups_not_reduced)
@@ -637,7 +637,7 @@ TEST(test_ichiprt2, MakeSlayerString_multiple_or_groups_not_reduced)
  * Runs MakeSlayerString over `n_components` components whose /s substrings are
  * all distinct: component i maps original atom 2 -> canonical 1 and original
  * atom 1 -> canonical (i+2), so its substring is "1(i+2)2(1)". Both an ABS and
- * a REL group are present so the ABS-only reduction (ES-R11) does not collapse
+ * a REL group are present so the ABS-only reduction does not collapse
  * them to one shared substring.
  */
 static void RunSlayerDistinctComponents(int n_components,
@@ -699,7 +699,7 @@ static void RunSlayerDistinctComponents(int n_components,
     inchi_free(sorts);
 }
 
-/* ES-R14 / SPEC 1 §5.A: the /s substring dictionary is sized from the component
+/* The /s substring dictionary is sized from the component
    count, so no component is ever dropped, whatever the structure's size. There
    used to be a fixed 100-slot cap that silently swallowed the excess. */
 TEST(test_ichiprt2, MakeSlayerString_keeps_every_distinct_component)
