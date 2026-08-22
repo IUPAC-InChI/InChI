@@ -111,3 +111,5 @@ else()
 		COMMAND_EXPAND_LISTS
 	)
 endif()
+
+install(TARGETS inchi_main)
