@@ -199,3 +199,11 @@ if(UNIX AND NOT APPLE)
 elseif(WIN32 AND NOT MSVC)
 	target_link_options(libinchi PRIVATE "LINKER:--version-script=${P_LIBINCHI_MAP}/libinchi.map")
 endif()
+
+install(FILES
+	"${P_BASE}/bcf_s.h"
+	"${P_BASE}/ichisize.h"
+	"${P_BASE}/inchi_api.h"
+	"${P_BASE}/ixa.h"
+	DESTINATION include/inchi)
+install(TARGETS libinchi)
