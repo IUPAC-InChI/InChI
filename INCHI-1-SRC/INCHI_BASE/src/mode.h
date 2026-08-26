@@ -636,8 +636,6 @@ extern "C" {
                                        /* 0=> allow other definitions (below) to be active */
 #define ONE_BAD_SB_NEIGHBOR         1  /* 1 => allow 1 "bad" bond type neighbor to a stereobond atom. 2004-06-02 */
 
-#define ENH_STEREO_DICT_SIZE        100 /* 100 => size of the dictionary for enhanced stereo */
-
 /* more stereo settings */
 #define BREAK_ONE_MORE_SC_TIE       1   /* break one more tie when comparing possible stereocenter neighbors */
 #define BREAK_ALSO_NEIGH_TIE        0   /* post 1.12Beta 2004-08-20: if fixed neighbor has equ neighbors, fix the one with smaller canon. rank */

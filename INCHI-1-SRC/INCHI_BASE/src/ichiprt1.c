@@ -3482,6 +3482,41 @@ int OutputINCHI_StereoLayer( CANON_GLOBALS    *pCG,
 }
 
 /**
+ * @brief Check whether any component still has an absolute sp3 reference (/m).
+ *
+ * set_EnhancedStereo_t_m_layers() zeroes nCompInv2Abs for components
+ * whose stereocentres are all OR/AND. The /m segment presence was decided
+ * earlier by CompINChILayers() from the pre-normalisation values, so without
+ * this check a structure with no ABS collection at all would emit a /m segment
+ * built solely from '.' placeholders. Only enhanced-stereo output uses it.
+ *
+ * @param pINChISort Array of per-component INCHI_SORT entries.
+ * @param bOutType Output type selecting the Mobile-H/Fixed-H variant.
+ * @param num_components Number of connected components.
+ * @return Returns 1 if at least one component has a non-zero nCompInv2Abs, else 0.
+ */
+static int bHasAbsStereoComponent( INCHI_SORT *pINChISort,
+                                   int         bOutType,
+                                   int         num_components )
+{
+    int i, ii;
+
+    for (i = 0; i < num_components; i++)
+    {
+        INCHI_SORT *is = pINChISort + i;
+        INChI *pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
+
+        if (pINChI && pINChI->Stereo && pINChI->Stereo->nCompInv2Abs)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+/**
  * @brief Output InChI: stereo layer with sublayers for enhanced stereochemistry (absolute, relative, racemic).
  *
  * @param pCG Pointer to the CANON_GLOBALS structure containing global canonicalization data.
@@ -3575,8 +3610,9 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             }
         }
 
-        /* m-layer */
-        if ((io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_m_SP3INV] ))) /* djb-rwth: addressing LLVM warning */
+        /* m-layer; omitted when no component has an ABS reference */
+        if ((io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_m_SP3INV] )) && /* djb-rwth: addressing LLVM warning */
+            bHasAbsStereoComponent( io->pINChISort, io->bOutType, io->num_components ))
         {
             szGetTag( IdentLbl, io->nTag, io->bTag2 = io->bTag1 | IL_INVS, io->szTag2, &io->bAlways, 1 );
             inchi_strbuf_reset( strbuf );
@@ -3616,9 +3652,11 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             io->tot_len = 0;
             if (INCHI_SEGM_FILL == io->nSegmAction)
             {
-                if (orig_inp_data->v3000->n_steabs > 0 ||
+                /* v3000 is NULL for V2000 input and for V3000 without collections */
+                if (orig_inp_data->v3000 &&
+                   (orig_inp_data->v3000->n_steabs > 0 ||
                     orig_inp_data->v3000->n_sterel > 0 ||
-                    orig_inp_data->v3000->n_sterac > 0) {
+                    orig_inp_data->v3000->n_sterac > 0)) {
                     io->tot_len += MakeSlayerString(
                         orig_inp_data,
                         io->pINChISort,

@@ -2216,10 +2216,15 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
                          int              **enh_stereo,
                          int              nof_stereo_groups,
                          int              nCtMode,
-                         int              *bOverflow )
+                         int              *bOverflow,
+                         int              *num_groups_used )
 {
     int tot_len = 0;
     int count_added = 0;
+
+    if (num_groups_used != NULL) {
+        *num_groups_used = 0;
+    }
 
     if (pAux == NULL) {
         return 0;
@@ -2237,6 +2242,9 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
 
     int **enh_stereo_canon = (int**)inchi_calloc(nof_stereo_groups, sizeof(int*));
 
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map(pAux, &map_size);
+
     // Converts the original atom numbers in the enhanced stereochemistry groups to canonical atom numbers
     // and sorts the atoms within each group based on their canonical atom numbers. This ensures that the order of
     // atoms in the string representation is consistent and does not depend on the order of atoms in the input data.
@@ -2253,7 +2261,7 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         for (int j = 0; j < nof_atoms; j++)  {
 
             int orig_atom_num = atom_numbers[j];
-            int canon_atom_num = get_canonical_atom_number(pAux, orig_atom_num);
+            int canon_atom_num = lookup_canonical_atom_number(orig_to_canon, map_size, pAux, orig_atom_num);
             if (canon_atom_num != -1) {
                 count_found_atoms++;
             } else {
@@ -2269,6 +2277,10 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         }
     }
 
+    if (orig_to_canon != NULL) {
+        inchi_free(orig_to_canon);
+    }
+
     // Sorts the enhanced stereochemistry groups based on the canonical atom number of the first atom in the group.
     // This ensures that the groups are always in a consistent order in the string representation, regardless of the
     // order they were added to the input data (e.g. AND1, AND2, ... or OR1, OR2, ...).
@@ -2281,6 +2293,9 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         int nof_found_atoms = enh_stereo_canon[i][1];
 
         if (nof_found_atoms > 0) {
+            if (num_groups_used != NULL) {
+                (*num_groups_used)++;
+            }
             tot_len += MakeDelim( "(", strbuf, bOverflow );
             for (int j = 0; j < nof_found_atoms; j++)  {
                 tot_len += MakeNumber_EnhStereo( enh_stereo_canon[i][j + 2], "", strbuf, nCtMode, bOverflow );
@@ -2346,13 +2361,23 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     // INChI        *pINChI = NULL;
     INChI_Aux    *pAux = NULL;
 
-    char **dictionary = (char**)inchi_calloc(ENH_STEREO_DICT_SIZE, sizeof(char*));
-    int *counts = (int*)inchi_calloc(ENH_STEREO_DICT_SIZE, sizeof(int));
-
-    for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-        dictionary[i] = NULL;
-        counts[i] = 0;
+    if (num_components < 1) {
+        return 0;
     }
+
+    /* At most one distinct /s substring per component, so the component count is
+       an exact upper bound for the dictionary - no cap, no growing. */
+    char **dictionary = (char**)inchi_calloc(num_components, sizeof(char*));
+    int *counts = (int*)inchi_calloc(num_components, sizeof(int));
+
+    if (dictionary == NULL || counts == NULL) {
+        inchi_free(dictionary);
+        inchi_free(counts);
+        *bOverflow = 1;
+        return 0;
+    }
+
+    int n_entries = 0;
 
     INCHI_IOS_STRING tmpbuf  = {0};
 
@@ -2366,67 +2391,96 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         inchi_strbuf_init(&tmpbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
 
         // s1
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_abs,
-                                        orig_inp_data->v3000->lists_steabs,
-                                        orig_inp_data->v3000->n_steabs,
-                                        nCtMode,
-                                        bOverflow);
+        int num_groups_abs = 0;
+        int len_abs = MakeEnhStereoString( pAux,
+                                           &tmpbuf,
+                                           x_abs,
+                                           orig_inp_data->v3000->lists_steabs,
+                                           orig_inp_data->v3000->n_steabs,
+                                           nCtMode,
+                                           bOverflow,
+                                           &num_groups_abs);
 
         // s2
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_rel,
-                                        orig_inp_data->v3000->lists_sterel,
-                                        orig_inp_data->v3000->n_sterel,
-                                        nCtMode,
-                                        bOverflow);
+        int num_groups_rel = 0;
+        int len_rel = MakeEnhStereoString( pAux,
+                                           &tmpbuf,
+                                           x_rel,
+                                           orig_inp_data->v3000->lists_sterel,
+                                           orig_inp_data->v3000->n_sterel,
+                                           nCtMode,
+                                           bOverflow,
+                                           &num_groups_rel);
 
         // s3
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_rac,
-                                        orig_inp_data->v3000->lists_sterac,
-                                        orig_inp_data->v3000->n_sterac,
-                                        nCtMode,
-                                        bOverflow);
+        int num_groups_rac = 0;
+        int len_rac = MakeEnhStereoString( pAux,
+                                           &tmpbuf,
+                                           x_rac,
+                                           orig_inp_data->v3000->lists_sterac,
+                                           orig_inp_data->v3000->n_sterac,
+                                           nCtMode,
+                                           bOverflow,
+                                           &num_groups_rac);
+
+        tot_len += len_abs + len_rel + len_rac;
+
+        // A component whose only enhanced-stereo collection is ABS says nothing
+        // beyond standard absolute stereo, so it reduces to the bare "1" (SAbs).
+        if (len_abs > 0 && len_rel == 0 && len_rac == 0) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_abs;
+            tot_len += MakeDelim( x_abs, &tmpbuf, bOverflow );
+        }
+        // A component whose only enhanced-stereo collection is a single
+        // OR group carries no grouping information beyond plain relative stereo,
+        // so it reduces to the bare "2" (SRel); analogously a single AND group
+        // reduces to the bare "3" (SRac). Multiple OR/AND groups on the same
+        // component are left grouped, since the grouping itself is meaningful.
+        else if (len_rel > 0 && len_abs == 0 && len_rac == 0 && num_groups_rel == 1) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_rel;
+            tot_len += MakeDelim( x_rel, &tmpbuf, bOverflow );
+        }
+        else if (len_rac > 0 && len_abs == 0 && len_rel == 0 && num_groups_rac == 1) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_rac;
+            tot_len += MakeDelim( x_rac, &tmpbuf, bOverflow );
+        }
 
         int found = 0;
-        for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-            if (dictionary[i] && strcmp(tmpbuf.pStr, dictionary[i]) == 0) {
+        for (int i = 0; i < n_entries; i++) {
+            if (strcmp(tmpbuf.pStr, dictionary[i]) == 0) {
                 counts[i]++;
                 found = 1;
                 break;
             }
         }
         if (!found) {
-            for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-                if (dictionary[i] == NULL) {
-                    dictionary[i] = strdup(tmpbuf.pStr);
-                    counts[i] = 1;
-                    break;
-                }
+            size_t len = strlen(tmpbuf.pStr);
+            dictionary[n_entries] = (char*)inchi_calloc(len + 1, sizeof(char));
+            if (dictionary[n_entries] == NULL) {
+                *bOverflow = 1;
+            } else {
+                memcpy(dictionary[n_entries], tmpbuf.pStr, len + 1);
+                counts[n_entries] = 1;
+                n_entries++;
             }
         }
         inchi_strbuf_close(&tmpbuf);
     }
 
     // String deduplication based on dictionary and counts
-    int count = 0;
-    for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-        if (dictionary[i]) {
-            if (count > 0) {
-                tot_len += MakeDelim( ";", strbuf, bOverflow );
-            }
-            if (counts[i] > 1) {
-                tot_len = inchi_strbuf_printf(strbuf, "%d*%s", counts[i], dictionary[i]);
-            } else {
-                tot_len = inchi_strbuf_printf(strbuf, "%s", dictionary[i]);
-            }
-            inchi_free(dictionary[i]);
-            count++;
+    for (int i = 0; i < n_entries; i++) {
+        if (i > 0) {
+            tot_len += MakeDelim( ";", strbuf, bOverflow );
         }
+        if (counts[i] > 1) {
+            tot_len = inchi_strbuf_printf(strbuf, "%d*%s", counts[i], dictionary[i]);
+        } else {
+            tot_len = inchi_strbuf_printf(strbuf, "%s", dictionary[i]);
+        }
+        inchi_free(dictionary[i]);
     }
 
     inchi_free(dictionary);

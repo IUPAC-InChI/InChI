@@ -5031,6 +5031,82 @@ int get_canonical_atom_number( const INChI_Aux *aux,
 }
 
 /**
+ * @brief Build a reverse (original -> canonical) atom number map
+ *
+ * Replaces repeated get_canonical_atom_number() linear scans in the enhanced
+ * stereo loops. Entry [orig] holds the canonical number, 0 means "not present";
+ * on duplicate original numbers the lowest canonical number wins, matching
+ * get_canonical_atom_number().
+ *
+ * @param aux Pointer to INChI auxiliary data
+ * @param map_size Receives the number of entries in the returned map (0 on failure)
+ * @return Newly allocated map (free with inchi_free), or NULL if unavailable
+ */
+int *make_orig_to_canon_map( const INChI_Aux *aux,
+                             int *map_size )
+{
+    if (map_size != NULL) {
+        *map_size = 0;
+    }
+
+    if (aux == NULL || aux->nOrigAtNosInCanonOrd == NULL || aux->nNumberOfAtoms <= 0) {
+        return NULL;
+    }
+
+    int max_orig = 0;
+    for (int canon_num = 1; canon_num <= aux->nNumberOfAtoms; canon_num++) {
+        int orig_atom_num = (int)aux->nOrigAtNosInCanonOrd[canon_num - 1];
+        if (orig_atom_num > max_orig) {
+            max_orig = orig_atom_num;
+        }
+    }
+
+    int size = max_orig + 1;
+    int *map = (int *)inchi_calloc( (size_t)size, sizeof(int) );
+    if (map == NULL) {
+        return NULL;
+    }
+
+    for (int canon_num = 1; canon_num <= aux->nNumberOfAtoms; canon_num++) {
+        int orig_atom_num = (int)aux->nOrigAtNosInCanonOrd[canon_num - 1];
+        if (orig_atom_num > 0 && map[orig_atom_num] == 0) {
+            map[orig_atom_num] = canon_num;
+        }
+    }
+
+    if (map_size != NULL) {
+        *map_size = size;
+    }
+
+    return map;
+}
+
+/**
+ * @brief Get the canonical atom number via a reverse map, with scan fallback
+ *
+ * @param map Map from make_orig_to_canon_map(), or NULL
+ * @param map_size Number of entries in map
+ * @param aux Pointer to INChI auxiliary data (used when map is NULL)
+ * @param orig_atom_num Original atom number
+ * @return Returns the canonical atom number, or -1 if not found
+ */
+int lookup_canonical_atom_number( const int *map,
+                                  int map_size,
+                                  const INChI_Aux *aux,
+                                  int orig_atom_num )
+{
+    if (map == NULL) {
+        return get_canonical_atom_number( aux, orig_atom_num );
+    }
+
+    if (orig_atom_num < 1 || orig_atom_num >= map_size || map[orig_atom_num] == 0) {
+        return -1;
+    }
+
+    return map[orig_atom_num];
+}
+
+/**
  * @brief Get the parity idx from canonical atom number object
  *
  * @param canon_atom_num Canonical atom number
@@ -5094,13 +5170,16 @@ int invert_parities(const INChI *inchi,
 
     S_CHAR *t_parity = inchi->Stereo->t_parity;
 
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+
     for (int i = 0; i < nof_lists; i++) {
         int nof_atoms = list_atoms[i][1];
 
         AT_NUMB min_c_atom_num = (AT_NUMB)INT_MAX;
         for (int j = 0; j < nof_atoms; j++) {
             int orig_atom_num = list_atoms[i][2 + j];
-            AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, orig_atom_num);
+            AT_NUMB canon_atom_num = (AT_NUMB)lookup_canonical_atom_number(orig_to_canon, map_size, aux, orig_atom_num);
             if (canon_atom_num < min_c_atom_num) {
                 min_c_atom_num = canon_atom_num;
             }
@@ -5121,7 +5200,7 @@ int invert_parities(const INChI *inchi,
 
             for (int j = 0; j < nof_atoms; j++) {
                 int orig_atom_num = list_atoms[i][2 + j];
-                AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, orig_atom_num);
+                AT_NUMB canon_atom_num = (AT_NUMB)lookup_canonical_atom_number(orig_to_canon, map_size, aux, orig_atom_num);
                 int parity_idx = get_parity_idx_from_canonical_atom_number(canon_atom_num,
                                                                             inchi->Stereo->nNumber,
                                                                             inchi->Stereo->nNumberOfStereoCenters);
@@ -5142,8 +5221,61 @@ int invert_parities(const INChI *inchi,
             }
         }
     }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
     return 0;
 }
+
+/**
+ * @brief Does any atom of these collections belong to this component?
+ *
+ * The V3000 collection lists are structure-wide, so a multi-component structure
+ * must ask per component: an atom of another component has no canonical number
+ * in this component's numbering. This is deliberately the same test that
+ * MakeEnhStereoString() applies when deciding which groups reach the /s layer,
+ * so /m and /s agree on which classes the component carries.
+ *
+ * @param aux Pointer to INChI auxiliary data of one component
+ * @param list_atoms Pointer to list of atom lists for abs, rel or rac information
+ * @param nof_lists Number of lists
+ * @return Returns 1 if at least one listed atom belongs to this component, else 0
+ */
+static int component_has_collection_atom( const INChI_Aux *aux,
+                                          int            **list_atoms,
+                                          int              nof_lists )
+{
+    int found = 0;
+    int map_size = 0;
+    int *orig_to_canon;
+
+    if (list_atoms == NULL || nof_lists <= 0) {
+        return 0;
+    }
+
+    orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+
+    for (int i = 0; i < nof_lists && !found; i++) {
+        int nof_atoms = list_atoms[i][1];
+
+        for (int j = 0; j < nof_atoms; j++) {
+            if (lookup_canonical_atom_number( orig_to_canon, map_size, aux,
+                                              list_atoms[i][2 + j] ) != -1) {
+                found = 1;
+                break;
+            }
+        }
+    }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
+    return found;
+}
+
 
 /**
  * @brief Set the enhanced stereochemistry information for t- and m-layers
@@ -5151,47 +5283,60 @@ int invert_parities(const INChI *inchi,
  * @param orig_inp_data Pointer to original input atom data
  * @param inchi Pointer to INChI structure
  * @param aux Pointer to INChI auxiliary data
- * @return Retruns 1 if not V3000, otherwise 0
+ *
+ * Nothing here can fail: the three invert_parities() calls return non-zero
+ * only to say "this collection list is empty", which is the ordinary case for
+ * any structure not carrying all three collection types, and the one
+ * allocation they make degrades to a linear scan when it cannot be served.
+ * There is therefore no status worth returning, and no caller ever read one.
  */
-int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
-                                   const INChI *inchi,
-                                   const INChI_Aux *aux)
+void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+                                    const INChI *inchi,
+                                    const INChI_Aux *aux)
 {
-    int ret = 0;
-
     if (!orig_inp_data->v3000)
     {
-        return 1;
+        return;
     }
 
     if (inchi == NULL || aux == NULL)
     {
-        return 1;
+        return;
     }
 
     if (inchi->Stereo == NULL ||
         inchi->Stereo->t_parity == NULL ||
         inchi->Stereo->nNumber == NULL ||
         inchi->Stereo->nNumberOfStereoCenters <= 0) {
-        return 1;
+        return;
     }
 
     if (aux->nOrigAtNosInCanonOrd == NULL ||
         aux->nNumberOfAtoms <= 0) {
-        return 1;
+        return;
     }
 
-    int ret_abs = invert_parities(inchi, aux, orig_inp_data->v3000->lists_steabs, orig_inp_data->v3000->n_steabs, 1);
-    int ret_rac = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
-    int ret_rel = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_steabs, orig_inp_data->v3000->n_steabs, 1);
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
 
-    if ((orig_inp_data->v3000->n_steabs == 0) &&
-        (orig_inp_data->v3000->n_sterel > 0 ||
-         orig_inp_data->v3000->n_sterac)) {
-        inchi->Stereo->nCompInv2Abs = 1; //m0
+    /* /m states which of the two enantiomers the /t parities describe,
+       so it is meaningful only for a component that has an absolute reference.
+       A component whose centres are all OR/AND has none, so it must not carry
+       /m: zero makes str_StereoAbsInv() emit the '.' placeholder for it, and a
+       structure in which no component keeps a non-zero value drops the /m
+       segment altogether (see OutputINCHI_StereoLayer_EnhancedStereo).
+       Tested per component, not from the structure-wide collection counts: in a
+       multi-component structure an ABS collection on one component must not keep
+       /m alive on an OR/AND-only sibling. */
+    if (!component_has_collection_atom( aux, orig_inp_data->v3000->lists_steabs,
+                                        orig_inp_data->v3000->n_steabs ) &&
+        (component_has_collection_atom( aux, orig_inp_data->v3000->lists_sterel,
+                                        orig_inp_data->v3000->n_sterel ) ||
+         component_has_collection_atom( aux, orig_inp_data->v3000->lists_sterac,
+                                        orig_inp_data->v3000->n_sterac ))) {
+        inchi->Stereo->nCompInv2Abs = 0;
     }
-
-    return ret;
 }
 
 /****************************************************************************

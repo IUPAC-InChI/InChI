@@ -642,6 +642,103 @@ err_fin:
 }
 
 /****************************************************************************
+ Check the stereo collections against the enhanced stereochemical representation
+ rules: a stereogenic centre belongs to exactly one stereochemical group, and a
+ structure carries at most one ABS collection.
+
+ Returns 1 and names the first violation in pStrErr if the block is malformed.
+ Accepted silently, such a block is laundered into a plausible-looking /s layer
+ and, where two collections overlap the same centre, into a corrupted /t: each
+ collection runs its own whole-group sign flip in invert_parities, and two flips
+ over a shared centre do not cancel.
+****************************************************************************/
+static int StereoCollectionsAreMalformed(MOL_FMT_CTAB *ctab, char *pStrErr)
+{
+    NUM_LISTS *colls[3];
+    int n_atoms, i, j, k, bad = 0, stamp = 0;
+    int *seen;
+    char msg[128];
+
+    colls[0] = ctab->v3000->steabs;
+    colls[1] = ctab->v3000->sterel;
+    colls[2] = ctab->v3000->sterac;
+
+    if (ctab->v3000->n_steabs > 1)
+    {
+        AddErrorMessage(pStrErr, "V3000 collections: more than one STEABS collection");
+        return 1;
+    }
+
+    /* A group number identifies a group, so it may not name two of them:
+       is 'STEREL1' twice one group split over two lines, or two groups? */
+    for (i = 1; i <= 2; i++)
+    {
+        for (j = 0; j < colls[i]->used; j++)
+        {
+            for (k = j + 1; k < colls[i]->used; k++)
+            {
+                if (colls[i]->lists[j][0] == colls[i]->lists[k][0])
+                {
+                    sprintf(msg, "V3000 collections: %s group number %d used by more than one collection",
+                            i == 1 ? "STEREL" : "STERAC", colls[i]->lists[j][0]);
+                    AddErrorMessage(pStrErr, msg);
+                    return 1;
+                }
+            }
+        }
+    }
+
+    /* Atom numbers here are already mapped onto the final atom order,
+       or -1 where the collection named an atom the CTab does not have. */
+    n_atoms = ctab->v3000->n_non_star_atoms + ctab->v3000->n_star_atoms;
+    seen = (int *)inchi_calloc((long long)n_atoms + 1, sizeof(int));
+    if (!seen)
+    {
+        return 0; /* out of memory: leave the data alone, not our error to report */
+    }
+
+    for (i = 0; i < 3 && !bad; i++)
+    {
+        for (j = 0; j < colls[i]->used && !bad; j++)
+        {
+            int nnum = colls[i]->lists[j][1];
+            stamp++;
+            /* atoms occupy lists[j][2 .. nnum+1] */
+            for (k = 2; k < nnum + 2; k++)
+            {
+                int a = colls[i]->lists[j][k];
+
+                if (a < 1 || a > n_atoms)
+                {
+                    AddErrorMessage(pStrErr, "V3000 collections: unknown atom in a stereo collection");
+                    bad = 1;
+                    break;
+                }
+                if (seen[a] == stamp)
+                {
+                    sprintf(msg, "V3000 collections: atom %d is listed twice in one stereo collection", a);
+                    AddErrorMessage(pStrErr, msg);
+                    bad = 1;
+                    break;
+                }
+                if (seen[a])
+                {
+                    sprintf(msg, "V3000 collections: atom %d is in more than one stereo collection", a);
+                    AddErrorMessage(pStrErr, msg);
+                    bad = 1;
+                    break;
+                }
+                seen[a] = stamp;
+            }
+        }
+    }
+
+    inchi_free(seen);
+
+    return bad;
+}
+
+/****************************************************************************
  Read V3000 collections
 ****************************************************************************/
 int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
@@ -748,7 +845,8 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
                         int k, nnum;
                         num_list[0] = n_coll;
                         nnum = num_list[1];
-                        for (k = 2; k < nnum; k++)
+                        /* atoms occupy num_list[2 .. nnum+1] */
+                        for (k = 2; k < nnum + 2; k++)
                         {
                             num_list[k] =
                                 get_actual_atom_number(num_list[k],
@@ -840,6 +938,18 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
             AddErrorMessage(pStrErr, line);
         }
         goto err_fin;
+    }
+
+    if (StereoCollectionsAreMalformed(ctab, pStrErr))
+    {
+        /* Diagnosed above; drop the collections rather than guess what the file
+           meant. The enhanced-stereo layer then degrades to standard behaviour,
+           which is what a structure without collections gets. */
+        NumLists_Free(ctab->v3000->steabs);
+        NumLists_Free(ctab->v3000->sterel);
+        NumLists_Free(ctab->v3000->sterac);
+        ctab->v3000->n_steabs = ctab->v3000->n_sterel = ctab->v3000->n_sterac = 0;
+        ctab->v3000->n_collections = 0;
     }
 
     // /* Error: No V3000 Collection end marker */
