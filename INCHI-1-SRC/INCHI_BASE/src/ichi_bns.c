@@ -58,6 +58,7 @@ Normalization related procedures
 #include "util.h"
 #include "ichister.h"
 #include "ichi_bns.h"
+#include "aromaticity.h"
 
 #include "bcf_s.h"
 
@@ -5277,6 +5278,14 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
 #endif
     int at_prot;  /* moved from below 2024-09-01 DT */
 
+    /* Issue #154: snapshot of the pre-search atom state (with original type-4
+       BOND_ALTERN ring bonds) taken when an unresolved aromatic electron source
+       is present, so the Hückel-relaxation retry can restart from flexible
+       aromatic bonds instead of the concrete single/double bonds the first
+       search commits via SetBondsFromBnStructFlow. */
+    inp_ATOM *at_arom_snapshot = NULL;
+    int       i_src, has_arom_electron_source = 0;
+
     nChanges = 0;
     bError = 0;
 
@@ -5379,6 +5388,35 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
     again:
     */
 
+    /* Issue #154: if the structure carries an unresolved aromatic electron source
+       (a charged or doublet-radical ring atom whose chem_bonds_valence exceeds its
+       valence), snapshot the pre-search atom state now -- while the ring bonds are
+       still flexible type-4 BOND_ALTERN. AllocateAndInitBnStruct below and the first
+       kekulization overwrite at[].bond_type with concrete single/double bonds, so
+       this snapshot is the only way to restart the relaxation retry from flexible
+       bonds. Structures without such a source never allocate the snapshot. */
+    for (i_src = 0; i_src < num_atoms; i_src++)
+    {
+        if (is_aromatic_electron_source( at, i_src ))
+        {
+            has_arom_electron_source = 1;
+            break;
+        }
+    }
+    if (has_arom_electron_source)
+    {
+        at_arom_snapshot = (inp_ATOM *) inchi_calloc( num_atoms, sizeof( at_arom_snapshot[0] ) );
+        if (at_arom_snapshot)
+        {
+            memcpy( at_arom_snapshot, at, num_atoms * sizeof( at_arom_snapshot[0] ) );
+        }
+        else
+        {
+            bError = BNS_OUT_OF_RAM; /* consistent with the other allocation sites */
+            goto exit_function;
+        }
+    }
+
     /* Allocate Balanced Network Data Strucures; replace Alternating bonds with Single */
     if (( pBNS = AllocateAndInitBnStruct( at, num_atoms,
                                           BNS_ADD_ATOMS, BNS_ADD_EDGES,
@@ -5428,8 +5466,83 @@ int mark_alt_bonds_and_taut_groups( struct tagINCHI_CLOCK   *ic,
         /* (here pair(s) of radicals could have disappeared from the atoms) */
         if (IS_BNS_ERROR( ret ))
         {
-            bError = ret;
-            goto exit_function;
+            /* Issue #154/#82: aromatic carbon ions (tropylium C7H7+, cyclopropenyl
+               C3H3+, cyclopentadienyl C5H5-), neutral odd-ring radicals (C5H5.),
+               and connected organometallic aromatics (ferrocene Cp under
+               MolecularInorganics) cannot be kekulized while every aromatic ring
+               atom is required to carry a localized double bond: the electron-
+               source atom contributes to the pi system via an empty orbital
+               (cation), lone pair (anion) or SOMO (radical), not a double bond, so
+               no perfect matching exists and BnsAdjustFlowBondsRad fails with
+               BNS_ALTBOND_ERR. Relax those sources (see aromaticity.c), rebuild the
+               network, and retry the conversion once. Structures that already
+               kekulize never reach this path, so existing InChIs are unaffected. */
+            if (ret == BNS_ALTBOND_ERR && at_arom_snapshot)
+            {
+                /* Restore the pre-search atom state (flexible type-4 ring bonds and
+                   the original valences/charges) that the failed first kekulization
+                   overwrote, then relax the aromatic electron sources on that clean
+                   state. Relaxation moves one valence unit of each source from a ring
+                   double bond to an implicit H so the odd aromatic ring gains a
+                   perfect matching. Because the vertex st-capacities are frozen at
+                   AllocateAndInitBnStruct time (MAX_AT_FLOW = chem_bonds_valence -
+                   valence), the network must be rebuilt from scratch -- ReInitBnStruct
+                   alone would keep the stale caps and demand a double bond at the
+                   relaxed atom. */
+                memcpy( at, at_arom_snapshot, num_atoms * sizeof( at_arom_snapshot[0] ) );
+                if (relax_aromatic_electron_sources( at, num_atoms ) > 0)
+                {
+                    pBNS = DeAllocateBnStruct( pBNS );
+                    pBD  = DeAllocateBnData( pBD );
+                    if (( pBNS = AllocateAndInitBnStruct( at, num_atoms,
+                                                          BNS_ADD_ATOMS, BNS_ADD_EDGES,
+                                                          max_altp, &num_changed_bonds ) )
+                         &&
+                         ( pBD = AllocateAndInitBnData( pBNS->max_vertices ) ))
+                    {
+                        pBNS->pbTautFlags = pbTautFlags;
+                        pBNS->pbTautFlagsDone = pbTautFlagsDone;
+                        pBNS->ulTimeOutTime = ulTimeOutTime;
+                        pBNS->ic = ic;
+#if ( BNS_PROTECT_FROM_TAUT == 1 )
+                        SetForbiddenEdges( pBNS, at, num_atoms, BNS_EDGE_FORBIDDEN_MASK, nebend, ebend );
+#endif
+                        ret = BnsAdjustFlowBondsRad( pBNS, pBD, at, num_atoms );
+#ifdef FIX_AROM_RADICAL
+                        /* Issue #154: restoring the pre-search snapshot above
+                           re-installed the FIX_AROM_RADICAL-neutralized state
+                           (radical cleared, one implicit H added). Mirror the
+                           normal path's restoration (see the n_arom_radicals block
+                           earlier) so any stored aromatic doublet radical is put
+                           back into at[] for the output; otherwise a structure that
+                           has BOTH a neutralized aromatic radical and a charged
+                           electron source reaching this retry would lose the radical
+                           (mis-encoded as an extra implicit H). */
+                        if (stored_radicals)
+                        {
+                            for (i = 0; i < num_atoms; i++)
+                            {
+                                if (stored_radicals[i])
+                                {
+                                    at[i].radical = stored_radicals[i];
+                                    at[i].num_H--;
+                                }
+                            }
+                        }
+#endif
+                    }
+                    else
+                    {
+                        bError = BNS_OUT_OF_RAM;
+                        goto exit_function;
+                    }
+                }
+            }
+            if (IS_BNS_ERROR( ret ))
+            {
+                bError = ret;
+                goto exit_function;
+            }
         }
         pBNS->tot_st_flow += 2 * ret;
 
@@ -5933,6 +6046,10 @@ exit_function:
     /* djb-rwth: ignoring LLVM warning: variables used to store functions return values */
     pBNS = DeAllocateBnStruct(pBNS);
     pBD = DeAllocateBnData(pBD);
+    if (at_arom_snapshot)
+    {
+        inchi_free( at_arom_snapshot );
+    }
     /*#if ( MOVE_CHARGES == 1 )*/
     if (c_group_info)
     {

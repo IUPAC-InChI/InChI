@@ -82,6 +82,39 @@ struct tagCANON_GLOBALS;
 int fix_aromatic_oxygen_and_sulfur( inp_ATOM *atom );
 
 /**
+ * @brief π-electron contribution of a ring atom to its conjugated system.
+ *
+ * Hückel counting for the electron-source cases this module handles: a cationic
+ * center donates 0 (empty p orbital), an anionic center donates 2 (in-ring lone
+ * pair), a doublet-radical center donates 1 (SOMO), and any other neutral atom
+ * donates 1 (its share of a ring double bond). Heteroatom-specific lone-pair
+ * rules (pyridine/pyrrole/furan) are deferred to a later increment.
+ * It is not yet invoked by the engine; it documents the π-electron rules for the deferred heteroaromatic increment and is currently exercised only by unit tests.
+ *
+ * @param at Atom array.
+ * @param i  Index of the ring atom.
+ * @return Number of π electrons the atom donates (0, 1, or 2).
+ */
+int huckel_pi_contribution( inp_ATOM *at, int i );
+
+/**
+ * @brief Test whether a ring atom is a Hückel electron source needing relaxation.
+ *
+ * True when atom @p i cannot carry a localized ring double bond and therefore
+ * blocks kekulization of an odd aromatic ring: its ring coordination
+ * (@c valence minus the number of metal neighbors) is 2, it has no implicit H,
+ * its @c chem_bonds_valence exceeds its @c valence (spare valence left by the
+ * unresolved aromatic system), and it is either charged or a doublet radical.
+ * Metal neighbors are counted, not excluded, so connected organometallic rings
+ * (e.g. ferrocene Cp) qualify.
+ *
+ * @param at Atom array.
+ * @param i  Index of the candidate ring atom.
+ * @return 1 if @p i is an electron source to relax; 0 otherwise.
+ */
+int is_aromatic_electron_source( inp_ATOM *at, int i );
+
+/**
  * @brief Test whether an atom is an unsaturated but non-aromatic carbon.
  *
  * True when @c at[i] is a neutral, non-radical carbon of total valence 4 that
@@ -142,6 +175,22 @@ int check_arom_chain( inp_ATOM *at, int cur, int from, int last, int len );
  * @return Count of residual aromatic bonds that could not be resolved (0 on full success).
  */
 int replace_arom_bonds( inp_ATOM *at, int num_atoms, inp_ATOM *at2, int num_atoms2 );
+
+/**
+ * @brief Relax Hückel electron-source ring atoms so an odd aromatic ring kekulizes.
+ *
+ * For every atom for which @c is_aromatic_electron_source is true, moves one
+ * valence unit from an assumed ring double bond to an implicit hydrogen
+ * (@c chem_bonds_valence-- paired with @c num_H++). Total valence and formula
+ * are preserved; charge and radical state are untouched. Intended to run only
+ * after the balanced-network kekulizer returns @c BNS_ALTBOND_ERR; the caller
+ * rebuilds the network and retries the conversion once.
+ *
+ * @param at        Atom array (modified in place).
+ * @param num_atoms Number of atoms in @p at.
+ * @return Number of atoms relaxed (0 if none matched).
+ */
+int relax_aromatic_electron_sources( inp_ATOM *at, int num_atoms );
 
 /**
  * @brief Mark alternating (aromatic) bonds via the balanced-network kekulizer.

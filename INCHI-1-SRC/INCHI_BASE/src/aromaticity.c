@@ -67,6 +67,69 @@ int fix_aromatic_oxygen_and_sulfur( inp_ATOM *atom )
 
 
 /****************************************************************************/
+int huckel_pi_contribution( inp_ATOM *at, int i )
+{
+    if (at[i].charge > 0)
+    {
+        return 0; /* cationic center: empty p orbital */
+    }
+    if (at[i].charge < 0)
+    {
+        return 2; /* anionic center: in-ring lone pair */
+    }
+    if (at[i].radical == RADICAL_DOUBLET)
+    {
+        return 1; /* radical center: singly occupied MO */
+    }
+    return 1;     /* ordinary conjugated atom: one ring double bond */
+}
+
+
+/****************************************************************************/
+/* Number of atom i's neighbors that are metal atoms. */
+static int count_metal_neighbors( inp_ATOM *at, int i )
+{
+    int k, n = 0;
+    for (k = 0; k < at[i].valence; k++)
+    {
+        if (is_el_a_metal( at[at[i].neighbor[k]].el_number ))
+        {
+            n++;
+        }
+    }
+    return n;
+}
+
+/****************************************************************************/
+int is_aromatic_electron_source( inp_ATOM *at, int i )
+{
+    int ring_coordination = (int) at[i].valence - count_metal_neighbors( at, i );
+
+    return ring_coordination == 2 &&
+           at[i].num_H == 0 &&
+           at[i].chem_bonds_valence > at[i].valence &&
+           ( at[i].charge != 0 || at[i].radical == RADICAL_DOUBLET );
+}
+
+
+/****************************************************************************/
+int relax_aromatic_electron_sources( inp_ATOM *at, int num_atoms )
+{
+    int i, num_relaxed = 0;
+    for (i = 0; i < num_atoms; i++)
+    {
+        if (is_aromatic_electron_source( at, i ))
+        {
+            at[i].chem_bonds_valence--;
+            at[i].num_H++;
+            num_relaxed++;
+        }
+    }
+    return num_relaxed;
+}
+
+
+/****************************************************************************/
 int check_arom_chain( inp_ATOM *at,
                       int cur /* first*/,
                       int from,
