@@ -2163,6 +2163,24 @@ int half_stereo_bond_parity( inp_ATOM *at,
         return 0;
     }
 
+    bValence3 = bAtomHasValence3( at[cur_at].elname, at[cur_at].charge, at[cur_at].radical );
+
+    /* To have a geometry at all, this end of the bond needs two attachments in
+       addition to the double bond partner, or one attachment plus a lone pair.
+       Only an atom which has a lone pair here (neutral N) may get away with a
+       total of MIN_NUM_STEREO_BOND_NEIGH attachments; for C, Si, Ge and N(+)
+       the remaining slot is a free valence, which is not a substituent and
+       therefore cannot make the bond stereogenic. Rejecting it here keeps a
+       free valence equivalent to a radical, which bCanAtomHaveAStereoBond()
+       already rejects: the two are indistinguishable in the InChI string, so
+       accepting one and not the other gave the same species different stereo
+       layers. Metal disconnection produces the free-valence form, hence the
+       round-trip mismatch reported in github #263. */
+    if (at[cur_at].valence + num_H <= MIN_NUM_STEREO_BOND_NEIGH && !bValence3)
+    {
+        return AB_PARITY_NONE;
+    }
+
     if (!bIgnoreIsotopicH)
     {
         for (j = 0, num_nH = num_H; j < NUM_H_ISOTOPES; j++)
@@ -2237,7 +2255,6 @@ int half_stereo_bond_parity( inp_ATOM *at,
         return num_H == 1 ? AB_PARITY_UNDF : -AB_PARITY_UNDF;
     }
 
-    bValence3 = bAtomHasValence3( at[cur_at].elname, at[cur_at].charge, at[cur_at].radical );
     /*
      * Can one explicit hydrogen be added to make asymmetric configuration?
      * For now we can add 1 H atom in case of an appropriate geometry if:
