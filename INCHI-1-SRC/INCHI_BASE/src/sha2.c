@@ -1,7 +1,7 @@
 /*
  *
  * FIPS-180-2 compliant SHA-256 implementation
- * Copyright (C) 2010 Paul Bakker.
+ * Copyright (C) 2010 Paul Bakker at Brainspark B.V..
  * Originally written (2003-2006) by Christophe Devine.
  *
  * This code is free software; you can redistribute it and/or
@@ -230,7 +230,7 @@ void sha2_update(sha2_context *ctx, unsigned char *input, int ilen)
         left = 0;
     }
 
-    while (ilen >= 64) 
+    while (ilen >= 64)
     {
         sha2_process(ctx, input); /* djb-rwth: ignoring LLVM warning as ilen >= 64 just in test case */
         input += 64;
