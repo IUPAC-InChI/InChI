@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ */
+
 #ifndef _FUZZER_H_
 #define _FUZZER_H_
 
