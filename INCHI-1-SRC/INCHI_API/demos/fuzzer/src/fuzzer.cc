@@ -1,6 +1,9 @@
 /*
-    Mimics Google AutoFuzz
-*/
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2024 IUPAC and InChI Trust
+ */
+
+/* Mimics Google AutoFuzz */
 
 #include <stddef.h>
 #include <stdint.h>
@@ -24,13 +27,13 @@ int(*getinchikeyfrominchi)(const char*, const int, const int,char*, char*, char*
 HANDLE_INSTANCE hLIBINCHI;
 char *szOptions = _strdup("");
 
-extern "C" int FuzzerTestOneInput(const uint8_t *data, size_t size) 
+extern "C" int FuzzerTestOneInput(const uint8_t *data, size_t size)
 {
   char *x =
       _strdup(std::string(reinterpret_cast<const char *>(data), size).c_str());
 
   char inchiKey[29], xtra1[65], xtra2[65];
-  
+
   getinchikeyfrominchi(x, 0, 0, inchiKey, xtra1, xtra2);
   /*printf("i2k");*/
 
@@ -111,15 +114,15 @@ int main( int argc, char *argv[] )
     }
 
     if ( !load_inchi_library())
-    { 
+    {
         fprintf(stderr, "Could not load %-s\n", LIBINCHINAME);
     }
 
     bufsize = sizeof( buf );
     memset( buf, 0, bufsize );
-    
+
     nbytes = fread( buf, 1, bufsize , f );
-    
+
     if (nbytes!= bufsize)
     {
         if (feof( f ))
@@ -146,7 +149,7 @@ int main( int argc, char *argv[] )
                     else
                     {
                         printf( "\n* %d * ! Unknown problem * %-s\n", i, argv[1] );
-                    }           
+                    }
 
                     free( tmp );
                 }
@@ -178,7 +181,7 @@ int main( int argc, char *argv[] )
 }
 
 
-int load_inchi_library(void) 
+int load_inchi_library(void)
 {
 #ifdef _WIN32
     // I:\Dropbox\work\INCHI\devel\INCHI-DEV\INCHI-1-SRC\INCHI_API\bin2\Windows\x64\Debug\
@@ -210,7 +213,7 @@ int load_inchi_library(void)
         GET_DLSYM(hLIBINCHI, "FreeINCHI");
 
     getinchikeyfrominchi = (int(*)(const char*, const int, const int, char*, char*, char*))
-        GET_DLSYM(hLIBINCHI, "GetINCHIKeyFromINCHI"); 
+        GET_DLSYM(hLIBINCHI, "GetINCHIKeyFromINCHI");
 
     return 1;
 }
