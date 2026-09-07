@@ -2,26 +2,20 @@ name: Release
 
 on:
   workflow_dispatch:
-  push:
-    # Trigger this workflow by pushing a release tag.
-    # Make sure that `HEAD` is pointing to the commit you want to release.
-    # Then run `git tag -a v<version_tag> -m "Release version <version_tag> (<yyyy>-<mm>-<dd>)" && git push && git push --tags`.
-    # For example `git tag -a v1.06 -m "Release version 1.06 (2020-12-20)" && git push && git push --tags`.
-    tags:
-      - v1.*
 
 jobs:
   define_matrix:
     runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.define_matrix.outputs.matrix }}
+      release_tag: ${{ steps.define_version.outputs.release_tag }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Verify build matrix
         # The build matrix is used to interpolate commands and inputs throughout the remainder of the workflow.
         # Since those interpolations are potentially security-sensitive, we verify the hash of the build matrix.
-        if: ${{ hashFiles('.github/workflows/build_matrix.json') != '9604e8750afb0d2df3bc2240d5d5810ead63848246ecb8fb6072b74e1bcf949b' }}
+        if: ${{ hashFiles('.github/workflows/build_matrix.json') != 'f2f0d2d642baf81c8899dcb548d9f306eeb7b42ec98c320d2351762e63a3da99' }}
         run: |
           echo "CI run aborted due to unexpected changes to the build matrix."
           exit 1
@@ -30,6 +24,17 @@ jobs:
         id: define_matrix
         run: |
           echo "matrix=$(cat .github/workflows/build_matrix.json| jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Define release tag
+        id: define_version
+        run: |
+          cmake -S INCHI-1-SRC/INCHI_EXE/inchi-1/src -B CMake_build/version_check
+          version=$(sed -n 's/^#define INCHI_SOFTWARE_VERSION "\(.*\)"$/\1/p' CMake_build/version_check/generated/inchi_version.h)
+          if [[ -z "$version" ]]; then
+            echo "Unable to read INCHI_SOFTWARE_VERSION from the generated header."
+            exit 1
+          fi
+          echo "release_tag=v${version}" >> "$GITHUB_OUTPUT"
 
   build_and_test:
     needs: define_matrix
@@ -53,13 +58,9 @@ jobs:
         env:
           SLUG: ${{ matrix.slug }}
           SHA: ${{ github.sha }}
-          REF_TYPE: ${{ github.ref_type }}
-          REF_NAME: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.define_matrix.outputs.release_tag }}
         run: |
-          tag_part=""
-          if [[ "$REF_TYPE" == "tag" ]]; then
-            tag_part="-${REF_NAME//[^A-Za-z0-9._-]/_}"
-          fi
+          tag_part="-${RELEASE_TAG//[^A-Za-z0-9._-]/_}"
           echo "value=inchi-${SLUG}${tag_part}-${SHA:0:7}" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
@@ -131,8 +132,7 @@ jobs:
           path: ${{ steps.release_dir.outputs.value }}-signed
 
   release:
-    needs: build_and_test
-    if: github.ref_type == 'tag'
+    needs: [define_matrix, build_and_test]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -140,8 +140,7 @@ jobs:
     steps:
 
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        # git repository needs to be checked out (including tags, hence `fetch-depth: 0`),
-        # otherwise the `--verify-tag` flag to `gh release create` fails.
+        # The complete history is retained so the release is created from the checked-out commit.
         with:
           fetch-depth: 0
 
@@ -167,11 +166,16 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
-        # See https://cli.github.com/manual/gh_release_create.
+          TAG: ${{ needs.define_matrix.outputs.release_tag }}
         run: |
+          if existing_commit=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq '.sha' 2>/dev/null); then
+            echo "Release tag $TAG already exists at $existing_commit. Aborting."
+            exit 1
+          fi
+
+          # See https://cli.github.com/manual/gh_release_create.
           gh release create "$TAG" \
-          --verify-tag \
+          --target "$GITHUB_SHA" \
           --title "$TAG" \
           --notes "For details about this release have a look at the [CHANGELOG](INCHI-1-DOC/CHANGELOG.md)." \
           release_artifacts.zip cmake_configurations.zip

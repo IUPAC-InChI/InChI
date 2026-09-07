@@ -6,15 +6,16 @@
 /* djb-rwth: bounds-checking functions / C11 Annex K */
 
 /* djb-rwth: adding guard idiom instead of #pragma once for code portabilty */
-#ifndef BCF_S_H 
+#ifndef BCF_S_H
 #define BCF_S_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include "inchi_version.h"
 
-#define CURRENT_VER "1.07.5" /* djb-rwth: full version number in the output, required for fixing GHI #61 */
+#define CURRENT_VER INCHI_SOFTWARE_VERSION
 
 #ifdef __STDC_LIB_EXT1__
 #if (__STDC_LIB_EXT1__ >= 201112L)
