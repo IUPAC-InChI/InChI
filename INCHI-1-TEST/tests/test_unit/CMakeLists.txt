@@ -11,7 +11,6 @@ file(GLOB BASE_SOURCES CONFIGURE_DEPENDS
 add_library(test_dependencies STATIC ${BASE_SOURCES})
 target_compile_definitions(test_dependencies PUBLIC TARGET_EXE_STANDALONE)
 target_compile_options(test_dependencies INTERFACE "-g")
-target_include_directories(test_dependencies PUBLIC "${CMAKE_BINARY_DIR}/generated")
 
 file(GLOB TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 foreach(test_src ${TEST_SOURCES})

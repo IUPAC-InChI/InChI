@@ -4,8 +4,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/InChIVersion.cmake)
 
 project(InChI_CLI VERSION ${INCHI_VERSION_YEAR}.${INCHI_VERSION_MINOR})
 
-inchi_configure_version_header("${PROJECT_BINARY_DIR}/generated")
-
 add_library(inchi_compiler_flags INTERFACE)
 target_compile_features(inchi_compiler_flags INTERFACE c_std_11)
 
@@ -150,7 +148,6 @@ target_compile_definitions(inchi-1 PRIVATE
 
 target_include_directories(inchi-1 PUBLIC
 	"${PROJECT_BINARY_DIR}"
-	"${PROJECT_BINARY_DIR}/generated"
 )
 
 string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
