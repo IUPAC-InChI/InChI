@@ -7,7 +7,7 @@
         "build_exe": "cmake --build CMake_build/cli_build",
         "build_lib": "cmake --build CMake_build/libinchi_build",
         "exe_path": "CMake_build/cli_build/bin/inchi-1",
-        "lib_path": "CMake_build/libinchi_build/bin/libinchi.so.2026",
+        "lib_path": "CMake_build/libinchi_build/bin/libinchi.so.@INCHI_SOVERSION@",
         "main_path": "CMake_build/libinchi_build/bin/inchi_main"
     },
     {
@@ -30,7 +30,7 @@
         "build_exe": "cmake --build CMake_build/cli_build",
         "build_lib": "cmake --build CMake_build/libinchi_build",
         "exe_path": "CMake_build/cli_build/bin/inchi-1",
-        "lib_path": "CMake_build/libinchi_build/bin/libinchi.2026.dylib",
+        "lib_path": "CMake_build/libinchi_build/bin/libinchi.@INCHI_SOVERSION@.dylib",
         "main_path": "CMake_build/libinchi_build/bin/inchi_main"
     }
 ]

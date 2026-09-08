@@ -12,29 +12,42 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+      - name: Define release tag
+        id: define_version
+        run: |
+          cmake -S INCHI-1-SRC/INCHI_EXE/inchi-1/src -B CMake_build/version_check
+          version=$(sed -n 's/^#define INCHI_SOFTWARE_VERSION "\(.*\)"$/\1/p' CMake_build/version_check/generated/inchi_version.h)
+          soversion=$(sed -n 's/^#define INCHI_SOVERSION \([0-9][0-9]*\)$/\1/p' CMake_build/version_check/generated/inchi_version.h)
+          if [[ -z "$version" ]]; then
+            echo "Unable to read INCHI_SOFTWARE_VERSION from the generated header."
+            exit 1
+          fi
+          if [[ ! "$soversion" =~ ^[0-9]+$ ]]; then
+            echo "Unable to read a valid INCHI_SOVERSION from the generated header."
+            exit 1
+          fi
+          echo "release_tag=v${version}" >> "$GITHUB_OUTPUT"
+          echo "soversion=$soversion" >> "$GITHUB_OUTPUT"
+
       - name: Verify build matrix
         # The build matrix is used to interpolate commands and inputs throughout the remainder of the workflow.
         # Since those interpolations are potentially security-sensitive, we verify the hash of the build matrix.
-        if: ${{ hashFiles('.github/workflows/build_matrix.json') != 'f2f0d2d642baf81c8899dcb548d9f306eeb7b42ec98c320d2351762e63a3da99' }}
+        if: ${{ hashFiles('.github/workflows/build_matrix.json') != 'a2c9a1c462aaa2fc8a9c5f2d102637369bfc4b6157051f4f2217fa4c22e265d6' }}
         run: |
           echo "CI run aborted due to unexpected changes to the build matrix."
           exit 1
 
       - name: Define build matrix
         id: define_matrix
+        env:
+          SOVERSION: ${{ steps.define_version.outputs.soversion }}
         run: |
-          echo "matrix=$(cat .github/workflows/build_matrix.json| jq -c .)" >> $GITHUB_OUTPUT
-
-      - name: Define release tag
-        id: define_version
-        run: |
-          cmake -S INCHI-1-SRC/INCHI_EXE/inchi-1/src -B CMake_build/version_check
-          version=$(sed -n 's/^#define INCHI_SOFTWARE_VERSION "\(.*\)"$/\1/p' CMake_build/version_check/generated/inchi_version.h)
-          if [[ -z "$version" ]]; then
-            echo "Unable to read INCHI_SOFTWARE_VERSION from the generated header."
-            exit 1
-          fi
-          echo "release_tag=v${version}" >> "$GITHUB_OUTPUT"
+          matrix=$(jq -c --arg soversion "$SOVERSION" '
+            map(
+              .lib_path |= gsub("@INCHI_SOVERSION@"; $soversion)
+            )
+          ' .github/workflows/build_matrix.json)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   build_and_test:
     needs: define_matrix
