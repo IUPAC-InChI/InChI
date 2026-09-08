@@ -109,9 +109,9 @@ The unit test coverage is [evaluated on every push](.github/workflows/deploy_pag
 
 ### Code signing policy
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).  
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 
-This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. 
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
 ## Contents of this repository
 
@@ -407,3 +407,15 @@ _32-bit_ `Microsoft Visual Studio C++ (MSVC) Win32` and `Microsoft LLVM/Clang` c
 - `InChI2InChI` Convert InChI string(s) into InChI string(s)        -- produces `Fatal Error(2)3` just like in `InChI v.1.06`
 
 Please refrain from using the above mentioned options as they might not function properly, or will not be recognized. Regular updates with regard to their functionality will be posted on this page.
+
+## Releasing a new software version
+
+The software version is defined in `INCHI-1-SRC/INCHI_BASE/src/inchi_version.h`.
+To change the version, edit `INCHI_SOFTWARE_VERSION` and, if required, `INCHI_SOVERSION`.
+Note that `INCHI_SOVERSION` is independent of `INCHI_SOFTWARE_VERSION`,
+since not every change of the latter requires a change of the former (`INCHI_SOVERSION` only changes when backward-compatibility is broken).
+Further note that `INCHI_SOFTWARE_VERSION` is not the same as the `INCHI_VERSION` from `INCHI-1-SRC/INCHI_BASE/src/mode.h`.
+The latter designates the version of the InChI _string_, whereas the former designates the version of the _software_ that generates the string.
+
+Once the version is defined, run the `.github/workflows/release.yml` workflow.
+The workflow builds and tests all artifacts, creates a release tag, and publishes the release under <https://github.com/IUPAC-InChI/InChI/releases>.
