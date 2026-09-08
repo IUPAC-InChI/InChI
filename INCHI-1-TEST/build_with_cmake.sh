@@ -19,8 +19,8 @@ else
 fi
 
 cmake -U INCHI_VERSION_FULL \
-  -B CMake_build/full_build \
-  -S . \
+  -B $build_dir \
+  -S $source_dir \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
-cmake --build CMake_build/full_build
+cmake --build $build_dir
