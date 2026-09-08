@@ -18,7 +18,7 @@ else
     exit 1
 fi
 
-cmake -U INCHI_VERSION_FULL \
+cmake -U INCHI_VERSION_FULL INCHI_SOVERSION \
   -B $build_dir \
   -S $source_dir \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
