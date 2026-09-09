@@ -7,8 +7,6 @@
 #ifndef _INHCH_API_H_
 #define _INHCH_API_H_
 
-#include "inchi_version.h"
-
 
 #ifndef FIND_RING_SYSTEMS
 #define FIND_RING_SYSTEMS 1
