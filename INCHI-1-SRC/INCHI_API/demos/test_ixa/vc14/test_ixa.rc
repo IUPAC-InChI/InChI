@@ -78,12 +78,12 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, 2024. Demo program exemplifying use of InChI IXA API"
+            VALUE "Comments", "IUPAC International Chemical Identifier (InChI). Demo program exemplifying use of InChI IXA API"
             VALUE "FileDescription", "Demo app test_ixa"
             VALUE "FileVersion", INCHI_RC_VERSION_STRING
             VALUE "InternalName", "test_ixa"
             VALUE "OriginalFilename", "test_ixa.exe"
-            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, 2024. Demo program exemplifying use of InChI IXA API"
+            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI). Demo program exemplifying use of InChI IXA API"
             VALUE "ProductVersion", INCHI_RC_VERSION_STRING
         END
     END

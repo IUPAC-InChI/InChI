@@ -78,12 +78,12 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07 , April 2024. Demo app mol2inchi"
+            VALUE "Comments", "IUPAC International Chemical Identifier (InChI). Demo app mol2inchi"
             VALUE "FileDescription", "mol2inchi demo app"
             VALUE "FileVersion", INCHI_RC_VERSION_STRING
             VALUE "InternalName", "mol2inchi"
             VALUE "OriginalFilename", "mol2inchi.exe"
-            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07 , April 2024. Demo app mol2inchi"
+            VALUE "ProductName", "IUPAC International Chemical Identifier (InChI). Demo app mol2inchi"
             VALUE "ProductVersion", INCHI_RC_VERSION_STRING
         END
     END
