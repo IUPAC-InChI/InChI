@@ -1,22 +1,19 @@
 set(INCHI_VERSION_HEADER "${CMAKE_CURRENT_LIST_DIR}/../INCHI-1-SRC/INCHI_BASE/src/inchi_version.h")
 
 file(STRINGS "${INCHI_VERSION_HEADER}" INCHI_VERSION_FULL_DEFINITION
-    REGEX "^#define INCHI_SOFTWARE_VERSION \"[0-9][0-9][0-9][0-9]\\.[0-9]+(-[a-z0-9]+(_[a-z0-9]+)*)?\"$")
+    REGEX "^#define INCHI_SOFTWARE_VERSION .*$")
 file(STRINGS "${INCHI_VERSION_HEADER}" INCHI_SOVERSION_DEFINITION
-    REGEX "^#define INCHI_SOVERSION [0-9][0-9]*$")
+    REGEX "^#define INCHI_SOVERSION .*$")
 
-if(NOT INCHI_VERSION_FULL_DEFINITION MATCHES "^#define INCHI_SOFTWARE_VERSION \"([^\"]+)\"$")
-    message(FATAL_ERROR "Unable to read INCHI_SOFTWARE_VERSION from ${INCHI_VERSION_HEADER}")
+if(NOT INCHI_VERSION_FULL_DEFINITION MATCHES "^#define INCHI_SOFTWARE_VERSION \"([0-9][0-9][0-9][0-9]\\.(0|[1-9][0-9]*)(-[a-z0-9]+(_[a-z0-9]+)*)?)\"$")
+    message(FATAL_ERROR
+        "INCHI_SOFTWARE_VERSION must match YYYY.MINOR[-lowercase_modifier], got '${INCHI_VERSION_FULL_DEFINITION}'"
+    )
 endif()
 set(INCHI_VERSION_FULL "${CMAKE_MATCH_1}")
 
 if(NOT INCHI_SOVERSION_DEFINITION MATCHES "^#define INCHI_SOVERSION ([0-9][0-9]*)$")
-    message(FATAL_ERROR "Unable to read INCHI_SOVERSION from ${INCHI_VERSION_HEADER}")
+    message(FATAL_ERROR
+        "INCHI_SOVERSION must match YYYY, got '${INCHI_SOVERSION_DEFINITION}'")
 endif()
 set(INCHI_SOVERSION "${CMAKE_MATCH_1}")
-
-if(NOT INCHI_VERSION_FULL MATCHES "^[0-9][0-9][0-9][0-9]\\.(0|[1-9][0-9]*)(-[a-z0-9]+(_[a-z0-9]+)*)?$")
-    message(FATAL_ERROR
-        "INCHI_VERSION_FULL must match YYYY.MINOR[-lowercase_modifier], got '${INCHI_VERSION_FULL}'"
-    )
-endif()
