@@ -19,4 +19,4 @@ else
 fi
 
 cmake -B $build_dir -S $source_dir -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build $build_dir --clean-first
+cmake --build $build_dir
