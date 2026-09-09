@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../cmake/InChIVersion.cmake)
 
-project(Mol2InChI_API VERSION ${INCHI_VERSION_YEAR}.${INCHI_VERSION_MINOR})
+project(Mol2InChI_API VERSION ${INCHI_VERSION_FULL})
 
 add_library(mol2inchi_compiler_flags INTERFACE)
 target_compile_features(mol2inchi_compiler_flags INTERFACE c_std_11)

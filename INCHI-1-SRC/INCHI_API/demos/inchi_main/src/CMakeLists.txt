@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../cmake/InChIVersion.cmake)
 
-project(InChIMain_API VERSION ${INCHI_VERSION_YEAR}.${INCHI_VERSION_MINOR})
+project(InChIMain_API VERSION ${INCHI_VERSION_FULL})
 
 add_library(inchimain_compiler_flags INTERFACE)
 target_compile_features(inchimain_compiler_flags INTERFACE c_std_11)
