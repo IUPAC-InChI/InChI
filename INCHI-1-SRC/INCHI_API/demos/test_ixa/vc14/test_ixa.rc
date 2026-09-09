@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
+#include "inchi_version_rc.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -25,18 +26,18 @@ LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -61,8 +62,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,6,1
- PRODUCTVERSION 1,0,6,1
+ FILEVERSION INCHI_RC_FILEVERSION
+ PRODUCTVERSION INCHI_RC_PRODUCTVERSION
  FILEFLAGSMASK 0x37L
 #ifdef _DEBUG
  FILEFLAGS 0x21L
@@ -79,11 +80,11 @@ BEGIN
         BEGIN
             VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, 2024. Demo program exemplifying use of InChI IXA API"
             VALUE "FileDescription", "Demo app test_ixa"
-            VALUE "FileVersion", "1.0.7"
+            VALUE "FileVersion", INCHI_RC_VERSION_STRING
             VALUE "InternalName", "test_ixa"
             VALUE "OriginalFilename", "test_ixa.exe"
             VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, 2024. Demo program exemplifying use of InChI IXA API"
-            VALUE "ProductVersion", "1.0.7"
+            VALUE "ProductVersion", INCHI_RC_VERSION_STRING
         END
     END
     BLOCK "VarFileInfo"

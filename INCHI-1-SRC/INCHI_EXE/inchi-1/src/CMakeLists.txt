@@ -4,6 +4,12 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/InChIVersion.cmake)
 
 project(InChI_CLI VERSION ${INCHI_VERSION_FULL})
 
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/inchi_version_rc.h.in
+	${PROJECT_BINARY_DIR}/inchi_version_rc.h
+	@ONLY
+)
+
 add_library(inchi_compiler_flags INTERFACE)
 target_compile_features(inchi_compiler_flags INTERFACE c_std_11)
 

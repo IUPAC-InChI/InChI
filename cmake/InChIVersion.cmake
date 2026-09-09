@@ -19,3 +19,13 @@ if(NOT INCHI_SOVERSION_DEFINITION MATCHES "^#define INCHI_SOVERSION ([0-9][0-9][
         "INCHI_SOVERSION must match YYYY, got '${INCHI_SOVERSION_DEFINITION}'")
 endif()
 set(INCHI_SOVERSION "${CMAKE_MATCH_1}")
+
+# Numeric components for Windows resource (.rc) VERSIONINFO blocks.
+string(REGEX MATCH "^([0-9]+)\\.([0-9]+)" _inchi_unused "${INCHI_VERSION_FULL}")
+set(INCHI_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(INCHI_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(INCHI_RC_FILEVERSION "${INCHI_VERSION_MAJOR},${INCHI_VERSION_MINOR},0,0")
+unset(_inchi_unused)
+
+# Reconfigure whenever the version source file changes.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${INCHI_VERSION_HEADER}")

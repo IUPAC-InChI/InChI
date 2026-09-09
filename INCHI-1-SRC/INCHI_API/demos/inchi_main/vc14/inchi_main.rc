@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
+#include "inchi_version_rc.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -25,8 +26,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,7,0
- PRODUCTVERSION 1,0,7,4
+ FILEVERSION INCHI_RC_FILEVERSION
+ PRODUCTVERSION INCHI_RC_PRODUCTVERSION
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x21L
@@ -43,11 +44,11 @@ BEGIN
         BEGIN
             VALUE "Comments", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, October 2023. Demo app inchi_main"
             VALUE "FileDescription", " Demo app inchi_main"
-            VALUE "FileVersion", "1.0.7.4"
+            VALUE "FileVersion", INCHI_RC_VERSION_STRING
             VALUE "InternalName", "inchi_main.exe"
             VALUE "OriginalFilename", "inchi_main.exe"
             VALUE "ProductName", "IUPAC International Chemical Identifier (InChI) version 1, Software version 1.07, October 2023. Demo app inchi_main"
-            VALUE "ProductVersion", "1.0.7.4"
+            VALUE "ProductVersion", INCHI_RC_VERSION_STRING
         END
     END
     BLOCK "VarFileInfo"
@@ -63,18 +64,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
