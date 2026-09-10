@@ -125,7 +125,7 @@ jobs:
 
       - name: Sign artifacts
         if: runner.os == 'Windows'
-        uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e
+        uses: signpath/github-action-submit-signing-request@c92b958760219087e01f8d67a1669ed57afe2627 # v2.3
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: 656f8204-f8c5-4028-bd48-f832f5f89b31
