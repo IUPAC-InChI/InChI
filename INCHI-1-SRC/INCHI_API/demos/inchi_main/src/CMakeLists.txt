@@ -112,4 +112,5 @@ else()
 	)
 endif()
 
+install(FILES "${PROJECT_BINARY_DIR}/inchi_version_rc.h" DESTINATION include/inchi)
 install(TARGETS inchi_main)
