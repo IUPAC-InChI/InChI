@@ -419,3 +419,5 @@ The latter designates the version of the InChI _string_, whereas the former desi
 
 Once the version is defined, run the `.github/workflows/release.yml` workflow.
 The workflow builds and tests all artifacts, creates a release tag, and publishes the release under <https://github.com/IUPAC-InChI/InChI/releases>.
+By default the workflow performs a dry run, executing all steps other than publishing the release.
+For a live run, uncheck the "dry run" checkbox next to the manual trigger.
