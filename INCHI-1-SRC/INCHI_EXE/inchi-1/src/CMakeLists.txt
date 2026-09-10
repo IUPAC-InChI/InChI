@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
-project(InChI_CLI VERSION 1.7)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/InChIVersion.cmake)
+
+project(InChI_CLI VERSION ${INCHI_VERSION_FULL})
+
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/inchi_version_rc.h.in
+	${PROJECT_BINARY_DIR}/inchi_version_rc.h
+	@ONLY
+)
 
 add_library(inchi_compiler_flags INTERFACE)
 target_compile_features(inchi_compiler_flags INTERFACE c_std_11)
@@ -144,7 +152,9 @@ target_compile_definitions(inchi-1 PRIVATE
 	ADD_AMI_MODE
 )
 
-target_include_directories(inchi-1 PUBLIC "${PROJECT_BINARY_DIR}")
+target_include_directories(inchi-1 PUBLIC
+	"${PROJECT_BINARY_DIR}"
+)
 
 string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")

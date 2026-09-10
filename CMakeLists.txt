@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
-project(InChI C CXX)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/InChIVersion.cmake)
+
+project(InChI VERSION ${INCHI_VERSION_FULL} LANGUAGES C CXX)
 
 option(COVERAGE "Enable coverage reporting" OFF)
 
