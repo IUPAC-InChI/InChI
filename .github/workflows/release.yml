@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip creating the GitHub release)'
+        type: boolean
+        default: true
 
 jobs:
   define_matrix:
@@ -168,6 +173,7 @@ jobs:
         run: zip -r cmake_configurations.zip cmake_configurations
 
       - name: Create release
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
