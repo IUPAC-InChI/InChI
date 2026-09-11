@@ -177,7 +177,6 @@ M  END
 """
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError)
 def test_roundtrip(molfile, run_inchi_exe):
     result = run_inchi_exe(molfile)
     inchi = parse_inchi_from_executable_output(result.output)
