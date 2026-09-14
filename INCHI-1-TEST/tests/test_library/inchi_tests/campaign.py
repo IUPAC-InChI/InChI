@@ -13,10 +13,16 @@ reconnected (`/r`) layer with the `-MolecularInorganics` InChI minus its prefix.
 """
 
 import json
+import multiprocessing
+import os
 import re
 from collections import Counter, defaultdict
+from functools import partial
 from pathlib import Path
+from typing import Callable
 from pydantic import BaseModel
+from sdf_pipeline.utils import select_records_from_gzipped_sdf
+from inchi_tests.consumers import campaign_regression_consumer
 
 _FAILURE_PATTERN = re.compile(
     r"^INFO:sdf_pipeline:regression test failed( expectedly)?:(?P<entry>\{.*\})$"
@@ -74,3 +80,72 @@ def parse_comparison_summary(log_path: Path) -> dict[str, int]:
                 counts = json.loads(match.group("counts"))
 
     return counts
+
+
+def _recompute_one_sdf(
+    sdf_path: Path,
+    ids_by_sdf: dict[str, set[str]],
+    inchi_lib_path: str,
+    inchi_api_parameters: str,
+    get_molfile_id: Callable,
+    consumer: Callable,
+) -> dict[str, dict]:
+    molfile_ids = ids_by_sdf.get(sdf_path.name, set())
+    if not molfile_ids:
+        return {}
+
+    results: dict[str, dict] = {}
+    for _, molfile in select_records_from_gzipped_sdf(
+        sdf_path, molfile_ids, get_molfile_id
+    ):
+        consumer_result = consumer(
+            molfile,
+            get_molfile_id=get_molfile_id,
+            inchi_lib_path=inchi_lib_path,
+            inchi_api_parameters=inchi_api_parameters,
+        )
+        results[consumer_result.molfile_id] = consumer_result.result
+
+    return results
+
+
+def recompute_subset(
+    sdf_paths: list[Path],
+    ids_by_sdf: dict[str, set[str]],
+    inchi_lib_path: str,
+    inchi_api_parameters: str,
+    get_molfile_id: Callable,
+    consumer: Callable = campaign_regression_consumer,
+    number_of_processes: int | None = None,
+) -> dict[str, dict]:
+    """Re-compute InChI for selected molfile IDs only, with arbitrary options.
+
+    One process per SDF: the per-shard cost is dominated by streaming and decoding
+    the whole gzipped file to find the requested records, not by the InChI calls.
+    `get_molfile_id` and `consumer` are pickled, so they must be importable
+    module-level callables unless `number_of_processes=1`."""
+    todo = [path for path in sdf_paths if ids_by_sdf.get(path.name)]
+    if not todo:
+        return {}
+
+    worker = partial(
+        _recompute_one_sdf,
+        ids_by_sdf=ids_by_sdf,
+        inchi_lib_path=inchi_lib_path,
+        inchi_api_parameters=inchi_api_parameters,
+        get_molfile_id=get_molfile_id,
+        consumer=consumer,
+    )
+
+    if number_of_processes == 1:
+        per_sdf = [worker(path) for path in todo]
+    else:
+        n_processes = min(number_of_processes or os.cpu_count() or 8, len(todo))
+        with multiprocessing.get_context("spawn").Pool(n_processes) as pool:
+            per_sdf = pool.map(worker, todo)
+
+    results: dict[str, dict] = {}
+    for chunk in per_sdf:
+        results.update(chunk)
+
+    return results

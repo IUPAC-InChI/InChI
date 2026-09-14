@@ -116,3 +116,74 @@ def test_parse_comparison_summary_absent(tmp_path):
     log_path = tmp_path / "empty.log"
     log_path.write_text("INFO:root:nothing here\n")
     assert parse_comparison_summary(log_path) == {}
+
+
+import gzip
+from inchi_tests.campaign import recompute_subset
+from inchi_tests.utils import get_molfile_id_pubchem
+
+
+ETHANOL_MOLFILE = """ethanol
+  test
+
+  3  2  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 C   0  0
+    1.0000    0.0000    0.0000 C   0  0
+    2.0000    0.0000    0.0000 O   0  0
+  1  2  1  0
+  2  3  1  0
+M  END
+$$$$
+"""
+
+METHANOL_MOLFILE = """methanol
+  test
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 C   0  0
+    1.0000    0.0000    0.0000 O   0  0
+  1  2  1  0
+M  END
+$$$$
+"""
+
+
+def test_recompute_subset_only_touches_requested_ids(lib_path, tmp_path):
+    sdf_path = tmp_path / "tiny.sdf.gz"
+    with gzip.open(sdf_path, "wt", encoding="utf-8") as sdf_file:
+        sdf_file.write(ETHANOL_MOLFILE)
+        sdf_file.write(METHANOL_MOLFILE)
+
+    # `get_molfile_id_pubchem` takes the first whitespace token, which is the title
+    # line for these hand-written molfiles.
+    results = recompute_subset(
+        sdf_paths=[sdf_path],
+        ids_by_sdf={"tiny.sdf.gz": {"methanol"}},
+        inchi_lib_path=lib_path,
+        inchi_api_parameters="",
+        get_molfile_id=get_molfile_id_pubchem,
+        number_of_processes=1,
+    )
+
+    assert set(results) == {"methanol"}
+    # Raw, prefix included.
+    assert results["methanol"]["inchi"] == "InChI=1S/CH4O/c1-2/h2H,1H3"
+    assert results["methanol"]["exit"] == 0
+
+
+def test_recompute_subset_skips_sdfs_with_no_requested_ids(lib_path, tmp_path):
+    sdf_path = tmp_path / "tiny.sdf.gz"
+    with gzip.open(sdf_path, "wt", encoding="utf-8") as sdf_file:
+        sdf_file.write(ETHANOL_MOLFILE)
+
+    assert (
+        recompute_subset(
+            sdf_paths=[sdf_path],
+            ids_by_sdf={"other.sdf.gz": {"x"}},
+            inchi_lib_path=lib_path,
+            inchi_api_parameters="",
+            get_molfile_id=get_molfile_id_pubchem,
+            number_of_processes=1,
+        )
+        == {}
+    )
