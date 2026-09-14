@@ -178,3 +178,69 @@ def test_core_raises(sdf_path, caplog, consumer):
         caplog.records[0].message
         == f"could not process {sdf_path}: A process terminated unexpectedly."
     )
+
+
+def test_regression_driver_accepts_a_compare_hook(sdf_path, tmp_path, caplog):
+    """A custom comparator can accept results that differ byte-for-byte."""
+    reference_path = tmp_path / "reference.sqlite"
+    drivers.regression_reference(
+        sdf_path=sdf_path,
+        reference_path=reference_path,
+        consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+        get_molfile_id=_get_mcule_id,
+        number_of_consumer_processes=2,
+    )
+
+    def always_match(current: dict, reference: dict) -> bool:
+        return True
+
+    def never_match(current: dict, reference: dict) -> bool:
+        return False
+
+    with caplog.at_level(logging.INFO):
+        exit_code = drivers.regression(
+            sdf_path=sdf_path,
+            reference_path=reference_path,
+            consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+            compare=always_match,
+        )
+    assert exit_code == 0
+    assert "regression test failed" not in caplog.text
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        exit_code = drivers.regression(
+            sdf_path=sdf_path,
+            reference_path=reference_path,
+            consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+            compare=never_match,
+        )
+    assert exit_code == 1
+    assert "regression test failed" in caplog.text
+
+
+def test_regression_driver_without_compare_hook_is_byte_exact(sdf_path, tmp_path):
+    """The default path must be unchanged: identical input compares equal."""
+    reference_path = tmp_path / "reference.sqlite"
+    drivers.regression_reference(
+        sdf_path=sdf_path,
+        reference_path=reference_path,
+        consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+        get_molfile_id=_get_mcule_id,
+        number_of_consumer_processes=2,
+    )
+
+    assert (
+        drivers.regression(
+            sdf_path=sdf_path,
+            reference_path=reference_path,
+            consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+        )
+        == 0
+    )

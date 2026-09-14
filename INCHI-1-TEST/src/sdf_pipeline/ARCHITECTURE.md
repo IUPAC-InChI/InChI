@@ -6,4 +6,8 @@ such as InChI, SMILES, or TUCAN against molecules from [SDF files](https://en.wi
 Any code that's specific to the molecular identifier that is being tested does not belong in `src/sdf_pipeline`.
 In other words, you should be able to vendor the `src/sdf_pipeline` package into another project (e.g., TUCAN).
 
+Callers may pass a `compare` callable to `drivers.regression` to decide what counts
+as a match. The callable receives two result dictionaries; the package itself stays
+agnostic about their contents.
+
 In contrast, the test code that's specific to the InChI tests lives under `tests`.
