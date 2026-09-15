@@ -12,17 +12,26 @@ A-vs-B mismatch is re-checked against v1.07.5 `-RecMet` by comparing that run's
 reconnected (`/r`) layer with the `-MolecularInorganics` InChI minus its prefix.
 """
 
+import argparse
+import csv
+import importlib
 import json
 import multiprocessing
 import os
 import re
+import sys
 from collections import Counter, defaultdict
 from functools import partial
 from pathlib import Path
 from typing import Callable
 from pydantic import BaseModel
 from sdf_pipeline.utils import select_records_from_gzipped_sdf
-from inchi_tests.consumers import campaign_regression_consumer, inchi_body, is_failed
+from inchi_tests.consumers import (
+    campaign_regression_consumer,
+    regression_consumer,
+    inchi_body,
+    is_failed,
+)
 
 _FAILURE_PATTERN = re.compile(
     r"^INFO:sdf_pipeline:regression test failed( expectedly)?:(?P<entry>\{.*\})$"
@@ -215,3 +224,128 @@ def classify_mismatches(
 
 def classification_counts(classifications: list[Classification]) -> dict[str, int]:
     return dict(Counter(c.category for c in classifications))
+
+
+CSV_FIELDS = [
+    "molfile_id",
+    "sdf",
+    "category",
+    "reference_inchi",
+    "dev_mi_inchi",
+    "recmet_inchi",
+]
+
+
+def write_report(
+    classifications: list[Classification],
+    output_dir: Path,
+    comparison_summary: dict[str, int] | None = None,
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(
+        output_dir.joinpath("classifications.csv"), "w", newline="", encoding="utf-8"
+    ) as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for classification in classifications:
+            writer.writerow(classification.model_dump())
+
+    with open(output_dir.joinpath("summary.json"), "w", encoding="utf-8") as json_file:
+        json.dump(
+            {
+                "counts": classification_counts(classifications),
+                "total": len(classifications),
+                "comparison": comparison_summary or {},
+            },
+            json_file,
+            indent=2,
+        )
+
+
+def explain_failures(
+    classifications: list[Classification],
+    sdf_paths: list[Path],
+    mi_lib_path: str,
+    get_molfile_id: Callable,
+) -> dict[str, str]:
+    """Recover the InChI `message` for the `error_under_mi` subset.
+
+    The campaign consumer omits `message`, so a failure under MI has no stated
+    reason. That subset is small enough to re-run with the full consumer."""
+    failures = [c for c in classifications if c.category == "error_under_mi"]
+    if not failures:
+        return {}
+
+    ids_by_sdf: dict[str, set[str]] = defaultdict(set)
+    for classification in failures:
+        ids_by_sdf[classification.sdf].add(classification.molfile_id)
+
+    results = recompute_subset(
+        sdf_paths=sdf_paths,
+        ids_by_sdf=dict(ids_by_sdf),
+        inchi_lib_path=mi_lib_path,
+        inchi_api_parameters="-MolecularInorganics",
+        get_molfile_id=get_molfile_id,
+        consumer=regression_consumer,
+    )
+
+    return {molfile_id: result["message"] for molfile_id, result in results.items()}
+
+
+def _load_data_config(data_config_path: str):
+    sys.path.append(str(Path(data_config_path).parent))
+
+    return importlib.import_module(str(Path(data_config_path).stem)).config
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Classify MolecularInorganics regression mismatches."
+    )
+    parser.add_argument("--regression-log", required=True, type=str)
+    parser.add_argument(
+        "--recmet-lib-path", required=True, type=str, help="v1.07.5 libinchi.so"
+    )
+    parser.add_argument("--mi-lib-path", required=True, type=str, help="dev libinchi.so")
+    parser.add_argument("--data-config", required=True, type=str)
+    parser.add_argument("--output", required=True, type=str)
+    args = parser.parse_args()
+
+    data_config = _load_data_config(args.data_config)
+    log_path = Path(args.regression_log)
+    mismatches = parse_regression_log(log_path)
+    comparison_summary = parse_comparison_summary(log_path)
+    print(f"Parsed {len(mismatches)} mismatches from {args.regression_log}.")
+    print(f"Ignored-difference tallies: {json.dumps(comparison_summary)}")
+
+    recmet_results = recompute_subset(
+        sdf_paths=data_config.sdf_paths,
+        ids_by_sdf=mismatch_ids_by_sdf(mismatches),
+        inchi_lib_path=args.recmet_lib_path,
+        inchi_api_parameters="-RecMet",
+        get_molfile_id=data_config.molfile_id_getter,
+    )
+    print(f"Re-computed {len(recmet_results)} structures with v1.07.5 -RecMet.")
+
+    classifications = classify_mismatches(mismatches, recmet_results)
+    output_dir = Path(args.output)
+    write_report(classifications, output_dir, comparison_summary)
+
+    messages = explain_failures(
+        classifications,
+        data_config.sdf_paths,
+        args.mi_lib_path,
+        data_config.molfile_id_getter,
+    )
+    if messages:
+        with open(
+            output_dir.joinpath("error_under_mi_messages.json"), "w", encoding="utf-8"
+        ) as json_file:
+            json.dump(messages, json_file, indent=2)
+
+    print(json.dumps(classification_counts(classifications), indent=2))
+
+
+if __name__ == "__main__":
+    main()

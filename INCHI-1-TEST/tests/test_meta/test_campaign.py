@@ -294,3 +294,41 @@ def test_classification_counts():
         "recmet_equivalent": 1,
         "novel": 1,
     }
+
+
+import csv
+from inchi_tests.campaign import Classification, write_report
+
+
+def test_write_report_emits_csv_and_summary(tmp_path):
+    classifications = [
+        Classification(molfile_id="1", sdf="A.sdf.gz", category="novel",
+                       reference_inchi="InChI=1S/X/c1", dev_mi_inchi="InChI=1B/Y/c1",
+                       recmet_inchi="InChI=1/Z/c1"),
+        Classification(molfile_id="2", sdf="A.sdf.gz", category="recmet_equivalent",
+                       reference_inchi=PTEN_PLAIN, dev_mi_inchi=PTEN_MI,
+                       recmet_inchi=PTEN_RECMET),
+    ]
+    comparison_summary = {
+        "matched": 999,
+        "mismatched": 2,
+        "prefix_only": 990,
+        "key_only": 990,
+        "warning_only": 7,
+        "both_failed": 9,
+    }
+
+    write_report(classifications, tmp_path, comparison_summary)
+
+    with open(tmp_path / "classifications.csv", newline="", encoding="utf-8") as csv_file:
+        rows = list(csv.DictReader(csv_file))
+    assert [row["molfile_id"] for row in rows] == ["1", "2"]
+    assert rows[0]["category"] == "novel"
+    # Raw InChIs with prefixes reach the CSV.
+    assert rows[1]["recmet_inchi"] == PTEN_RECMET
+    assert rows[1]["dev_mi_inchi"].startswith("InChI=1B/")
+
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["counts"] == {"novel": 1, "recmet_equivalent": 1}
+    assert summary["total"] == 2
+    assert summary["comparison"] == comparison_summary
