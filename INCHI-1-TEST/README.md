@@ -163,6 +163,78 @@ To convince yourself that the tests fail once a regression has been introduced,
 change `INCHI_NAME` in `INCHI-1-SRC/INCHI_BASE/src/mode.h` and re-run the tests.
 The tests should now fail and indicate that the difference between the reference results and the latest test run is the change you've made.
 
+### Cross-version campaigns
+
+A campaign compares a released baseline against the working tree over a whole
+PubChem dataset, including under a non-default option. It runs three passes over
+the same SDFs and re-checks every difference:
+
+| pass | library | options | purpose |
+| --- | --- | --- | --- |
+| A | baseline tag | none | the reference |
+| B | working tree | e.g. `-MolecularInorganics` | what the option changes |
+| C | working tree | none | must be identical to A |
+
+Run the whole thing with one command:
+
+```Shell
+./INCHI-1-TEST/run_campaign.sh <compound|compound3d|substance>
+```
+
+It creates the virtual environment, builds both libraries in Release mode
+(`build_with_cmake.sh` sets no `CMAKE_BUILD_TYPE`, and `libinchi` gates `-O1` on
+Release, so an unconfigured build is several times slower), adds a git worktree
+for the baseline tag, mirrors and md5-verifies the dataset, runs all three
+passes, classifies the differences and writes an HTML report to
+`docs/superpowers/campaign/<dataset>/report.html`.
+
+Re-running is safe: the environment, the worktree and the per-shard references
+are reused, so an interrupted reference pass resumes at the shards it is missing.
+Pass `--skip-download` to re-run against data already on disk. `BASELINE_TAG`
+(default `v1.07.5`) and `RUN_TAG` are environment overrides.
+
+The script fails loudly on the conditions that otherwise pass silently: a shard
+whose md5 does not match (`validate.py` only prints these and always exits 0), a
+shard that aborted mid-run (`run_tests.py` logs `Aborted …` and continues, so it
+never reaches the exit code), and a leftover `.partial` reference. A non-zero Run
+C is reported prominently, because it means Run B's differences cannot be
+attributed to the option under test.
+
+#### How the comparison works
+
+Comparing raw InChI strings across option sets does not work. `-MolecularInorganics`
+sets `is_beta` from the option alone, so *every* structure changes prefix
+(`InChI=1S/` to `InChI=1B/`) and InChIKey flag — metal-free organics included — and
+a byte comparison would mark an entire dataset as changed.
+
+Campaign runs therefore store the raw result (full InChI, key, exit code) but
+compare the InChI *body* plus a failure flag, where failure means `exit >= 2` or
+an empty InChI. Exit code 1 is a warning, and a metal disconnection always warns,
+so treating it as failure would misclassify most of the structures of interest.
+The differences the comparison ignores are counted and logged as
+`prefix_only`, `key_only`, `warning_only` and `both_failed`.
+
+Differences are then classified against the baseline's `-RecMet` output. The old
+code breaks bonds to metals by two routes and `-RecMet` only reverses one of
+them, so:
+
+- `recmet_equivalent` — the option's InChI equals the `-RecMet` reconnected
+  (`/r`) layer: the old code disconnected the metal and `-RecMet` put it back.
+- `novel` with an `/r` layer — both reconnect, and disagree.
+- `novel` without one — the old code used salt disconnection, which `-RecMet`
+  cannot undo.
+- `error_under_mi` / `error_in_reference` / `recmet_failed` / `recmet_missing` —
+  one side produced no InChI.
+
+To rebuild only the report from an existing run:
+
+```Shell
+python INCHI-1-TEST/tests/test_library/inchi_tests/report.py \
+    --classifications docs/superpowers/campaign/<dataset>/classifications.csv \
+    --summary docs/superpowers/campaign/<dataset>/summary.json \
+    --output docs/superpowers/campaign/<dataset>/report.html
+```
+
 ### Inspect test results
 
 In addition to inspecting the raw logs, you can review the results by running
