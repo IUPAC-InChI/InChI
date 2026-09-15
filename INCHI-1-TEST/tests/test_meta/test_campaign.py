@@ -171,6 +171,34 @@ def test_recompute_subset_only_touches_requested_ids(lib_path, tmp_path):
     assert results["methanol"]["exit"] == 0
 
 
+def test_recompute_subset_merges_results_from_the_process_pool(lib_path, tmp_path):
+    # `number_of_processes=1` bypasses the pool entirely, but the campaign runs on
+    # the pool path, where `get_molfile_id` and `consumer` are pickled to spawned
+    # workers. Several shards with distinct IDs also exercise the per-shard merge.
+    sdf_paths = []
+    for shard in range(3):
+        sdf_path = tmp_path / f"shard{shard}.sdf.gz"
+        with gzip.open(sdf_path, "wt", encoding="utf-8") as sdf_file:
+            sdf_file.write(ETHANOL_MOLFILE.replace("ethanol", f"ethanol{shard}", 1))
+            sdf_file.write(METHANOL_MOLFILE.replace("methanol", f"methanol{shard}", 1))
+        sdf_paths.append(sdf_path)
+
+    results = recompute_subset(
+        sdf_paths=sdf_paths,
+        ids_by_sdf={path.name: {f"ethanol{i}"} for i, path in enumerate(sdf_paths)},
+        inchi_lib_path=lib_path,
+        inchi_api_parameters="-RecMet",
+        get_molfile_id=get_molfile_id_pubchem,
+        number_of_processes=3,
+    )
+
+    assert set(results) == {"ethanol0", "ethanol1", "ethanol2"}
+    for result in results.values():
+        # -RecMet clears the standard-format flag, so the prefix is `InChI=1/`.
+        assert result["inchi"] == "InChI=1/C2H6O/c1-2-3/h3H,2H2,1H3"
+        assert result["exit"] == 0
+
+
 def test_recompute_subset_skips_sdfs_with_no_requested_ids(lib_path, tmp_path):
     sdf_path = tmp_path / "tiny.sdf.gz"
     with gzip.open(sdf_path, "wt", encoding="utf-8") as sdf_file:
