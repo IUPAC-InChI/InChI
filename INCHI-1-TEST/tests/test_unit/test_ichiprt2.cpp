@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <string>
+#include <vector>
+
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichiprt2.c"
@@ -248,11 +251,45 @@ TEST(test_ichiprt2, MakeEnhStereoString_basic)
     int bOverflow = 0;
     int nCtMode = 0;
 
-    int len = MakeEnhStereoString(&aux, &strbuf, "1", enh_stereo, 1, nCtMode, &bOverflow);
+    int len = MakeEnhStereoString(&aux, &strbuf, "1", enh_stereo, 1, nCtMode, &bOverflow, NULL);
 
     EXPECT_EQ(bOverflow, 0);
     EXPECT_EQ(std::string(strbuf.pStr), "1(1,2,3)");
     EXPECT_EQ(len, 8);
+
+    inchi_strbuf_close(&strbuf);
+}
+
+/* num_groups_used must count only collections that contributed at
+   least one atom to this component, not the total number of collections
+   passed in - callers use it to tell "one group, all its atoms missing"
+   apart from "one group, present" when deciding whether to reduce to /s2 or
+   /s3. */
+TEST(test_ichiprt2, MakeEnhStereoString_counts_groups_used)
+{
+    INChI_Aux aux = {0};
+    AT_NUMB orig_atoms[] = {1, 2};
+    aux.nNumberOfAtoms = 2;
+    aux.nOrigAtNosInCanonOrd = orig_atoms;
+
+    // group1 resolves (orig atom 1 is canonical); group2 does not (orig atom
+    // 99 is out of range for this component).
+    int group1[] = {0, 1, 1};
+    int group2[] = {0, 1, 99};
+    int* enh_stereo[2] = {group1, group2};
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+    int nCtMode = 0;
+    int num_groups_used = -1;
+
+    int len = MakeEnhStereoString(&aux, &strbuf, "2", enh_stereo, 2, nCtMode, &bOverflow, &num_groups_used);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(num_groups_used, 1);
+    EXPECT_EQ(std::string(strbuf.pStr), "2(1)");
+    EXPECT_EQ(len, 4);
 
     inchi_strbuf_close(&strbuf);
 }
@@ -273,7 +310,7 @@ TEST(test_ichiprt2, MakeEnhStereoString_multiple_groups)
     int bOverflow = 0;
     int nCtMode = 0;
 
-    int len = MakeEnhStereoString(&aux, &strbuf, "2", enh_stereo, 2, nCtMode, &bOverflow);
+    int len = MakeEnhStereoString(&aux, &strbuf, "2", enh_stereo, 2, nCtMode, &bOverflow, NULL);
 
     EXPECT_EQ(bOverflow, 0);
     EXPECT_EQ(std::string(strbuf.pStr), "2(1,2)(3,4)");
@@ -298,7 +335,7 @@ TEST(test_ichiprt2, MakeEnhStereoString_empty_group)
     int bOverflow = 0;
     int nCtMode = 0;
 
-    int len = MakeEnhStereoString(&aux, &strbuf, "3", enh_stereo, 1, nCtMode, &bOverflow);
+    int len = MakeEnhStereoString(&aux, &strbuf, "3", enh_stereo, 1, nCtMode, &bOverflow, NULL);
 
     EXPECT_EQ(bOverflow, 0);
     EXPECT_EQ(std::string(strbuf.pStr), "");
@@ -375,4 +412,367 @@ TEST(test_ichiprt2, MakeSlayerString_basic)
     FreeInpAtom(&atoms);
     Free_INChI_Aux(&pAux);
     Free_INChI(&inchi);
+}
+
+/* A component whose only collection is ABS carries no
+   information beyond standard absolute stereo, so /s reduces to a bare "1". */
+TEST(test_ichiprt2, MakeSlayerString_abs_only_reduces_to_bare_s1)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 3, 1, 2, 3}; // [unused, n_atoms, orig atoms 1,2,3]
+    int *lists_abs[1] = {group_abs};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 0;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
+    pAux->nNumberOfAtoms = 3;
+    pAux->nOrigAtNosInCanonOrd[0] = 1;
+    pAux->nOrigAtNosInCanonOrd[1] = 2;
+    pAux->nOrigAtNosInCanonOrd[2] = 3;
+
+    INCHI_SORT sorts = {0};
+    sorts.pINChI[0] = &dummy_inchi;
+    sorts.pINChI_Aux[0] = pAux;
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    int len = MakeSlayerString(&oad, &sorts, &strbuf, OUT_TN, 1, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "1");
+    EXPECT_EQ(len, 1);
+
+    inchi_strbuf_close(&strbuf);
+    Free_INChI_Aux(&pAux);
+}
+
+/* Guard against over-reduction: ABS alongside AND keeps the full grouping. */
+TEST(test_ichiprt2, MakeSlayerString_abs_plus_rac_not_reduced)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 2, 1, 2};
+    int group_rac[] = {0, 1, 3};
+    int *lists_abs[1] = {group_abs};
+    int *lists_rac[1] = {group_rac};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 0;
+    v3000.n_sterac = 1;
+    v3000.lists_sterac = lists_rac;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
+    pAux->nNumberOfAtoms = 3;
+    pAux->nOrigAtNosInCanonOrd[0] = 1;
+    pAux->nOrigAtNosInCanonOrd[1] = 2;
+    pAux->nOrigAtNosInCanonOrd[2] = 3;
+
+    INCHI_SORT sorts = {0};
+    sorts.pINChI[0] = &dummy_inchi;
+    sorts.pINChI_Aux[0] = pAux;
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    int len = MakeSlayerString(&oad, &sorts, &strbuf, OUT_TN, 1, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "1(1,2)3(3)");
+    EXPECT_EQ(len, 10);
+
+    inchi_strbuf_close(&strbuf);
+    Free_INChI_Aux(&pAux);
+}
+
+/* A component whose only collection is a single OR
+   group carries no information beyond plain relative stereo, so /s reduces
+   to a bare "2". */
+TEST(test_ichiprt2, MakeSlayerString_single_or_reduces_to_bare_s2)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_rel[] = {0, 3, 1, 2, 3}; // [unused, n_atoms, orig atoms 1,2,3]
+    int *lists_rel[1] = {group_rel};
+
+    v3000.n_steabs = 0;
+    v3000.n_sterel = 1;
+    v3000.lists_sterel = lists_rel;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
+    pAux->nNumberOfAtoms = 3;
+    pAux->nOrigAtNosInCanonOrd[0] = 1;
+    pAux->nOrigAtNosInCanonOrd[1] = 2;
+    pAux->nOrigAtNosInCanonOrd[2] = 3;
+
+    INCHI_SORT sorts = {0};
+    sorts.pINChI[0] = &dummy_inchi;
+    sorts.pINChI_Aux[0] = pAux;
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    int len = MakeSlayerString(&oad, &sorts, &strbuf, OUT_TN, 1, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "2");
+    EXPECT_EQ(len, 1);
+
+    inchi_strbuf_close(&strbuf);
+    Free_INChI_Aux(&pAux);
+}
+
+/* Symmetric with the OR case: a single AND group reduces to a bare "3". */
+TEST(test_ichiprt2, MakeSlayerString_single_and_reduces_to_bare_s3)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_rac[] = {0, 3, 1, 2, 3}; // [unused, n_atoms, orig atoms 1,2,3]
+    int *lists_rac[1] = {group_rac};
+
+    v3000.n_steabs = 0;
+    v3000.n_sterel = 0;
+    v3000.n_sterac = 1;
+    v3000.lists_sterac = lists_rac;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
+    pAux->nNumberOfAtoms = 3;
+    pAux->nOrigAtNosInCanonOrd[0] = 1;
+    pAux->nOrigAtNosInCanonOrd[1] = 2;
+    pAux->nOrigAtNosInCanonOrd[2] = 3;
+
+    INCHI_SORT sorts = {0};
+    sorts.pINChI[0] = &dummy_inchi;
+    sorts.pINChI_Aux[0] = pAux;
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    int len = MakeSlayerString(&oad, &sorts, &strbuf, OUT_TN, 1, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "3");
+    EXPECT_EQ(len, 1);
+
+    inchi_strbuf_close(&strbuf);
+    Free_INChI_Aux(&pAux);
+}
+
+/* Guard against over-reduction: two independent OR groups on the same
+   component carry real grouping information and must
+   stay grouped rather than collapse to a bare "2". Mirrors the real-world
+   two_centers_and/or.mol and rdkit_two_and_groups.mol regression cases. */
+TEST(test_ichiprt2, MakeSlayerString_multiple_or_groups_not_reduced)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_rel1[] = {0, 1, 1}; // orig atom 1
+    int group_rel2[] = {0, 1, 2}; // orig atom 2
+    int *lists_rel[2] = {group_rel1, group_rel2};
+
+    v3000.n_steabs = 0;
+    v3000.n_sterel = 2;
+    v3000.lists_sterel = lists_rel;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INChI_Aux *pAux = Alloc_INChI_Aux(2, 0, 0, 0);
+    pAux->nNumberOfAtoms = 2;
+    pAux->nOrigAtNosInCanonOrd[0] = 1;
+    pAux->nOrigAtNosInCanonOrd[1] = 2;
+
+    INCHI_SORT sorts = {0};
+    sorts.pINChI[0] = &dummy_inchi;
+    sorts.pINChI_Aux[0] = pAux;
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    int len = MakeSlayerString(&oad, &sorts, &strbuf, OUT_TN, 1, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "2(1)(2)");
+    EXPECT_EQ(len, 7);
+
+    inchi_strbuf_close(&strbuf);
+    Free_INChI_Aux(&pAux);
+}
+
+/*
+ * Runs MakeSlayerString over `n_components` components whose /s substrings are
+ * all distinct: component i maps original atom 2 -> canonical 1 and original
+ * atom 1 -> canonical (i+2), so its substring is "1(i+2)2(1)". Both an ABS and
+ * a REL group are present so the ABS-only reduction does not collapse
+ * them to one shared substring.
+ */
+static void RunSlayerDistinctComponents(int n_components,
+                                        int *bOverflow,
+                                        std::string *out)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 1, 1}; // [unused, n_atoms, orig atom 1]
+    int group_rel[] = {0, 1, 2}; // [unused, n_atoms, orig atom 2]
+    int *lists_abs[1] = {group_abs};
+    int *lists_rel[1] = {group_rel};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 1;
+    v3000.lists_sterel = lists_rel;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    // Only used by GET_II() to pick the TAUT_NON slot; never dereferenced further.
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    INCHI_SORT *sorts = (INCHI_SORT *)inchi_calloc(n_components, sizeof(INCHI_SORT));
+    std::vector<INChI_Aux *> auxes(n_components, nullptr);
+
+    for (int i = 0; i < n_components; i++)
+    {
+        int num_at = i + 2;
+        INChI_Aux *pAux = Alloc_INChI_Aux(num_at, 0, 0, 0);
+        pAux->nNumberOfAtoms = num_at;
+        for (int j = 0; j < num_at; j++)
+        {
+            pAux->nOrigAtNosInCanonOrd[j] = 0;
+        }
+        pAux->nOrigAtNosInCanonOrd[0] = 2;           // canonical 1      -> orig 2
+        pAux->nOrigAtNosInCanonOrd[num_at - 1] = 1;  // canonical num_at -> orig 1
+
+        auxes[i] = pAux;
+        sorts[i].pINChI[0] = &dummy_inchi;
+        sorts[i].pINChI_Aux[0] = pAux;
+    }
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    *bOverflow = 0;
+
+    MakeSlayerString(&oad, sorts, &strbuf, OUT_TN, n_components, 0, bOverflow);
+
+    *out = strbuf.pStr ? strbuf.pStr : "";
+
+    inchi_strbuf_close(&strbuf);
+    for (int i = 0; i < n_components; i++)
+    {
+        Free_INChI_Aux(&auxes[i]);
+    }
+    inchi_free(sorts);
+}
+
+/* The /s substring dictionary is sized from the component
+   count, so no component is ever dropped, whatever the structure's size. There
+   used to be a fixed 100-slot cap that silently swallowed the excess. */
+TEST(test_ichiprt2, MakeSlayerString_keeps_every_distinct_component)
+{
+    for (int n_components : {1, 2, 100, 101, 250})
+    {
+        int bOverflow = 0;
+        std::string out;
+
+        RunSlayerDistinctComponents(n_components, &bOverflow, &out);
+
+        EXPECT_EQ(bOverflow, 0) << "n_components " << n_components;
+        // Every substring is distinct here, so all of them are emitted, ';'-joined
+        EXPECT_EQ(std::count(out.begin(), out.end(), ';'), n_components - 1)
+            << "n_components " << n_components;
+        EXPECT_NE(out.find("1(2)2(1)"), std::string::npos)
+            << "n_components " << n_components;
+        EXPECT_NE(out.find("1(" + std::to_string(n_components + 1) + ")2(1)"),
+                  std::string::npos)
+            << "n_components " << n_components;
+    }
+}
+
+/* Repeated components must still collapse to count*substring, not one entry
+   per component. */
+TEST(test_ichiprt2, MakeSlayerString_deduplicates_identical_components)
+{
+    ORIG_ATOM_DATA oad = {0};
+    OAD_V3000 v3000 = {0};
+
+    int group_abs[] = {0, 1, 1};
+    int group_rel[] = {0, 1, 2};
+    int *lists_abs[1] = {group_abs};
+    int *lists_rel[1] = {group_rel};
+
+    v3000.n_steabs = 1;
+    v3000.lists_steabs = lists_abs;
+    v3000.n_sterel = 1;
+    v3000.lists_sterel = lists_rel;
+    v3000.n_sterac = 0;
+    oad.v3000 = &v3000;
+
+    INChI dummy_inchi = {0};
+    dummy_inchi.nNumberOfAtoms = 1;
+
+    const int n_components = 3;
+    INCHI_SORT *sorts = (INCHI_SORT *)inchi_calloc(n_components, sizeof(INCHI_SORT));
+    std::vector<INChI_Aux *> auxes(n_components, nullptr);
+
+    for (int i = 0; i < n_components; i++)
+    {
+        INChI_Aux *pAux = Alloc_INChI_Aux(2, 0, 0, 0);
+        pAux->nNumberOfAtoms = 2;
+        pAux->nOrigAtNosInCanonOrd[0] = 2;
+        pAux->nOrigAtNosInCanonOrd[1] = 1;
+        auxes[i] = pAux;
+        sorts[i].pINChI[0] = &dummy_inchi;
+        sorts[i].pINChI_Aux[0] = pAux;
+    }
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    MakeSlayerString(&oad, sorts, &strbuf, OUT_TN, n_components, 0, &bOverflow);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "3*1(2)2(1)");
+
+    inchi_strbuf_close(&strbuf);
+    for (int i = 0; i < n_components; i++)
+    {
+        Free_INChI_Aux(&auxes[i]);
+    }
+    inchi_free(sorts);
 }

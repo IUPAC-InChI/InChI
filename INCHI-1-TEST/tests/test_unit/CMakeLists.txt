@@ -16,6 +16,8 @@ file(GLOB TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp
 foreach(test_src ${TEST_SOURCES})
     get_filename_component(test_name "${test_src}" NAME_WE)
     add_executable(${test_name} ${test_src})
+    target_compile_definitions(${test_name} PRIVATE
+        FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
     target_compile_options(${test_name} PRIVATE
         "$<$<CONFIG:Debug>:-g;-O0;-fsanitize=address>"
     )
