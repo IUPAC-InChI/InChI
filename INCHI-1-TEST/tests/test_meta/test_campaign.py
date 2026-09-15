@@ -187,3 +187,110 @@ def test_recompute_subset_skips_sdfs_with_no_requested_ids(lib_path, tmp_path):
         )
         == {}
     )
+
+
+from inchi_tests.campaign import (
+    Mismatch,
+    classify_mismatches,
+    classification_counts,
+    reconnected_layer,
+)
+from inchi_tests.consumers import inchi_body
+
+
+def _mismatch(molfile_id, current, reference):
+    return Mismatch(
+        molfile_id=molfile_id, sdf="A.sdf.gz", current=current,
+        reference=reference, expected=False,
+    )
+
+
+def test_reconnected_layer_extracts_the_r_layer_without_a_prefix():
+    assert reconnected_layer(PTEN_RECMET) == inchi_body(PTEN_MI)
+    assert reconnected_layer(PTEN_RECMET) == "C2H6Cl2N2Pt/c3-7(4)5-1-2-6-7/h5-6H,1-2H2"
+    # No /r layer: the prefix-stripped InChI, unchanged.
+    assert reconnected_layer("InChI=1S/CH4O/c1-2/h2H,1H3") == "CH4O/c1-2/h2H,1H3"
+
+
+def test_classify_recmet_equivalent():
+    mismatches = [
+        _mismatch("1", {"inchi": PTEN_MI, "key": "K1", "exit": 0},
+                  {"inchi": PTEN_PLAIN, "key": "K0", "exit": 1})
+    ]
+    recmet = {"1": {"inchi": PTEN_RECMET, "key": "K2", "exit": 1}}
+
+    result = classify_mismatches(mismatches, recmet)
+
+    assert result[0].category == "recmet_equivalent"
+    # Raw strings, prefixes intact, are what gets reported.
+    assert result[0].recmet_inchi == PTEN_RECMET
+    assert result[0].dev_mi_inchi == PTEN_MI
+    assert result[0].reference_inchi == PTEN_PLAIN
+
+
+def test_classify_novel():
+    mismatches = [_mismatch("2", {"inchi": "InChI=1B/X/c1", "key": "K", "exit": 0},
+                            {"inchi": "InChI=1S/Y/c1", "key": "K", "exit": 0})]
+    recmet = {"2": {"inchi": "InChI=1/Z/c1", "key": "K", "exit": 0}}
+
+    assert classify_mismatches(mismatches, recmet)[0].category == "novel"
+
+
+def test_classify_error_under_mi_takes_precedence_over_recmet():
+    mismatches = [_mismatch("3", {"inchi": "", "key": "", "exit": 2},
+                            {"inchi": "InChI=1S/X/c1", "key": "K", "exit": 0})]
+    recmet = {"3": {"inchi": "", "key": "", "exit": 2}}
+
+    assert classify_mismatches(mismatches, recmet)[0].category == "error_under_mi"
+
+
+def test_classify_error_in_reference_wins_over_error_under_mi():
+    mismatches = [_mismatch("4", {"inchi": "", "key": "", "exit": 2},
+                            {"inchi": "", "key": "", "exit": 2})]
+
+    assert classify_mismatches(mismatches, {})[0].category == "error_in_reference"
+
+
+def test_classify_recmet_failed():
+    mismatches = [_mismatch("5b", {"inchi": PTEN_MI, "key": "K", "exit": 0},
+                            {"inchi": PTEN_PLAIN, "key": "K", "exit": 1})]
+    recmet = {"5b": {"inchi": "", "key": "", "exit": 2}}
+
+    assert classify_mismatches(mismatches, recmet)[0].category == "recmet_failed"
+
+
+def test_classify_recmet_missing():
+    mismatches = [_mismatch("5", {"inchi": "InChI=1B/X/c1", "key": "K", "exit": 0},
+                            {"inchi": "InChI=1S/Y/c1", "key": "K", "exit": 0})]
+
+    result = classify_mismatches(mismatches, {})
+
+    assert result[0].category == "recmet_missing"
+    assert result[0].recmet_inchi == ""
+
+
+def test_a_warning_level_exit_is_never_a_failure_category():
+    # exit=1 ("Metal was disconnected") must not reach a failure category.
+    mismatches = [_mismatch("6", {"inchi": PTEN_MI, "key": "K", "exit": 0},
+                            {"inchi": PTEN_PLAIN, "key": "K", "exit": 1})]
+    recmet = {"6": {"inchi": PTEN_RECMET, "key": "K", "exit": 1}}
+
+    assert classify_mismatches(mismatches, recmet)[0].category == "recmet_equivalent"
+
+
+def test_classification_counts():
+    mismatches = [
+        _mismatch("1", {"inchi": PTEN_MI, "key": "K", "exit": 0},
+                  {"inchi": PTEN_PLAIN, "key": "K", "exit": 1}),
+        _mismatch("2", {"inchi": "InChI=1B/X/c1", "key": "K", "exit": 0},
+                  {"inchi": "InChI=1S/Y/c1", "key": "K", "exit": 0}),
+    ]
+    recmet = {
+        "1": {"inchi": PTEN_RECMET, "key": "K", "exit": 1},
+        "2": {"inchi": "InChI=1/Z/c1", "key": "K", "exit": 0},
+    }
+
+    assert classification_counts(classify_mismatches(mismatches, recmet)) == {
+        "recmet_equivalent": 1,
+        "novel": 1,
+    }

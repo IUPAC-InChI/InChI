@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Callable
 from pydantic import BaseModel
 from sdf_pipeline.utils import select_records_from_gzipped_sdf
-from inchi_tests.consumers import campaign_regression_consumer
+from inchi_tests.consumers import campaign_regression_consumer, inchi_body, is_failed
 
 _FAILURE_PATTERN = re.compile(
     r"^INFO:sdf_pipeline:regression test failed( expectedly)?:(?P<entry>\{.*\})$"
@@ -149,3 +149,69 @@ def recompute_subset(
         results.update(chunk)
 
     return results
+
+
+class Classification(BaseModel):
+    molfile_id: str
+    sdf: str
+    category: str
+    reference_inchi: str
+    dev_mi_inchi: str
+    recmet_inchi: str
+
+
+def reconnected_layer(inchi: str) -> str:
+    """The reconnected-metal (`/r`) layer of an InChI, without any prefix.
+
+    `-RecMet` appends the reconnected structure as a `/r` layer, and that layer is
+    exactly what `-MolecularInorganics` emits as its whole InChI body. Measured on
+    Pt(en)Cl2: RecMet `.../p-2/rC2H6Cl2N2Pt/c3-7(4)5-1-2-6-7/h5-6H,1-2H2` vs MI
+    `InChI=1B/C2H6Cl2N2Pt/c3-7(4)5-1-2-6-7/h5-6H,1-2H2`. An InChI with no `/r`
+    layer yields its prefix-stripped self, which then cannot match an MI body
+    unless the metal was never disconnected in the first place."""
+    body = inchi_body(inchi)
+    _, separator, reconnected = body.partition("/r")
+
+    return reconnected if separator else body
+
+
+def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
+    if is_failed(mismatch.reference):
+        return "error_in_reference"
+    if is_failed(mismatch.current):
+        return "error_under_mi"
+    if recmet_result is None:
+        return "recmet_missing"
+    if is_failed(recmet_result):
+        return "recmet_failed"
+    if reconnected_layer(recmet_result["inchi"]) == inchi_body(
+        mismatch.current["inchi"]
+    ):
+        return "recmet_equivalent"
+
+    return "novel"
+
+
+def classify_mismatches(
+    mismatches: list[Mismatch], recmet_results: dict[str, dict]
+) -> list[Classification]:
+    classifications: list[Classification] = []
+
+    for mismatch in mismatches:
+        recmet_result = recmet_results.get(mismatch.molfile_id)
+        classifications.append(
+            Classification(
+                molfile_id=mismatch.molfile_id,
+                sdf=mismatch.sdf,
+                category=_categorize(mismatch, recmet_result),
+                reference_inchi=mismatch.reference["inchi"],
+                dev_mi_inchi=mismatch.current["inchi"],
+                recmet_inchi=recmet_result["inchi"] if recmet_result else "",
+            )
+        )
+
+    return classifications
+
+
+def classification_counts(classifications: list[Classification]) -> dict[str, int]:
+    return dict(Counter(c.category for c in classifications))
