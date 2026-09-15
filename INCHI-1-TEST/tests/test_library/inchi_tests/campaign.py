@@ -326,7 +326,10 @@ def main() -> None:
         inchi_api_parameters="-RecMet",
         get_molfile_id=data_config.molfile_id_getter,
     )
-    print(f"Re-computed {len(recmet_results)} structures with v1.07.5 -RecMet.")
+    print(
+        f"Re-computed {len(recmet_results)} structures with -RecMet using "
+        f"{args.recmet_lib_path}."
+    )
 
     classifications = classify_mismatches(mismatches, recmet_results)
     output_dir = Path(args.output)
