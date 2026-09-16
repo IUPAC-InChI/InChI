@@ -3082,6 +3082,7 @@ int RemoveCalculatedNonStereoBondParities( CANON_GLOBALS *pCG,
                                            int vABParityUnknown )
 {
     int j, n, m, ret, ret1, ret2, ret_failed = 0;
+    int bHasWellDefinedStereo;
 
     int i1, n1, s2;  /*  n1 must be SIGNED integer */
     AT_RANK nAtomRank1, nAtomRank2, neigh[3] = { 0 }, nAvoidCheckAtom[2], opposite_atom, nLength; /* djb-rwth: initialisation of neigh required to avoid undefined array subscript */
@@ -3198,6 +3199,37 @@ second_pass:
                 nVisited1, nVisited2, opposite_atom, (AT_RANK)i1,
                 neigh[0], neigh[1], nNeighMode, bParitiesInverted, 0,
                 pCS, vABParityUnknown);
+            if (!ret2 && bRingNeigh &&
+                PARITY_CALCULATE(at[i1].stereo_bond_parity[n1]))
+            {
+                bHasWellDefinedStereo = 0;
+                for (j = 0; j < pCS->nLenLinearCTStereoCarb; j++)
+                {
+                    bHasWellDefinedStereo |=
+                        PARITY_WELL_DEF(pCS->LinearCTStereoCarb[j].parity);
+                }
+                for (j = 0; j < pCS->nLenLinearCTStereoDble; j++)
+                {
+                    if (pCS->LinearCTStereoDble[j].at_num1 ==
+                            inchi_max(nCanonRank[i1], nCanonRank[opposite_atom]) &&
+                        pCS->LinearCTStereoDble[j].at_num2 ==
+                            inchi_min(nCanonRank[i1], nCanonRank[opposite_atom]))
+                    {
+                        continue;
+                    }
+                    bHasWellDefinedStereo |=
+                        PARITY_WELL_DEF(pCS->LinearCTStereoDble[j].parity);
+                }
+                /*
+                 * A coordinate-derived parity is not stereogenic when the
+                 * equivalent ring paths contain no well-defined stereo.
+                 * Ill-defined/unknown descriptors cannot distinguish them.
+                 */
+                if (!bHasWellDefinedStereo)
+                {
+                    ret2 = 1;
+                }
+            }
 
             if (0 < ret1) /* djb-rwth: or is this (0 < ret1) && (0 < ret2) ? */
             {
