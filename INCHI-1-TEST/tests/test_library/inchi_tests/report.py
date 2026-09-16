@@ -27,6 +27,8 @@ from datetime import datetime
 from html import escape
 from pathlib import Path
 
+from inchi_tests.campaign import has_reconnected_layer
+
 _TIMESTAMP = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
 _ELEMENT = re.compile(r"[A-Z][a-z]?")
 _ORGANIC = {"C", "H"}
@@ -35,11 +37,6 @@ _ORGANIC = {"C", "H"}
 def load_classifications(path: Path) -> list[dict]:
     with open(path, newline="", encoding="utf-8") as csv_file:
         return list(csv.DictReader(csv_file))
-
-
-def has_reconnected_layer(recmet_inchi: str) -> bool:
-    """Whether `-RecMet` emitted a reconnected (`/r`) layer for this structure."""
-    return "/r" in recmet_inchi
 
 
 def novel_split(rows: list[dict]) -> dict[str, int]:

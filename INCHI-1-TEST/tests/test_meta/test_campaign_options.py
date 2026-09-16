@@ -4,8 +4,12 @@ from inchi_tests.consumers import campaign_regression_consumer, inchi_body
 from inchi_tests.campaign import reconnected_layer
 
 DEV_LIB = "CMake_build/full_build/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so"
+# The baseline worktree path `run_campaign.sh` derives from BASELINE_TAG. Keep
+# these in step, or these cross-version tests silently skip instead of running.
+BASELINE_TAG = "v1.07.5"
 V1075_LIB = (
-    "../inchi-v1075/CMake_build/full_build/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so"
+    f"../inchi-{BASELINE_TAG}/CMake_build/full_build"
+    "/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so"
 )
 
 # Pt(en)Cl2: a chelate whose ring carries 4 C/N atoms, satisfying the ring
@@ -49,7 +53,7 @@ $$$$
 def _result(lib, molfile, options):
     path = Path(lib)
     if not path.is_file():
-        pytest.skip(f"{lib} not built; see Task 8 Step 1")
+        pytest.skip(f"{lib} not built; run ./INCHI-1-TEST/run_campaign.sh to create it")
     return campaign_regression_consumer(
         molfile,
         get_molfile_id=lambda m: m.splitlines()[0].strip(),

@@ -360,3 +360,69 @@ def test_write_report_emits_csv_and_summary(tmp_path):
     assert summary["counts"] == {"novel": 1, "recmet_equivalent": 1}
     assert summary["total"] == 2
     assert summary["comparison"] == comparison_summary
+
+
+def _classification(molfile_id, category, recmet_inchi=""):
+    return Classification(
+        molfile_id=molfile_id, sdf="A.sdf.gz", category=category,
+        reference_inchi="InChI=1S/x", dev_mi_inchi="InChI=1B/x",
+        recmet_inchi=recmet_inchi,
+    )
+
+
+def test_cause_of_splits_novel_by_disconnection_pathway():
+    from inchi_tests.campaign import cause_of
+
+    # An /r layer means the old code disconnected the metal and -RecMet put it
+    # back; without one it used salt disconnection, which -RecMet cannot undo.
+    assert cause_of(_classification("1", "novel", PTEN_RECMET)) == "novel_metal_pathway"
+    assert cause_of(_classification("2", "novel", "InChI=1/C8H11N.2ClH.Hg")) == "novel_salt_pathway"
+    assert cause_of(_classification("3", "novel", "")) == "novel_salt_pathway"
+    assert cause_of(_classification("4", "recmet_equivalent", PTEN_RECMET)) == "recmet_equivalent"
+    assert cause_of(_classification("5", "error_under_mi")) == "error_under_mi"
+
+
+def test_write_id_lists_one_file_per_cause(tmp_path):
+    from inchi_tests.campaign import write_id_lists, ID_LIST_CAUSES
+
+    classifications = [
+        _classification("300", "recmet_equivalent", PTEN_RECMET),
+        _classification("42", "recmet_equivalent", PTEN_RECMET),
+        _classification("7", "novel", PTEN_RECMET),
+        _classification("1000", "novel", "InChI=1/no-r-layer"),
+        _classification("9", "error_under_mi"),
+    ]
+
+    counts = write_id_lists(classifications, tmp_path)
+
+    ids_dir = tmp_path / "ids"
+    # Every cause gets a file, even when empty, so downstream tooling can rely
+    # on the set of filenames rather than probing for them.
+    assert {p.name for p in ids_dir.iterdir()} == {f"{c}.txt" for c in ID_LIST_CAUSES}
+
+    # Numeric IDs sort numerically, not as strings: 42 before 300.
+    assert (ids_dir / "recmet_equivalent.txt").read_text() == "42\n300\n"
+    assert (ids_dir / "novel_metal_pathway.txt").read_text() == "7\n"
+    assert (ids_dir / "novel_salt_pathway.txt").read_text() == "1000\n"
+    assert (ids_dir / "error_under_mi.txt").read_text() == "9\n"
+    assert (ids_dir / "recmet_missing.txt").read_text() == ""
+
+    assert counts["recmet_equivalent"] == 2
+    assert counts["novel_metal_pathway"] == 1
+    assert counts["recmet_missing"] == 0
+
+
+def test_write_id_lists_handles_non_numeric_ids(tmp_path):
+    from inchi_tests.campaign import write_id_lists
+
+    write_id_lists(
+        [
+            _classification("_Elements.#070", "novel", ""),
+            _classification("mcule-42", "novel", ""),
+        ],
+        tmp_path,
+    )
+
+    assert (tmp_path / "ids" / "novel_salt_pathway.txt").read_text() == (
+        "_Elements.#070\nmcule-42\n"
+    )

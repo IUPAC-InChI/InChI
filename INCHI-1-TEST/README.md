@@ -226,6 +226,22 @@ them, so:
 - `error_under_mi` / `error_in_reference` / `recmet_failed` / `recmet_missing` —
   one side produced no InChI.
 
+#### Mismatch IDs per cause
+
+Every run also writes the molfile ID of each mismatch to one file per cause, so a
+set of structures can be fed straight into another tool:
+
+```
+docs/superpowers/campaign/<dataset>/ids/
+    recmet_equivalent.txt     novel_metal_pathway.txt   novel_salt_pathway.txt
+    error_under_mi.txt        error_in_reference.txt
+    recmet_failed.txt         recmet_missing.txt
+```
+
+One ID per line, numerically sorted where the IDs are numeric. `novel` is split by
+disconnection pathway, which is the distinction that matters when following one up.
+Every file is written even when empty, so a consumer can rely on the filenames.
+
 To rebuild only the report from an existing run:
 
 ```Shell

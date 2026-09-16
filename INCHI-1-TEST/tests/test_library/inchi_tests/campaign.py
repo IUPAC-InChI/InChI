@@ -169,6 +169,14 @@ class Classification(BaseModel):
     recmet_inchi: str
 
 
+def has_reconnected_layer(inchi: str) -> bool:
+    """Whether `-RecMet` emitted a reconnected (`/r`) layer for this structure.
+
+    Its absence means the old code used salt disconnection, which `-RecMet` has
+    no mechanism to undo."""
+    return "/r" in inchi
+
+
 def reconnected_layer(inchi: str) -> str:
     """The reconnected-metal (`/r`) layer of an InChI, without any prefix.
 
@@ -263,6 +271,67 @@ def write_report(
         )
 
 
+# One file per cause, always written, so a consumer can rely on the filenames
+# rather than probing for them. `novel` is split by disconnection pathway because
+# that is the actual cause: the old code breaks bonds to metals by two routes and
+# `-RecMet` only reverses one of them.
+ID_LIST_CAUSES = (
+    "recmet_equivalent",
+    "novel_metal_pathway",
+    "novel_salt_pathway",
+    "error_under_mi",
+    "error_in_reference",
+    "recmet_failed",
+    "recmet_missing",
+)
+
+
+def cause_of(classification: Classification) -> str:
+    """The cause bucket a classification belongs in, splitting `novel` by pathway."""
+    if classification.category != "novel":
+        return classification.category
+
+    return (
+        "novel_metal_pathway"
+        if has_reconnected_layer(classification.recmet_inchi)
+        else "novel_salt_pathway"
+    )
+
+
+def _id_sort_key(molfile_id: str):
+    # PubChem IDs are integers and must not sort as strings (42 before 300);
+    # other datasets use names, which fall back to lexicographic order.
+    return (0, int(molfile_id), "") if molfile_id.isdigit() else (1, 0, molfile_id)
+
+
+def write_id_lists(
+    classifications: list[Classification], output_dir: Path
+) -> dict[str, int]:
+    """Write the molfile IDs of every mismatch to one file per cause.
+
+    Returns the count per cause. Files land in `<output_dir>/ids/<cause>.txt`,
+    one ID per line, sorted."""
+    grouped: dict[str, list[str]] = {cause: [] for cause in ID_LIST_CAUSES}
+
+    for classification in classifications:
+        grouped.setdefault(cause_of(classification), []).append(
+            classification.molfile_id
+        )
+
+    ids_dir = output_dir.joinpath("ids")
+    ids_dir.mkdir(parents=True, exist_ok=True)
+
+    counts: dict[str, int] = {}
+    for cause, molfile_ids in grouped.items():
+        molfile_ids.sort(key=_id_sort_key)
+        ids_dir.joinpath(f"{cause}.txt").write_text(
+            "".join(f"{molfile_id}\n" for molfile_id in molfile_ids), encoding="utf-8"
+        )
+        counts[cause] = len(molfile_ids)
+
+    return counts
+
+
 def explain_failures(
     classifications: list[Classification],
     sdf_paths: list[Path],
@@ -334,6 +403,11 @@ def main() -> None:
     classifications = classify_mismatches(mismatches, recmet_results)
     output_dir = Path(args.output)
     write_report(classifications, output_dir, comparison_summary)
+
+    id_counts = write_id_lists(classifications, output_dir)
+    print(f"Wrote ID lists to {output_dir / 'ids'}:")
+    for cause, count in id_counts.items():
+        print(f"  {count:>8,}  {cause}.txt")
 
     messages = explain_failures(
         classifications,
