@@ -3,12 +3,6 @@
 from helpers import parse_inchi_from_executable_output
 
 
-EXPECTED_INCHI = (
-    "InChI=1S/C10H16O2/c1-8-3-5-9(6-4-8)7-10(11)12-2/"
-    "h7-8H,3-6H2,1-2H3"
-)
-
-
 MOLFILE = """\
 RDKit          2D
 
@@ -126,7 +120,11 @@ def test_coordinate_only_symmetric_ylidene_is_not_stereogenic(
 ):
     result = run_inchi_exe(MOLFILE, "NoLabels NoWarnings AuxNone")
 
-    assert parse_inchi_from_executable_output(result.output) == EXPECTED_INCHI
+    assert (
+        parse_inchi_from_executable_output(result.output)
+        == "InChI=1S/C10H16O2/c1-8-3-5-9(6-4-8)7-10(11)12-2/"
+        "h7-8H,3-6H2,1-2H3"
+    )
 
 
 def test_unrelated_tetrahedral_stereo_does_not_preserve_ylidene_stereo(
