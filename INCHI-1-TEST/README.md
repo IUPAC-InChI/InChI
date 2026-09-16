@@ -186,7 +186,7 @@ It creates the virtual environment, builds both libraries in Release mode
 Release, so an unconfigured build is several times slower), adds a git worktree
 for the baseline tag, mirrors and md5-verifies the dataset, runs all three
 passes, classifies the differences and writes an HTML report to
-`docs/superpowers/campaign/<dataset>/report.html`.
+`INCHI-1-TEST/tests/test_library/data/pubchem/campaign/<dataset>/report.html`.
 
 Re-running is safe: the environment, the worktree and the per-shard references
 are reused, so an interrupted reference pass resumes at the shards it is missing.
@@ -232,7 +232,7 @@ Every run also writes the molfile ID of each mismatch to one file per cause, so 
 set of structures can be fed straight into another tool:
 
 ```
-docs/superpowers/campaign/<dataset>/ids/
+INCHI-1-TEST/tests/test_library/data/pubchem/campaign/<dataset>/ids/
     recmet_equivalent.txt     novel_metal_pathway.txt   novel_salt_pathway.txt
     error_under_mi.txt        error_in_reference.txt
     recmet_failed.txt         recmet_missing.txt
@@ -246,9 +246,9 @@ To rebuild only the report from an existing run:
 
 ```Shell
 python INCHI-1-TEST/tests/test_library/inchi_tests/report.py \
-    --classifications docs/superpowers/campaign/<dataset>/classifications.csv \
-    --summary docs/superpowers/campaign/<dataset>/summary.json \
-    --output docs/superpowers/campaign/<dataset>/report.html
+    --classifications .../data/pubchem/campaign/<dataset>/classifications.csv \
+    --summary .../data/pubchem/campaign/<dataset>/summary.json \
+    --output INCHI-1-TEST/tests/test_library/data/pubchem/campaign/<dataset>/report.html
 ```
 
 ### Inspect test results

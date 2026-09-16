@@ -4,9 +4,10 @@
 #
 #   ./INCHI-1-TEST/run_campaign.sh <dataset> [--skip-download]
 #
-# <dataset> is "compound", "compound3d" or "substance". Everything is written
-# under INCHI-1-TEST/tests/test_library/data/pubchem/<dataset>/ and
-# docs/superpowers/campaign/<dataset>/.
+# <dataset> is "compound", "compound3d" or "substance". SDFs and per-shard
+# references live in .../data/pubchem/<dataset>/; every output of the run --
+# report, classifications, per-cause ID lists and copies of the run logs --
+# goes to .../data/pubchem/campaign/<dataset>/.
 #
 # The campaign compares three passes over the same SDFs:
 #
@@ -41,7 +42,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKTREE="$REPO/../inchi-${BASELINE_TAG}"
 DATA="$REPO/INCHI-1-TEST/tests/test_library/data/pubchem/$DATASET"
 CONFIG="$REPO/INCHI-1-TEST/tests/test_library/config/config_pubchem_${DATASET}.py"
-OUT="$REPO/docs/superpowers/campaign/$DATASET"
+OUT="$REPO/INCHI-1-TEST/tests/test_library/data/pubchem/campaign/$DATASET"
 LIB_REL="CMake_build/full_build/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so"
 PY="$REPO/.venv/bin/python"
 TESTS="$REPO/INCHI-1-TEST/tests/test_library/inchi_tests"
@@ -181,7 +182,14 @@ step "8/8  Classify and report"
     --run-a-log="$run_a_log" --run-b-log="$run_b_log" --run-c-log="$run_c_log" \
     --output="$OUT/report.html"
 
+# Copy the run logs in so the output folder stands alone when archived or moved.
+mkdir -p "$OUT/logs"
+cp "$run_a_log" "$run_b_log" "$run_c_log" "$OUT/logs/"
+
 printf '\n\033[1mCampaign complete.\033[0m\n'
-echo "  report  $OUT/report.html"
-echo "  rows    $OUT/classifications.csv"
-echo "  logs    $DATA/*.log"
+echo "  everything in  $OUT"
+echo "    report.html          the rendered report"
+echo "    classifications.csv  one row per mismatch"
+echo "    ids/                 mismatching IDs, one file per cause"
+echo "    summary.json         counts and tallies"
+echo "    logs/                the three run logs"
