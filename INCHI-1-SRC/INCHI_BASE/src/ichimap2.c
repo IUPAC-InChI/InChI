@@ -3082,7 +3082,8 @@ int RemoveCalculatedNonStereoBondParities( CANON_GLOBALS *pCG,
                                            int vABParityUnknown )
 {
     int j, n, m, ret, ret1, ret2, ret_failed = 0;
-    int bHasWellDefinedStereo;
+    int bHasWellDefinedStereo, bHasWellDefinedCenter;
+    int bHasIllDefinedVisitedCenter;
 
     int i1, n1, s2;  /*  n1 must be SIGNED integer */
     AT_RANK nAtomRank1, nAtomRank2, neigh[3] = { 0 }, nAvoidCheckAtom[2], opposite_atom, nLength; /* djb-rwth: initialisation of neigh required to avoid undefined array subscript */
@@ -3203,10 +3204,26 @@ second_pass:
                 PARITY_CALCULATE(at[i1].stereo_bond_parity[n1]))
             {
                 bHasWellDefinedStereo = 0;
+                bHasWellDefinedCenter = 0;
+                bHasIllDefinedVisitedCenter = 0;
                 for (j = 0; j < pCS->nLenLinearCTStereoCarb; j++)
                 {
-                    bHasWellDefinedStereo |=
-                        PARITY_WELL_DEF(pCS->LinearCTStereoCarb[j].parity);
+                    nAtomRank1 = nAtomNumberCanon[
+                        pCS->LinearCTStereoCarb[j].at_num - 1];
+                    if (PARITY_WELL_DEF(pCS->LinearCTStereoCarb[j].parity))
+                    {
+                        bHasWellDefinedCenter = 1;
+                    }
+                    if ((nVisited1[nAtomRank1] || nVisited2[nAtomRank1]) &&
+                        PARITY_WELL_DEF(pCS->LinearCTStereoCarb[j].parity))
+                    {
+                        bHasWellDefinedStereo = 1;
+                    }
+                    if ((nVisited1[nAtomRank1] || nVisited2[nAtomRank1]) &&
+                        PARITY_ILL_DEF(pCS->LinearCTStereoCarb[j].parity))
+                    {
+                        bHasIllDefinedVisitedCenter = 1;
+                    }
                 }
                 for (j = 0; j < pCS->nLenLinearCTStereoDble; j++)
                 {
@@ -3217,8 +3234,16 @@ second_pass:
                     {
                         continue;
                     }
-                    bHasWellDefinedStereo |=
-                        PARITY_WELL_DEF(pCS->LinearCTStereoDble[j].parity);
+                    nAtomRank1 = nAtomNumberCanon[
+                        pCS->LinearCTStereoDble[j].at_num1 - 1];
+                    nAtomRank2 = nAtomNumberCanon[
+                        pCS->LinearCTStereoDble[j].at_num2 - 1];
+                    if (((nVisited1[nAtomRank1] && nVisited1[nAtomRank2]) ||
+                         (nVisited2[nAtomRank1] && nVisited2[nAtomRank2])) &&
+                        PARITY_WELL_DEF(pCS->LinearCTStereoDble[j].parity))
+                    {
+                        bHasWellDefinedStereo = 1;
+                    }
                 }
                 /*
                  * A coordinate-derived parity is not stereogenic when the
@@ -3227,7 +3252,10 @@ second_pass:
                  */
                 if (!bHasWellDefinedStereo)
                 {
-                    ret2 = 1;
+                    /* Preserve an ambiguous visited center when defined atom stereo anchors the component. */
+                    ret2 = bHasIllDefinedVisitedCenter && bHasWellDefinedCenter
+                        ? NOT_WELL_DEF_UNKN
+                        : 1;
                 }
             }
 
