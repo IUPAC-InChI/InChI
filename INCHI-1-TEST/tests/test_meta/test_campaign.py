@@ -426,3 +426,71 @@ def test_write_id_lists_handles_non_numeric_ids(tmp_path):
     assert (tmp_path / "ids" / "novel_salt_pathway.txt").read_text() == (
         "_Elements.#070\nmcule-42\n"
     )
+
+
+def test_classification_carries_keys_and_exit_codes():
+    # The log holds key and exit for both sides; without them on the row the CSV
+    # cannot answer "which mismatches changed the InChIKey" without parsing logs.
+    mismatches = [
+        Mismatch(
+            molfile_id="7",
+            sdf="A.sdf.gz",
+            current={"inchi": PTEN_MI, "key": "AAA-UHFFFAOYBA-N", "exit": 0},
+            reference={"inchi": PTEN_PLAIN, "key": "BBB-UHFFFAOYSA-N", "exit": 1},
+            expected=False,
+        )
+    ]
+    recmet = {"7": {"inchi": PTEN_RECMET, "key": "CCC-UHFFFAOYNA-N", "exit": 1}}
+
+    result = classify_mismatches(mismatches, recmet)[0]
+
+    assert result.reference_key == "BBB-UHFFFAOYSA-N"
+    assert result.dev_mi_key == "AAA-UHFFFAOYBA-N"
+    assert result.recmet_key == "CCC-UHFFFAOYNA-N"
+    assert result.reference_exit == 1
+    assert result.dev_mi_exit == 0
+    assert result.recmet_exit == 1
+
+
+def test_missing_recmet_leaves_key_and_exit_blank():
+    mismatches = [
+        Mismatch(
+            molfile_id="8", sdf="A.sdf.gz",
+            current={"inchi": "InChI=1B/X", "key": "K1", "exit": 0},
+            reference={"inchi": "InChI=1S/Y", "key": "K0", "exit": 0},
+            expected=False,
+        )
+    ]
+
+    result = classify_mismatches(mismatches, {})[0]
+
+    assert result.category == "recmet_missing"
+    assert result.recmet_key == ""
+    assert result.recmet_exit is None
+
+
+def test_csv_columns_include_keys_and_exits(tmp_path):
+    from inchi_tests.campaign import CSV_FIELDS, write_report
+
+    for field in ("reference_key", "dev_mi_key", "recmet_key",
+                  "reference_exit", "dev_mi_exit", "recmet_exit"):
+        assert field in CSV_FIELDS
+
+    write_report(
+        [
+            Classification(
+                molfile_id="9", sdf="A.sdf.gz", category="novel",
+                reference_inchi="InChI=1S/Y", dev_mi_inchi="InChI=1B/X",
+                recmet_inchi="InChI=1/Z",
+                reference_key="K0", dev_mi_key="K1", recmet_key="K2",
+                reference_exit=1, dev_mi_exit=0, recmet_exit=1,
+            )
+        ],
+        tmp_path,
+    )
+
+    with open(tmp_path / "classifications.csv", newline="", encoding="utf-8") as f:
+        row = next(csv.DictReader(f))
+    assert row["dev_mi_key"] == "K1"
+    assert row["reference_exit"] == "1"
+    assert row["dev_mi_exit"] == "0"

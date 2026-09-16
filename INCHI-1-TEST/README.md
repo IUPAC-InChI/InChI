@@ -226,6 +226,11 @@ them, so:
 - `error_under_mi` / `error_in_reference` / `recmet_failed` / `recmet_missing` —
   one side produced no InChI.
 
+`classifications.csv` carries one row per mismatch with the InChI, InChIKey and
+exit code of all three sides -- baseline, the option under test, and the `-RecMet`
+re-check -- so it can be queried without going back to the logs. An empty
+`recmet_*` cell means no re-computation was made for that structure.
+
 #### Mismatch IDs per cause
 
 Every run also writes the molfile ID of each mismatch to one file per cause, so a

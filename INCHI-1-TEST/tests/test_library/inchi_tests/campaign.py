@@ -167,6 +167,14 @@ class Classification(BaseModel):
     reference_inchi: str
     dev_mi_inchi: str
     recmet_inchi: str
+    # Carried through from the raw results so the CSV answers key and exit-code
+    # questions without anyone having to parse the logs.
+    reference_key: str = ""
+    dev_mi_key: str = ""
+    recmet_key: str = ""
+    reference_exit: int | None = None
+    dev_mi_exit: int | None = None
+    recmet_exit: int | None = None
 
 
 def has_reconnected_layer(inchi: str) -> bool:
@@ -224,6 +232,12 @@ def classify_mismatches(
                 reference_inchi=mismatch.reference["inchi"],
                 dev_mi_inchi=mismatch.current["inchi"],
                 recmet_inchi=recmet_result["inchi"] if recmet_result else "",
+                reference_key=mismatch.reference.get("key", ""),
+                dev_mi_key=mismatch.current.get("key", ""),
+                recmet_key=recmet_result.get("key", "") if recmet_result else "",
+                reference_exit=mismatch.reference.get("exit"),
+                dev_mi_exit=mismatch.current.get("exit"),
+                recmet_exit=recmet_result.get("exit") if recmet_result else None,
             )
         )
 
@@ -241,6 +255,12 @@ CSV_FIELDS = [
     "reference_inchi",
     "dev_mi_inchi",
     "recmet_inchi",
+    "reference_key",
+    "dev_mi_key",
+    "recmet_key",
+    "reference_exit",
+    "dev_mi_exit",
+    "recmet_exit",
 ]
 
 
