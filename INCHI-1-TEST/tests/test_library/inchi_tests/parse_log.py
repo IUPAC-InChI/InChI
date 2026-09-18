@@ -209,7 +209,9 @@ def main(test, data_config) -> None:
 if __name__ == "__main__":
     # Note that this file must be run as a script, i.e., `python parse_log.py`.
 
-    test, _, dataset_config_path, _, _, _ = get_config_args()
+    # Starred: this reader needs only the test and the dataset, and should not
+    # break every time the runner gains an option.
+    test, _, dataset_config_path, *_ = get_config_args()
     # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
     sys.path.append(str(Path(dataset_config_path).parent))
     data_config = importlib.import_module(str(Path(dataset_config_path).stem))
