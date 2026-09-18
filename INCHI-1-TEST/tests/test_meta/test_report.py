@@ -115,12 +115,114 @@ def test_build_report_data_assembles_gates(classifications_path, summary_path):
         summary_path=summary_path,
         baseline_label="v1.07.5 · 11a8798",
         test_label="dev · f75a737",
+        expected_structures=100,
     )
     assert data["total_structures"] == 100          # matched + mismatched
     assert data["mismatch_rate"] == pytest.approx(3.0)
     assert data["novel"]["salt_pathway"] == 1
     assert data["gates"]["run_b_prefix_gate"] is True     # 97 + 0 == 97
-    assert data["gates"]["completeness"] is True          # 97 + 3 == 100
+    assert data["gates"]["completeness"] is True          # 97 + 3 == 100 reference rows
+
+
+def test_completeness_is_checked_against_an_independent_count(
+    classifications_path, summary_path
+):
+    """The gate must be able to fail.
+
+    It once read `matched + mismatched == total` with `total` defined as their
+    sum -- a tautology that rendered green on precisely the short-total runs it
+    exists to catch, such as a run where shards aborted."""
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+        expected_structures=120,  # 20 structures never reached the comparison
+    )
+    assert data["gates"]["completeness"] is False
+
+
+def test_completeness_without_an_independent_count_is_not_checked(
+    classifications_path, summary_path
+):
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    assert data["gates"]["completeness"] is None
+
+
+def test_an_unmeasured_comparison_is_not_a_100_percent_mismatch(
+    classifications_path, tmp_path
+):
+    """A missing summary line must not read as a measured total.
+
+    Defaulting to 0 matched and len(rows) mismatched put the headline at exactly
+    100.00% changed over a total that was only the mismatch count, and passed the
+    prefix gate on 0 + 0 == 0."""
+    summary_path = tmp_path / "summary_no_comparison.json"
+    summary_path.write_text(json.dumps({"counts": {"recmet_equivalent": 1}}))
+
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+        expected_structures=100,
+    )
+    assert data["matched"] is None
+    assert data["mismatched"] is None
+    assert data["total_structures"] is None
+    assert data["mismatch_rate"] is None
+    assert data["gates"]["run_b_prefix_gate"] is None
+    assert data["gates"]["completeness"] is None
+    # And it still renders, with dashes where the numbers would be.
+    assert "—" in render_html(data)
+
+
+def test_no_aborted_gate_does_not_pass_on_an_unreadable_log(
+    classifications_path, summary_path, tmp_path
+):
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+        run_a_log=tmp_path / "absent.log",
+    )
+    # A log that could not be opened is not evidence that nothing aborted.
+    assert data["gates"]["no_aborted"] is None
+
+
+def test_run_c_not_measured_renders_as_such(classifications_path, summary_path):
+    """No Run C log means the control was not measured for this report.
+
+    Rendering that as a green zero asserts a check nobody performed -- the README's
+    'rebuild the report from an existing run' invocation passes no logs."""
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    data["comparison"]["mismatched_run_c"] = None
+    html = render_html(data)
+    assert "Not measured" in html
+    assert "reproduces the baseline exactly" not in html
+
+
+def test_specimen_captions_are_not_double_escaped(classifications_path, summary_path):
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    html = render_html(data)
+    assert "&amp;mdash;" not in html
+    assert "Salt route — RecMet cannot restore it" in html
 
 
 def test_render_html_is_self_contained_and_theme_aware(classifications_path, summary_path):

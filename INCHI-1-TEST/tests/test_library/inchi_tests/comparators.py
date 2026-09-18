@@ -12,9 +12,9 @@ class PrefixInsensitiveComparator:
 
     Two results match when their InChI bodies are equal and both either failed or
     did not. Differences that the rule deliberately ignores are counted, so a run
-    can report how much of its output changed in prefix, key flag, or warning level
-    only. The comparator is called from the driver's main loop, one structure at a
-    time, so the counts are exact."""
+    can report how much of its output changed in prefix, key flag, warning level or
+    failure kind only. The comparator is called from the driver's main loop, one
+    structure at a time, so the counts are exact."""
 
     def __init__(self) -> None:
         self.counts: Counter = Counter(
@@ -25,6 +25,7 @@ class PrefixInsensitiveComparator:
                 "key_only": 0,
                 "warning_only": 0,
                 "both_failed": 0,
+                "failure_kind_only": 0,
             }
         )
 
@@ -39,12 +40,17 @@ class PrefixInsensitiveComparator:
             return False
 
         self.counts["matched"] += 1
-        if not current["inchi"]:
-            # Both runs failed and produced nothing. Every field compares equal, so
-            # none of the tallies below would fire and `matched` would grow without
-            # `prefix_only` growing with it. Count it separately instead; an exit
-            # code difference here (2 vs 3) is a failure kind, not a warning flip.
+        if is_failed(current):
+            # Both runs failed -- the match test above established that they agree
+            # on it. `is_failed` covers an empty InChI *and* `exit >= 2` with output,
+            # and neither tally below applies to those: there is no prefix to differ
+            # when there is no InChI, and an exit code difference here is a failure
+            # kind (inchi_Ret_ERROR 2 vs inchi_Ret_FATAL 3), not a warning flip.
+            # Counting it as one would inflate the figure the report presents as
+            # changed warnings.
             self.counts["both_failed"] += 1
+            if current["exit"] != reference["exit"]:
+                self.counts["failure_kind_only"] += 1
 
             return True
 

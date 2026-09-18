@@ -87,6 +87,7 @@ def test_comparator_ignores_the_prefix_and_tallies_it():
         "key_only": 1,
         "warning_only": 0,
         "both_failed": 0,
+        "failure_kind_only": 0,
     }
 
 
@@ -116,6 +117,7 @@ def test_comparator_reports_a_real_body_difference():
         "key_only": 0,
         "warning_only": 0,
         "both_failed": 0,
+        "failure_kind_only": 0,
     }
 
 
@@ -134,7 +136,40 @@ def test_comparator_counts_a_mutual_failure_separately():
         "key_only": 0,
         "warning_only": 0,
         "both_failed": 1,
+        "failure_kind_only": 0,
     }
+
+
+def test_a_failure_with_output_is_counted_as_a_failure_not_a_warning():
+    """`is_failed` is `exit >= 2` *or* an empty InChI, so a failure can carry output.
+
+    Two runs failing on the same body with different error codes -- inchi_Ret_ERROR
+    (2) against inchi_Ret_FATAL (3) -- differ in failure kind, not warning level.
+    Counting that as `warning_only` inflated the figure the report presents as
+    changed warnings."""
+    comparator = PrefixInsensitiveComparator()
+    body = "C2H6O/c1-2-3"
+
+    assert comparator(
+        {"inchi": f"InChI=1B/{body}", "key": "A", "exit": 2},
+        {"inchi": f"InChI=1S/{body}", "key": "B", "exit": 3},
+    ) is True
+    summary = comparator.summary()
+    assert summary["both_failed"] == 1
+    assert summary["failure_kind_only"] == 1
+    assert summary["warning_only"] == 0
+    # No prefix or key tally either: neither is meaningful for a failed structure.
+    assert summary["prefix_only"] == 0
+    assert summary["key_only"] == 0
+
+
+def test_mutual_failure_on_the_same_code_tallies_no_kind_difference():
+    comparator = PrefixInsensitiveComparator()
+    failed = {"inchi": "InChI=1B/C2H6O/c1-2-3", "key": "A", "exit": 2}
+
+    assert comparator(dict(failed), dict(failed)) is True
+    assert comparator.summary()["both_failed"] == 1
+    assert comparator.summary()["failure_kind_only"] == 0
 
 
 def test_comparator_treats_a_failure_flip_as_a_mismatch():
@@ -159,6 +194,7 @@ def test_identical_raw_results_tally_nothing_extra():
         "key_only": 0,
         "warning_only": 0,
         "both_failed": 0,
+        "failure_kind_only": 0,
     }
 
 

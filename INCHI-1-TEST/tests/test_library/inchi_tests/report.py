@@ -94,6 +94,31 @@ def count_log_lines(log_path: Path, needle: str) -> int | None:
         return None
 
 
+def _is_zero(count: int | None) -> bool | None:
+    """A gate over a count that may not have been obtainable.
+
+    `None` propagates as `None` -- not checked -- rather than collapsing to a pass.
+    A log that could not be opened is not evidence that nothing went wrong in it."""
+    return None if count is None else count == 0
+
+
+def _share(part: int | None, whole: int | None) -> float | None:
+    return part / whole * 100 if part is not None and whole else None
+
+
+def _no_aborted(*log_paths: Path | None) -> bool | None:
+    """Whether no shard aborted in any run whose log could actually be read."""
+    counts = [
+        count_log_lines(log_path, "Aborted regression")
+        for log_path in log_paths
+        if log_path
+    ]
+    if not counts or any(count is None for count in counts):
+        return None
+
+    return all(count == 0 for count in counts)
+
+
 def build_report_data(
     classifications_path: Path,
     summary_path: Path,
@@ -102,15 +127,23 @@ def build_report_data(
     run_a_log: Path | None = None,
     run_b_log: Path | None = None,
     run_c_log: Path | None = None,
+    expected_structures: int | None = None,
 ) -> dict:
     rows = load_classifications(classifications_path)
     summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
     comparison = summary.get("comparison", {})
     counts = summary.get("counts", {})
 
-    matched = comparison.get("matched", 0)
-    mismatched = comparison.get("mismatched", len(rows))
-    total = matched + mismatched
+    # No summary line in the run log means the comparison was never measured: the
+    # log was truncated, or the pass compared byte-for-byte and wrote none. Falling
+    # back to 0 matched and len(rows) mismatched would make the total the mismatch
+    # count, put the headline at exactly 100.00% changed, and pass the prefix gate
+    # on 0 + 0 == 0 -- a measured-looking report of a measurement that never
+    # happened. Carry the absence through as None instead and render it as such.
+    measured = "matched" in comparison and "mismatched" in comparison
+    matched = comparison["matched"] if measured else None
+    mismatched = comparison["mismatched"] if measured else None
+    total = matched + mismatched if measured else None
 
     novel = novel_split(rows)
     equivalent = counts.get("recmet_equivalent", 0)
@@ -122,13 +155,13 @@ def build_report_data(
         "total_structures": total,
         "matched": matched,
         "mismatched": mismatched,
-        "mismatch_rate": (mismatched / total * 100) if total else 0.0,
+        "mismatch_rate": _share(mismatched, total),
         "comparison": comparison,
         "counts": counts,
         "equivalent": equivalent,
-        "equivalent_share": (equivalent / mismatched * 100) if mismatched else 0.0,
+        "equivalent_share": _share(equivalent, mismatched),
         "novel": novel,
-        "novel_share": (novel["total"] / mismatched * 100) if mismatched else 0.0,
+        "novel_share": _share(novel["total"], mismatched),
         "census": element_census(
             [row for row in rows if row["category"] == "novel"]
         ),
@@ -136,18 +169,26 @@ def build_report_data(
         "gates": {
             # Every structure that produced an InChI flips prefix under MI; the rest
             # are structures both libraries rejected.
-            "run_b_prefix_gate": comparison.get("prefix_only", 0)
-            + comparison.get("both_failed", 0)
-            == matched,
-            "completeness": matched + mismatched == total,
-            "run_c_clean": count_log_lines(run_c_log, "regression test failed:") == 0
+            "run_b_prefix_gate": (
+                comparison.get("prefix_only", 0) + comparison.get("both_failed", 0)
+                == matched
+            )
+            if measured
+            else None,
+            # Against the reference row count, which is arrived at by counting rows
+            # in the reference databases -- a different route to the number than the
+            # comparator's tallies. Checking `matched + mismatched` against a total
+            # *defined* as their sum, as this once did, is a tautology that renders
+            # green on exactly the short-total runs it is meant to catch.
+            "completeness": (matched + mismatched == expected_structures)
+            if measured and expected_structures is not None
+            else None,
+            "run_c_clean": _is_zero(
+                count_log_lines(run_c_log, "regression test failed:")
+            )
             if run_c_log
             else None,
-            "no_aborted": all(
-                count_log_lines(log, "Aborted regression") in (0, None)
-                for log in (run_a_log, run_b_log, run_c_log)
-                if log
-            ),
+            "no_aborted": _no_aborted(run_a_log, run_b_log, run_c_log),
         },
         "durations": {
             "run_a": run_duration(run_a_log) if run_a_log else None,
@@ -184,6 +225,16 @@ def _pick_examples(rows: list[dict]) -> dict[str, dict | None]:
 
 def _fmt(n) -> str:
     return f"{n:,}" if isinstance(n, int) else ("—" if n is None else f"{n:.2f}")
+
+
+def _pct(value: float | None, places: int = 2) -> str:
+    """A percentage, or an em dash where there is no measurement to render."""
+    return "—" if value is None else f"{value:.{places}f}%"
+
+
+def _bar(value: float | None) -> float:
+    """A bar width. An unmeasured quantity draws nothing rather than guessing."""
+    return 0.0 if value is None else value
 
 
 def _duration(seconds: float | None) -> str:
@@ -236,18 +287,34 @@ def render_html(data: dict) -> str:
     )
     counts_rows = "".join(
         f'<tr><td>{escape(k)}</td><td class="n">{_fmt(v)}</td>'
-        f'<td class="n">{v / data["mismatched"] * 100:.1f}%</td></tr>'
+        f'<td class="n">{_pct(_share(v, data["mismatched"]), 1)}</td></tr>'
         for k, v in data["counts"].items()
     )
     mismatch_pct = data["mismatch_rate"]
-    eq_pct = (
-        data["equivalent"] / data["total_structures"] * 100
-        if data["total_structures"]
-        else 0
-    )
-    novel_pct = (
-        n["total"] / data["total_structures"] * 100 if data["total_structures"] else 0
-    )
+    eq_pct = _share(data["equivalent"], data["total_structures"])
+    novel_pct = _share(n["total"], data["total_structures"])
+    matched_pct = _share(data["matched"], data["total_structures"])
+
+    # An absent Run C count means the control was not measured for this report --
+    # report.py was run without --run-c-log. Rendering that as a green zero would
+    # assert a check nobody performed.
+    run_c_mismatches = c.get("mismatched_run_c")
+    if run_c_mismatches is None:
+        run_c_class, run_c_note = (
+            "is-muted",
+            "Not measured: this report was rendered without a Run C log.",
+        )
+    elif run_c_mismatches == 0:
+        run_c_class, run_c_note = (
+            "is-good",
+            "With no options the test build reproduces the baseline exactly.",
+        )
+    else:
+        run_c_class, run_c_note = (
+            "is-flag",
+            "The test build does not reproduce the baseline without options. "
+            "Run B&rsquo;s differences cannot be attributed to the option.",
+        )
 
     return f"""<title>MolecularInorganics Campaign</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
@@ -303,6 +370,7 @@ header{{display:flex;flex-direction:column;gap:16px;border-bottom:2px solid var(
   text-transform:uppercase;color:var(--muted)}}
 .fig .d{{font-size:13.5px;color:var(--muted);line-height:1.5}}
 .fig.is-good .n{{color:var(--good)}} .fig.is-mi .n{{color:var(--mi)}} .fig.is-base .n{{color:var(--base)}}
+.fig.is-flag .n{{color:var(--flag)}} .fig.is-muted .n{{color:var(--muted)}}
 .cascade{{display:flex;flex-direction:column;gap:9px;background:var(--surface);
   border:1px solid var(--line);padding:20px}}
 .bar-row{{display:grid;grid-template-columns:minmax(120px,176px) 1fr auto;gap:14px;align-items:center}}
@@ -366,13 +434,13 @@ footer{{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:v
 
 <section>
   <div class="figs">
-    <div class="fig is-good"><div class="n">{_fmt(c.get("mismatched_run_c", 0))}</div>
+    <div class="fig {run_c_class}"><div class="n">{_fmt(run_c_mismatches)}</div>
       <div class="k">Run C mismatches</div>
-      <div class="d">With no options the test build reproduces the baseline exactly.</div></div>
-    <div class="fig is-mi"><div class="n">{mismatch_pct:.2f}%</div>
+      <div class="d">{run_c_note}</div></div>
+    <div class="fig is-mi"><div class="n">{_pct(mismatch_pct)}</div>
       <div class="k">changed by MI</div>
       <div class="d">{_fmt(data["mismatched"])} structures differ chemically.</div></div>
-    <div class="fig is-base"><div class="n">{data["equivalent_share"]:.1f}%</div>
+    <div class="fig is-base"><div class="n">{_pct(data["equivalent_share"], 1)}</div>
       <div class="k">reproduce RecMet</div>
       <div class="d">{_fmt(data["equivalent"])} equal the reconnected <span class="mono">/r</span> layer.</div></div>
   </div>
@@ -385,16 +453,16 @@ footer{{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:v
       <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--base)"></div></div>
       <div class="val">{_fmt(data["total_structures"])}</div></div>
     <div class="bar-row"><div class="lab">body unchanged</div>
-      <div class="bar-track"><div class="bar-fill" style="width:{data["matched"] / max(data["total_structures"], 1) * 100:.3f}%;background:var(--good)"></div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:{_bar(matched_pct):.3f}%;background:var(--good)"></div></div>
       <div class="val">{_fmt(data["matched"])}</div></div>
     <div class="bar-row"><div class="lab">mismatched</div>
-      <div class="bar-track"><div class="bar-fill" style="width:{mismatch_pct:.3f}%;min-width:3px;background:var(--mi)"></div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:{_bar(mismatch_pct):.3f}%;min-width:3px;background:var(--mi)"></div></div>
       <div class="val">{_fmt(data["mismatched"])}</div></div>
     <div class="bar-row"><div class="lab">&rarr; recmet_equivalent</div>
-      <div class="bar-track"><div class="bar-fill" style="width:{eq_pct:.3f}%;min-width:3px;background:var(--base)"></div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:{_bar(eq_pct):.3f}%;min-width:3px;background:var(--base)"></div></div>
       <div class="val">{_fmt(data["equivalent"])}</div></div>
     <div class="bar-row"><div class="lab">&rarr; novel</div>
-      <div class="bar-track"><div class="bar-fill" style="width:{novel_pct:.3f}%;min-width:2px;background:var(--flag)"></div></div>
+      <div class="bar-track"><div class="bar-fill" style="width:{_bar(novel_pct):.3f}%;min-width:2px;background:var(--flag)"></div></div>
       <div class="val">{_fmt(n["total"])}</div></div>
   </div>
 </section>
@@ -414,12 +482,13 @@ footer{{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:v
       <tr><td>key_only</td><td class="n">{_fmt(c.get("key_only"))}</td></tr>
       <tr><td>warning_only</td><td class="n">{_fmt(c.get("warning_only"))}</td></tr>
       <tr><td>both_failed</td><td class="n">{_fmt(c.get("both_failed"))}</td></tr>
+      <tr><td>failure_kind_only</td><td class="n">{_fmt(c.get("failure_kind_only"))}</td></tr>
     </tbody></table></div>
   <div class="gates">
     <div class="gate">{_tick(data["gates"]["run_b_prefix_gate"])}
       <span>prefix_only + both_failed = matched</span><span class="what">Run B</span></div>
     <div class="gate">{_tick(data["gates"]["completeness"])}
-      <span>matched + mismatched = structures processed</span><span class="what">completeness</span></div>
+      <span>matched + mismatched = reference rows</span><span class="what">completeness</span></div>
     <div class="gate">{_tick(data["gates"]["run_c_clean"])}
       <span>Run C mismatches = 0</span><span class="what">no version drift</span></div>
     <div class="gate">{_tick(data["gates"]["no_aborted"])}
@@ -447,8 +516,8 @@ footer{{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:v
   &ldquo;Metal was disconnected&rdquo; for every <span class="mono">/r</span> case and
   &ldquo;Salt was disconnected&rdquo; for every case without one.</p>
 {_specimen("MI reproduces the restored bonds", data["examples"]["equivalent"])}
-{_specimen("Salt route &mdash; RecMet cannot restore it", data["examples"]["salt_pathway"], "no /r layer &mdash; salt disconnection is not reversible by RecMet")}
-{_specimen("Metal route &mdash; the two disagree", data["examples"]["metal_pathway"])}
+{_specimen("Salt route — RecMet cannot restore it", data["examples"]["salt_pathway"], "no /r layer — salt disconnection is not reversible by RecMet")}
+{_specimen("Metal route — the two disagree", data["examples"]["metal_pathway"])}
 </section>
 
 <section>
@@ -487,7 +556,9 @@ footer{{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:v
   {_fmt(c.get("both_failed"))}), and <span class="mono">aux</span>,
   <span class="mono">log</span> and <span class="mono">message</span> are not stored, so
   changed warnings appear only as <span class="mono">warning_only</span>:
-  {_fmt(c.get("warning_only"))}.</p>
+  {_fmt(c.get("warning_only"))}. Where both runs failed, a differing error code is a
+  failure <em>kind</em> rather than a warning flip and is counted separately
+  (<span class="mono">failure_kind_only</span>: {_fmt(c.get("failure_kind_only"))}).</p>
 </section>
 
 <footer>
@@ -511,6 +582,16 @@ def main() -> None:
     parser.add_argument("--run-a-log", type=Path)
     parser.add_argument("--run-b-log", type=Path)
     parser.add_argument("--run-c-log", type=Path)
+    parser.add_argument(
+        "--expected-structures",
+        type=int,
+        help=(
+            "How many structures the run should have covered, counted independently "
+            "of the comparison -- run_campaign.sh passes the reference row count. "
+            "Without it the completeness gate reads 'not checked' rather than "
+            "checking a total against itself."
+        ),
+    )
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
@@ -522,11 +603,16 @@ def main() -> None:
         run_a_log=args.run_a_log,
         run_b_log=args.run_b_log,
         run_c_log=args.run_c_log,
+        expected_structures=args.expected_structures,
     )
-    if args.run_c_log is not None:
-        data["comparison"]["mismatched_run_c"] = count_log_lines(
-            args.run_c_log, "regression test failed:"
-        )
+    # None when no Run C log was given: the control was not measured for this
+    # report, which must not render as a measured zero under a caption asserting
+    # that the build reproduces the baseline.
+    data["comparison"]["mismatched_run_c"] = (
+        count_log_lines(args.run_c_log, "regression test failed:")
+        if args.run_c_log is not None
+        else None
+    )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(render_html(data), encoding="utf-8")

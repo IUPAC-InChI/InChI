@@ -194,6 +194,7 @@ step "8/8  Classify and report"
     --baseline-label="$BASELINE_TAG · $(git -C "$WORKTREE" rev-parse --short HEAD)" \
     --test-label="$(git rev-parse --abbrev-ref HEAD) · $(git rev-parse --short HEAD)" \
     --run-a-log="$run_a_log" --run-b-log="$run_b_log" --run-c-log="$run_c_log" \
+    --expected-structures="$rows" \
     --output="$OUT/report.html"
 
 # Copy the run logs in so the output folder stands alone when archived or moved.

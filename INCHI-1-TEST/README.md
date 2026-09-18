@@ -213,7 +213,9 @@ decide at comparison time what counts as a match. A run that passes
 where failure means `exit >= 2` or an empty InChI. Exit code 1 is a warning, and a
 metal disconnection always warns, so treating it as failure would misclassify most
 of the structures of interest. The differences the comparison ignores are counted
-and logged as `prefix_only`, `key_only`, `warning_only` and `both_failed`.
+and logged as `prefix_only`, `key_only`, `warning_only`, `both_failed` and
+`failure_kind_only` — the last being two runs that both failed on the same body
+with different error codes, which is a failure kind rather than a warning flip.
 
 Leniency is opted into per run and is **not** implied by `--run-tag`. Run C is
 tagged — it reads Run A's tagged reference — but it is the control, so it keeps
@@ -267,6 +269,14 @@ python INCHI-1-TEST/tests/test_library/inchi_tests/report.py \
     --summary .../data/pubchem/campaign/<dataset>/summary.json \
     --output INCHI-1-TEST/tests/test_library/data/pubchem/campaign/<dataset>/report.html
 ```
+
+Anything the report cannot establish from its inputs renders as *not checked* or an
+em dash rather than as a passing number: without `--run-c-log` the control is not
+measured, without `--run-a/b/c-log` the aborted-shard gate has nothing to read, and
+without `--expected-structures` the completeness gate has no independent count to
+check the comparison against. `run_campaign.sh` passes all four, so a full run
+fills them in; the logs it copies into `logs/` are what a later rebuild should
+point at.
 
 ### Inspect test results
 
