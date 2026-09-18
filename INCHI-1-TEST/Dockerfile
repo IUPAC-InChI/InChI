@@ -13,6 +13,10 @@ COPY INCHI-1-SRC/INCHI_API /inchi/INCHI-1-SRC/INCHI_API
 COPY INCHI-1-SRC/INCHI_EXE /inchi/INCHI-1-SRC/INCHI_EXE
 COPY INCHI-1-TEST /inchi/INCHI-1-TEST
 COPY CMakeLists.txt /inchi/CMakeLists.txt
+# The root and per-target CMakeLists both `include` cmake/InChIVersion.cmake and
+# configure cmake/inchi_version_rc.h.in, so the build cannot configure without
+# this directory.
+COPY cmake /inchi/cmake
 
 # Ignore future changes, i.e., mounted custom files.
 RUN echo "*" > /inchi/.gitignore
