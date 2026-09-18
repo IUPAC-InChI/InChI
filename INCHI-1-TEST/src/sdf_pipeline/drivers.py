@@ -40,6 +40,7 @@ def regression(
     get_molfile_id: Callable,
     number_of_consumer_processes: int = 8,
     expected_failures: set[str] = set(),
+    compare: Callable[[dict, dict], bool] | None = None,
 ) -> int:
     with sqlite3.connect(reference_path) as reference_db:
         exit_code = 0
@@ -66,9 +67,21 @@ def regression(
             reference_result = reference_query[0]
 
             current_result = json.dumps(consumer_result.result)
-            if current_result != reference_result:
+            if compare is None:
+                # Default: byte-for-byte, as the CI regression tests rely on.
+                is_match = current_result == reference_result
+            else:
+                # The caller decides what counts as a match. `compare` receives the
+                # result dictionaries and knows nothing about this module.
+                is_match = compare(consumer_result.result, json.loads(reference_result))
+
+            if not is_match:
                 expected_failure = molfile_id in expected_failures
-                exit_code = 0 if expected_failure else 1
+                # Never reset the exit code: once an unexpected failure has
+                # occurred the run must fail, regardless of any later expected
+                # failures.
+                if not expected_failure:
+                    exit_code = 1
                 log_entry = json.dumps(
                     {
                         "time": consumer_result.time,
@@ -158,7 +171,10 @@ def invariance(
         if n_variants == 1:
             continue
         expected_failure = consumer_result.molfile_id in expected_failures
-        exit_code = 0 if expected_failure else 1
+        # Never reset the exit code: once an unexpected failure has occurred the
+        # run must fail, regardless of any later expected failures.
+        if not expected_failure:
+            exit_code = 1
         if n_variants == 0:
             logger.info(
                 f"invariance test didn't run: molfile ID {consumer_result.molfile_id} from {sdf_path.name} could not be read."
