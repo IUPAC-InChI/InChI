@@ -200,6 +200,57 @@ never reaches the exit code), and a leftover `.partial` reference. A non-zero Ru
 C is reported prominently, because it means Run B's differences cannot be
 attributed to the option under test.
 
+#### Running the campaign in a container
+
+The campaign runs for days, so it is usually better off in a container than in a
+login session. The `inchi-campaign` service exists for that, and is set up
+differently from `inchi-test` above:
+
+```Shell
+docker compose -f INCHI-1-TEST/docker-compose.yml build
+docker compose -f INCHI-1-TEST/docker-compose.yml run --rm \
+    inchi-campaign substance --skip-download
+```
+
+Arguments after the service name are passed to `run_campaign.sh`, and
+`BASELINE_TAG` selects the baseline:
+
+```Shell
+BASELINE_TAG=v1.06 docker compose -f INCHI-1-TEST/docker-compose.yml run --rm \
+    inchi-campaign compound
+```
+
+Unlike `inchi-test`, this service **bind-mounts the repository** instead of using
+the copy baked into the image, so it always runs the current working tree and
+needs no rebuild after a code change. What the campaign builds goes on named
+volumes rather than into that bind mount:
+
+| volume | mounted at | why |
+| --- | --- | --- |
+| `campaign_build` | `/inchi/CMake_build` | container-built binaries must not overwrite the host's |
+| `campaign_worktree` | `/campaign/worktree` | `run_campaign.sh` puts the baseline worktree beside the repo, which is outside the mount and would be lost on exit |
+| `campaign_venv` | `/opt/campaign/venv` | a virtualenv's interpreter paths are only valid inside the container |
+
+All three persist between runs, so a re-run reuses the builds rather than
+repeating them. `WORKTREE` and `VENV` are what redirect the script onto them;
+both default to the in-repo paths when unset, so a host run is unaffected.
+
+The container runs as `1001:1001` so that references, logs and the report stay
+owned by the host user instead of root. If your UID differs, set `CAMPAIGN_UID`
+and `CAMPAIGN_GID` at **both** build and run time — they are a build argument as
+well, because the volume mount points must be created with that ownership:
+
+```Shell
+CAMPAIGN_UID=$(id -u) CAMPAIGN_GID=$(id -g) \
+    docker compose -f INCHI-1-TEST/docker-compose.yml build
+```
+
+Two things this buys beyond convenience: the `python:3.12` image has `ensurepip`,
+so `run_campaign.sh` can create its virtualenv on hosts whose system Python
+cannot; and `git worktree` bookkeeping is written into the bind-mounted `.git`,
+where a registration can outlive the volume holding the worktree — which is why
+the script prunes stale registrations before adding one.
+
 #### How the comparison works
 
 Comparing raw InChI strings across option sets does not work. `-MolecularInorganics`

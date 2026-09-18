@@ -12,3 +12,63 @@ services:
       - type: bind
         source: tests/test_library/config
         target: /inchi/INCHI-1-TEST/tests/test_library/config
+
+  # The cross-version campaign, which runs for days and needs a different setup
+  # from the test suite above.
+  #
+  # The repository is bind-mounted rather than baked into the image, so the
+  # campaign always runs against the current working tree and never needs the
+  # image rebuilt to pick up a change. Everything the campaign builds goes on a
+  # named volume instead: the build directory (so container-built binaries never
+  # overwrite the host's), the baseline worktree (which `run_campaign.sh` would
+  # otherwise put outside the mount, losing it when the container exits) and the
+  # virtualenv (whose interpreter paths are only valid inside the container).
+  # All three survive between runs, so a re-run skips rebuilding them.
+  #
+  # Usage, from the repository root:
+  #
+  #   docker compose -f INCHI-1-TEST/docker-compose.yml build
+  #   docker compose -f INCHI-1-TEST/docker-compose.yml run --rm \
+  #       inchi-campaign substance --skip-download
+  #
+  # Arguments after the service name go to `run_campaign.sh`. Override the
+  # baseline with `BASELINE_TAG=v1.06 docker compose ... run ...`.
+  inchi-campaign:
+    build:
+      context: ..
+      dockerfile: INCHI-1-TEST/Dockerfile
+      args:
+        CAMPAIGN_UID: "${CAMPAIGN_UID:-1001}"
+        CAMPAIGN_GID: "${CAMPAIGN_GID:-1001}"
+    # Runs as the host user so that references, logs and reports written into the
+    # bind-mounted data directory stay owned by that user rather than by root.
+    user: "${CAMPAIGN_UID:-1001}:${CAMPAIGN_GID:-1001}"
+    working_dir: /inchi
+    entrypoint: ["./INCHI-1-TEST/run_campaign.sh"]
+    environment:
+      BASELINE_TAG: "${BASELINE_TAG:-v1.07.5}"
+      VENV: /opt/campaign/venv
+      WORKTREE: /campaign/worktree/baseline
+      # The bind-mounted repository belongs to the host user, which git refuses
+      # to operate on as "dubious ownership" unless told otherwise.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+    volumes:
+      - type: bind
+        source: ..
+        target: /inchi
+      - type: volume
+        source: campaign_build
+        target: /inchi/CMake_build
+      - type: volume
+        source: campaign_worktree
+        target: /campaign/worktree
+      - type: volume
+        source: campaign_venv
+        target: /opt/campaign/venv
+
+volumes:
+  campaign_build:
+  campaign_worktree:
+  campaign_venv:

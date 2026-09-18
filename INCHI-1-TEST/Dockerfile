@@ -41,3 +41,13 @@ RUN mkdir -p $lib_legacy_dir
 RUN ./INCHI-1-TEST/build_with_makefile.sh v1.06 $lib_legacy_dir lib || exit 1;
 
 RUN cd INCHI-1-TEST && ./install_test_dependencies.sh
+
+# Mount points for the `inchi-campaign` service's named volumes. Docker
+# initialises a named volume from the image's content at that path and keeps its
+# ownership, so creating them here -- owned by the UID the service runs as --
+# is what makes them writable to a non-root container. Without it they arrive
+# root-owned and the campaign cannot write a thing.
+ARG CAMPAIGN_UID=1001
+ARG CAMPAIGN_GID=1001
+RUN mkdir -p /opt/campaign/venv /campaign/worktree && \
+    chown -R ${CAMPAIGN_UID}:${CAMPAIGN_GID} /opt/campaign /campaign /inchi/CMake_build

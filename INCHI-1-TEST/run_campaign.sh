@@ -26,6 +26,12 @@
 # Environment overrides:
 #   BASELINE_TAG   git tag to compare against          (default v1.07.5)
 #   RUN_TAG        namespace for reference files       (default ref_<tag>)
+#   WORKTREE       where to check the baseline out     (default ../inchi-<tag>)
+#   VENV           virtualenv to build and run in      (default <repo>/.venv)
+#
+# WORKTREE and VENV exist so the campaign can run in a container against a
+# bind-mounted repository, keeping both off the host's copy. See the
+# `inchi-campaign` service in docker-compose.yml.
 
 set -euo pipefail
 shopt -s nullglob
@@ -41,12 +47,13 @@ fi
 BASELINE_TAG="${BASELINE_TAG:-v1.07.5}"
 RUN_TAG="${RUN_TAG:-ref_${BASELINE_TAG//[.-]/_}}"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORKTREE="$REPO/../inchi-${BASELINE_TAG}"
+WORKTREE="${WORKTREE:-$REPO/../inchi-${BASELINE_TAG}}"
 DATA="$REPO/INCHI-1-TEST/tests/test_library/data/pubchem/$DATASET"
 CONFIG="$REPO/INCHI-1-TEST/tests/test_library/config/config_pubchem_${DATASET}.py"
 OUT="$REPO/INCHI-1-TEST/tests/test_library/data/pubchem/campaign/$DATASET"
 LIB_REL="CMake_build/full_build/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so"
-PY="$REPO/.venv/bin/python"
+VENV="${VENV:-$REPO/.venv}"
+PY="$VENV/bin/python"
 TESTS="$REPO/INCHI-1-TEST/tests/test_library/inchi_tests"
 
 cd "$REPO"
@@ -100,10 +107,10 @@ run_pass() {
 
 step "1/8  Python environment"
 if [[ ! -x "$PY" ]]; then
-    python3 -m venv "$REPO/.venv"
-    "$REPO/.venv/bin/pip" install --quiet --upgrade pip
+    python3 -m venv "$VENV"
+    "$VENV/bin/pip" install --quiet --upgrade pip
 fi
-"$REPO/.venv/bin/pip" install --quiet -e INCHI-1-TEST
+"$VENV/bin/pip" install --quiet -e INCHI-1-TEST
 "$PY" -c "import pydantic, sdf_pipeline, inchi_tests" || die "environment incomplete"
 echo "ok: $($PY --version)"
 
@@ -118,6 +125,11 @@ echo "ok: $(git rev-parse --short HEAD)"
 
 step "3/8  Build the $BASELINE_TAG baseline (Release)"
 if [[ ! -d "$WORKTREE" ]]; then
+    # Drop registrations whose directory is gone before adding: `add` refuses a
+    # path git still has on file. That happens routinely in a container, where
+    # the worktree lives on a volume but the registration is written into the
+    # bind-mounted .git and outlives it.
+    git worktree prune
     git worktree add "$WORKTREE" "$BASELINE_TAG"
 fi
 ( cd "$WORKTREE"
