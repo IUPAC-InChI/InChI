@@ -12,8 +12,10 @@
 # The campaign compares three passes over the same SDFs:
 #
 #   A  baseline (a released tag), no options   -- the reference
-#   B  working tree, -MolecularInorganics      -- what the option changes
-#   C  working tree, no options                -- must be identical to A
+#   B  working tree, -MolecularInorganics      -- what the option changes,
+#                                                 compared ignoring the prefix
+#   C  working tree, no options                -- the control, compared
+#                                                 byte-for-byte against A
 #
 # and re-checks every A-vs-B mismatch against the baseline's -RecMet output.
 #
@@ -66,15 +68,27 @@ newest_log() {
 
 # run_tests.py exits 1 whenever it logs a mismatch, which is not a script error.
 run_pass() {
-    local test=$1 lib=$2 log_tag=$3 options=${4:-}
+    local test=$1 lib=$2 log_tag=$3 compare=$4 options=${5:-}
     local args=(--test="$test" --lib-path="$lib" --data-config="$CONFIG"
-                --run-tag="$RUN_TAG" --log-tag="$log_tag")
+                --run-tag="$RUN_TAG" --log-tag="$log_tag" --compare="$compare")
     [[ -n "$options" ]] && args+=(--inchi-api-parameters="$options")
+
+    # run_tests.py opens its log only after argparse and the data-config import
+    # have succeeded, so a pass that dies before that leaves no log at all --
+    # and newest_log would then hand back an earlier campaign's log for this tag,
+    # which greps clean and gets classified as if it were this run's. Comparing
+    # against the logs that existed beforehand catches that without depending on
+    # filesystem timestamp granularity.
+    local before=("$DATA"/*"$log_tag".log)
     "$PY" "$TESTS/run_tests.py" "${args[@]}" || true
 
-    local log
+    local log candidate
     log=$(newest_log "$log_tag")
     [[ -n "$log" ]] || die "$log_tag produced no log"
+    for candidate in "${before[@]}"; do
+        [[ "$candidate" == "$log" ]] && die \
+            "$log_tag produced no log this run; newest is from an earlier run ($log)"
+    done
     local aborted
     aborted=$(grep -c "Aborted " "$log" || true)
     # An aborted shard is logged and the run continues, so it never shows up in
@@ -137,7 +151,7 @@ else
 fi
 
 step "5/8  Run A — $BASELINE_TAG reference"
-run_a_log=$(run_pass regression-reference "$BASELINE_LIB" run_a_ref)
+run_a_log=$(run_pass regression-reference "$BASELINE_LIB" run_a_ref exact)
 partials=("$DATA"/*.partial)
 [[ ${#partials[@]} -eq 0 ]] || die "${#partials[@]} incomplete reference(s) left behind"
 rows=$("$PY" - "$DATA" "$RUN_TAG" <<'PYEOF'
@@ -152,11 +166,11 @@ PYEOF
 echo "ok: $rows reference rows"
 
 step "6/8  Run B — working tree, -MolecularInorganics"
-run_b_log=$(run_pass regression "$DEV_LIB" run_b_dev_mi -MolecularInorganics)
+run_b_log=$(run_pass regression "$DEV_LIB" run_b_dev_mi prefix-insensitive -MolecularInorganics)
 echo "ok: $(grep -c 'regression test failed:' "$run_b_log" || true) mismatches"
 
 step "7/8  Run C — working tree, no options"
-run_c_log=$(run_pass regression "$DEV_LIB" run_c_dev_plain)
+run_c_log=$(run_pass regression "$DEV_LIB" run_c_dev_plain exact)
 run_c_mismatches=$(grep -c 'regression test failed:' "$run_c_log" || true)
 if [[ "$run_c_mismatches" -ne 0 ]]; then
     printf '\n\033[31m*** %s Run C mismatches ***\033[0m\n' "$run_c_mismatches"

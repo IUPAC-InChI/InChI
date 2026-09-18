@@ -169,11 +169,11 @@ A campaign compares a released baseline against the working tree over a whole
 PubChem dataset, including under a non-default option. It runs three passes over
 the same SDFs and re-checks every difference:
 
-| pass | library | options | purpose |
-| --- | --- | --- | --- |
-| A | baseline tag | none | the reference |
-| B | working tree | e.g. `-MolecularInorganics` | what the option changes |
-| C | working tree | none | must be identical to A |
+| pass | library | options | compared | purpose |
+| --- | --- | --- | --- | --- |
+| A | baseline tag | none | — | the reference |
+| B | working tree | e.g. `-MolecularInorganics` | InChI body only | what the option changes |
+| C | working tree | none | byte-for-byte | the control: must reproduce A exactly |
 
 Run the whole thing with one command:
 
@@ -207,12 +207,24 @@ sets `is_beta` from the option alone, so *every* structure changes prefix
 (`InChI=1S/` to `InChI=1B/`) and InChIKey flag — metal-free organics included — and
 a byte comparison would mark an entire dataset as changed.
 
-Campaign runs therefore store the raw result (full InChI, key, exit code) but
-compare the InChI *body* plus a failure flag, where failure means `exit >= 2` or
-an empty InChI. Exit code 1 is a warning, and a metal disconnection always warns,
-so treating it as failure would misclassify most of the structures of interest.
-The differences the comparison ignores are counted and logged as
-`prefix_only`, `key_only`, `warning_only` and `both_failed`.
+Campaign runs therefore store the raw result (full InChI, key, exit code) and
+decide at comparison time what counts as a match. A run that passes
+`--compare=prefix-insensitive` compares the InChI *body* plus a failure flag,
+where failure means `exit >= 2` or an empty InChI. Exit code 1 is a warning, and a
+metal disconnection always warns, so treating it as failure would misclassify most
+of the structures of interest. The differences the comparison ignores are counted
+and logged as `prefix_only`, `key_only`, `warning_only` and `both_failed`.
+
+Leniency is opted into per run and is **not** implied by `--run-tag`. Run C is
+tagged — it reads Run A's tagged reference — but it is the control, so it keeps
+the default `--compare=exact`. A prefix-insensitive Run C could not see a changed
+prefix, InChIKey or warning level, which is exactly the version drift it exists to
+catch, and it would still print that the working tree reproduces the baseline.
+
+`--inchi-api-parameters` requires `--run-tag`, because options change the output
+but not the reference filename: an untagged reference run would otherwise
+overwrite the canonical `<shard>.regression_reference.sqlite` that ordinary
+regression runs read.
 
 Differences are then classified against the baseline's `-RecMet` output. The old
 code breaks bonds to metals by two routes and `-RecMet` only reverses one of

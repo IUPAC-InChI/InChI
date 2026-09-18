@@ -45,7 +45,7 @@ def log_filename(timestamp: str, test: str, dataset: str, log_tag: str) -> str:
     return f"{timestamp}_{test}_{dataset}{tag_suffix}.log"
 
 
-def get_config_args() -> tuple[str, str, str, str, str, str]:
+def get_config_args() -> tuple[str, str, str, str, str, str, str]:
     parser = argparse.ArgumentParser(
         description="Choose a test, InChI library, and dataset.",
     )
@@ -88,8 +88,9 @@ def get_config_args() -> tuple[str, str, str, str, str, str]:
         help=(
             "Namespace for the regression reference files, e.g. 'ref_1075'. Runs "
             "compared against the same reference share this tag. A non-empty tag "
-            "switches the run into campaign mode: raw results, prefix-insensitive "
-            "comparison. Letters, digits, underscores."
+            "switches the run into campaign mode: results are stored raw, prefix "
+            "included. How they are compared is --compare's business, not this "
+            "flag's. Letters, digits, underscores."
         ),
     )
     parser.add_argument(
@@ -99,7 +100,30 @@ def get_config_args() -> tuple[str, str, str, str, str, str]:
         action=TagValidator,
         help="Namespace for the log file, e.g. 'run_b_dev_mi'. Distinct per run.",
     )
+    parser.add_argument(
+        "--compare",
+        type=str,
+        default="exact",
+        choices=["exact", "prefix-insensitive"],
+        help=(
+            "How a result is compared against its reference. 'exact' is "
+            "byte-for-byte and is what a control run needs. 'prefix-insensitive' "
+            "compares the InChI body only and is for runs whose options change the "
+            "prefix by design, e.g. '-MolecularInorganics'. Independent of "
+            "--run-tag: a tagged run is not automatically a lenient one."
+        ),
+    )
     args = parser.parse_args()
+
+    # Options change the output but not the reference filename, so an untagged
+    # reference run would write the canonical `<stem>.regression_reference.sqlite`
+    # that plain regression runs read. Every structure would then mismatch, with
+    # nothing in the filename to say why.
+    if args.inchi_api_parameters and not args.run_tag:
+        parser.error(
+            "--inchi-api-parameters requires --run-tag, which namespaces the "
+            "reference files this run reads and writes."
+        )
 
     return (
         args.test,
@@ -108,4 +132,5 @@ def get_config_args() -> tuple[str, str, str, str, str, str]:
         args.inchi_api_parameters,
         args.run_tag,
         args.log_tag,
+        args.compare,
     )

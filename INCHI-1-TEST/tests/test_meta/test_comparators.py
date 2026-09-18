@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from inchi_tests.consumers import campaign_regression_consumer, inchi_body, is_failed
 from inchi_tests.comparators import PrefixInsensitiveComparator
+from inchi_tests.run_tests import select_comparator
 
 
 LIB_PATH = "CMake_build/full_build/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so"
@@ -159,3 +160,26 @@ def test_identical_raw_results_tally_nothing_extra():
         "warning_only": 0,
         "both_failed": 0,
     }
+
+
+class TestComparatorSelection:
+    """`--compare` alone decides leniency; `--run-tag` never does.
+
+    Run C of the campaign is tagged -- it reads Run A's tagged reference -- and is
+    the control that licenses attributing Run B's differences to the option under
+    test. If a tag implied a prefix-insensitive comparison, Run C could not see a
+    changed prefix, InChIKey or warning level and would certify a drifting build."""
+
+    def test_default_is_byte_for_byte(self):
+        assert select_comparator("regression", "exact") is None
+
+    def test_prefix_insensitive_is_opt_in(self):
+        assert isinstance(
+            select_comparator("regression", "prefix-insensitive"),
+            PrefixInsensitiveComparator,
+        )
+
+    @pytest.mark.parametrize("test", ["regression-reference", "invariance"])
+    def test_only_regression_compares(self, test):
+        # A comparator here would log an all-zero summary that the report would read.
+        assert select_comparator(test, "prefix-insensitive") is None

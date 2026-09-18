@@ -23,6 +23,24 @@ from inchi_tests.consumers import (
 from inchi_tests.comparators import PrefixInsensitiveComparator
 
 
+def select_comparator(test: str, compare: str) -> PrefixInsensitiveComparator | None:
+    """The comparison rule for a run, decided by `--compare` alone.
+
+    Leniency is opted into explicitly and is deliberately not implied by
+    `--run-tag`. A control run -- same build, no options, expected to reproduce
+    its reference -- is tagged too, because it reads the tagged reference, but it
+    must stay byte-for-byte: a prefix-insensitive comparison cannot see a changed
+    prefix, InChIKey or warning level, which is exactly the drift it exists to
+    catch. `None` leaves the driver on its byte-for-byte default.
+
+    Only the `regression` test compares anything; a reference run would otherwise
+    write an all-zero summary that `parse_comparison_summary` would happily read."""
+    if compare == "prefix-insensitive" and test == "regression":
+        return PrefixInsensitiveComparator()
+
+    return None
+
+
 def main(
     test,
     inchi_lib_path,
@@ -30,6 +48,7 @@ def main(
     inchi_api_parameters="",
     run_tag="",
     log_tag="",
+    compare="exact",
 ) -> None:
     dataset = data_config.name
 
@@ -42,19 +61,17 @@ def main(
         log_filename(datetime.now().strftime("%Y%m%dT%H%M%S"), test, dataset, log_tag)
     )
     n_processes = os.cpu_count() or 8
-    # A tagged run is a campaign run: store raw results, compare ignoring the
-    # version-and-kind prefix, and tally the differences that comparison ignores.
+    # A tagged run is a campaign run: store raw results, prefix included, so that
+    # what is compared is a choice made at comparison time rather than baked into
+    # the reference.
     consumer = campaign_regression_consumer if run_tag else regression_consumer
-    # Only the `regression` test compares anything; a reference run would otherwise
-    # write an all-zero summary that `parse_comparison_summary` would happily read.
-    comparator = (
-        PrefixInsensitiveComparator() if run_tag and test == "regression" else None
-    )
+    comparator = select_comparator(test, compare)
 
     logging.basicConfig(filename=log_path, encoding="utf-8", level=logging.INFO)
     logging.info(f"{get_current_time()}: Using '{inchi_lib_path}'.")
     logging.info(f"{get_current_time()}: InChI options: '{inchi_api_parameters}'.")
     logging.info(f"{get_current_time()}: Reference tag: '{run_tag}'.")
+    logging.info(f"{get_current_time()}: Comparison: '{compare}'.")
     logging.info(
         f"{get_current_time()}: Starting to process {n_sdf} SDFs on {n_processes} cores."
     )
@@ -163,6 +180,7 @@ if __name__ == "__main__":
         inchi_api_parameters,
         run_tag,
         log_tag,
+        compare,
     ) = get_config_args()
     sys.path.append(str(Path(dataset_config_path).parent))
     data_config = importlib.import_module(str(Path(dataset_config_path).stem))
@@ -174,4 +192,5 @@ if __name__ == "__main__":
         inchi_api_parameters,
         run_tag,
         log_tag,
+        compare,
     )
