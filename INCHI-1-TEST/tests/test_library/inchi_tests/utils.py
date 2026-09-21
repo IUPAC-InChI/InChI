@@ -45,7 +45,7 @@ def log_filename(timestamp: str, test: str, dataset: str, log_tag: str) -> str:
     return f"{timestamp}_{test}_{dataset}{tag_suffix}.log"
 
 
-def get_config_args() -> tuple[str, str, str, str, str, str, str]:
+def get_config_args() -> tuple[str, str, str, str, str, str, str, int]:
     parser = argparse.ArgumentParser(
         description="Choose a test, InChI library, and dataset.",
     )
@@ -101,6 +101,16 @@ def get_config_args() -> tuple[str, str, str, str, str, str, str]:
         help="Namespace for the log file, e.g. 'run_b_dev_mi'. Distinct per run.",
     )
     parser.add_argument(
+        "--timeout-seconds-per-molfile",
+        type=int,
+        default=60,
+        help=(
+            "How long one molfile may occupy a consumer before it is killed and "
+            "recorded as a timeout. Bounds the damage from a structure the "
+            "library never returns from: that record is lost, not the shard."
+        ),
+    )
+    parser.add_argument(
         "--compare",
         type=str,
         default="exact",
@@ -133,4 +143,5 @@ def get_config_args() -> tuple[str, str, str, str, str, str, str]:
         args.run_tag,
         args.log_tag,
         args.compare,
+        args.timeout_seconds_per_molfile,
     )

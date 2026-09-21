@@ -22,13 +22,14 @@ def argv_base(tmp_path):
 
 def test_get_config_args_defaults(monkeypatch, argv_base):
     monkeypatch.setattr(sys, "argv", argv_base)
-    test, _, _, parameters, run_tag, log_tag, compare = get_config_args()
+    test, _, _, parameters, run_tag, log_tag, compare, timeout = get_config_args()
     assert test == "regression"
     assert parameters == ""
     assert run_tag == ""
     assert log_tag == ""
     # Leniency is opt-in: an unqualified run compares byte-for-byte.
     assert compare == "exact"
+    assert timeout == 60
 
 
 def test_get_config_args_options_and_tags(monkeypatch, argv_base):
@@ -42,7 +43,7 @@ def test_get_config_args_options_and_tags(monkeypatch, argv_base):
             "--log-tag=run_b_dev_mi",
         ],
     )
-    _, _, _, parameters, run_tag, log_tag, compare = get_config_args()
+    _, _, _, parameters, run_tag, log_tag, compare, _timeout = get_config_args()
     assert parameters == "-MolecularInorganics"
     assert run_tag == "ref_1075"
     assert log_tag == "run_b_dev_mi"
@@ -56,7 +57,7 @@ def test_run_tag_alone_does_not_loosen_comparison(monkeypatch, argv_base):
     and must stay byte-for-byte, or it cannot see the prefix, InChIKey and warning
     drift it exists to catch."""
     monkeypatch.setattr(sys, "argv", argv_base + ["--run-tag=ref_1075"])
-    *_, compare = get_config_args()
+    *_, compare, _timeout = get_config_args()
     assert compare == "exact"
 
 
@@ -64,7 +65,7 @@ def test_compare_mode_is_explicit(monkeypatch, argv_base):
     monkeypatch.setattr(
         sys, "argv", argv_base + ["--run-tag=ref_1075", "--compare=prefix-insensitive"]
     )
-    *_, compare = get_config_args()
+    *_, compare, _timeout = get_config_args()
     assert compare == "prefix-insensitive"
 
 
@@ -158,3 +159,15 @@ def test_parse_log_cli_accepts_the_runner_arguments(tmp_path):
         env=env,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_timeout_per_molfile_is_configurable(monkeypatch, argv_base):
+    """A structure the library never returns from must not cost the shard.
+
+    PubChem SID 141382403 ran for over ten minutes; the cap is what turns that
+    from a lost shard into one recorded timeout."""
+    monkeypatch.setattr(
+        sys, "argv", argv_base + ["--timeout-seconds-per-molfile=600"]
+    )
+    *_, timeout = get_config_args()
+    assert timeout == 600

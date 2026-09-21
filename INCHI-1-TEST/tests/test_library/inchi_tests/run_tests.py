@@ -49,6 +49,7 @@ def main(
     run_tag="",
     log_tag="",
     compare="exact",
+    timeout_seconds_per_molfile=60,
 ) -> None:
     dataset = data_config.name
 
@@ -72,6 +73,9 @@ def main(
     logging.info(f"{get_current_time()}: InChI options: '{inchi_api_parameters}'.")
     logging.info(f"{get_current_time()}: Reference tag: '{run_tag}'.")
     logging.info(f"{get_current_time()}: Comparison: '{compare}'.")
+    logging.info(
+        f"{get_current_time()}: Timeout per molfile: {timeout_seconds_per_molfile}s."
+    )
     logging.info(
         f"{get_current_time()}: Starting to process {n_sdf} SDFs on {n_processes} cores."
     )
@@ -97,6 +101,7 @@ def main(
                             get_molfile_id=get_molfile_id,
                             number_of_consumer_processes=n_processes,
                             expected_failures=expected_failures,
+                            timeout_seconds_per_molfile=timeout_seconds_per_molfile,
                             compare=comparator,
                         ),
                     )
@@ -126,6 +131,7 @@ def main(
                             ),
                             get_molfile_id=get_molfile_id,
                             number_of_consumer_processes=n_processes,
+                            timeout_seconds_per_molfile=timeout_seconds_per_molfile,
                         ),
                     )
                     partial_path.rename(reference_path)
@@ -144,6 +150,7 @@ def main(
                             get_molfile_id=get_molfile_id,
                             number_of_consumer_processes=n_processes,
                             expected_failures=expected_failures,
+                            timeout_seconds_per_molfile=timeout_seconds_per_molfile,
                         ),
                     )
 
@@ -181,6 +188,7 @@ if __name__ == "__main__":
         run_tag,
         log_tag,
         compare,
+        timeout_seconds_per_molfile,
     ) = get_config_args()
     sys.path.append(str(Path(dataset_config_path).parent))
     data_config = importlib.import_module(str(Path(dataset_config_path).stem))
@@ -193,4 +201,5 @@ if __name__ == "__main__":
         run_tag,
         log_tag,
         compare,
+        timeout_seconds_per_molfile,
     )
