@@ -22,7 +22,7 @@ class PathValidator(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def get_config_args() -> tuple[str, str, str]:
+def get_config_args() -> tuple[str, str, str, int]:
     parser = argparse.ArgumentParser(
         description="Choose a test, InChI library, and dataset.",
     )
@@ -47,6 +47,21 @@ def get_config_args() -> tuple[str, str, str]:
         action=PathValidator,
         help="Specify the path to a dataset configuration file.",
     )
+    parser.add_argument(
+        "--timeout-seconds-per-molfile",
+        type=int,
+        default=60,
+        help=(
+            "How long one molfile may occupy a consumer before it is killed and "
+            "recorded as a timeout. Bounds the damage from a structure the "
+            "library never returns from: that record is lost, not the shard."
+        ),
+    )
     args = parser.parse_args()
 
-    return (args.test, args.lib_path, args.data_config)
+    return (
+        args.test,
+        args.lib_path,
+        args.data_config,
+        args.timeout_seconds_per_molfile,
+    )

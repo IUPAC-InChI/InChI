@@ -2,6 +2,29 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+import pytest
+from inchi_tests.utils import get_config_args
+
+
+@pytest.fixture
+def argv_base(tmp_path):
+    lib = tmp_path / "libinchi.so"
+    lib.write_text("")
+    cfg = tmp_path / "config_x.py"
+    cfg.write_text("")
+    return [
+        "run_tests.py",
+        "--test=regression",
+        f"--lib-path={lib}",
+        f"--data-config={cfg}",
+    ]
+
+
+def test_get_config_args_defaults(monkeypatch, argv_base):
+    monkeypatch.setattr(sys, "argv", argv_base)
+    test, _, _, timeout = get_config_args()
+    assert test == "regression"
+    assert timeout == 60
 
 
 def test_parse_log_cli_accepts_the_runner_arguments(tmp_path):
@@ -54,3 +77,15 @@ def test_parse_log_cli_accepts_the_runner_arguments(tmp_path):
         env=env,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_timeout_per_molfile_is_configurable(monkeypatch, argv_base):
+    """A structure the library never returns from must not cost the shard.
+
+    PubChem SID 141382403 ran for over ten minutes; the cap is what turns that
+    from a lost shard into one recorded timeout."""
+    monkeypatch.setattr(
+        sys, "argv", argv_base + ["--timeout-seconds-per-molfile=600"]
+    )
+    *_, timeout = get_config_args()
+    assert timeout == 600
