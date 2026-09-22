@@ -2,15 +2,40 @@
 
 ## v2026.1
 
+### Features
+
+- New option `MolecularInorganics` (initial testing phase) adds dedicated preprocessing for molecular inorganic and organometallic structures: MOLfile bond type 9 (coordinative bond) is accepted and normalised, haptic bonds and star atoms are handled, and metal-ligand bonds are disconnected according to a documented decision tree instead of unconditionally. The option implies `NPZz` and produces non-standard output.
+- New option `EnhancedStereochemistry` (initial testing phase) evaluates the V3000 `STEABS`/`STEREL`/`STERAC` stereo collections of the input MOLfile and recomputes the `/b`, `/t`, `/m` and `/s` layers accordingly, so that structures differing only in their absolute, relative or racemic stereo groups no longer receive identical identifiers.
+- Both `MolecularInorganics` and `EnhancedStereochemistry` mark their output as beta: the identifier is prefixed `InChI=1B/` rather than `InChI=1S/` or `InChI=1/`.
+- GHI #77: the maximum number of bonds per atom (`MAXVAL`) was raised from 20 to 50, so structures with highly connected atoms -- common in metal complexes -- are processed instead of rejected.
+- New library entry point `PermuteMolfileText()` produces a permuted copy of a MOLfile's atom and bond blocks; it is exported by `libinchi` and used by the invariance test suite, which no longer needs RDKit to permute input.
+- Valence 7 was added to neutral manganese.
+
 ### Changed
 
 - We switched the software versioning from semantic versioning (https://semver.org) to calendar versioning (https://calver.org). On Unix and macOS this changes the soname of the library artifact from `1.07` to `2026`, even though we don't break the ABI.
+- Release artifacts have been renamed, and the `libinchi` artifact now carries a `SOVERSION`.
 - Molecular Inorganics preprocessing now follows the revised bond-disconnection decision tree, preserving stereo-indicated metal bonds, linked-metal structures, and qualifying metal-containing chelate ring systems while applying the Group 1/2 and terminal-metal exceptions.
 - The generated InChI for qualifying chelate complexes may intentionally change from a disconnected representation to a connected representation. In particular, the Ti bis-flavonoid regression case is now represented as connected `C30H18O14Ti` instead of disconnected `2C15H10O7.Ti` components.
+- Implicit hydrogens are no longer added to metal atoms, and an explicit valence of zero in the input is honoured instead of being treated as "unspecified". Both change the `/h` layer of affected metal-containing structures.
+- `main()` was decoupled from `ichimain.c` into `inchi_main_cli.c`, so the CLI driver functions can be exercised by unit tests.
+- The periodic table and the Molecular Inorganics data tables were moved out of `util.c` into dedicated `eldata.{c,h}` and `molecular_inorganics.{c,h}` translation units, and the aromatic-bond utilities into `aromaticity.{c,h}`, each with Doxygen documentation and unit tests. No behaviour change intended.
+- GitHub Actions are pinned to commit SHAs, workflow script-injection risks were removed, pull requests are now checked for unit-test coverage regressions, and issue and pull request templates were added.
+- Debug builds propagate `-fsanitize=address` to all targets. The test suite supports Python 3.13 and later.
 
 ### Fixed
 
+- GHI #236: v1.07.5 no longer read structures from standard input, which worked in v1.06. Input from `stdin` is read again when the first command line argument is an option, non-seekable inputs such as `/dev/stdin` and named pipes are supported, and an input file placed after the options is accepted at an interactive terminal.
 - GHI #252: Explicit H/D/T atoms used as polymer crossing-bond end groups are now preserved during terminal-H processing when the `Polymers` option is enabled. This allows valid SRU/CRU structures with explicit hydrogen leaving groups to be processed instead of being rejected as unsupported. The retained H/D/T atom is represented explicitly as a numbered atom in the `/c` layer rather than being converted to an implicit hydrogen.
+- GHI #264: access violation when generating the InChI of head-to-head polymers through `GetINCHIEx()`.
+- GHI #249: heap buffer underflow in `ParseSegmentMobileH()` on non-positive mobile-H atom indexes; negative proton isotope indexes are likewise rejected instead of read out of bounds.
+- GHI #105: an explicit zero valence (V3000 `VAL=-1`, stored as the V2000 valence field value 15) was only honoured in `get_num_H()` for atoms without bonds. A zero-valence atom carrying a bond fell through to the literal-valence branch and gained `15 - chem_bonds_valence` implicit hydrogens, so ethane with `VAL=-1` on both carbons yielded `InChI=1S/C2H28/c1-2/h1-2H14`. Valence 15 is now treated as zero valence unconditionally, giving `InChI=1S/C2/c1-2`. No structure in either regression dataset (4190 records) is affected.
+- GHI #139: non-metal atoms carrying coordinative bonds were saturated with hallucinated hydrogens. The target valence is now derived from the element, its charge and the input valence before the H count is computed, instead of adding hydrogens afterwards.
+- GHI #101, #132, #166, #168, #174, #218: Molecular Inorganics bond handling -- disconnection of single bonds to Group 1/2 metals and oxygen, explicit H counts on coordinatively bound carbon atoms (Zeise's salt), incorrect breaking of Fe-F and V-O bonds, retention of explicit metal-hydrogen bonds, and the order in which the rules are applied.
+- GHI #206: memory leaks in the Molecular Inorganics pipeline.
+- GHI #152: unit tests for Molecular Inorganics.
+- AuxInfo again contains atom coordinates when `MolecularInorganics` is used.
+- A heap buffer overflow in MOLfile permutation handling, truncation handling in `inchi_ios_print_nodisplay()`, and an unbounded neighbour scan in the aromatic-bond replacement code.
 
 ## v1.07.5 2026-02-17
 
