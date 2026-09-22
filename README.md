@@ -376,6 +376,40 @@ The use of bounds checking functions in `InChI` can be enabled/disabled in `bcf_
 
 If you wish to use [Intel oneAPI Threading Building Blocks (oneTBB)](https://github.com/oneapi-src/oneTBB), please follow the instructions given in header files `mode.h` and `tbbmalloc_proxy.h`. Please note that the [compiled binaries](#using-compiled-binaries) _do not_ use `oneTBB`.
 
+## Features in initial testing phase
+
+The following options are functional but still under active development.
+Both of them produce a **non-standard** identifier that is marked as beta with
+the prefix `InChI=1B/` instead of `InChI=1S/` or `InChI=1/`.
+The strings they generate are not stable across releases yet, so please do not
+store them in databases or use them as persistent identifiers.
+Feedback and bug reports on these two options are very welcome.
+
+### `MolecularInorganics`
+
+Dedicated preprocessing for molecular inorganic and organometallic structures.
+Rather than disconnecting every metal-ligand bond, the option applies a
+decision tree that preserves stereo-indicated metal bonds, linked-metal
+structures and qualifying metal-containing chelate ring systems, while still
+applying the exceptions for Group 1/2 metals and terminal metal atoms.
+In addition:
+
+- MOLfile bond type `9` (coordinative bond) is accepted and normalized
+- haptic bonds and star atoms are recognized
+- the option implies `NPZz`, since pseudo-element placeholders may be produced
+
+Because bonds are kept that earlier versions broke, the formula of a metal
+complex can change from a disconnected to a connected representation -- for
+example `2C15H10O7.Ti` becomes `C30H18O14Ti`.
+
+### `EnhancedStereochemistry`
+
+Evaluates the V3000 stereo collections `STEABS`, `STEREL` and `STERAC` of the
+input MOLfile and recomputes the `/b`, `/t`, `/m` and `/s` layers from them.
+Without this option, those collections are ignored, so two structures that
+differ only in their absolute, relative or racemic stereo groups receive
+identical identifiers.
+
 ## Experimental features under development
 
 Some of the experimental/engineering/hidden options featured in `InChI 1.07` which are known to be not fully functional are:
