@@ -4403,6 +4403,8 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
         return -1;
     }
 
+    ip->bMolecularInorganicsReconnectedInChI = 0;  /*@nnuk: flag reset*/
+
     /* Pointer to the array of input atoms from the original atom data structure */
     inp_ATOM *at = orig_at_data->at;
 

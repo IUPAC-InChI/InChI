@@ -159,6 +159,24 @@ int INCHI_DECL STDINCHIGEN_Setup( INCHIGEN_HANDLE _HGen,
     retcode = INCHIGEN_Setup( _HGen, pGenData, pInp );
 
     /* Ensure standardness */
+
+    /*
+     * (@nnuk) 
+     * Molecular Inorganics is part of Standard InChI.
+     * Discard legacy salt and metal-bond handling when standard
+     * output is explicitly enforced by STDINCHIGEN_Setup().
+     */
+    ip->bMolecularInorganics = 1;
+
+    ip->bTautFlags &= ~(TG_FLAG_DISCONNECT_SALTS |
+        TG_FLAG_TEST_TAUT__SALTS |
+        TG_FLAG_TEST_TAUT2_SALTS |
+        TG_FLAG_ALLOW_NO_NEGTV_O |
+        TG_FLAG_MERGE_TAUT_SALTS |
+        TG_FLAG_DISCONNECT_COORD |
+        TG_FLAG_RECONNECT_COORD |
+        TG_FLAG_CHECK_VALENCE_COORD);
+
     if (ip->bINChIOutputOptions & INCHI_OUT_SAVEOPT)
     {
         ip->bINChIOutputOptions &= ~INCHI_OUT_SAVEOPT;
@@ -543,6 +561,26 @@ int INCHI_DECL INCHIGEN_DoNormalization( INCHIGEN_HANDLE _HGen, INCHIGEN_DATA *p
             sd->nStructReadError = 99;
             sd->nErrorType = _IS_ERROR;
             nRet = _IS_ERROR;
+        }
+    }
+
+    /*
+     * (@nnuk)
+     * Apply the Standard Molecular Inorganics preprocessing before
+     * normalization. OrigStruct has already captured the native input
+     * when full AuxInfo was requested.
+     */
+    if (ip->bMolecularInorganics && nRet != _IS_FATAL && nRet != _IS_ERROR)
+    {
+        nRet1 = MolecularInorganicsPreprocessing(orig_inp_data, ip);
+
+        if (nRet1 < 0)
+        {
+            AddErrorMessage(sd->pStrErrStruct, "Molecular Inorganics preprocessing failed");
+            sd->nStructReadError = 99;
+            sd->nErrorType = _IS_FATAL;
+            nRet = _IS_FATAL;
+            goto exit_function;
         }
     }
 

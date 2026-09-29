@@ -50,7 +50,7 @@ TEST(test_molecularInorganics, test_MI_1_VOF3)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/F3OV/c1-5(2,3)4", 0);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/F3OV/c1-5(2,3)4", 0);
 }
 
 TEST(test_molecularInorganics, test_MI_2_FeF4)
@@ -71,7 +71,7 @@ TEST(test_molecularInorganics, test_MI_2_FeF4)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/F4Fe/c1-5(2,3)4", 0);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/F4Fe/c1-5(2,3)4", 0);
 }
 
 TEST(test_molecularInorganics, test_MI_3_FeF3)
@@ -90,7 +90,7 @@ TEST(test_molecularInorganics, test_MI_3_FeF3)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/3FH.Fe/h3*1H;/q;;;+3/p-3", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/3FH.Fe/h3*1H;/q;;;+3/p-3", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_4_FeCl3)
@@ -109,7 +109,7 @@ TEST(test_molecularInorganics, test_MI_4_FeCl3)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Cl3Fe/c1-4(2)3", 0);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Cl3Fe/c1-4(2)3", 0);
 }
 
 TEST(test_molecularInorganics, test_MI_5_hydrido_dimethyl_iron)
@@ -128,7 +128,7 @@ TEST(test_molecularInorganics, test_MI_5_hydrido_dimethyl_iron)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/C2H7Fe/c1-3(2)4/h1-2H3", 0);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/C2H7Fe/c1-3(2)4/h1-2H3", 0);
 }
 
 TEST(test_molecularInorganics, test_MI_6_Pt_haptic)
@@ -159,7 +159,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/C2H4Cl3Pt/c3-6(4,5)1-2-6/h1-2H2/q-1", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/C2H4Cl3Pt/c3-6(4,5)1-2-6/h1-2H2/q-1", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_GHI_218)
@@ -274,7 +274,7 @@ M  V30 END BOND
 M  V30 END CTAB
 M  END)";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/C30H18O14Ti/c31-11-1-3-15(17(35)5-11)25-29-27(23-19(37)7-13(33)9-21(23)39-25)41-45(43-29)42-28-24-20(38)8-14(34)10-22(24)40-26(30(28)44-45)16-4-2-12(32)6-18(16)36/h1-10,31-38H", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/C30H18O14Ti/c31-11-1-3-15(17(35)5-11)25-29-27(23-19(37)7-13(33)9-21(23)39-25)41-45(43-29)42-28-24-20(38)8-14(34)10-22(24)40-26(30(28)44-45)16-4-2-12(32)6-18(16)36/h1-10,31-38H", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_Na_H2O_CoordBond)
@@ -296,7 +296,7 @@ M  V30 END CTAB
 M  END
 )";
 
-     ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Na.H2O/h;1H2/q+1;/p-1", 1);
+     ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Na.H2O/h;1H2/q+1;/p-1", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_Na_H2O_CoordBond_Charged)
@@ -318,7 +318,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Na.H2O/h;1H2/q+1;/p-1", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Na.H2O/h;1H2/q+1;/p-1", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_Na_Methoxide_Charged)
@@ -342,7 +342,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/CH3O.Na/c1-2;/h1H3;/q-1;+1", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/CH3O.Na/c1-2;/h1H3;/q-1;+1", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_Na_Methoxide_Valence1)
@@ -366,7 +366,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/CH3O.Na/c1-2;/h1H3;/q-1;+1", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/CH3O.Na/c1-2;/h1H3;/q-1;+1", 1);
 }
 
 
@@ -383,7 +383,7 @@ M  CHG  2   1   1   2  -1
 M  END
 )";
 
-     ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Na.H2O/h;1H2/q+1;/p-1", 1);
+     ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Na.H2O/h;1H2/q+1;/p-1", 1);
 }
 
 /* (@fbaensch) Charge accounting for multiply-charged coordinative (type 9)
@@ -404,7 +404,7 @@ M  CHG  2   1   1   2  -1
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Na.H2O/h;1H2/q+1;/p-1", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Na.H2O/h;1H2/q+1;/p-1", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_NaOH_charged_coordinative)
@@ -426,7 +426,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Na.H2O/h;1H2/q+2;-2", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Na.H2O/h;1H2/q+2;-2", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_NaO_charged_coordinative)
@@ -448,7 +448,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Na.O/q+2;-2", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Na.O/q+2;-2", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_NaONa_charged_coordinative)
@@ -472,7 +472,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/2Na.O/q2*+1;-2", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/2Na.O/q2*+1;-2", 1);
 }
 
 TEST(test_molecularInorganics, test_MI_MgO_charged_coordinative)
@@ -494,7 +494,7 @@ M  V30 END CTAB
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Mg.O/q+2;-2", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Mg.O/q+2;-2", 1);
 }
 
 
@@ -525,7 +525,7 @@ TEST(test_molecularInorganics, test_MI_Issue244_TitaniumComplex_1)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/C4H10O4Ti/c1-5-9(6-2)7-3-4-8-9/h3-4H2,1-2H3", 0);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/C4H10O4Ti/c1-5-9(6-2)7-3-4-8-9/h3-4H2,1-2H3", 0);
 }
 
 
@@ -552,7 +552,7 @@ TEST(test_molecularInorganics, test_MI_Issue244_CalciumOxalate)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/C2H2O4.Ca/c3-1(4)2(5)6;/h(H,3,4)(H,5,6);/q;+2/p-2", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/C2H2O4.Ca/c3-1(4)2(5)6;/h(H,3,4)(H,5,6);/q;+2/p-2", 1);
 }
 
 
@@ -577,7 +577,7 @@ TEST(test_molecularInorganics, test_MI_Issue244_CalciumSulfate)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/Ca.H2O4S/c;1-5(2,3)4/h;(H2,1,2,3,4)/q+2;/p-2", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/Ca.H2O4S/c;1-5(2,3)4/h;(H2,1,2,3,4)/q+2;/p-2", 1);
 }
 
 
@@ -637,7 +637,7 @@ TEST(test_molecularInorganics, test_MI_Issue244_CalciumCitrate)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/2C4H4O6.3Ca/c2*5-2(6)1(3(7)8)4(9)10;;;/h2*1H,(H,5,6)(H,7,8)(H,9,10);;;/q;;3*+2/p-6", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/2C4H4O6.3Ca/c2*5-2(6)1(3(7)8)4(9)10;;;/h2*1H,(H,5,6)(H,7,8)(H,9,10);;;/q;;3*+2/p-6", 1);
 }
 
 
@@ -663,5 +663,5 @@ TEST(test_molecularInorganics, test_MI_Issue245_DisodiumSulfate)
 M  END
 )";
 
-    ExpectedMolecularInorganicsInChI(molblock, "InChI=1B/2Na.H2O4S/c;;1-5(2,3)4/h;;(H2,1,2,3,4)/q2*+1;/p-2", 1);
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1SB/2Na.H2O4S/c;;1-5(2,3)4/h;;(H2,1,2,3,4)/q2*+1;/p-2", 1);
 }

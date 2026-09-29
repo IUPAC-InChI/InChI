@@ -5001,6 +5001,7 @@ int ReadInChILine(INCHI_IOSTREAM* pInp,
     int  bAbc = -1;                    /* -1=> undefined, 0=> decimal, 1=> abc (compressed) */
 
     const int len_std_prefix = 8;
+    const int len_std_mi_prefix = 9;
     size_t k = 0;
     unsigned char let1 = 0, let2 = 0;
     const char a2p[] = "ABCDEFGHIJKLMNOP";
@@ -5065,7 +5066,8 @@ next_line:
 
 
     /* Check if got a standard InChI */
-    if (pLine->str && (pLine->len == len_std_prefix) && (pLine->str[len_std_prefix - 1] == 'S')) /* djb-rwth: fixing a NULL pointer dereference */
+    if (pLine->str && ((pLine->len == len_std_prefix && pLine->str[len_std_prefix - 1] == 'S') ||
+            (pLine->len == len_std_mi_prefix && pLine->str[len_std_prefix - 1] == 'S' && pLine->str[len_std_mi_prefix - 1] == 'B'))) /* djb-rwth: fixing a NULL pointer dereference */
     {
         *bStdFormat = 1;
     }
@@ -10929,7 +10931,14 @@ void TreatErrorsInReadInChIString(int            nReadStatus,
                 inchi_ios_eprint(pOut, "%s\n", *pstrHdr ? *pstrHdr : szHdrSimulation);
                 if (ip->bINChIOutputOptions & INCHI_OUT_STDINCHI)
                 {
-                    inchi_ios_eprint(pOut, "InChI=1S//\n");
+                    if (ip->bMolecularInorganics)
+                    {
+                        inchi_ios_eprint(pOut, "InChI=1SB//\n");
+                    }
+                    else
+                    {
+                        inchi_ios_eprint(pOut, "InChI=1S//\n");
+                    }
                 }
                 else
                 {
@@ -11127,7 +11136,14 @@ int ConvertInChI2InChI(INPUT_PARMS* ip,
         {/* inchi_ios_eprint( pOut, "InChICreationError!\n"); *//* emit err string */
             if (ip->bINChIOutputOptions & INCHI_OUT_STDINCHI)
             {
-                inchi_ios_eprint(pOut, "InChI=1S//\n");
+                if (ip->bMolecularInorganics)
+                {
+                    inchi_ios_eprint(pOut, "InChI=1SB//\n");
+                }
+                else
+                {
+                    inchi_ios_eprint(pOut, "InChI=1S//\n");
+                }
             }
             else
             {

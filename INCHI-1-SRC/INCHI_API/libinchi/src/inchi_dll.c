@@ -505,6 +505,23 @@ static int GetINCHI1( inchi_InputEx *extended_input,
     /* Ensure standardness */
     if (enforce_std_format)
     {
+        /*
+         * (@nnuk)
+         * Molecular Inorganics is part of Standard InChI.
+         * Discard legacy salt and metal-bond handling when standard
+         * output is explicitly enforced by GetStdINCHI().
+         */
+        ip->bMolecularInorganics = 1;
+
+        ip->bTautFlags &= ~(TG_FLAG_DISCONNECT_SALTS |
+            TG_FLAG_TEST_TAUT__SALTS |
+            TG_FLAG_TEST_TAUT2_SALTS |
+            TG_FLAG_ALLOW_NO_NEGTV_O |
+            TG_FLAG_MERGE_TAUT_SALTS |
+            TG_FLAG_DISCONNECT_COORD |
+            TG_FLAG_RECONNECT_COORD |
+            TG_FLAG_CHECK_VALENCE_COORD);
+
         if (ip->bINChIOutputOptions & INCHI_OUT_SAVEOPT)
         {
             ip->bINChIOutputOptions &= ~INCHI_OUT_SAVEOPT;
@@ -841,12 +858,24 @@ int INCHI_DECL CheckINCHI( const char *szINCHI, const int strict )
         /* Standard InChI ==> standard InChIKey */
         ret = INCHI_VALID_STANDARD;
         pos_slash1++;
+
+        /* Standard Molecular Inorganics: InChI=1SB/... */
+        if (szINCHI[pos_slash1] == 'B')
+        {
+            pos_slash1++;
+        }
     }
     else if (szINCHI[pos_slash1] == 'B')
     {
         /* Beta version InChI ==> non-standard */
         ret = INCHI_VALID_BETA;
         pos_slash1++;
+
+        /* Beta Molecular Inorganics: InChI=1BB/... */
+        if (szINCHI[pos_slash1] == 'B')
+        {
+            pos_slash1++;
+        }
     }
 
     /* .. has trailing slash in the right place */

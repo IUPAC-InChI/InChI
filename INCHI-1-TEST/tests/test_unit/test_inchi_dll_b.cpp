@@ -49,7 +49,7 @@ TEST(test_inchi_dll_b, test_MakeINCHIFromMolfileText)
     char options[] = "";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;/q2*-1;";
+    const char expected_inchi[] = "InChI=1SB/C10H10Fe/c1-2-4-5-3(1)11(1,2,4,5)6-7(11)9(11)10(11)8(6)11/h1-10H/q-2"; /*previous expectation : "InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;/q2*-1;"*/
 
     ASSERT_EQ(MakeINCHIFromMolfileText(ferrocene, options, poutput), 1);
     ASSERT_STREQ(poutput->szInChI, expected_inchi);

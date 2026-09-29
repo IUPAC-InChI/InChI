@@ -103,6 +103,8 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
                                1    standard
                               -1    experimental ('beta') */
 
+    int is_molecular_inorganic = 0;
+
 
 
     if (NULL != szXtra1) /* Software version 1.06 added check to fix bug with NULL szXtra, thanks to WDI */
@@ -146,12 +148,26 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
         /* Standard InChI ==> standard InChIKey */
         is_stdinchi = 1;
         pos_slash1++;
+
+        /* Molecular Inorganics standard InChI: InChI=1SB/... */
+        if (szINCHISource[pos_slash1] == 'B')
+        {
+            is_molecular_inorganic = 1;
+            pos_slash1++;
+        }
     }
     else if (szINCHISource[pos_slash1] == 'B')
     {
         /* v. 1.05 Experimental ('beta') InChI ==> corresponding InChIKey */
         is_stdinchi = -1;
         pos_slash1++;
+
+        /* Beta Molecular Inorganics: InChI=1BB/... */
+        if (szINCHISource[pos_slash1] == 'B')
+        {
+            is_molecular_inorganic = 1;
+            pos_slash1++;
+        }
     }
 
     /* .. has trailing slash in the right place */
@@ -266,7 +282,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     }
 
 
-    /* Trim 'InChI=1[S]/' */
+    /* Trim 'InChI=1[S][B]/' */
     memcpy(smajor, str + pos_slash1 + 1, ncp * sizeof(str[0]));
     smajor[ncp] = '\0';
 
@@ -400,7 +416,8 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     }
 
     /* Append InChI v.1 flag */
-    szINCHIKey[slen + 1] = flagver;
+    /* Molecular Inorganics uses 'B' as the second InChIKey flag. */
+    szINCHIKey[slen + 1] = is_molecular_inorganic ? 'B' : flagver;
 
     /* Append dash  */
     szINCHIKey[slen + 2] = '-';
@@ -533,7 +550,8 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL CheckINCHIKey( const char *szINCHIKey )
     }
 
     /* Check for version (only 1 allowed) */
-    if (szINCHIKey[24] != 'A')
+    /* @nnuk:  Molecular Inorganics flag */
+    if (szINCHIKey[24] != 'A' && szINCHIKey[24] != 'B')
     {
         return INCHIKEY_INVALID_VERSION;
     }
@@ -543,7 +561,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL CheckINCHIKey( const char *szINCHIKey )
     {
         return INCHIKEY_VALID_STANDARD;
     }
-    else if (szINCHIKey[23] == 'N')
+    else if (szINCHIKey[23] == 'N' || szINCHIKey[23] == 'B')
     {
         return INCHIKEY_VALID_NON_STANDARD;
     }

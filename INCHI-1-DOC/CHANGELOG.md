@@ -6,6 +6,7 @@
 
 - We switched the software versioning from semantic versioning (https://semver.org) to calendar versioning (https://calver.org). On Unix and macOS this changes the soname of the library artifact from `1.07` to `2026`, even though we don't break the ABI.
 - Molecular Inorganics preprocessing now follows the revised bond-disconnection decision tree, preserving stereo-indicated metal bonds, linked-metal structures, and qualifying metal-containing chelate ring systems while applying the Group 1/2 and terminal-metal exceptions.
+- Makes Molecular Inorganics part of the default Standard InChI workflow and introduces `LegacyMetalHandling` parameter to access the previous salt and metal-bond handling.
 - The generated InChI for qualifying chelate complexes may intentionally change from a disconnected representation to a connected representation. In particular, the Ti bis-flavonoid regression case is now represented as connected `C30H18O14Ti` instead of disconnected `2C15H10O7.Ti` components.
 
 ### Fixed

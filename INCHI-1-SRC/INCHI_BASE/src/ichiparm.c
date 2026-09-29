@@ -212,6 +212,15 @@ int set_common_options_by_parg(const char* pArg,
         *pbHashXtra2 = 1;
         got = 1;
     }
+    /* (@nnuk :: NaumanUllahKhan)
+    * Parameter option that deals with Molecular Inorganics (ON by default)
+    */
+    else if (!inchi_stricmp(pArg, "MolecularInorganics"))
+    {
+        *pbMolecularInorganics = 1;
+        *pbNPZz = 1;
+        got = 1;
+    }
     /* All modes (std and non-std InChI) structure perception options */
     /* These options DO NOT TURN OFF Std flag                         */
     else if ( !inchi_stricmp(pArg, "SNON") )
@@ -314,12 +323,14 @@ int set_common_options_by_parg(const char* pArg,
         *pbStdFormat = 0;
         got = 1;
     }
-    /* (@nnuk :: NaumanUllahKhan)
-    * Parameter option that deals with Molecular Inorganics
+    /*
+    * (@nnuk)
+    * Use the legacy salt and metal-bond handling.
+    * This disables Molecular Inorganics and produces non-standard InChI.
     */
-    else if ( !inchi_stricmp(pArg, "MolecularInorganics") )
+    else if (!inchi_stricmp(pArg, "LegacyMetalHandling"))
     {
-        *pbMolecularInorganics = 1;
+        *pbMolecularInorganics = 0;
         *pbNPZz = 1;
         *pbStdFormat = 0;
         got = 1;
@@ -429,7 +440,6 @@ int set_common_options_by_parg(const char* pArg,
     else if ( !inchi_stricmp(pArg, "NPZz") )
     {
         *pbNPZz = 1;
-        *pbMolecularInorganics = 1;
         got = 1;
     }
     else if ( !inchi_stricmp(pArg, "NoWarnings") )
@@ -665,11 +675,11 @@ int ReadCommandLineParms(int argc,
 #endif
     int bLooseTSACheck = 0;
     int bStereoAtZz = 0;
-    int bNPZz = 0;
+    int bNPZz = 1;
     int bNoWarnings = 0;
     int bMergeHash = 0;
     int bHideInChI = 0;
-    int bMolecularInorganics = 0;                   /* @nnuk */
+    int bMolecularInorganics = 1;                   /* @nnuk */
     int bOutputStyle = INCHI_OUT_PLAIN_TEXT;
     int bDisplay = 0;
     int bNoStructLabels = 0;
@@ -1949,26 +1959,38 @@ int ReadCommandLineParms(int argc,
     /* Find regular tautomerism */
     ip->bTautFlags |= TG_FLAG_TEST_TAUT__ATOMS;
 
-    /* Disconnect salts */
-    ip->bTautFlags |= bDisconnectSalts ? TG_FLAG_DISCONNECT_SALTS : 0;
+    /*
+     * (@nnuk)
+     * Legacy salt handling and metal-bond disconnection are not part of
+     * Molecular Inorganics processing. Enable them only when Molecular
+     * Inorganics handling is disabled.
+     */
+    if (!bMolecularInorganics)
+    {
+        /* Disconnect salts */
+        ip->bTautFlags |= bDisconnectSalts ? TG_FLAG_DISCONNECT_SALTS : 0;
 
-    /* If possible, find long-range H/(-) taut. on =C-OH, >C=O    */
-    ip->bTautFlags |= bAcidTautomerism ? TG_FLAG_TEST_TAUT__SALTS : 0;
+        /* If possible, find long-range H/(-) taut. on =C-OH, >C=O */
+        ip->bTautFlags |= bAcidTautomerism ? TG_FLAG_TEST_TAUT__SALTS : 0;
 
-    /* Allow long-range movement of N(+), P(+) charges           */
+        /* Multi-attachement long-range H/(-) taut. on =C-OH, >C=O */
+        ip->bTautFlags |= (bAcidTautomerism > 1) ? TG_FLAG_TEST_TAUT2_SALTS : 0;
+
+        /* (Debug) allow to find long-range H-only tautomerism on =C-OH, >C=O */
+        ip->bTautFlags |= (bUnchargedAcidTaut == 1) ? TG_FLAG_ALLOW_NO_NEGTV_O : 0;
+
+        /* Merge =C-OH and >C=O containing t-groups and other =C-OH groups */
+        ip->bTautFlags |= bMergeSaltTGroups ? TG_FLAG_MERGE_TAUT_SALTS : 0;
+
+        /* Legacy metal-bond handling */
+        ip->bTautFlags |= bDisconnectCoord ? TG_FLAG_DISCONNECT_COORD : 0;
+        ip->bTautFlags |= (bDisconnectCoord && bReconnectCoord) ? TG_FLAG_RECONNECT_COORD : 0;
+        ip->bTautFlags |= bDisconnectCoordChkVal ? TG_FLAG_CHECK_VALENCE_COORD : 0;
+    }
+
+    /* Allow long-range movement of N(+), P(+) charges */
     ip->bTautFlags |= bMovePositiveCharges ? TG_FLAG_MOVE_POS_CHARGES : 0;
 
-    /* Multi-attachement long-range H/(-) taut. on =C-OH, >C=O   */
-    ip->bTautFlags |= (bAcidTautomerism > 1) ? TG_FLAG_TEST_TAUT2_SALTS : 0;
-
-    /* (Debug) allow to find long-range H-only tautomerism on =C-OH, >C=O */
-    ip->bTautFlags |= (bUnchargedAcidTaut == 1) ? TG_FLAG_ALLOW_NO_NEGTV_O : 0;
-
-    /* Merge =C-OH and >C=O containing t-groups and other =C-OH groups */
-    ip->bTautFlags |= bMergeSaltTGroups ? TG_FLAG_MERGE_TAUT_SALTS : 0;
-    ip->bTautFlags |= bDisconnectCoord ? TG_FLAG_DISCONNECT_COORD : 0;
-    ip->bTautFlags |= (bDisconnectCoord && bReconnectCoord) ? TG_FLAG_RECONNECT_COORD : 0;
-    ip->bTautFlags |= bDisconnectCoordChkVal ? TG_FLAG_CHECK_VALENCE_COORD : 0;
     ip->bTautFlags |= bTgFlagVariableProtons ? TG_FLAG_VARIABLE_PROTONS : 0;
     ip->bTautFlags |= bTgFlagHardAddRenProtons ? TG_FLAG_HARD_ADD_REM_PROTONS : 0;
     ip->bTautFlags |= bKetoEnolTaut ? TG_FLAG_KETO_ENOL_TAUT : 0;
@@ -2760,7 +2782,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
 #endif
 
     inchi_ios_print_nodisplay(f, "Structure perception\n");
-    inchi_ios_print_nodisplay(f, "  MolecularInorganics      Parameter deals with Molecular Inorganics (initial testing phase)\n");              /*(@nnuk : Nauman Ullah Khan) :: Parameter for Molecular Inorganics added*/
+    inchi_ios_print_nodisplay(f, "  MolecularInorganics      Use Molecular Inorganics bond handling (default)\n\n");              /*(@nnuk : Nauman Ullah Khan) :: Parameter for Molecular Inorganics (default)*/
     inchi_ios_print_nodisplay(f, "  SNon        Exclude stereo (default: include absolute stereo)\n");
     inchi_ios_print_nodisplay(f, "  NEWPSOFF    Both ends of wedge point to stereocenters (default: a narrow end)\n");
     inchi_ios_print_nodisplay(f, "  LooseTSACheck   Relax criteria of ambiguous drawing for in-ring tetrahedral stereo\n");
@@ -2772,6 +2794,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
     inchi_ios_print_nodisplay(f, "  SUCF        Use Chiral Flag: On means Absolute stereo, Off - Relative\n");
 
     inchi_ios_print_nodisplay(f, "Customizing InChI creation (non-standard InChI)\n");
+    inchi_ios_print_nodisplay(f, "  LegacyMetalHandling      Use legacy salt and metal-bond handling\n");
     inchi_ios_print_nodisplay(f, "  SUU         Always include omitted unknown/undefined stereo\n");
     inchi_ios_print_nodisplay(f, "  SLUUD       Make labels for unknown and undefined stereo different\n");
     inchi_ios_print_nodisplay(f, "  RecMet      Include reconnected metals results\n");
@@ -2799,7 +2822,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
     inchi_ios_print_nodisplay(f, "  FoldCRU     Fold polymer CRU if inner repeats occur\n");
     inchi_ios_print_nodisplay(f, "  NoFrameShift Disable polymer CRU frame shift\n");
     inchi_ios_print_nodisplay(f, "  NoEdits     Disable polymer CRU frame shift and folding\n");
-    inchi_ios_print_nodisplay(f, "  NPZz        Allow non-polymer-related Zz atoms (pseudo element placeholders)\n");
+    inchi_ios_print_nodisplay(f, "  NPZz        Allow non-polymer-related Zz atoms (pseudo element placeholders) (enabled by default)\n");
     inchi_ios_print_nodisplay(f, "  SAtZz       Allow stereo at atoms connected to Zz(default: disabled)\n");
 #endif
 
@@ -3024,7 +3047,7 @@ exit_function:
     return 0;
 }
 
-
+#define NUM_INCHI_VERSIONS 10
 #define NUM_VERSIONS 7
 #define LEN_VERSIONS 64
 
@@ -3082,8 +3105,8 @@ int DetectInputINChIFileType(FILE** inp_file,
     const char* fmode)
 {
     char szLine[256], ret = 0;
-    static char szPlnVersion[NUM_VERSIONS][LEN_VERSIONS]; /* = "INChI:1.1Beta/";*/
-    static int  lenPlnVersion[NUM_VERSIONS];
+    static char szPlnVersion[NUM_INCHI_VERSIONS][LEN_VERSIONS]; /* = "INChI:1.1Beta/";*/
+    static int  lenPlnVersion[NUM_INCHI_VERSIONS];
     static char szPlnAuxVer[NUM_VERSIONS][LEN_VERSIONS]; /* = "AuxInfo:1.1Beta/";*/
     static int  lenPlnAuxVer[NUM_VERSIONS];
     static int  bInitialized = 0;
@@ -3104,6 +3127,9 @@ int DetectInputINChIFileType(FILE** inp_file,
         lenPlnVersion[4] = sprintf(szPlnVersion[4], "InChI=1/");
         lenPlnVersion[5] = sprintf(szPlnVersion[5], "MoChI=1a/");
         lenPlnVersion[6] = sprintf(szPlnVersion[6], "InChI=1S/");
+        lenPlnVersion[7] = sprintf(szPlnVersion[7], "InChI=1SB/");             /*@nnuk: entry for molecular inorganics as standard*/
+        lenPlnVersion[8] = sprintf(szPlnVersion[8], "InChI=1B/");              /*@nnuk: Beta */
+        lenPlnVersion[9] = sprintf(szPlnVersion[9], "InChI=1BB/");             /*@nnuk: Beta + MI */
         lenPlnAuxVer[0] = sprintf(szPlnAuxVer[0], "AuxInfo=%s/", INCHI_VERSION);
         lenPlnAuxVer[1] = sprintf(szPlnAuxVer[1], "AuxInfo=1.12Beta/");
         lenPlnAuxVer[2] = sprintf(szPlnAuxVer[2], "AuxInfo=1.0RC/");
@@ -3135,7 +3161,7 @@ int DetectInputINChIFileType(FILE** inp_file,
         {
             break;
         }
-        if ( bMatchOnePrefix(len, szLine, lenPlnVersion, szPlnVersion, NUM_VERSIONS) ||
+        if ( bMatchOnePrefix(len, szLine, lenPlnVersion, szPlnVersion, NUM_INCHI_VERSIONS) ||
             bMatchOnePrefix(len, szLine, lenPlnAuxVer, szPlnAuxVer, NUM_VERSIONS) )
         {
             bINChI_plain++;
@@ -3155,6 +3181,7 @@ int DetectInputINChIFileType(FILE** inp_file,
 
     return ret;
 }
+#undef NUM_INCHI_VERSIONS
 #undef NUM_VERSIONS
 #undef LEN_VERSIONS
 
