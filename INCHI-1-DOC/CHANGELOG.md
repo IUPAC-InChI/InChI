@@ -4,7 +4,7 @@
 
 ### Features
 
-- New option `MolecularInorganics` (beta feature, see README) adds preprocessing for molecular inorganic and organometallic structures: MOLfile bond type 9 (coordinative bond) is accepted and normalised, haptic bonds and star atoms are handled, and metal-ligand bonds are disconnected according to a documented decision tree instead of unconditionally. The option implies `NPZz` and produces non-standard output.
+- New option `MolecularInorganics` (beta feature, see README) adds preprocessing for molecular inorganic and organometallic structures: MOLfile bond type 9 (coordinative bond) is accepted and normalised, haptic bonds and star atoms are handled, and metal-ligand bonds are disconnected according to a decision tree (see README) instead of unconditionally. The option implies `NPZz` and produces non-standard output.
 - New option `EnhancedStereochemistry` (beta feature, see README) evaluates the V3000 `STEABS`/`STEREL`/`STERAC` stereo collections of the input MOLfile and recomputes the `/b`, `/t`, `/m` and `/s` layers accordingly, so that structures differing only in their absolute, relative or racemic stereo groups no longer receive identical identifiers.
 - Both `MolecularInorganics` and `EnhancedStereochemistry` mark their output as beta: the identifier is prefixed `InChI=1B/` rather than `InChI=1S/` or `InChI=1/`.
 - GHI #77: the maximum number of bonds per atom (`MAXVAL`) was raised from 20 to 50, so structures with highly connected atoms -- common in metal complexes -- are processed instead of rejected.
@@ -19,7 +19,7 @@
 - The generated InChI for qualifying chelate complexes may intentionally change from a disconnected representation to a connected representation. In particular, the Ti bis-flavonoid regression case is now represented as connected `C30H18O14Ti` instead of disconnected `2C15H10O7.Ti` components.
 - Implicit hydrogens are no longer added to metal atoms, and an explicit valence of zero in the input is honoured instead of being treated as "unspecified". Both change the `/h` layer of affected metal-containing structures.
 - `main()` was decoupled from `ichimain.c` into `inchi_main_cli.c`, so the CLI driver functions can be exercised by unit tests.
-- The periodic table and the Molecular Inorganics data tables were moved out of `util.c` into dedicated `eldata.{c,h}` and `molecular_inorganics.{c,h}` translation units, and the aromatic-bond utilities into `aromaticity.{c,h}`, each with Doxygen documentation and unit tests. No behaviour change intended.
+- The periodic table and the Molecular Inorganics data tables were moved out of `util.c` into dedicated `eldata.{c,h}` and `molecular_inorganics.{c,h}` translation units, and the aromatic-bond utilities into `aromaticity.{c,h}`, each with Doxygen documentation and unit tests.
 - GitHub Actions are pinned to commit SHAs, workflow script-injection risks were removed, pull requests are now checked for unit-test coverage regressions, and issue and pull request templates were added.
 - Debug builds propagate `-fsanitize=address` to all targets. The test suite supports Python 3.11 and later.
 
