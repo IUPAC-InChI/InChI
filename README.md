@@ -376,7 +376,7 @@ The use of bounds checking functions in `InChI` can be enabled/disabled in `bcf_
 
 If you wish to use [Intel oneAPI Threading Building Blocks (oneTBB)](https://github.com/oneapi-src/oneTBB), please follow the instructions given in header files `mode.h` and `tbbmalloc_proxy.h`. Please note that the [compiled binaries](#using-compiled-binaries) _do not_ use `oneTBB`.
 
-## Features in initial testing phase
+## Beta features (testing phase)
 
 The following options are functional but still under active development.
 Both of them produce a **non-standard** identifier that is marked as beta with
@@ -387,7 +387,7 @@ Feedback and bug reports on these two options are very welcome.
 
 ### `MolecularInorganics`
 
-Dedicated preprocessing for molecular inorganic and organometallic structures.
+Preprocessing for molecular inorganic and organometallic structures.
 Rather than disconnecting every metal-ligand bond, the option applies a
 decision tree that preserves stereo-indicated metal bonds, linked-metal
 structures and qualifying metal-containing chelate ring systems, while still
