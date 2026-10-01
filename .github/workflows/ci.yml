@@ -24,6 +24,12 @@ jobs:
       - name: Run executable tests
         run: pytest INCHI-1-TEST/tests/test_executable
 
+      # test_execution_time asserts a wall-clock bound that depends on the machine.
+      - name: Run meta tests
+        run: >-
+          pytest INCHI-1-TEST/tests/test_meta
+          -k "not test_execution_time"
+
       - name: Run multithreading test
         run: python INCHI-1-TEST/tests/test_library/test_multithreading.py
         timeout-minutes: 1
@@ -78,6 +84,13 @@ jobs:
       - name: Run executable tests
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pytest INCHI-1-TEST/tests/test_executable
+
+      # test_execution_time asserts a wall-clock bound that depends on the machine.
+      - name: Run meta tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: >-
+          pytest INCHI-1-TEST/tests/test_meta
+          -k "not test_execution_time"
 
       - name: Run multithreading test
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
