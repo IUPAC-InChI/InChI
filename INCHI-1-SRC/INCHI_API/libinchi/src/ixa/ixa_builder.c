@@ -48,6 +48,7 @@ typedef struct
     IXA_BOOL                      option_SUU;
     IXA_BOOL                      option_SLUUD;
     IXA_BOOL                      option_FixedH;
+    IXA_BOOL                      option_LegacyMetalHandling;
     IXA_BOOL                      option_RecMet;
     IXA_BOOL                      option_KET;
     IXA_BOOL                      option_15T;
@@ -423,6 +424,7 @@ static void BUILDER_ClearOptions( INCHIBUILDER* pBuilder )
     pBuilder->option_SUU = IXA_FALSE;
     pBuilder->option_SLUUD = IXA_FALSE;
     pBuilder->option_FixedH = IXA_FALSE;
+    pBuilder->option_LegacyMetalHandling = IXA_FALSE;
     pBuilder->option_RecMet = IXA_FALSE;
     pBuilder->option_KET = IXA_FALSE;
     pBuilder->option_15T = IXA_FALSE;
@@ -534,6 +536,10 @@ static void BUILDER_Update( IXA_STATUS_HANDLE hStatus,
     if (pBuilder->option_FixedH)
     {
         AppendOption( options, OPTION_PREFIX "FixedH" );
+    }
+    if (pBuilder->option_LegacyMetalHandling)
+    {
+        AppendOption(options, OPTION_PREFIX "LegacyMetalHandling");
     }
     if (pBuilder->option_RecMet)
     {
@@ -1615,6 +1621,9 @@ void INCHI_DECL IXA_INCHIBUILDER_SetOption( IXA_STATUS_HANDLE hStatus,
         case IXA_INCHIBUILDER_OPTION_FixedH:
             builder->option_FixedH = vValue;
             return;
+        case IXA_INCHIBUILDER_OPTION_LegacyMetalHandling:
+            builder->option_LegacyMetalHandling = vValue;
+            return;
         case IXA_INCHIBUILDER_OPTION_RecMet:
             builder->option_RecMet = vValue;
             return;
@@ -1771,6 +1780,10 @@ IXA_BOOL INCHI_DECL IXA_INCHIBUILDER_CheckOption( IXA_STATUS_HANDLE hStatus,
     else if (vOption == IXA_INCHIBUILDER_OPTION_FixedH)
     {
         val = builder->option_FixedH;
+    }
+    else if (vOption == IXA_INCHIBUILDER_OPTION_LegacyMetalHandling)
+    {
+        val = builder->option_LegacyMetalHandling;
     }
     else if (vOption == IXA_INCHIBUILDER_OPTION_RecMet)
     {

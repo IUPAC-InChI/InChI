@@ -1038,7 +1038,14 @@ void emit_empty_inchi(INPUT_PARMS* ip,
 {
     if (ip->bINChIOutputOptions & INCHI_OUT_STDINCHI)
     {
-        inchi_ios_eprint(pout, "InChI=1S//\n"); /* emit empty Std InChI */
+        if (ip->bMolecularInorganics)
+        {
+            inchi_ios_eprint(pout, "InChI=1SB//\n"); /* emit empty Standard MI InChI */
+        }
+        else
+        {
+            inchi_ios_eprint(pout, "InChI=1S//\n"); /* emit empty Standard InChI */
+        }
     }
     else
     {

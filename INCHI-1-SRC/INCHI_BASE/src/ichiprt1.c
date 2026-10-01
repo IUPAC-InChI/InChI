@@ -56,6 +56,7 @@ static int OutputINCHI_VersionAndKind( INCHI_IOSTREAM *out_file,
                                        INCHI_IOS_STRING *strbuf,
                                        int bINChIOutputOptions,
                                        int is_beta,
+                                       int is_molecular_inorganic,
                                        char *pLF,
                                        char *pTAB );
 static int OutputINCHI_MainLayerFormula( CANON_GLOBALS *pCG,
@@ -1054,6 +1055,7 @@ int OutputINChI1( CANON_GLOBALS *pCG,
     int bTautomericAcid, bHardAddRemProton;
     int bRequestedRacemicStereo = 0, bRequestedRelativeStereo = 0;
     int npass = 0; /* djb-rwth: removing redundant variables */
+    int is_molecular_inorganic = 0;
 
     INCHI_SORT *is, *is2;
     INChI *pINChI /*, *pINChI2*/;
@@ -1132,6 +1134,24 @@ int OutputINChI1( CANON_GLOBALS *pCG,
         }
     }
 
+    /*
+     * @nnuk
+     * The Molecular Inorganics option is enabled by default, but the output
+     * prefix must identify the actual structure rather than the enabled mode.
+     * A structure is treated as Molecular Inorganics here when the MI mode is
+     * active and the current input contains at least one metal atom.
+    */
+    if (ip->bMolecularInorganics && orig_inp_data && orig_inp_data->at)
+    {
+        for (i = 0; i < orig_inp_data->num_inp_atoms; i++)
+        {
+            if (is_el_a_metal(orig_inp_data->at[i].el_number))
+            {
+                is_molecular_inorganic = 1;
+                break;
+            }
+        }
+    }
 
     io.bPolymers = ip->bPolymers;
 
@@ -1675,12 +1695,12 @@ int OutputINChI1( CANON_GLOBALS *pCG,
         {
             is_beta = 1;
         }
-        else if (ip->bMolecularInorganics || ip->bEnhancedStereo)
+        else if (ip->bEnhancedStereo)
         {
             is_beta = 1;
         }
 
-        OutputINCHI_VersionAndKind(out_file, strbuf, bINChIOutputOptions, is_beta, pLF, pTAB);
+        OutputINCHI_VersionAndKind(out_file, strbuf, bINChIOutputOptions, is_beta, is_molecular_inorganic, pLF, pTAB);
     }
 
     /* InChI output: atoms */
@@ -3085,6 +3105,7 @@ int OutputINCHI_VersionAndKind(INCHI_IOSTREAM *out_file,
                                INCHI_IOS_STRING *strbuf,
                                int bINChIOutputOptions,
                                int is_beta,
+                               int is_molecular_inorganic,
                                char *pLF,
                                char *pTAB)
 {
@@ -3093,15 +3114,32 @@ int OutputINCHI_VersionAndKind(INCHI_IOSTREAM *out_file,
     inchi_strbuf_reset(strbuf);
     inchi_strbuf_printf(strbuf, "%s", x_curr_ver);
 
-    /* - add 'Beta' flag if applicable */
+    /*
+     * Experimental features use the Beta prefix.
+     * Molecular Inorganics adds the second 'B' when the structure
+     * is both beta and molecular inorganic.
+     */
     if (is_beta)
     {
         inchi_strbuf_printf(strbuf, "B");
+
+        if (is_molecular_inorganic)
+        {
+            inchi_strbuf_printf(strbuf, "B");
+        }
     }
-    /* - add 'Standard' flag if applicable */
+    /*
+     * Standard structures use 'S'. Molecular Inorganics Standard
+     * structures additionally use the 'B' marker.
+     */
     else if (bINChIOutputOptions & INCHI_OUT_STDINCHI)
     {
         inchi_strbuf_printf(strbuf, "S");
+
+        if (is_molecular_inorganic)
+        {
+            inchi_strbuf_printf(strbuf, "B");
+        }
     }
 
     inchi_ios_print_nodisplay(out_file, "%s%s", strbuf->pStr, pLF);
