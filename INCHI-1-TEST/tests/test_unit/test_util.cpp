@@ -553,10 +553,9 @@ TEST(test_util, test_is_in_the_list)
     int nPathLen2 = 5;
     EXPECT_FALSE(is_in_the_list(pathAtom2, nNextAtom2, nPathLen2));
 
-    AT_NUMB pathAtom3[] = {};
     AT_NUMB nNextAtom3 = 6;
     int nPathLen3 = 0;
-    EXPECT_FALSE(is_in_the_list(pathAtom3, nNextAtom3, nPathLen3));
+    EXPECT_FALSE(is_in_the_list(nullptr, nNextAtom3, nPathLen3));
 }
 
 TEST(test_util, test_is_in_the_ilist)
@@ -574,10 +573,9 @@ TEST(test_util, test_is_in_the_ilist)
     int nPathLen2 = 5;
     EXPECT_FALSE(is_in_the_ilist(pathAtom2, nNextAtom2, nPathLen2));
 
-    int pathAtom3[] = {};
     int nNextAtom3 = -6;
     int nPathLen3 = 0;
-    EXPECT_FALSE(is_in_the_ilist(pathAtom3, nNextAtom3, nPathLen3));
+    EXPECT_FALSE(is_in_the_ilist(nullptr, nNextAtom3, nPathLen3));
 }
 
 TEST(test_util, test_is_ilist_inside)
@@ -594,9 +592,7 @@ TEST(test_util, test_is_ilist_inside)
 
     EXPECT_FALSE(is_ilist_inside(pathAtom2, 2, pathAtom3, 2));
 
-    int pathAtom4[] = {};
-    int pathAtom5[] = {};
-    EXPECT_TRUE(is_ilist_inside(pathAtom4, 0, pathAtom5, 0));
+    EXPECT_TRUE(is_ilist_inside(nullptr, 0, nullptr, 0));
 }
 
 TEST(test_util, test_nBondsValToMetal)
