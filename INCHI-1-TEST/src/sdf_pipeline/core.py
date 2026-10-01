@@ -108,18 +108,18 @@ def run(
         for process_id in process_ids
     ]
 
-    def _overrunning() -> list[int]:
+    def _get_timed_out_processes() -> list[int]:
         """Consumers still alive and on the same record for too long."""
         now = time.monotonic()
-        overrunning = []
+        timed_out = []
         for process_id in list(process_ids):
             if not consumer_processes[process_id].is_alive():
                 continue
             begun = started_at[process_id].value
             if begun and now - begun > timeout_seconds_per_molfile:
-                overrunning.append(process_id)
+                timed_out.append(process_id)
 
-        return overrunning
+        return timed_out
 
     try:
         producer_process.start()
@@ -137,24 +137,24 @@ def run(
                 # does not mean one died. A consumer sitting on one record for
                 # longer than the timeout is the reason, and killing it costs
                 # this record rather than the whole SDF.
-                overrunning = _overrunning()
-                if not overrunning:
+                timed_out = _get_timed_out_processes()
+                if not timed_out:
                     raise  # Handled below: a consumer really is gone.
 
                 now = time.monotonic()
-                for overrunning_id in overrunning:
-                    molfile_id = current_molfile_ids[overrunning_id].value.decode(
+                for timed_out_id in timed_out:
+                    molfile_id = current_molfile_ids[timed_out_id].value.decode(
                         "utf-8", "backslashreplace"
                     )
-                    seconds = now - started_at[overrunning_id].value
+                    seconds = now - started_at[timed_out_id].value
                     logger.error(
                         f"timed out after {seconds:.0f}s on molfile ID {molfile_id} "
-                        f"from {sdf_path.name}; killing consumer {overrunning_id}."
+                        f"from {sdf_path.name}; killing consumer {timed_out_id}."
                     )
-                    consumer_processes[overrunning_id].kill()
-                    consumer_processes[overrunning_id].join()
+                    consumer_processes[timed_out_id].kill()
+                    consumer_processes[timed_out_id].join()
                     # A killed consumer never posts its sentinel, so retire it here.
-                    process_ids.remove(overrunning_id)
+                    process_ids.remove(timed_out_id)
                     yield TimedOut(molfile_id=molfile_id, seconds=seconds)
 
                 continue
@@ -170,7 +170,7 @@ def run(
             consumer_process.join()
 
     except Empty:
-        # Nothing overrunning and nothing talking: a consumer really has gone,
+        # Nothing timed out and nothing talking: a consumer really has gone,
         # and we cannot catch its exception from here.
         message = f"could not process {sdf_path}: A process terminated unexpectedly."
         logger.error(message)

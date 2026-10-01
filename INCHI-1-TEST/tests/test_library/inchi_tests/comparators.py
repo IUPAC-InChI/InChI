@@ -7,6 +7,8 @@ from collections import Counter
 from inchi_tests.consumers import inchi_body, is_failed
 
 
+# TODO: rename "prefix" here and in `inchi_body` once we've settled on names for
+# the constituent parts of the prefix, i.e., the `1`, `B`, and `B` in `1BB`.
 class PrefixInsensitiveComparator:
     """Compares InChI results ignoring the version-and-kind prefix.
 
