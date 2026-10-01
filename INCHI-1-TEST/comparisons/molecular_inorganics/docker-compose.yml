@@ -1,0 +1,60 @@
+# The MolecularInorganics comparison runs for hours to days, so it is usually
+# better off in a container than in a login session.
+#
+# The repository is bind-mounted rather than baked into the image, so the
+# comparison always runs against the current working tree and never needs the
+# image rebuilt to pick up a change. Everything it builds goes on a named volume
+# instead: the build directory (so container-built binaries never overwrite the
+# host's), the baseline worktree (which `run_comparison.sh` would otherwise put
+# outside the mount, losing it when the container exits) and the virtualenv
+# (whose interpreter paths are only valid inside the container). All three
+# survive between runs, so a re-run skips rebuilding them.
+#
+# Usage, from the repository root:
+#
+#   docker compose -f INCHI-1-TEST/comparisons/molecular_inorganics/docker-compose.yml build
+#   docker compose -f INCHI-1-TEST/comparisons/molecular_inorganics/docker-compose.yml \
+#       run --rm inchi-comparison substance --skip-download
+#
+# Arguments after the service name go to `run_comparison.sh`. Override the
+# baseline with `BASELINE_TAG=v1.06 docker compose ... run ...`.
+services:
+  inchi-comparison:
+    build:
+      context: .
+      args:
+        COMPARISON_UID: "${COMPARISON_UID:-1001}"
+        COMPARISON_GID: "${COMPARISON_GID:-1001}"
+    # Runs as the host user so that references, logs and reports written into the
+    # bind-mounted data directory stay owned by that user rather than by root.
+    user: "${COMPARISON_UID:-1001}:${COMPARISON_GID:-1001}"
+    working_dir: /inchi
+    entrypoint: ["./INCHI-1-TEST/comparisons/molecular_inorganics/run_comparison.sh"]
+    environment:
+      BASELINE_TAG: "${BASELINE_TAG:-v1.07.5}"
+      VENV: /opt/comparison/venv
+      WORKTREE: /comparison/worktree/baseline
+      # The bind-mounted repository belongs to the host user, which git refuses
+      # to operate on as "dubious ownership" unless told otherwise.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+    volumes:
+      # `source` paths are relative to this file.
+      - type: bind
+        source: ../../..
+        target: /inchi
+      - type: volume
+        source: comparison_build
+        target: /inchi/CMake_build
+      - type: volume
+        source: comparison_worktree
+        target: /comparison/worktree
+      - type: volume
+        source: comparison_venv
+        target: /opt/comparison/venv
+
+volumes:
+  comparison_build:
+  comparison_worktree:
+  comparison_venv:
