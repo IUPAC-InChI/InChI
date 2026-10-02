@@ -33,6 +33,7 @@ from sdf_pipeline import drivers
 from inchi_tests.comparators import PrefixInsensitiveComparator
 from inchi_tests.utils import PathValidator, get_current_time, get_progress
 from inchi_tests.consumers import is_failed
+from molecular_inorganics.classify import has_metal
 from molecular_inorganics.consumers import RESULT_FIELDS, raw_regression_consumer
 
 
@@ -79,24 +80,37 @@ class ExactComparator:
 
 
 class MessageTallyingComparator(PrefixInsensitiveComparator):
-    """The option pass's rule, plus a tally of changed warning messages.
+    """The option pass's rule, plus tallies of changed warnings.
 
     Matching is unchanged: the InChI body and the failure state. A matched
     structure whose warning text differs is counted as `message_only`, so a
-    change in what the library warns about is visible without failing it."""
+    change in what the library warns about is visible without failing it.
+
+    MolecularInorganics only changes how bonds to metals are treated, so on a
+    structure without a metal even a warning change is unexpected. Those are
+    counted again as `metal_free_warning_only` and `metal_free_message_only`;
+    a metal-free structure whose body changed is a mismatch and is classified as
+    `metal_free` by `classify.py`."""
 
     def __init__(self) -> None:
         super().__init__()
-        self.counts["message_only"] = 0
+        self.counts.update(
+            {"message_only": 0, "metal_free_warning_only": 0, "metal_free_message_only": 0}
+        )
 
     def __call__(self, current: dict, reference: dict) -> bool:
         is_match = super().__call__(current, reference)
-        if (
-            is_match
-            and not is_failed(current)
-            and current.get("message") != reference.get("message")
-        ):
+        if not is_match or is_failed(current):
+            return is_match
+
+        message_changed = current.get("message") != reference.get("message")
+        if message_changed:
             self.counts["message_only"] += 1
+        if not has_metal(current["inchi"]) and not has_metal(reference["inchi"]):
+            if current["exit"] != reference["exit"]:
+                self.counts["metal_free_warning_only"] += 1
+            if message_changed:
+                self.counts["metal_free_message_only"] += 1
 
         return is_match
 

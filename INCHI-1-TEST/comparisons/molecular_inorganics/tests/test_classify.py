@@ -534,7 +534,10 @@ def test_a_metal_free_mismatch_is_its_own_category():
         {"inchi": "InChI=1S/C7H10N2/c1-9(2)6-7-3-4-8-5-7/h3-6H,1-2H3/p+1", "key": "K", "exit": 0},
     )]
 
-    assert classify_mismatches(mismatches, {})[0].category == "metal_free"
+    classification = classify_mismatches(mismatches, {})[0]
+    assert classification.category == "metal_free"
+    # Not `no_disconnection`, which on a structure with a metal is a finding.
+    assert classification.route_check == "no_metal"
 
 
 def test_a_failure_wins_over_metal_free():

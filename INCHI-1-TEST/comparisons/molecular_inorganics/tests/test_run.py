@@ -176,3 +176,21 @@ class TestCheckReferenceFormat:
 
         with pytest.raises(ValueError, match="delete it and re-run the reference pass"):
             check_reference_format(path)
+
+
+def test_warning_changes_on_metal_free_structures_are_tallied_apart():
+    comparator = MessageTallyingComparator()
+    organic = "C2H6O/c1-2-3/h3H,2H2,1H3"
+    comparator({"inchi": f"InChI=1B/{organic}", "key": "K", "exit": 0, "message": ""},
+               {"inchi": f"InChI=1S/{organic}", "key": "K", "exit": 1,
+                "message": "Charges were rearranged"})
+    # A metal structure's warning change is expected and not counted again.
+    comparator({"inchi": f"InChI=1B/{TestMessageTallyingComparator.BODY}", "key": "K", "exit": 0, "message": ""},
+               {"inchi": f"InChI=1S/{TestMessageTallyingComparator.BODY}", "key": "K", "exit": 1,
+                "message": "Metal was disconnected"})
+
+    summary = comparator.summary()
+    assert summary["message_only"] == 2
+    assert summary["warning_only"] == 2
+    assert summary["metal_free_message_only"] == 1
+    assert summary["metal_free_warning_only"] == 1

@@ -457,6 +457,14 @@ def build_option_data(
     checked = "route_check" in summary
     route = {key: summary["route_check"].get(key, 0) for key in ROUTE_CHECKS} if checked else None
     metal_free = counts.get("metal_free", 0) if checked else None
+    # Matched metal-free structures whose warning level or text changed; only
+    # logged by passes run since the tally was added.
+    metal_free_warnings = (
+        comparison["metal_free_warning_only"] + comparison["metal_free_message_only"]
+        if "metal_free_warning_only" in comparison
+        and "metal_free_message_only" in comparison
+        else None
+    )
 
     return {
         "total_structures": total,
@@ -475,10 +483,12 @@ def build_option_data(
         ),
         "examples": _pick_examples(rows),
         "metal_free": metal_free,
+        "metal_free_warnings": metal_free_warnings,
         "route": route,
         "gates": {
             # MI only changes how bonds to metals are treated.
             "metal_free": _is_zero(metal_free),
+            "metal_free_warnings": _is_zero(metal_free_warnings),
             # The `/r` layer names the route the baseline's own warning names.
             "route": _is_zero(route["disagrees"]) if route else None,
             # Every structure that produced an InChI flips prefix under MI; the rest
@@ -643,6 +653,7 @@ _ROUTE_LABELS = {
     "agrees": "proxy and message name the same route",
     "disagrees": "proxy and message name different routes",
     "no_disconnection": "the baseline disconnected nothing",
+    "no_metal": "no metal, so no route (<code>metal_free</code>)",
     "not_checked": "no usable <code>-RecMet</code> result",
 }
 
@@ -663,15 +674,27 @@ def _route_table(route: dict | None) -> str:
       <tbody>{body}</tbody></table></div>"""
 
 
-def _metal_free_callout(metal_free: int | None) -> str:
-    if not metal_free:
+def _metal_free_callout(metal_free: int | None, warnings: int | None) -> str:
+    """Flag any change to a structure without a metal, which MI cannot explain."""
+    parts = []
+    if metal_free:
+        parts.append(
+            f"<b>{_fmt(metal_free)} structures without a metal changed their InChI.</b> "
+            "Their IDs are in <code>ids/metal_free.txt</code>."
+        )
+    if warnings:
+        parts.append(
+            f"<b>{_fmt(warnings)} warning changes on structures without a metal</b> "
+            "whose InChI is unchanged (<span class=\"mono\">metal_free_warning_only</span> "
+            "plus <span class=\"mono\">metal_free_message_only</span>)."
+        )
+    if not parts:
         return ""
 
     return f"""<div class="callout flagged">
       <div class="eyebrow">unexpected</div>
-      <p><b>{_fmt(metal_free)} structures without a metal changed.</b> MolecularInorganics
-      only changes how bonds to metals are treated, so it has no mechanism to change
-      these. Their IDs are in <code>ids/metal_free.txt</code>.</p>
+      <p>{" ".join(parts)} MolecularInorganics only changes how bonds to metals are
+      treated, so it has no mechanism to change these.</p>
     </div>"""
 
 
@@ -818,11 +841,14 @@ def _render_option(data: dict) -> str:
         <tr><td>key_only</td><td class="n">{_fmt(c.get("key_only"))}</td></tr>
         <tr><td>warning_only</td><td class="n">{_fmt(c.get("warning_only"))}</td></tr>
         <tr><td>message_only</td><td class="n">{_fmt(c.get("message_only"))}</td></tr>
+        <tr><td>metal_free_warning_only</td><td class="n">{_fmt(c.get("metal_free_warning_only"))}</td></tr>
+        <tr><td>metal_free_message_only</td><td class="n">{_fmt(c.get("metal_free_message_only"))}</td></tr>
         <tr><td>both_failed</td><td class="n">{_fmt(c.get("both_failed"))}</td></tr>
         <tr><td>failure_kind_only</td><td class="n">{_fmt(c.get("failure_kind_only"))}</td></tr>
       </tbody></table></div>
     {_gates([
         (gates["metal_free"], "metal-free mismatches = 0", "MI touches metals only"),
+        (gates["metal_free_warnings"], "metal-free warning changes = 0", "MI touches metals only"),
         (gates["route"], "<span class=\"mono\">/r</span> proxy disagrees with the baseline message = 0", "route proxy"),
         (gates["prefix"], "prefix_only + both_failed = matched", "prefix flip"),
         (gates["completeness"], "matched + mismatched + timed out = reference rows", "completeness"),
@@ -862,7 +888,7 @@ def _render_option(data: dict) -> str:
       <tbody>{counts_rows}</tbody></table></div>
     <p>Elements other than C and H across the <span class="mono">novel</span> formulae:</p>
     <div class="census">{census}</div>
-{_metal_free_callout(option["metal_free"])}
+{_metal_free_callout(option["metal_free"], option["metal_free_warnings"])}
     <div class="callout flagged">
       <div class="eyebrow">needs chemical review</div>
       <p><b>{_fmt(n["metal_pathway"])} structures.</b> Both the old code and MI act on the metal,

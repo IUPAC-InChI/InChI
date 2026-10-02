@@ -260,7 +260,7 @@ def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
 
 
 # Outcomes of checking the `/r` proxy against the baseline's own message.
-ROUTE_CHECKS = ("agrees", "disagrees", "no_disconnection", "not_checked")
+ROUTE_CHECKS = ("agrees", "disagrees", "no_disconnection", "no_metal", "not_checked")
 
 
 def route_check(recmet_result: dict | None) -> str:
@@ -291,11 +291,12 @@ def classify_mismatches(
 
     for mismatch in mismatches:
         recmet_result = recmet_results.get(mismatch.molfile_id)
+        category = _categorize(mismatch, recmet_result)
         classifications.append(
             Classification(
                 molfile_id=mismatch.molfile_id,
                 sdf=mismatch.sdf,
-                category=_categorize(mismatch, recmet_result),
+                category=category,
                 reference_inchi=mismatch.reference["inchi"],
                 dev_mi_inchi=mismatch.current["inchi"],
                 recmet_inchi=recmet_result["inchi"] if recmet_result else "",
@@ -304,7 +305,11 @@ def classify_mismatches(
                 recmet_message=recmet_result.get("message", "")
                 if recmet_result
                 else "",
-                route_check=route_check(recmet_result),
+                # No metal, no route: kept apart from `no_disconnection`, which
+                # on a structure with a metal is a finding of its own.
+                route_check="no_metal"
+                if category == "metal_free"
+                else route_check(recmet_result),
                 reference_key=mismatch.reference.get("key", ""),
                 dev_mi_key=mismatch.current.get("key", ""),
                 recmet_key=recmet_result.get("key", "") if recmet_result else "",

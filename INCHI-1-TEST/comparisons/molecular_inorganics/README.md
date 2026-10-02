@@ -109,7 +109,8 @@ it compares the InChI *body* plus a failure flag, where failure means `exit >= 2
 or an empty InChI. Exit code 1 is a warning, and a metal disconnection always
 warns, so treating it as failure would misclassify most of the structures of
 interest. The differences it ignores are counted and logged as `prefix_only`,
-`key_only`, `warning_only`, `message_only`, `both_failed` and `failure_kind_only` —
+`key_only`, `warning_only`, `message_only`, `metal_free_warning_only`,
+`metal_free_message_only`, `both_failed` and `failure_kind_only` —
 the last being two passes that both failed on the same body with different error
 codes.
 
@@ -135,7 +136,9 @@ them, so:
   `METAL`/`METAL2` rows of `eldata.c`). The option only changes how bonds to
   metals are treated, so it has no mechanism to change these; any count here is
   unexpected and fails a gate in the report. Checked after the error categories
-  and before the `-RecMet` comparison.
+  and before the `-RecMet` comparison. A metal-free structure whose InChI matched
+  but whose warning changed is counted by pass B as `metal_free_warning_only` /
+  `metal_free_message_only` and fails a second gate.
 - `error_under_mi` / `error_in_reference` / `recmet_failed` / `recmet_missing` —
   one side produced no InChI.
 
@@ -143,8 +146,10 @@ The `/r` layer is only a proxy for the route the old code took, so it is checked
 per structure: the `-RecMet` re-run stores the baseline's warning message, and
 `route_check` records whether "Metal was disconnected" comes with an `/r` layer
 and "Salt was disconnected" alone without one (`agrees` / `disagrees`), whether
-the baseline disconnected nothing (`no_disconnection`), or whether there was no
-usable `-RecMet` result (`not_checked`).
+the baseline disconnected nothing although the structure has a metal
+(`no_disconnection`), whether there is no metal and so no route (`no_metal`, the
+`metal_free` rows), or whether there was no usable `-RecMet` result
+(`not_checked`).
 
 `classifications.csv` carries one row per mismatch with the InChI, InChIKey, exit
 code and message of all three sides — baseline, the option, and the `-RecMet`

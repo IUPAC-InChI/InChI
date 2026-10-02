@@ -421,10 +421,12 @@ def test_metal_free_mismatches_and_route_disagreements_fail_their_gates(
     option = data["a_vs_b"]
     assert option["gates"]["metal_free"] is False
     assert option["gates"]["route"] is False
-    assert option["route"] == {"agrees": 2, "disagrees": 1, "no_disconnection": 0, "not_checked": 0}
+    assert option["route"] == {
+        "agrees": 2, "disagrees": 1, "no_disconnection": 0, "no_metal": 0, "not_checked": 0
+    }
 
     html = _part(render_html(data), "a-vs-b")
-    assert "4 structures without a metal changed." in html
+    assert "4 structures without a metal changed their InChI." in html
     assert "ids/metal_free.txt" in html
 
 
@@ -442,3 +444,36 @@ def test_message_only_is_shown_in_the_option_part(classifications_path, tmp_path
     )
     option = _part(render_html(data), "a-vs-b")
     assert '<td>message_only</td><td class="n">12</td>' in option
+
+
+def test_metal_free_warning_changes_fail_their_own_gate(classifications_path, tmp_path):
+    summary_path = tmp_path / "summary.json"
+    summary_path.write_text(json.dumps({
+        "counts": {"recmet_equivalent": 1, "novel": 2},
+        "route_check": {"agrees": 3},
+        "comparison": {"matched": 97, "mismatched": 3,
+                       "metal_free_warning_only": 2, "metal_free_message_only": 5},
+    }))
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    option = data["a_vs_b"]
+    assert option["metal_free_warnings"] == 7
+    assert option["gates"]["metal_free_warnings"] is False
+    assert option["gates"]["metal_free"] is True
+    assert "7 warning changes on structures without a metal" in _part(render_html(data), "a-vs-b")
+
+
+def test_metal_free_warning_gate_is_not_checked_on_an_older_log(
+    classifications_path, summary_path
+):
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    assert data["a_vs_b"]["gates"]["metal_free_warnings"] is None
