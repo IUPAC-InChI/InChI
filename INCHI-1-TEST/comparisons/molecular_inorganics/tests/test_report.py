@@ -386,3 +386,43 @@ def test_render_html_is_self_contained_and_theme_aware(classifications_path, sum
     # Real measured numbers, not placeholders.
     assert "100" in html and "recmet_equivalent" in html
     assert "TODO" not in html and "lorem" not in html.lower()
+
+
+def test_metal_free_and_route_gates_need_a_classification_that_checked_them(
+    classifications_path, summary_path
+):
+    # The fixture's summary predates both checks: not checked, never a pass.
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    assert data["a_vs_b"]["gates"]["metal_free"] is None
+    assert data["a_vs_b"]["gates"]["route"] is None
+    assert "Route check: not checked" in render_html(data)
+
+
+def test_metal_free_mismatches_and_route_disagreements_fail_their_gates(
+    classifications_path, tmp_path
+):
+    summary_path = tmp_path / "summary.json"
+    summary_path.write_text(json.dumps({
+        "counts": {"recmet_equivalent": 1, "novel": 2, "metal_free": 4},
+        "route_check": {"agrees": 2, "disagrees": 1},
+        "comparison": {"matched": 93, "mismatched": 7},
+    }))
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    option = data["a_vs_b"]
+    assert option["gates"]["metal_free"] is False
+    assert option["gates"]["route"] is False
+    assert option["route"] == {"agrees": 2, "disagrees": 1, "no_disconnection": 0, "not_checked": 0}
+
+    html = _part(render_html(data), "a-vs-b")
+    assert "4 structures without a metal changed." in html
+    assert "ids/metal_free.txt" in html

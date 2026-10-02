@@ -34,6 +34,7 @@ from html import escape
 from pathlib import Path
 
 from molecular_inorganics.classify import (
+    ROUTE_CHECKS,
     Mismatch,
     has_reconnected_layer,
     parse_comparison_summary,
@@ -450,6 +451,12 @@ def build_option_data(
 
     novel = novel_split(rows)
     equivalent = counts.get("recmet_equivalent", 0)
+    # The metal-free category and the route check exist only in classifications
+    # written since they were added; an older summary has neither, and must not
+    # read as zero metal-free mismatches or a passed check.
+    checked = "route_check" in summary
+    route = {key: summary["route_check"].get(key, 0) for key in ROUTE_CHECKS} if checked else None
+    metal_free = counts.get("metal_free", 0) if checked else None
 
     return {
         "total_structures": total,
@@ -467,7 +474,13 @@ def build_option_data(
             [row for row in rows if row["category"] == "novel"]
         ),
         "examples": _pick_examples(rows),
+        "metal_free": metal_free,
+        "route": route,
         "gates": {
+            # MI only changes how bonds to metals are treated.
+            "metal_free": _is_zero(metal_free),
+            # The `/r` layer names the route the baseline's own warning names.
+            "route": _is_zero(route["disagrees"]) if route else None,
             # Every structure that produced an InChI flips prefix under MI; the rest
             # are structures both libraries rejected.
             "prefix": (
@@ -626,6 +639,42 @@ def _control_mismatches(control: dict) -> str:
   </section>"""
 
 
+_ROUTE_LABELS = {
+    "agrees": "proxy and message name the same route",
+    "disagrees": "proxy and message name different routes",
+    "no_disconnection": "the baseline disconnected nothing",
+    "not_checked": "no usable <code>-RecMet</code> result",
+}
+
+
+def _route_table(route: dict | None) -> str:
+    if route is None:
+        return (
+            '<p class="rule">Route check: not checked. These classifications predate it.</p>'
+        )
+    body = "".join(
+        f'<tr><td>{escape(key)}</td><td>{_ROUTE_LABELS[key]}</td>'
+        f'<td class="n">{_fmt(route[key])}</td></tr>'
+        for key in ROUTE_CHECKS
+    )
+
+    return f"""<div class="scroll"><table>
+      <thead><tr><th>route check</th><th>meaning</th><th class="n">count</th></tr></thead>
+      <tbody>{body}</tbody></table></div>"""
+
+
+def _metal_free_callout(metal_free: int | None) -> str:
+    if not metal_free:
+        return ""
+
+    return f"""<div class="callout flagged">
+      <div class="eyebrow">unexpected</div>
+      <p><b>{_fmt(metal_free)} structures without a metal changed.</b> MolecularInorganics
+      only changes how bonds to metals are treated, so it has no mechanism to change
+      these. Their IDs are in <code>ids/metal_free.txt</code>.</p>
+    </div>"""
+
+
 def _render_reference(data: dict) -> str:
     ref = data["reference"]
 
@@ -772,6 +821,8 @@ def _render_option(data: dict) -> str:
         <tr><td>failure_kind_only</td><td class="n">{_fmt(c.get("failure_kind_only"))}</td></tr>
       </tbody></table></div>
     {_gates([
+        (gates["metal_free"], "metal-free mismatches = 0", "MI touches metals only"),
+        (gates["route"], "<span class=\"mono\">/r</span> proxy disagrees with the baseline message = 0", "route proxy"),
         (gates["prefix"], "prefix_only + both_failed = matched", "prefix flip"),
         (gates["completeness"], "matched + mismatched + timed out = reference rows", "completeness"),
         (gates["no_aborted"], "no aborted shards", "Run B"),
@@ -794,9 +845,10 @@ def _render_option(data: dict) -> str:
           <td class="n">{_fmt(n["salt_pathway"])}</td><td>cannot undo it, no <span class="mono">/r</span></td></tr>
       </tbody></table></div>
     <p>The presence of an <span class="mono">/r</span> layer is the proxy for which route was taken.
-    On the pilot corpus it separated the two perfectly, with the baseline emitting
-    &ldquo;Metal was disconnected&rdquo; for every <span class="mono">/r</span> case and
-    &ldquo;Salt was disconnected&rdquo; for every case without one.</p>
+    It is checked per structure against the baseline&rsquo;s own warning from the
+    <code>-RecMet</code> re-run: &ldquo;Metal was disconnected&rdquo; should come with an
+    <span class="mono">/r</span> layer, &ldquo;Salt was disconnected&rdquo; alone without one.</p>
+{_route_table(option["route"])}
 {_specimen("MI reproduces the restored bonds", option["examples"]["equivalent"])}
 {_specimen("Salt route — RecMet cannot restore it", option["examples"]["salt_pathway"], "no /r layer — salt disconnection is not reversible by RecMet")}
 {_specimen("Metal route — the two disagree", option["examples"]["metal_pathway"])}
@@ -809,6 +861,7 @@ def _render_option(data: dict) -> str:
       <tbody>{counts_rows}</tbody></table></div>
     <p>Elements other than C and H across the <span class="mono">novel</span> formulae:</p>
     <div class="census">{census}</div>
+{_metal_free_callout(option["metal_free"])}
     <div class="callout flagged">
       <div class="eyebrow">needs chemical review</div>
       <p><b>{_fmt(n["metal_pathway"])} structures.</b> Both the old code and MI act on the metal,

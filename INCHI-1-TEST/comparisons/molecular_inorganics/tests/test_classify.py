@@ -494,3 +494,89 @@ def test_csv_columns_include_keys_and_exits(tmp_path):
     assert row["dev_mi_key"] == "K1"
     assert row["reference_exit"] == "1"
     assert row["dev_mi_exit"] == "0"
+
+
+import re
+from molecular_inorganics.classify import (
+    METALS,
+    has_metal,
+    route_check,
+)
+
+ELDATA = Path(__file__).parents[4] / "INCHI-1-SRC/INCHI_BASE/src/eldata.c"
+
+
+def test_metals_match_the_element_table_of_the_library():
+    """`METALS` must be what `is_el_a_metal` returns true for, nothing else."""
+    rows = re.findall(
+        r'^\s*\{\s*"([A-Za-z]{1,3})"\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*(\w+)\s*,',
+        ELDATA.read_text(encoding="utf-8"),
+        re.M,
+    )
+    assert rows, f"no element rows parsed from {ELDATA}"
+    assert METALS == {symbol for symbol, kind in rows if kind in ("METAL", "METAL2")}
+
+
+def test_has_metal_reads_the_formula_layer_only():
+    assert has_metal(PTEN_MI)
+    assert has_metal("InChI=1S/ClH.Na/h1H;/q;+1/p-1")
+    # Ge and As are not metals in InChI's element table.
+    assert not has_metal("InChI=1S/AsH3/h1H3")
+    assert not has_metal("InChI=1S/C7H11N2/c1-9(2)6-7-3-4-8-5-7/h3-6,8H,1-2H3/q+1")
+    assert not has_metal("")
+
+
+def test_a_metal_free_mismatch_is_its_own_category():
+    # Mcule 7099468173: MI has no mechanism to change a structure without a metal.
+    mismatches = [_mismatch(
+        "7099468173",
+        {"inchi": "InChI=1B/C7H11N2/c1-9(2)6-7-3-4-8-5-7/h3-6,8H,1-2H3/q+1", "key": "K", "exit": 0},
+        {"inchi": "InChI=1S/C7H10N2/c1-9(2)6-7-3-4-8-5-7/h3-6H,1-2H3/p+1", "key": "K", "exit": 0},
+    )]
+
+    assert classify_mismatches(mismatches, {})[0].category == "metal_free"
+
+
+def test_a_failure_wins_over_metal_free():
+    mismatches = [_mismatch("1", {"inchi": "", "key": "", "exit": 2},
+                            {"inchi": "InChI=1S/CH4/h1H4", "key": "K", "exit": 0})]
+
+    assert classify_mismatches(mismatches, {})[0].category == "error_under_mi"
+
+
+@pytest.mark.parametrize(
+    "inchi, message, expected",
+    [
+        (PTEN_RECMET, "Metal was disconnected", "agrees"),
+        (PTEN_RECMET, "Salt was disconnected", "disagrees"),
+        ("InChI=1/C8H11N.2ClH.Hg/c;;;", "Salt was disconnected", "agrees"),
+        ("InChI=1/C8H11N.2ClH.Hg/c;;;", "Metal was disconnected", "disagrees"),
+        (PTEN_RECMET, "Metal was disconnected; Salt was disconnected", "agrees"),
+        ("InChI=1/C8H11N.2ClH.Hg/c;;;", "Metal was disconnected; Salt was disconnected", "disagrees"),
+        ("InChI=1/C8H11N.2ClH.Hg/c;;;", "", "no_disconnection"),
+    ],
+)
+def test_route_check_compares_the_r_proxy_with_the_baseline_message(inchi, message, expected):
+    assert route_check({"inchi": inchi, "key": "K", "exit": 1, "message": message}) == expected
+
+
+def test_route_check_without_a_usable_recmet_result_is_not_checked():
+    assert route_check(None) == "not_checked"
+    assert route_check({"inchi": "", "key": "", "exit": 2, "message": ""}) == "not_checked"
+
+
+def test_classification_carries_the_message_and_route_check(tmp_path):
+    mismatches = [_mismatch("1", {"inchi": PTEN_MI, "key": "K1", "exit": 0},
+                            {"inchi": PTEN_PLAIN, "key": "K2", "exit": 1})]
+    recmet = {"1": {"inchi": PTEN_RECMET, "key": "K3", "exit": 1,
+                    "message": "Metal was disconnected"}}
+
+    classification = classify_mismatches(mismatches, recmet)[0]
+    assert classification.recmet_message == "Metal was disconnected"
+    assert classification.route_check == "agrees"
+
+    write_report([classification], tmp_path)
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["route_check"] == {"agrees": 1}
+    with open(tmp_path / "classifications.csv", newline="", encoding="utf-8") as csv_file:
+        assert next(csv.DictReader(csv_file))["route_check"] == "agrees"

@@ -123,13 +123,26 @@ them, so:
 - `novel` with an `/r` layer — both reconnect, and disagree.
 - `novel` without one — the old code used salt disconnection, which `-RecMet`
   cannot undo.
+- `metal_free` — neither side's formula contains a metal (InChI's own list, the
+  `METAL`/`METAL2` rows of `eldata.c`). The option only changes how bonds to
+  metals are treated, so it has no mechanism to change these; any count here is
+  unexpected and fails a gate in the report. Checked after the error categories
+  and before the `-RecMet` comparison.
 - `error_under_mi` / `error_in_reference` / `recmet_failed` / `recmet_missing` —
   one side produced no InChI.
 
+The `/r` layer is only a proxy for the route the old code took, so it is checked
+per structure: the `-RecMet` re-run keeps the baseline's warning message, and
+`route_check` records whether "Metal was disconnected" comes with an `/r` layer
+and "Salt was disconnected" alone without one (`agrees` / `disagrees`), whether
+the baseline disconnected nothing (`no_disconnection`), or whether there was no
+usable `-RecMet` result (`not_checked`).
+
 `classifications.csv` carries one row per mismatch with the InChI, InChIKey and
 exit code of all three sides — baseline, the option, and the `-RecMet` re-check —
-so it can be queried without going back to the logs. An empty `recmet_*` cell
-means no re-computation was made for that structure.
+plus the baseline's message and the route check, so it can be queried without
+going back to the logs. An empty `recmet_*` cell means no re-computation was made
+for that structure.
 
 ### Mismatch IDs per cause
 
@@ -138,6 +151,7 @@ of structures can be fed straight into another tool:
 
 ```
 ids/
+    metal_free.txt
     recmet_equivalent.txt     novel_metal_pathway.txt   novel_salt_pathway.txt
     error_under_mi.txt        error_in_reference.txt
     recmet_failed.txt         recmet_missing.txt

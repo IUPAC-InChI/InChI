@@ -10,6 +10,12 @@ Results are stored raw, prefixes included. Comparison ignores the
 version-and-kind prefix (`comparators.PrefixInsensitiveComparator`), and every
 A-vs-B mismatch is re-checked against v1.07.5 `-RecMet` by comparing that run's
 reconnected (`/r`) layer with the `-MolecularInorganics` InChI minus its prefix.
+
+A mismatch on a structure without any metal is its own category, `metal_free`:
+MolecularInorganics only changes how bonds to metals are treated, so it has no
+mechanism to change such a structure. The `-RecMet` re-run also keeps the
+baseline's warning message, which states which disconnection route it took, so
+the `/r` layer's use as a proxy for the route is checked per structure.
 """
 
 import argparse
@@ -33,6 +39,23 @@ _FAILURE_PATTERN = re.compile(
     r"^INFO:sdf_pipeline:regression test failed( expectedly)?:(?P<entry>\{.*\})$"
 )
 _SUMMARY_PATTERN = re.compile(r"Comparison summary: (?P<counts>\{.*\})$")
+
+
+# Elements InChI treats as metals: the rows of `INCHI_BASE/src/eldata.c` whose
+# type is METAL or METAL2, i.e. what `is_el_a_metal` returns true for. Not the
+# textbook list: Ge, As and Te are not metals here, Sb, Po, Ts and Og are.
+METALS = frozenset(
+    "Li Be Na Mg Al K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Rb Sr Y Zr Nb Mo Tc Ru "
+    "Rh Pd Ag Cd In Sn Sb Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf "
+    "Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm "
+    "Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og".split()
+)
+_ELEMENT = re.compile(r"[A-Z][a-z]?")
+
+# Warnings the baseline emits when it breaks a bond to a metal
+# (`runichi3.c:563` and `:683`). Both can appear for one structure.
+METAL_DISCONNECTED = "Metal was disconnected"
+SALT_DISCONNECTED = "Salt was disconnected"
 
 
 class Mismatch(BaseModel):
@@ -163,6 +186,10 @@ class Classification(BaseModel):
     reference_inchi: str
     dev_mi_inchi: str
     recmet_inchi: str
+    # The baseline's warning text from the -RecMet re-run, and whether the `/r`
+    # layer named the same disconnection route (`route_check`).
+    recmet_message: str = ""
+    route_check: str = ""
     # Carried through from the raw results so the CSV answers key and exit-code
     # questions without anyone having to parse the logs.
     reference_key: str = ""
@@ -171,6 +198,19 @@ class Classification(BaseModel):
     reference_exit: int | None = None
     dev_mi_exit: int | None = None
     recmet_exit: int | None = None
+
+
+def formula_elements(inchi: str) -> set[str]:
+    """The element symbols in the formula layer of an InChI."""
+    body = inchi_body(inchi)
+    if not body:
+        return set()
+
+    return set(_ELEMENT.findall(body.split("/", 1)[0]))
+
+
+def has_metal(inchi: str) -> bool:
+    return not formula_elements(inchi).isdisjoint(METALS)
 
 
 def has_reconnected_layer(inchi: str) -> bool:
@@ -201,6 +241,10 @@ def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
         return "error_in_reference"
     if is_failed(mismatch.current):
         return "error_under_mi"
+    if not has_metal(mismatch.reference["inchi"]) and not has_metal(
+        mismatch.current["inchi"]
+    ):
+        return "metal_free"
     if recmet_result is None:
         return "recmet_missing"
     if is_failed(recmet_result):
@@ -211,6 +255,31 @@ def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
         return "recmet_equivalent"
 
     return "novel"
+
+
+# Outcomes of checking the `/r` proxy against the baseline's own message.
+ROUTE_CHECKS = ("agrees", "disagrees", "no_disconnection", "not_checked")
+
+
+def route_check(recmet_result: dict | None) -> str:
+    """Whether the `/r` layer names the route the baseline says it took.
+
+    The proxy reads an `/r` layer as metal disconnection, which `-RecMet`
+    reverses, and its absence as salt disconnection, which it cannot. The
+    baseline states the route in its warnings, so the proxy is checked rather
+    than assumed. `no_disconnection` is a structure for which the baseline broke
+    no bond to a metal at all."""
+    if recmet_result is None or is_failed(recmet_result):
+        return "not_checked"
+    message = recmet_result.get("message", "")
+    metal = METAL_DISCONNECTED in message
+    salt = SALT_DISCONNECTED in message
+    if not metal and not salt:
+        return "no_disconnection"
+    if has_reconnected_layer(recmet_result["inchi"]):
+        return "agrees" if metal else "disagrees"
+
+    return "agrees" if salt and not metal else "disagrees"
 
 
 def classify_mismatches(
@@ -228,6 +297,10 @@ def classify_mismatches(
                 reference_inchi=mismatch.reference["inchi"],
                 dev_mi_inchi=mismatch.current["inchi"],
                 recmet_inchi=recmet_result["inchi"] if recmet_result else "",
+                recmet_message=recmet_result.get("message", "")
+                if recmet_result
+                else "",
+                route_check=route_check(recmet_result),
                 reference_key=mismatch.reference.get("key", ""),
                 dev_mi_key=mismatch.current.get("key", ""),
                 recmet_key=recmet_result.get("key", "") if recmet_result else "",
@@ -251,6 +324,8 @@ CSV_FIELDS = [
     "reference_inchi",
     "dev_mi_inchi",
     "recmet_inchi",
+    "recmet_message",
+    "route_check",
     "reference_key",
     "dev_mi_key",
     "recmet_key",
@@ -279,6 +354,7 @@ def write_report(
         json.dump(
             {
                 "counts": classification_counts(classifications),
+                "route_check": dict(Counter(c.route_check for c in classifications)),
                 "total": len(classifications),
                 "comparison": comparison_summary or {},
             },
@@ -292,6 +368,7 @@ def write_report(
 # that is the actual cause: the old code breaks bonds to metals by two routes and
 # `-RecMet` only reverses one of them.
 ID_LIST_CAUSES = (
+    "metal_free",
     "recmet_equivalent",
     "novel_metal_pathway",
     "novel_salt_pathway",
@@ -404,12 +481,16 @@ def main() -> None:
     print(f"Parsed {len(mismatches)} mismatches from {args.regression_log}.")
     print(f"Ignored-difference tallies: {json.dumps(comparison_summary)}")
 
+    # The full consumer, for the baseline's warning message: it names the
+    # disconnection route that `route_check` verifies the `/r` proxy against.
+    # The subset is the mismatches only, so the extra fields cost little.
     recmet_results = recompute_subset(
         sdf_paths=data_config.sdf_paths,
         ids_by_sdf=mismatch_ids_by_sdf(mismatches),
         inchi_lib_path=args.recmet_lib_path,
         inchi_api_parameters="-RecMet",
         get_molfile_id=data_config.molfile_id_getter,
+        consumer=regression_consumer,
     )
     print(
         f"Re-computed {len(recmet_results)} structures with -RecMet using "
@@ -438,6 +519,10 @@ def main() -> None:
             json.dump(messages, json_file, indent=2)
 
     print(json.dumps(classification_counts(classifications), indent=2))
+    print(
+        "Route proxy check: "
+        f"{json.dumps(dict(Counter(c.route_check for c in classifications)))}"
+    )
 
 
 if __name__ == "__main__":
