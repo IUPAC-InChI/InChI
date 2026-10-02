@@ -194,3 +194,18 @@ def test_warning_changes_on_metal_free_structures_are_tallied_apart():
     assert summary["warning_only"] == 2
     assert summary["metal_free_message_only"] == 1
     assert summary["metal_free_warning_only"] == 1
+
+
+def test_only_prefix_changed_excludes_warning_and_message_changes():
+    comparator = MessageTallyingComparator()
+    body = TestMessageTallyingComparator.BODY
+    base = {"inchi": f"InChI=1S/{body}", "key": "K-SA", "exit": 1, "message": "m"}
+
+    comparator({**base, "inchi": f"InChI=1SB/{body}", "key": "K-SB"}, base)       # only prefix
+    comparator({**base, "inchi": f"InChI=1SB/{body}", "exit": 0}, base)           # + warning level
+    comparator({**base, "inchi": f"InChI=1SB/{body}", "message": ""}, base)       # + warning text
+    comparator(dict(base), base)                                                  # nothing
+
+    summary = comparator.summary()
+    assert summary["prefix_only"] == 3
+    assert summary["only_prefix_changed"] == 1

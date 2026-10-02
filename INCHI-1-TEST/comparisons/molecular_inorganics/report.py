@@ -495,6 +495,8 @@ def build_option_data(
         "examples": _pick_examples(rows),
         "metal_free": metal_free,
         "metal_free_warnings": metal_free_warnings,
+        # Classifications and logs from before the breakdown have neither part.
+        "prefix": summary.get("prefix"),
         "route": route,
         "gates": {
             # MI only changes how bonds to metals are treated.
@@ -683,6 +685,54 @@ def _route_table(route: dict | None) -> str:
     return f"""<div class="scroll"><table>
       <thead><tr><th>route check</th><th>meaning</th><th class="n">count</th></tr></thead>
       <tbody>{body}</tbody></table></div>"""
+
+
+def _prefix_section(option: dict) -> str:
+    """Prefix changes, split by what else changed and by the -RecMet layer."""
+    c = option["comparison"]
+    p = option["prefix"]
+    only = c.get("only_prefix_changed")
+    with_warning = (
+        c["prefix_only"] - only if only is not None and "prefix_only" in c else None
+    )
+
+    def cell(side: str, status: str):
+        return p[side][status] if p else None
+
+    rows = [
+        ("matched", "only the prefix changed: same body, exit code and message", only, True),
+        ("matched", "prefix and warning changed, same body", with_warning, False),
+        ("mismatched", "prefix changed, 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer = new InChI",
+         cell("prefix_changed", "equals_new_inchi"), True),
+        ("mismatched", "prefix changed, no 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer",
+         cell("prefix_changed", "no_layer"), True),
+        ("mismatched", "prefix changed, <span class=\"mono\">/r</span> layer differs from the new InChI",
+         cell("prefix_changed", "differs"), False),
+        ("mismatched", "prefix unchanged, <span class=\"mono\">/r</span> layer = new InChI",
+         cell("prefix_unchanged", "equals_new_inchi"), False),
+        ("mismatched", "prefix unchanged, no <span class=\"mono\">/r</span> layer",
+         cell("prefix_unchanged", "no_layer"), False),
+        ("mismatched", "prefix unchanged, <span class=\"mono\">/r</span> layer differs",
+         cell("prefix_unchanged", "differs"), False),
+    ]
+    body = "".join(
+        f'<tr><td>{side}</td><td>{"<b>" if headline else ""}{label}{"</b>" if headline else ""}</td>'
+        f'<td class="n">{_fmt(count)}</td></tr>'
+        for side, label, count, headline in rows
+    )
+
+    return f"""  <section>
+    <h3><span class="tag">A vs B</span> Prefix changes</h3>
+    <p>Every structure whose prefix differs from Run A&rsquo;s, by what else changed. Matched
+    structures come from Run B&rsquo;s tallies, mismatched ones from the classification; a
+    mismatch where either side failed has no prefix and is left out. The three rows in bold
+    answer: did only the prefix change, did the new InChI already exist as 1.07.5&rsquo;s
+    reconnected layer, or could 1.07.5 not reconnect at all.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>side</th><th>structures</th><th class="n">count</th></tr></thead>
+      <tbody>{body}</tbody></table></div>
+  </section>
+"""
 
 
 def _pathway_source(n: dict) -> str:
@@ -887,6 +937,7 @@ def _render_option(data: dict) -> str:
     ])}
   </section>
 
+{_prefix_section(option)}
   <section>
     <h3><span class="tag">A vs B</span> What the categories mean</h3>
     <p><b>MolecularInorganics does not create bonds. It declines to break the ones the molfile

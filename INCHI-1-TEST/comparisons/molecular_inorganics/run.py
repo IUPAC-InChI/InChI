@@ -90,12 +90,23 @@ class MessageTallyingComparator(PrefixInsensitiveComparator):
     structure without a metal even a warning change is unexpected. Those are
     counted again as `metal_free_warning_only` and `metal_free_message_only`;
     a metal-free structure whose body changed is a mismatch and is classified as
-    `metal_free` by `classify.py`."""
+    `metal_free` by `classify.py`.
+
+    `prefix_only` counts every matched structure whose raw InChI differs, even
+    when its warning changed too. `only_prefix_changed` is the strict subset:
+    the prefix differs and the exit code and message are identical. The key then
+    differs in its flag characters at most, since its hash blocks follow the
+    body."""
 
     def __init__(self) -> None:
         super().__init__()
         self.counts.update(
-            {"message_only": 0, "metal_free_warning_only": 0, "metal_free_message_only": 0}
+            {
+                "message_only": 0,
+                "only_prefix_changed": 0,
+                "metal_free_warning_only": 0,
+                "metal_free_message_only": 0,
+            }
         )
 
     def __call__(self, current: dict, reference: dict) -> bool:
@@ -106,6 +117,12 @@ class MessageTallyingComparator(PrefixInsensitiveComparator):
         message_changed = current.get("message") != reference.get("message")
         if message_changed:
             self.counts["message_only"] += 1
+        if (
+            current["inchi"] != reference["inchi"]
+            and current["exit"] == reference["exit"]
+            and not message_changed
+        ):
+            self.counts["only_prefix_changed"] += 1
         if not has_metal(current["inchi"]) and not has_metal(reference["inchi"]):
             if current["exit"] != reference["exit"]:
                 self.counts["metal_free_warning_only"] += 1

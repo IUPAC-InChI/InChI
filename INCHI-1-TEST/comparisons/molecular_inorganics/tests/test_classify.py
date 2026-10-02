@@ -618,3 +618,37 @@ def test_novel_pathway_falls_back_to_the_proxy_without_messages():
     # Classifications written before messages were stored have no column.
     assert novel_pathway(None, PTEN_RECMET) == "novel_metal_pathway"
     assert novel_pathway(None, "InChI=1/C8H11N.2ClH.Hg") == "novel_salt_pathway"
+
+
+def test_prefix_breakdown_splits_mismatches_by_prefix_and_recmet_layer(tmp_path):
+    from molecular_inorganics.classify import prefix_breakdown
+
+    def row(molfile_id, reference, current, recmet, category="novel"):
+        return Classification(molfile_id=molfile_id, sdf="A.sdf.gz", category=category,
+                              reference_inchi=reference, dev_mi_inchi=current,
+                              recmet_inchi=recmet)
+
+    rows = [
+        # Prefix changed, -RecMet's /r layer is the new InChI.
+        row("1", PTEN_PLAIN, PTEN_MI, PTEN_RECMET, "recmet_equivalent"),
+        # Prefix changed, /r layer exists but is something else.
+        row("2", PTEN_PLAIN, PTEN_MI, "InChI=1/X/c1/rY/c2"),
+        # Prefix changed, -RecMet made no /r layer, or nothing at all.
+        row("3", "InChI=1S/C8H11N.2ClH.Hg/c;;;", "InChI=1B/C8H11N.Cl2Hg/c;1-3-2",
+            "InChI=1/C8H11N.2ClH.Hg/c;;;"),
+        row("4", "InChI=1S/C8H11N.2ClH.Hg/c;;;", "InChI=1B/C8H11N.Cl2Hg/c;1-3-2", "",
+            "recmet_failed"),
+        # Prefix kept: the #280 metal-free case.
+        row("5", "InChI=1S/C7H10N2/c1", "InChI=1S/C7H11N2/c1", "InChI=1/C7H10N2/c1",
+            "metal_free"),
+        # A failed side has no prefix and is left out.
+        row("6", "", PTEN_MI, "", "error_in_reference"),
+    ]
+
+    assert prefix_breakdown(rows) == {
+        "prefix_changed": {"equals_new_inchi": 1, "differs": 1, "no_layer": 2},
+        "prefix_unchanged": {"equals_new_inchi": 0, "differs": 0, "no_layer": 1},
+    }
+    write_report(rows, tmp_path)
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["prefix"]["prefix_changed"]["no_layer"] == 2

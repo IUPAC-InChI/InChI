@@ -500,3 +500,44 @@ def test_novel_split_uses_the_stated_route_when_messages_are_stored(tmp_path):
     assert split["salt_pathway"] == 1
     assert split["no_disconnection"] == 1
     assert split["from_messages"] is True
+
+
+def test_prefix_section_answers_the_three_questions(classifications_path, tmp_path):
+    summary_path = tmp_path / "summary.json"
+    summary_path.write_text(json.dumps({
+        "counts": {"recmet_equivalent": 1, "novel": 2},
+        "prefix": {
+            "prefix_changed": {"equals_new_inchi": 40, "differs": 7, "no_layer": 13},
+            "prefix_unchanged": {"equals_new_inchi": 0, "differs": 0, "no_layer": 2},
+        },
+        "comparison": {"matched": 97, "mismatched": 62, "prefix_only": 90,
+                       "only_prefix_changed": 85},
+    }))
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    option = _part(render_html(data), "a-vs-b")
+    for label, count in [
+        ("only the prefix changed: same body, exit code and message", "85"),
+        ("prefix and warning changed, same body", "5"),
+        ("prefix changed, 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer = new InChI", "40"),
+        ("prefix changed, no 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer", "13"),
+    ]:
+        assert f'{label}</b></td><td class="n">{count}</td>' in option or (
+            f'{label}</td><td class="n">{count}</td>' in option
+        ), label
+
+
+def test_prefix_section_is_not_checked_on_older_output(classifications_path, summary_path):
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    option = _part(render_html(data), "a-vs-b")
+    assert "Prefix changes" in option
+    assert '<td class="n">—</td>' in option

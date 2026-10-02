@@ -323,6 +323,48 @@ def classify_mismatches(
     return classifications
 
 
+def inchi_prefix(inchi: str) -> str:
+    """The version-and-kind prefix of an InChI, e.g. `InChI=1S`; empty if none."""
+    return inchi.split("/", 1)[0] if "/" in inchi else ""
+
+
+# What the baseline's -RecMet re-run says about a mismatch: its `/r` layer equals
+# the option's InChI body, exists but differs, or does not exist -- including
+# when -RecMet produced nothing at all.
+RECMET_LAYERS = ("equals_new_inchi", "differs", "no_layer")
+
+
+def recmet_layer_status(classification: Classification) -> str:
+    recmet = classification.recmet_inchi
+    if not has_reconnected_layer(recmet):
+        return "no_layer"
+    if reconnected_layer(recmet) == inchi_body(classification.dev_mi_inchi):
+        return "equals_new_inchi"
+
+    return "differs"
+
+
+def prefix_breakdown(classifications: list[Classification]) -> dict[str, dict[str, int]]:
+    """Mismatches split by whether the prefix changed and by the -RecMet layer.
+
+    Only mismatches where both sides produced an InChI, since a prefix needs one.
+    The matched side of the same question is pass B's `only_prefix_changed`
+    tally."""
+    breakdown = {
+        side: {status: 0 for status in RECMET_LAYERS}
+        for side in ("prefix_changed", "prefix_unchanged")
+    }
+    for classification in classifications:
+        reference = inchi_prefix(classification.reference_inchi)
+        current = inchi_prefix(classification.dev_mi_inchi)
+        if not reference or not current:
+            continue
+        side = "prefix_changed" if reference != current else "prefix_unchanged"
+        breakdown[side][recmet_layer_status(classification)] += 1
+
+    return breakdown
+
+
 def classification_counts(classifications: list[Classification]) -> dict[str, int]:
     return dict(Counter(c.category for c in classifications))
 
@@ -367,6 +409,7 @@ def write_report(
             {
                 "counts": classification_counts(classifications),
                 "route_check": dict(Counter(c.route_check for c in classifications)),
+                "prefix": prefix_breakdown(classifications),
                 "total": len(classifications),
                 "comparison": comparison_summary or {},
             },
