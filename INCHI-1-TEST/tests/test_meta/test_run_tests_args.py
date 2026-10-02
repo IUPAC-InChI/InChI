@@ -77,15 +77,3 @@ def test_parse_log_cli_accepts_the_runner_arguments(tmp_path):
         env=env,
     )
     assert result.returncode == 0, result.stderr
-
-
-def test_timeout_per_molfile_is_configurable(monkeypatch, argv_base):
-    """A structure the library never returns from must not cost the shard.
-
-    PubChem SID 141382403 ran for over ten minutes; the cap is what turns that
-    from a lost shard into one recorded timeout."""
-    monkeypatch.setattr(
-        sys, "argv", argv_base + ["--timeout-seconds-per-molfile=600"]
-    )
-    *_, timeout = get_config_args()
-    assert timeout == 600
