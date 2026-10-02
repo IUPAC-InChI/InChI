@@ -163,6 +163,19 @@ To convince yourself that the tests fail once a regression has been introduced,
 change `INCHI_NAME` in `INCHI-1-SRC/INCHI_BASE/src/mode.h` and re-run the tests.
 The tests should now fail and indicate that the difference between the reference results and the latest test run is the change you've made.
 
+### Timeouts during canonicalization
+
+Consumers that spend longer than `timeout-seconds-per-molfile` (default 60)
+on a molfile are killed, and the molfile is yielded as a timeout.
+
+You can inspect an SDF for crashing or hanging structures using
+
+```Shell
+python INCHI-1-TEST/tests/test_library/inchi_tests/bisect_crash.py \
+    --sdf-path=.../Substance_141000001_141500000.sdf.gz \
+    --lib-path=.../libinchi.so
+```
+
 ### Inspect test results
 
 In addition to inspecting the raw logs, you can review the results by running

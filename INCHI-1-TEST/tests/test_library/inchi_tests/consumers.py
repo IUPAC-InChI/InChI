@@ -94,3 +94,22 @@ def invariance_consumer(
             "variants": variants,
         },
     )
+
+
+def inchi_body(inchi: str) -> str:
+    """The InChI minus its version-and-kind prefix.
+
+    `-MolecularInorganics` emits `InChI=1B/`, `-RecMet` emits `InChI=1/`, and the
+    standard prefix is `InChI=1S/` -- for every structure, metal or not
+    (`ichiprt1.c:1678` sets `is_beta` from the option alone). Comparing raw strings
+    across option sets would therefore mismatch on 100% of any corpus."""
+    return inchi.split("/", 1)[1] if "/" in inchi else ""
+
+
+def is_failed(result: dict) -> bool:
+    """Whether a result represents a failure rather than a warning.
+
+    `inchi_api.h:693-694`: `inchi_Ret_WARNING = 1`, `inchi_Ret_ERROR = 2`.
+    `runichi3.c:683` warns on every metal disconnection, so exit code 1 is the norm
+    on structures with metals."""
+    return result["exit"] >= 2 or not result["inchi"]

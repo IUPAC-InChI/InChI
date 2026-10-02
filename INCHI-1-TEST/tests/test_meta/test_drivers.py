@@ -10,7 +10,9 @@ from functools import partial
 from sdf_pipeline import drivers, core
 from consumers import (
     regression_consumer,
+    two_diff_regression_consumer,
     invariance_consumer,
+    two_diff_invariance_consumer,
     raising_consumer,
     segfaulting_consumer,
 )
@@ -91,6 +93,30 @@ def test_regression_driver(
     }
 
 
+def test_regression_driver_does_not_mask_unexpected_failure(
+    sdf_path, reference_path, caplog
+):
+    # "9261759198" is the first record and "1690718558" is the last record in
+    # mcule_20000.sdf.gz. With a single consumer process, results are yielded in
+    # SDF order, so the unexpected failure is seen before the expected one.
+    # A later expected failure must not reset the exit code back to 0.
+    caplog.set_level(logging.INFO, logger="sdf_pipeline")
+    exit_code = drivers.regression(
+        sdf_path=sdf_path,
+        reference_path=reference_path,
+        consumer_function=two_diff_regression_consumer,
+        get_molfile_id=_get_mcule_id,
+        number_of_consumer_processes=1,
+        expected_failures={"1690718558"},
+    )
+    assert exit_code == 1
+    logged_ids = {
+        json.loads(record.message[record.message.index("{") :])["molfile_id"]
+        for record in caplog.records
+    }
+    assert logged_ids == {"9261759198", "1690718558"}
+
+
 @pytest.mark.parametrize("expected_failures,exit_code", [({}, 1), ({"9261759198"}, 0)])
 def test_invariance_driver(sdf_path, caplog, expected_failures, exit_code):
     caplog.set_level(logging.INFO, logger="sdf_pipeline")
@@ -116,6 +142,27 @@ def test_invariance_driver(sdf_path, caplog, expected_failures, exit_code):
     assert log_entry["variants"] == ["A", "B"]
 
 
+def test_invariance_driver_does_not_mask_unexpected_failure(sdf_path, caplog):
+    # See test_regression_driver_does_not_mask_unexpected_failure: with a single
+    # consumer process the unexpected failure ("9261759198", first record) is
+    # seen before the expected one ("1690718558", last record), and a later
+    # expected failure must not reset the exit code back to 0.
+    caplog.set_level(logging.INFO, logger="sdf_pipeline")
+    exit_code = drivers.invariance(
+        sdf_path=sdf_path,
+        consumer_function=two_diff_invariance_consumer,
+        get_molfile_id=_get_mcule_id,
+        number_of_consumer_processes=1,
+        expected_failures={"1690718558"},
+    )
+    assert exit_code == 1
+    logged_ids = {
+        json.loads(record.message[record.message.index("{") :])["molfile_id"]
+        for record in caplog.records
+    }
+    assert logged_ids == {"9261759198", "1690718558"}
+
+
 @pytest.mark.parametrize("consumer", [raising_consumer, segfaulting_consumer])
 def test_core_raises(sdf_path, caplog, consumer):
     caplog.set_level(logging.ERROR, logger="sdf_pipeline")
@@ -130,4 +177,70 @@ def test_core_raises(sdf_path, caplog, consumer):
     assert (
         caplog.records[0].message
         == f"could not process {sdf_path}: A process terminated unexpectedly."
+    )
+
+
+def test_regression_driver_accepts_a_compare_hook(sdf_path, tmp_path, caplog):
+    """A custom comparator can accept results that differ byte-for-byte."""
+    reference_path = tmp_path / "reference.sqlite"
+    drivers.regression_reference(
+        sdf_path=sdf_path,
+        reference_path=reference_path,
+        consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+        get_molfile_id=_get_mcule_id,
+        number_of_consumer_processes=2,
+    )
+
+    def always_match(current: dict, reference: dict) -> bool:
+        return True
+
+    def never_match(current: dict, reference: dict) -> bool:
+        return False
+
+    with caplog.at_level(logging.INFO):
+        exit_code = drivers.regression(
+            sdf_path=sdf_path,
+            reference_path=reference_path,
+            consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+            compare=always_match,
+        )
+    assert exit_code == 0
+    assert "regression test failed" not in caplog.text
+
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        exit_code = drivers.regression(
+            sdf_path=sdf_path,
+            reference_path=reference_path,
+            consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+            compare=never_match,
+        )
+    assert exit_code == 1
+    assert "regression test failed" in caplog.text
+
+
+def test_regression_driver_without_compare_hook_is_byte_exact(sdf_path, tmp_path):
+    """The default path must be unchanged: identical input compares equal."""
+    reference_path = tmp_path / "reference.sqlite"
+    drivers.regression_reference(
+        sdf_path=sdf_path,
+        reference_path=reference_path,
+        consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+        get_molfile_id=_get_mcule_id,
+        number_of_consumer_processes=2,
+    )
+
+    assert (
+        drivers.regression(
+            sdf_path=sdf_path,
+            reference_path=reference_path,
+            consumer_function=partial(regression_consumer, get_molfile_id=_get_mcule_id),
+            get_molfile_id=_get_mcule_id,
+            number_of_consumer_processes=2,
+        )
+        == 0
     )
