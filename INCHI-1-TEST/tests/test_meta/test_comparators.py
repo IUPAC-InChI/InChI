@@ -1,5 +1,10 @@
+import pytest
 from inchi_tests.consumers import inchi_body, is_failed
-from inchi_tests.comparators import PrefixInsensitiveComparator
+from inchi_tests.comparators import (
+    PrefixInsensitiveComparator,
+    compare_ignoring_prefix,
+    key_without_flags,
+)
 
 
 def test_inchi_body_strips_the_version_and_kind_prefix():
@@ -149,3 +154,58 @@ def test_identical_raw_results_tally_nothing_extra():
         "both_failed": 0,
         "failure_kind_only": 0,
     }
+
+
+# A row as the CI references store it (`consumers.regression_consumer`).
+CI_ROW = {
+    "inchi": "InChI=1S/ClH.Na/h1H;/q;+1/p-1",
+    "key": "FAPWRFPIFSIZLT-UHFFFAOYSA-M",
+    "aux": "AuxInfo=1/0/N:1;2/rA:2ClNa/rB:/rC:;;",
+    "log": "",
+    "message": "",
+    "exit": 0,
+}
+
+
+def test_key_without_flags_drops_the_standard_and_version_characters():
+    assert key_without_flags("FAPWRFPIFSIZLT-UHFFFAOYSA-M") == "FAPWRFPIFSIZLT-UHFFFAOY-M"
+    assert key_without_flags("FAPWRFPIFSIZLT-UHFFFAOYSB-M") == "FAPWRFPIFSIZLT-UHFFFAOY-M"
+    assert key_without_flags("") == ""
+
+
+def test_compare_ignoring_prefix_accepts_the_1sb_prefix_and_key_flag():
+    # #280 changes only these two fields for ionic NaCl.
+    current = {
+        **CI_ROW,
+        "inchi": "InChI=1SB/ClH.Na/h1H;/q;+1/p-1",
+        "key": "FAPWRFPIFSIZLT-UHFFFAOYSB-M",
+    }
+
+    assert compare_ignoring_prefix(current, CI_ROW) is True
+    assert compare_ignoring_prefix(dict(CI_ROW), CI_ROW) is True
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ("inchi", "InChI=1S/ClH.Na/h1H;/q;+1"),
+        ("key", "FAPWRFPIFSIZLT-UHFFFAOYSA-N"),
+        ("key", "XXXXXXXXXXXXXX-UHFFFAOYSA-M"),
+        ("aux", "AuxInfo=1/0/N:2;1/rA:2ClNa/rB:/rC:;;"),
+        ("log", "Warning (Metal was disconnected)"),
+        ("message", "Metal was disconnected"),
+        ("exit", 1),
+    ],
+)
+def test_compare_ignoring_prefix_is_exact_on_everything_else(field, value):
+    """Unlike `PrefixInsensitiveComparator`, which ignores all of these but the body."""
+    current = {**CI_ROW, "inchi": "InChI=1SB/ClH.Na/h1H;/q;+1/p-1", field: value}
+
+    assert compare_ignoring_prefix(current, CI_ROW) is False
+
+
+def test_compare_ignoring_prefix_treats_a_failure_flip_as_a_mismatch():
+    failed = {**CI_ROW, "inchi": "", "key": "", "aux": "", "exit": 2}
+
+    assert compare_ignoring_prefix(failed, CI_ROW) is False
+    assert compare_ignoring_prefix(failed, dict(failed)) is True

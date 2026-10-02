@@ -3,6 +3,9 @@ import subprocess
 import sys
 from pathlib import Path
 import pytest
+from types import SimpleNamespace
+from inchi_tests import run_tests
+from inchi_tests.comparators import compare_ignoring_prefix
 from inchi_tests.utils import get_config_args
 
 
@@ -89,3 +92,25 @@ def test_timeout_per_molfile_is_configurable(monkeypatch, argv_base):
     )
     *_, timeout = get_config_args()
     assert timeout == 600
+
+
+
+def test_regression_compares_ignoring_the_prefix(monkeypatch, tmp_path):
+    """CI regression must not fail on `1S` vs `1SB` alone (review of #280)."""
+    calls = []
+    monkeypatch.setattr(
+        run_tests.drivers, "regression", lambda **kwargs: calls.append(kwargs) or 0
+    )
+    data_config = SimpleNamespace(
+        name="x",
+        path=tmp_path,
+        sdf_paths=[tmp_path / "x.sdf.gz"],
+        molfile_id_getter=lambda molfile: "",
+        expected_failures={},
+    )
+
+    with pytest.raises(SystemExit) as exit_info:
+        run_tests.main("regression", "libinchi.so", data_config)
+
+    assert exit_info.value.code == 0
+    assert calls[0]["compare"] is compare_ignoring_prefix

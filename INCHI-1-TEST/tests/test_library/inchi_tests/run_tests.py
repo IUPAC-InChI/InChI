@@ -9,6 +9,7 @@ from pathlib import Path
 from sdf_pipeline import drivers
 from inchi_tests.utils import get_current_time, get_progress, get_config_args
 from inchi_tests.consumers import regression_consumer, invariance_consumer
+from inchi_tests.comparators import compare_ignoring_prefix
 
 
 def main(test, inchi_lib_path, data_config, timeout_seconds_per_molfile=60) -> None:
@@ -55,6 +56,7 @@ def main(test, inchi_lib_path, data_config, timeout_seconds_per_molfile=60) -> N
                             number_of_consumer_processes=n_processes,
                             expected_failures=expected_failures,
                             timeout_seconds_per_molfile=timeout_seconds_per_molfile,
+                            compare=compare_ignoring_prefix,
                         ),
                     )
 
