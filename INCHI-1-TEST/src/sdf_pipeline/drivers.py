@@ -103,7 +103,7 @@ def regression(
 
             current_result = json.dumps(consumer_result.result)
             if compare is None:
-                # Default: byte-for-byte, as the CI regression tests rely on.
+                # Default: byte-for-byte.
                 is_match = current_result == reference_result
             else:
                 # The caller decides what counts as a match. `compare` receives the

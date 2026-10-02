@@ -7,6 +7,40 @@ from collections import Counter
 from inchi_tests.consumers import inchi_body, is_failed
 
 
+def key_without_flags(key: str) -> str:
+    """The InChIKey minus the two characters that encode the InChI prefix.
+
+    The second block ends in the standard/non-standard flag (`S`/`N`) and the
+    version character (`A` for version 1), e.g. `LFQSCWFLJHTTHZ-UHFFFAOYSA-N`. The
+    hash blocks are computed from the InChI without its prefix, so they do not
+    move when only the prefix does. A failed run has no key; it is left as is."""
+    if len(key) != 27:
+        return key
+
+    return key[:23] + key[25:]
+
+
+def _without_prefix(result: dict) -> dict:
+    return {
+        **result,
+        "inchi": inchi_body(result["inchi"]),
+        "key": key_without_flags(result["key"]),
+    }
+
+
+def compare_ignoring_prefix(current: dict, reference: dict) -> bool:
+    """The CI regression rule: byte-for-byte, except for the InChI prefix.
+
+    Decided in the review of #280 (30.09.2026): making MolecularInorganics the
+    default changes the standard prefix from `1S` to `1SB`, and that alone must not
+    fail every regression test. Only the prefix and the key characters encoding it
+    are ignored; `aux`, `log`, `message` and `exit` must still match exactly.
+
+    Deliberately stricter than `PrefixInsensitiveComparator`, which compares only
+    the InChI body and the failure state."""
+    return _without_prefix(current) == _without_prefix(reference)
+
+
 # TODO: rename "prefix" here and in `inchi_body` once we've settled on names for
 # the constituent parts of the prefix, i.e., the `1`, `B`, and `B` in `1BB`.
 class PrefixInsensitiveComparator:
