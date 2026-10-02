@@ -163,37 +163,12 @@ To convince yourself that the tests fail once a regression has been introduced,
 change `INCHI_NAME` in `INCHI-1-SRC/INCHI_BASE/src/mode.h` and re-run the tests.
 The tests should now fail and indicate that the difference between the reference results and the latest test run is the change you've made.
 
-### When a structure never comes back
+### Timeouts during canonicalization
 
-Canonicalization can take unbounded time on a structure whose atoms are nearly
-all equivalent. PubChem SID 141382403 -- 238 atoms, 204 of them phosphorus, 237
-bonds -- ran for over ten minutes under v1.07.5 without finishing, and is not
-known to terminate at all.
+Consumers that spend longer than `timeout-seconds-per-molfile` (default 60)
+on a molfile are killed, and the molfile is yielded as a timeout.
 
-That used to cost the whole SDF. `core.run` waited 60s for *any* result, got
-none because the other consumers had finished, and reported `A process
-terminated unexpectedly` -- a guess, and a wrong one: the consumer was alive and
-still computing. All 500000 records of that SDF were lost.
-
-A consumer that spends longer than `--timeout-seconds-per-molfile` (default 60)
-on one record is now killed, and the record is yielded as a timeout instead:
-
-- `regression-reference` writes a row recording the timeout, so the reference
-  stays complete. A reference that silently omits a molfile makes every later
-  run fail on "Reference contains molfile IDs that haven't been processed",
-  which names the SDF but not the reason.
-- `regression` and `invariance` log `timed out:{...}` with the molfile ID and
-  the seconds, and fail the run unless the ID is in the dataset's
-  `expected_failures`.
-
-Note that the old behaviour was also *load-dependent*: the 60s was silence on
-the result queue, not a per-record budget, so a slow record only aborted the
-SDF once its neighbours had finished and stopped producing results. The cap is
-now on the record itself, which is deterministic.
-
-`bisect_crash.py` walks an SDF in a single process and fsyncs the current
-molfile ID before each call, so it names the offending structure whether it
-crashes or hangs:
+You can inspect an SDF for crashing or hanging structures using
 
 ```Shell
 python INCHI-1-TEST/tests/test_library/inchi_tests/bisect_crash.py \
