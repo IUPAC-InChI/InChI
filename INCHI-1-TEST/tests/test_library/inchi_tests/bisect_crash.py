@@ -40,7 +40,7 @@ from inchi_tests.utils import get_molfile_id_pubchem
 
 
 def _compute(molfile: str, inchi_lib_path: str, inchi_api_parameters: str) -> None:
-    """Exactly what the campaign consumer asks of the library, nothing more."""
+    """Only the library call a consumer makes per molfile, nothing more."""
     inchi_lib = ctypes.CDLL(inchi_lib_path)
     make_inchi_from_molfile_text(inchi_lib, molfile, inchi_api_parameters)
 
@@ -125,7 +125,7 @@ def main() -> None:
                 )
             elif worker.exitcode != 0:
                 # The child died where this process would have. Report and stop:
-                # the ID is the answer the campaign log could not give.
+                # the ID is the answer the regression log could not give.
                 print(
                     f"\nCRASH record {index}, molfile ID {molfile_id}: "
                     f"child exited with {worker.exitcode}",

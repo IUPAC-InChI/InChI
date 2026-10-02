@@ -4,7 +4,7 @@ PubChem substance 141382403 -- 238 atoms, 204 of them phosphorus -- ran for over
 ten minutes without finishing. `core.run` waited 60s for any result, got none,
 and reported "A process terminated unexpectedly", which was a guess: the
 consumer was alive and still computing. The whole 500000-record shard was lost,
-and `run_campaign.sh` stopped the campaign on it.
+and the run stopped on it.
 """
 
 import gzip
