@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from molecular_inorganics.consumers import raw_regression_consumer
+from molecular_inorganics.consumers import RESULT_FIELDS, raw_regression_consumer
 
 
 LIB_PATH = "CMake_build/full_build/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so"
@@ -39,7 +39,7 @@ def test_raw_consumer_stores_raw_results(lib_path):
     plain = consume("")
     molecular_inorganics = consume("-MolecularInorganics")
 
-    assert set(plain.result) == {"inchi", "key", "exit"}
+    assert set(plain.result) == RESULT_FIELDS == {"inchi", "key", "exit", "message"}
     assert plain.info.consumer == "raw-regression"
     assert plain.molfile_id == "ethanol"
     # Raw: prefixes and key flags are kept exactly as the library emitted them.

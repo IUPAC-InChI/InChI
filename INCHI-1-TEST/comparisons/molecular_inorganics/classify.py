@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Callable
 from pydantic import BaseModel
 from sdf_pipeline.utils import select_records_from_gzipped_sdf
-from inchi_tests.consumers import regression_consumer, inchi_body, is_failed
+from inchi_tests.consumers import inchi_body, is_failed
 from molecular_inorganics.consumers import raw_regression_consumer
 
 _FAILURE_PATTERN = re.compile(
@@ -186,8 +186,10 @@ class Classification(BaseModel):
     reference_inchi: str
     dev_mi_inchi: str
     recmet_inchi: str
-    # The baseline's warning text from the -RecMet re-run, and whether the `/r`
-    # layer named the same disconnection route (`route_check`).
+    # Warning text of all three sides; the -RecMet one names the disconnection
+    # route, and `route_check` records whether the `/r` layer agrees with it.
+    reference_message: str = ""
+    dev_mi_message: str = ""
     recmet_message: str = ""
     route_check: str = ""
     # Carried through from the raw results so the CSV answers key and exit-code
@@ -297,6 +299,8 @@ def classify_mismatches(
                 reference_inchi=mismatch.reference["inchi"],
                 dev_mi_inchi=mismatch.current["inchi"],
                 recmet_inchi=recmet_result["inchi"] if recmet_result else "",
+                reference_message=mismatch.reference.get("message", ""),
+                dev_mi_message=mismatch.current.get("message", ""),
                 recmet_message=recmet_result.get("message", "")
                 if recmet_result
                 else "",
@@ -324,6 +328,8 @@ CSV_FIELDS = [
     "reference_inchi",
     "dev_mi_inchi",
     "recmet_inchi",
+    "reference_message",
+    "dev_mi_message",
     "recmet_message",
     "route_check",
     "reference_key",
@@ -425,34 +431,13 @@ def write_id_lists(
     return counts
 
 
-def explain_failures(
-    classifications: list[Classification],
-    sdf_paths: list[Path],
-    mi_lib_path: str,
-    get_molfile_id: Callable,
-) -> dict[str, str]:
-    """Recover the InChI `message` for the `error_under_mi` subset.
-
-    The raw consumer omits `message`, so a failure under MI has no stated
-    reason. That subset is small enough to re-run with the full consumer."""
-    failures = [c for c in classifications if c.category == "error_under_mi"]
-    if not failures:
-        return {}
-
-    ids_by_sdf: dict[str, set[str]] = defaultdict(set)
-    for classification in failures:
-        ids_by_sdf[classification.sdf].add(classification.molfile_id)
-
-    results = recompute_subset(
-        sdf_paths=sdf_paths,
-        ids_by_sdf=dict(ids_by_sdf),
-        inchi_lib_path=mi_lib_path,
-        inchi_api_parameters="-MolecularInorganics",
-        get_molfile_id=get_molfile_id,
-        consumer=regression_consumer,
-    )
-
-    return {molfile_id: result["message"] for molfile_id, result in results.items()}
+def explain_failures(classifications: list[Classification]) -> dict[str, str]:
+    """The InChI `message` of every structure that failed only under MI."""
+    return {
+        c.molfile_id: c.dev_mi_message
+        for c in classifications
+        if c.category == "error_under_mi"
+    }
 
 
 def _load_data_config(data_config_path: str):
@@ -469,7 +454,6 @@ def main() -> None:
     parser.add_argument(
         "--recmet-lib-path", required=True, type=str, help="v1.07.5 libinchi.so"
     )
-    parser.add_argument("--mi-lib-path", required=True, type=str, help="dev libinchi.so")
     parser.add_argument("--data-config", required=True, type=str)
     parser.add_argument("--output", required=True, type=str)
     args = parser.parse_args()
@@ -481,16 +465,12 @@ def main() -> None:
     print(f"Parsed {len(mismatches)} mismatches from {args.regression_log}.")
     print(f"Ignored-difference tallies: {json.dumps(comparison_summary)}")
 
-    # The full consumer, for the baseline's warning message: it names the
-    # disconnection route that `route_check` verifies the `/r` proxy against.
-    # The subset is the mismatches only, so the extra fields cost little.
     recmet_results = recompute_subset(
         sdf_paths=data_config.sdf_paths,
         ids_by_sdf=mismatch_ids_by_sdf(mismatches),
         inchi_lib_path=args.recmet_lib_path,
         inchi_api_parameters="-RecMet",
         get_molfile_id=data_config.molfile_id_getter,
-        consumer=regression_consumer,
     )
     print(
         f"Re-computed {len(recmet_results)} structures with -RecMet using "
@@ -506,12 +486,7 @@ def main() -> None:
     for cause, count in id_counts.items():
         print(f"  {count:>8,}  {cause}.txt")
 
-    messages = explain_failures(
-        classifications,
-        data_config.sdf_paths,
-        args.mi_lib_path,
-        data_config.molfile_id_getter,
-    )
+    messages = explain_failures(classifications)
     if messages:
         with open(
             output_dir.joinpath("error_under_mi_messages.json"), "w", encoding="utf-8"

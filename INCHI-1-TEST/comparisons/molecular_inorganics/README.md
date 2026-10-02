@@ -96,19 +96,27 @@ sets `is_beta` from the option alone (`ichiprt1.c:1678`), so *every* structure
 changes prefix (`InChI=1S/` to `InChI=1B/`) and InChIKey flag — metal-free
 organics included — and a byte comparison would mark an entire dataset as changed.
 
-The passes therefore store the raw result (full InChI, key, exit code) and decide
-at comparison time what counts as a match. Pass B uses
-`--compare=prefix-insensitive`, i.e. `inchi_tests.comparators.PrefixInsensitiveComparator`:
+The passes therefore store the raw result (full InChI, key, exit code and the
+warning `message`) and decide at comparison time what counts as a match. `aux` and
+`log` are not stored; they would dominate reference size at PubChem scale. A
+reference storing any other set of fields, e.g. one written before `message` was
+added, is refused with an `Aborted` line naming the file: delete it and the
+reference pass recomputes it.
+
+Pass B uses `--compare=prefix-insensitive`, i.e. `run.MessageTallyingComparator`,
+which is `inchi_tests.comparators.PrefixInsensitiveComparator` plus one tally:
 it compares the InChI *body* plus a failure flag, where failure means `exit >= 2`
 or an empty InChI. Exit code 1 is a warning, and a metal disconnection always
 warns, so treating it as failure would misclassify most of the structures of
 interest. The differences it ignores are counted and logged as `prefix_only`,
-`key_only`, `warning_only`, `both_failed` and `failure_kind_only` — the last being
-two passes that both failed on the same body with different error codes.
+`key_only`, `warning_only`, `message_only`, `both_failed` and `failure_kind_only` —
+the last being two passes that both failed on the same body with different error
+codes.
 
-Pass C reads the same tagged reference as pass B but keeps `--compare=exact`. A
-prefix-insensitive pass C could not see a changed prefix, InChIKey or warning
-level, which is exactly the version drift it exists to catch.
+Pass C reads the same tagged reference as pass B but keeps `--compare=exact`,
+byte-for-byte on all four stored fields. A prefix-insensitive pass C could not see
+a changed prefix, InChIKey, warning level or warning text, which is exactly the
+version drift it exists to catch.
 
 References are namespaced by `--run-tag` (`<shard>.<tag>.regression_reference.sqlite`)
 and logs by `--log-tag`, so the comparison never reads or overwrites the
@@ -132,16 +140,17 @@ them, so:
   one side produced no InChI.
 
 The `/r` layer is only a proxy for the route the old code took, so it is checked
-per structure: the `-RecMet` re-run keeps the baseline's warning message, and
+per structure: the `-RecMet` re-run stores the baseline's warning message, and
 `route_check` records whether "Metal was disconnected" comes with an `/r` layer
 and "Salt was disconnected" alone without one (`agrees` / `disagrees`), whether
 the baseline disconnected nothing (`no_disconnection`), or whether there was no
 usable `-RecMet` result (`not_checked`).
 
-`classifications.csv` carries one row per mismatch with the InChI, InChIKey and
-exit code of all three sides — baseline, the option, and the `-RecMet` re-check —
-plus the baseline's message and the route check, so it can be queried without
-going back to the logs. An empty `recmet_*` cell means no re-computation was made
+`classifications.csv` carries one row per mismatch with the InChI, InChIKey, exit
+code and message of all three sides — baseline, the option, and the `-RecMet`
+re-check — plus the route check, so it can be queried without going back to the
+logs. `error_under_mi_messages.json` lists the message of every structure that
+failed only under the option. An empty `recmet_*` cell means no re-computation was made
 for that structure.
 
 ### Mismatch IDs per cause
@@ -193,7 +202,7 @@ passes all of them; point a rebuild at the copies in `logs/`.
 | --- | --- |
 | `run_comparison.sh` | the whole comparison, end to end |
 | `run.py` | one pass: raw results, tagged references and logs, optional prefix-insensitive comparison |
-| `consumers.py` | `raw_regression_consumer`: InChI, key and exit code, unnormalised |
+| `consumers.py` | `raw_regression_consumer`: InChI, key, exit code and message, unnormalised |
 | `classify.py` | parses pass B's log, re-computes mismatches with `-RecMet`, classifies them |
 | `report.py` | renders `report.html` from `classify.py`'s output |
 | `tests/` | `pytest INCHI-1-TEST/comparisons/molecular_inorganics/tests` |

@@ -580,3 +580,22 @@ def test_classification_carries_the_message_and_route_check(tmp_path):
     assert summary["route_check"] == {"agrees": 1}
     with open(tmp_path / "classifications.csv", newline="", encoding="utf-8") as csv_file:
         assert next(csv.DictReader(csv_file))["route_check"] == "agrees"
+
+
+def test_messages_of_all_three_sides_reach_the_classification():
+    from molecular_inorganics.classify import explain_failures
+
+    mismatches = [
+        _mismatch("1", {"inchi": PTEN_MI, "key": "K1", "exit": 0, "message": ""},
+                  {"inchi": PTEN_PLAIN, "key": "K2", "exit": 1, "message": "Metal was disconnected"}),
+        _mismatch("2", {"inchi": "", "key": "", "exit": 2, "message": "Unknown element"},
+                  {"inchi": PTEN_PLAIN, "key": "K2", "exit": 1, "message": "Metal was disconnected"}),
+    ]
+    recmet = {"1": {"inchi": PTEN_RECMET, "key": "K3", "exit": 1, "message": "Metal was disconnected"}}
+
+    first, second = classify_mismatches(mismatches, recmet)
+    assert first.reference_message == "Metal was disconnected"
+    assert first.dev_mi_message == ""
+    assert first.recmet_message == "Metal was disconnected"
+    # Failures under MI are explained from the stored message, no re-run.
+    assert explain_failures([first, second]) == {"2": "Unknown element"}

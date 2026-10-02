@@ -4,14 +4,15 @@ The shared `inchi_tests/run_tests.py` compares byte-for-byte against the committ
 references. A comparison pass differs in four ways, which is why it has its own
 runner rather than flags on the shared one:
 
-- results are stored raw, prefix included (`consumers.raw_regression_consumer`);
+- results are stored raw, prefix included (`consumers.raw_regression_consumer`),
+  and a reference storing other fields is refused (`check_reference_format`);
 - references are namespaced by `--run-tag`, so a pass never reads or overwrites
   the committed `<sdf>.regression_reference.sqlite`;
 - logs are namespaced by `--log-tag`, so the three passes can be told apart;
 - every regression pass logs its tallies as a `Comparison summary` line, which
   `classify.py` and `report.py` read back: `--compare=exact` through
   `ExactComparator`, `--compare=prefix-insensitive` through
-  `PrefixInsensitiveComparator`.
+  `MessageTallyingComparator`.
 
 Run as a module from `INCHI-1-TEST/comparisons`, e.g.
 `python -m molecular_inorganics.run --test=regression ...`."""
@@ -23,6 +24,7 @@ import logging
 import multiprocessing
 import os
 import re
+import sqlite3
 import sys
 from datetime import datetime
 from functools import partial
@@ -30,7 +32,8 @@ from pathlib import Path
 from sdf_pipeline import drivers
 from inchi_tests.comparators import PrefixInsensitiveComparator
 from inchi_tests.utils import PathValidator, get_current_time, get_progress
-from molecular_inorganics.consumers import raw_regression_consumer
+from inchi_tests.consumers import is_failed
+from molecular_inorganics.consumers import RESULT_FIELDS, raw_regression_consumer
 
 
 TAG_PATTERN = re.compile(r"^[A-Za-z0-9_]+$")
@@ -75,6 +78,51 @@ class ExactComparator:
         return dict(self.counts)
 
 
+class MessageTallyingComparator(PrefixInsensitiveComparator):
+    """The option pass's rule, plus a tally of changed warning messages.
+
+    Matching is unchanged: the InChI body and the failure state. A matched
+    structure whose warning text differs is counted as `message_only`, so a
+    change in what the library warns about is visible without failing it."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.counts["message_only"] = 0
+
+    def __call__(self, current: dict, reference: dict) -> bool:
+        is_match = super().__call__(current, reference)
+        if (
+            is_match
+            and not is_failed(current)
+            and current.get("message") != reference.get("message")
+        ):
+            self.counts["message_only"] += 1
+
+        return is_match
+
+
+def check_reference_format(reference_path: Path) -> None:
+    """Refuse a reference whose rows do not store `RESULT_FIELDS`.
+
+    A reference written before the stored fields last changed would otherwise be
+    used as is: the reference pass skips any shard whose file exists, the control
+    pass would then mismatch on every structure, and the option pass would
+    compare without the fields it reports on. Timeout rows store
+    `timeout_seconds` instead and are skipped."""
+    with sqlite3.connect(reference_path) as reference_db:
+        for (result,) in reference_db.execute("SELECT result FROM results"):
+            fields = set(json.loads(result))
+            if fields == {"timeout_seconds"}:
+                continue
+            if fields != RESULT_FIELDS:
+                raise ValueError(
+                    f"{reference_path.name} stores {sorted(fields)}, not "
+                    f"{sorted(RESULT_FIELDS)}. It was written by an older version of "
+                    "the comparison; delete it and re-run the reference pass."
+                )
+            return
+
+
 def select_comparator(
     test: str, compare: str
 ) -> ExactComparator | PrefixInsensitiveComparator | None:
@@ -91,7 +139,7 @@ def select_comparator(
     if test != "regression":
         return None
     if compare == "prefix-insensitive":
-        return PrefixInsensitiveComparator()
+        return MessageTallyingComparator()
 
     return ExactComparator()
 
@@ -211,6 +259,7 @@ def main(args: argparse.Namespace, data_config) -> None:
         try:
             match test:
                 case "regression":
+                    check_reference_format(reference_path)
                     exit_code = max(
                         exit_code,
                         drivers.regression(
@@ -227,6 +276,7 @@ def main(args: argparse.Namespace, data_config) -> None:
 
                 case "regression-reference":
                     if reference_path.exists():
+                        check_reference_format(reference_path)
                         logging.info(f"Not re-computing reference for {sdf_path.name}.")
 
                         continue

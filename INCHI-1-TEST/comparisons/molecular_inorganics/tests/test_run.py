@@ -6,6 +6,8 @@ from molecular_inorganics.run import (
     log_filename,
     reference_filename,
     ExactComparator,
+    MessageTallyingComparator,
+    check_reference_format,
     select_comparator,
 )
 
@@ -94,10 +96,9 @@ class TestComparatorSelection:
         assert isinstance(select_comparator("regression", "exact"), ExactComparator)
 
     def test_prefix_insensitive_is_opt_in(self):
-        assert isinstance(
-            select_comparator("regression", "prefix-insensitive"),
-            PrefixInsensitiveComparator,
-        )
+        comparator = select_comparator("regression", "prefix-insensitive")
+        assert isinstance(comparator, MessageTallyingComparator)
+        assert isinstance(comparator, PrefixInsensitiveComparator)
 
     def test_reference_pass_never_compares(self):
         # A comparator here would log an all-zero summary that the report would read.
@@ -123,3 +124,55 @@ class TestExactComparator:
         assert comparator({**self.RESULT, field: value}, dict(self.RESULT)) is False
         assert comparator(dict(self.RESULT), dict(self.RESULT)) is True
         assert comparator.summary() == {"matched": 1, "mismatched": 1}
+
+
+class TestMessageTallyingComparator:
+    BODY = "C2H6Cl2N2Pt/c3-7(4)5-1-2-6-7/h5-6H,1-2H2"
+
+    def test_a_changed_message_is_tallied_not_failed(self):
+        comparator = MessageTallyingComparator()
+        current = {"inchi": f"InChI=1B/{self.BODY}", "key": "K", "exit": 1, "message": ""}
+        reference = {"inchi": f"InChI=1S/{self.BODY}", "key": "K", "exit": 1,
+                     "message": "Metal was disconnected"}
+
+        assert comparator(current, reference) is True
+        assert comparator.summary()["message_only"] == 1
+        assert comparator.summary()["prefix_only"] == 1
+
+    def test_mismatches_and_mutual_failures_are_not_message_changes(self):
+        comparator = MessageTallyingComparator()
+        comparator({"inchi": "InChI=1B/X", "key": "", "exit": 0, "message": "a"},
+                   {"inchi": "InChI=1S/Y", "key": "", "exit": 0, "message": "b"})
+        comparator({"inchi": "", "key": "", "exit": 2, "message": "a"},
+                   {"inchi": "", "key": "", "exit": 2, "message": "b"})
+
+        assert comparator.summary()["message_only"] == 0
+
+
+def _reference(path, *results):
+    import sqlite3
+
+    with sqlite3.connect(path) as db:
+        db.execute("CREATE TABLE results (molfile_id TEXT, time TEXT, info TEXT, result TEXT)")
+        db.executemany(
+            "INSERT INTO results VALUES (?, '', '{}', ?)",
+            [(str(i), json.dumps(result)) for i, result in enumerate(results)],
+        )
+    return path
+
+
+class TestCheckReferenceFormat:
+    CURRENT = {"inchi": "InChI=1S/CH4/h1H4", "key": "K", "exit": 0, "message": ""}
+
+    def test_accepts_the_current_fields_after_a_timeout_row(self, tmp_path):
+        check_reference_format(
+            _reference(tmp_path / "x.sqlite", {"timeout_seconds": 60.0}, self.CURRENT)
+        )
+
+    def test_refuses_a_reference_without_the_message(self, tmp_path):
+        """The 1 Oct references store inchi, key and exit only."""
+        old = {k: v for k, v in self.CURRENT.items() if k != "message"}
+        path = _reference(tmp_path / "Substance_1.sdf.ref_v1_07_5.regression_reference.sqlite", old)
+
+        with pytest.raises(ValueError, match="delete it and re-run the reference pass"):
+            check_reference_format(path)

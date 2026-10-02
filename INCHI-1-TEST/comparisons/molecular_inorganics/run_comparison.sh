@@ -199,7 +199,6 @@ step "8/8  Classify and report"
 "$PY" -m molecular_inorganics.classify \
     --regression-log="$run_b_log" \
     --recmet-lib-path="$BASELINE_LIB" \
-    --mi-lib-path="$DEV_LIB" \
     --data-config="$CONFIG" \
     --output="$OUT"
 "$PY" -m molecular_inorganics.report \

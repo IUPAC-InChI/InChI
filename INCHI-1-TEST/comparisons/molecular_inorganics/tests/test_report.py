@@ -426,3 +426,19 @@ def test_metal_free_mismatches_and_route_disagreements_fail_their_gates(
     html = _part(render_html(data), "a-vs-b")
     assert "4 structures without a metal changed." in html
     assert "ids/metal_free.txt" in html
+
+
+def test_message_only_is_shown_in_the_option_part(classifications_path, tmp_path):
+    summary_path = tmp_path / "summary.json"
+    summary_path.write_text(json.dumps({
+        "counts": {"recmet_equivalent": 1, "novel": 2},
+        "comparison": {"matched": 97, "mismatched": 3, "message_only": 12},
+    }))
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+    )
+    option = _part(render_html(data), "a-vs-b")
+    assert '<td>message_only</td><td class="n">12</td>' in option

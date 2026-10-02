@@ -706,8 +706,9 @@ def _render_control(data: dict) -> str:
     <span class="badge">A vs C &middot; control</span>
     <h2>Does the test build reproduce the baseline without options?</h2>
     <p class="rule">Run C: {escape(data["test_label"])}, no options. Compared with Run A
-    byte-for-byte on the three stored fields: <code>inchi</code> including its prefix,
-    <code>key</code> including its flag characters, and <code>exit</code>.</p>
+    byte-for-byte on the four stored fields: <code>inchi</code> including its prefix,
+    <code>key</code> including its flag characters, <code>exit</code> and the warning
+    <code>message</code>.</p>
   </div>
 
   <section>
@@ -730,10 +731,9 @@ def _render_control(data: dict) -> str:
 {_control_mismatches(control)}
   <section>
     <h3><span class="tag">A vs C</span> What this cannot see</h3>
-    <p>Only <code>inchi</code>, <code>key</code> and <code>exit</code> are stored, so a
-    change in AuxInfo or in the warning text is invisible here. A clean control proves
-    the same InChI, InChIKey and return code as the baseline on every structure, not
-    identical output.</p>
+    <p>AuxInfo and the full log are not stored, so a change in either is invisible
+    here. A clean control proves the same InChI, InChIKey, return code and warning
+    message as the baseline on every structure, not identical output.</p>
   </section>
 
   <section>
@@ -817,6 +817,7 @@ def _render_option(data: dict) -> str:
         <tr><td>prefix_only</td><td class="n">{_fmt(c.get("prefix_only"))}</td></tr>
         <tr><td>key_only</td><td class="n">{_fmt(c.get("key_only"))}</td></tr>
         <tr><td>warning_only</td><td class="n">{_fmt(c.get("warning_only"))}</td></tr>
+        <tr><td>message_only</td><td class="n">{_fmt(c.get("message_only"))}</td></tr>
         <tr><td>both_failed</td><td class="n">{_fmt(c.get("both_failed"))}</td></tr>
         <tr><td>failure_kind_only</td><td class="n">{_fmt(c.get("failure_kind_only"))}</td></tr>
       </tbody></table></div>
@@ -877,10 +878,12 @@ def _render_option(data: dict) -> str:
     matched structures changed both. A mismatch count means &ldquo;the chemical body
     differs&rdquo;, never &ldquo;the output is unchanged&rdquo;. MI failures on structures the
     baseline also rejected are invisible (<span class="mono">both_failed</span>:
-    {_fmt(c.get("both_failed"))}), and <span class="mono">aux</span>,
-    <span class="mono">log</span> and <span class="mono">message</span> are not stored, so
-    changed warnings appear only as <span class="mono">warning_only</span>:
-    {_fmt(c.get("warning_only"))}. Where both runs failed, a differing error code is a
+    {_fmt(c.get("both_failed"))}). On a matched structure a changed warning level is
+    counted as <span class="mono">warning_only</span> ({_fmt(c.get("warning_only"))}) and a
+    changed warning text as <span class="mono">message_only</span>
+    ({_fmt(c.get("message_only"))}); neither fails the comparison.
+    <span class="mono">aux</span> and <span class="mono">log</span> are not stored at all.
+    Where both runs failed, a differing error code is a
     failure <em>kind</em> rather than a warning flip and is counted separately
     (<span class="mono">failure_kind_only</span>: {_fmt(c.get("failure_kind_only"))}).</p>
   </section>
