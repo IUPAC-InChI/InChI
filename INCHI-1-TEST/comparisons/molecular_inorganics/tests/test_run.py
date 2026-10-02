@@ -1,9 +1,11 @@
+import json
 import pytest
 from inchi_tests.comparators import PrefixInsensitiveComparator
 from molecular_inorganics.run import (
     get_args,
     log_filename,
     reference_filename,
+    ExactComparator,
     select_comparator,
 )
 
@@ -89,7 +91,7 @@ class TestComparatorSelection:
     drifting build."""
 
     def test_default_is_byte_for_byte(self):
-        assert select_comparator("regression", "exact") is None
+        assert isinstance(select_comparator("regression", "exact"), ExactComparator)
 
     def test_prefix_insensitive_is_opt_in(self):
         assert isinstance(
@@ -100,3 +102,24 @@ class TestComparatorSelection:
     def test_reference_pass_never_compares(self):
         # A comparator here would log an all-zero summary that the report would read.
         assert select_comparator("regression-reference", "prefix-insensitive") is None
+
+
+class TestExactComparator:
+    RESULT = {"inchi": "InChI=1S/CH4/h1H4", "key": "VNWKTOKETHGBQD-UHFFFAOYSA-N", "exit": 0}
+
+    def test_agrees_with_the_drivers_byte_comparison(self):
+        # The driver compares the stored string; the comparator gets it parsed.
+        stored = json.dumps(self.RESULT)
+        assert ExactComparator()(dict(self.RESULT), json.loads(stored)) is (
+            json.dumps(self.RESULT) == stored
+        )
+
+    @pytest.mark.parametrize(
+        "field, value",
+        [("inchi", "InChI=1B/CH4/h1H4"), ("key", "VNWKTOKETHGBQD-UHFFFAOYBA-N"), ("exit", 1)],
+    )
+    def test_any_field_difference_is_a_mismatch(self, field, value):
+        comparator = ExactComparator()
+        assert comparator({**self.RESULT, field: value}, dict(self.RESULT)) is False
+        assert comparator(dict(self.RESULT), dict(self.RESULT)) is True
+        assert comparator.summary() == {"matched": 1, "mismatched": 1}

@@ -158,12 +158,20 @@ PYTHONPATH=INCHI-1-TEST/comparisons python -m molecular_inorganics.report \
     --output $OUT/report.html
 ```
 
+The report keeps the two comparisons strictly apart: a block for Run A, the
+reference, then one part for **A vs C** (the control, byte-for-byte) and one for
+**A vs B** (the option, prefix-insensitive). Each part has its own figures, gates,
+blind spots and cost, built only from that pass's data, and every heading in it
+is tagged with its comparison.
+
 Anything the report cannot establish from its inputs renders as *not checked* or an
-em dash rather than as a passing number: without `--run-c-log` the control is not
-measured, without `--run-a/b/c-log` the aborted-shard gate has nothing to read, and
-without `--expected-structures` the completeness gate has no independent count to
-check the comparison against. `run_comparison.sh` passes all four; point a rebuild
-at the copies in `logs/`.
+em dash rather than as a passing number. Each pass's log drives its own part:
+without `--run-c-log` the control is not measured at all, and without
+`--run-a-log` or `--run-b-log` that pass's aborted-shard gate and timeout count
+have nothing to read. A completeness gate needs both `--expected-structures`, the
+independent count it checks against, and the pass's log, because timed-out
+molfiles are reference rows that never reach the comparator. `run_comparison.sh`
+passes all of them; point a rebuild at the copies in `logs/`.
 
 ## Layout
 

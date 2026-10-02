@@ -8,9 +8,10 @@ runner rather than flags on the shared one:
 - references are namespaced by `--run-tag`, so a pass never reads or overwrites
   the committed `<sdf>.regression_reference.sqlite`;
 - logs are namespaced by `--log-tag`, so the three passes can be told apart;
-- `--compare=prefix-insensitive` swaps in `PrefixInsensitiveComparator` and logs
-  its tallies as a `Comparison summary` line, which `classify.py` and `report.py`
-  read back.
+- every regression pass logs its tallies as a `Comparison summary` line, which
+  `classify.py` and `report.py` read back: `--compare=exact` through
+  `ExactComparator`, `--compare=prefix-insensitive` through
+  `PrefixInsensitiveComparator`.
 
 Run as a module from `INCHI-1-TEST/comparisons`, e.g.
 `python -m molecular_inorganics.run --test=regression ...`."""
@@ -52,21 +53,47 @@ def log_filename(timestamp: str, test: str, dataset: str, log_tag: str) -> str:
     return f"{timestamp}_{test}_{dataset}.{log_tag}.log"
 
 
-def select_comparator(test: str, compare: str) -> PrefixInsensitiveComparator | None:
+class ExactComparator:
+    """Byte-for-byte, like the driver's default, but tallied.
+
+    The driver compares the stored JSON string; this compares the result
+    re-serialised from the dictionary it hands over. The two agree because the
+    reference was written by `json.dumps` of the same consumer's dictionary, and
+    `json.dumps(json.loads(s)) == s` for that output. The tally gives the control
+    pass a measured `matched` count instead of one derived from the mismatches."""
+
+    def __init__(self) -> None:
+        self.counts = {"matched": 0, "mismatched": 0}
+
+    def __call__(self, current: dict, reference: dict) -> bool:
+        is_match = json.dumps(current) == json.dumps(reference)
+        self.counts["matched" if is_match else "mismatched"] += 1
+
+        return is_match
+
+    def summary(self) -> dict[str, int]:
+        return dict(self.counts)
+
+
+def select_comparator(
+    test: str, compare: str
+) -> ExactComparator | PrefixInsensitiveComparator | None:
     """The comparison rule for a pass, decided by `--compare` alone.
 
     Leniency is opted into explicitly. The control pass -- same build, no options,
     expected to reproduce its reference -- reads the same tagged reference as the
     option pass, but it must stay byte-for-byte: a prefix-insensitive comparison
     cannot see a changed prefix, InChIKey or warning level, which is exactly the
-    drift it exists to catch. `None` leaves the driver on its byte-for-byte default.
+    drift it exists to catch.
 
     Only `regression` compares anything; a reference pass would otherwise write an
     all-zero summary that `classify.parse_comparison_summary` would happily read."""
-    if compare == "prefix-insensitive" and test == "regression":
+    if test != "regression":
+        return None
+    if compare == "prefix-insensitive":
         return PrefixInsensitiveComparator()
 
-    return None
+    return ExactComparator()
 
 
 def get_args(argv: list[str] | None = None) -> argparse.Namespace:
