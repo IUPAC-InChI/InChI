@@ -37,6 +37,7 @@ from molecular_inorganics.classify import (
     ROUTE_CHECKS,
     Mismatch,
     has_reconnected_layer,
+    novel_pathway,
     parse_comparison_summary,
     parse_regression_log,
 )
@@ -56,16 +57,22 @@ def load_classifications(path: Path) -> list[dict]:
         return list(csv.DictReader(csv_file))
 
 
+def _row_pathway(row: dict) -> str:
+    """A `novel` row's cause bucket; older CSVs have no message column."""
+    return novel_pathway(row.get("reference_message"), row["recmet_inchi"])
+
+
 def novel_split(rows: list[dict]) -> dict[str, int]:
     """Split the `novel` rows by which route the old code used to break the bond."""
-    novel = [row for row in rows if row["category"] == "novel"]
-
-    metal = sum(has_reconnected_layer(row["recmet_inchi"]) for row in novel)
+    pathways = Counter(_row_pathway(row) for row in rows if row["category"] == "novel")
 
     return {
-        "total": len(novel),
-        "metal_pathway": metal,
-        "salt_pathway": len(novel) - metal,
+        "total": sum(pathways.values()),
+        "metal_pathway": pathways["novel_metal_pathway"],
+        "salt_pathway": pathways["novel_salt_pathway"],
+        "no_disconnection": pathways["novel_no_disconnection"],
+        # Whether the split came from the baseline's messages or from the proxy.
+        "from_messages": bool(rows) and "reference_message" in rows[0],
     }
 
 
@@ -212,23 +219,27 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:va
 """
 
 
+_EXAMPLE_KEYS = {
+    "novel_metal_pathway": "metal_pathway",
+    "novel_salt_pathway": "salt_pathway",
+    "novel_no_disconnection": "no_disconnection",
+}
+
+
 def _pick_examples(rows: list[dict]) -> dict[str, dict | None]:
     """One representative row per mechanism, chosen deterministically."""
     examples: dict[str, dict | None] = {
         "equivalent": None,
         "salt_pathway": None,
         "metal_pathway": None,
+        "no_disconnection": None,
     }
 
     for row in rows:
         if row["category"] == "recmet_equivalent" and not examples["equivalent"]:
             examples["equivalent"] = row
         elif row["category"] == "novel":
-            key = (
-                "metal_pathway"
-                if has_reconnected_layer(row["recmet_inchi"])
-                else "salt_pathway"
-            )
+            key = _EXAMPLE_KEYS[_row_pathway(row)]
             if not examples[key]:
                 examples[key] = row
         if all(examples.values()):
@@ -674,6 +685,26 @@ def _route_table(route: dict | None) -> str:
       <tbody>{body}</tbody></table></div>"""
 
 
+def _pathway_source(n: dict) -> str:
+    if n["from_messages"]:
+        return "&ldquo;Metal was disconnected&rdquo; / &ldquo;Salt was disconnected&rdquo;"
+
+    return (
+        "these classifications predate stored messages, so the <span class=\"mono\">/r</span> "
+        "layer stands in for it and cannot tell salt disconnection from none"
+    )
+
+
+def _no_disconnection_note(count: int) -> str:
+    if not count:
+        return ""
+
+    return (
+        f" <b>{_fmt(count)} more</b> have a metal that the baseline did not disconnect,"
+        " yet MI changed them."
+    )
+
+
 def _metal_free_callout(metal_free: int | None, warnings: int | None) -> str:
     """Flag any change to a structure without a metal, which MI cannot explain."""
     parts = []
@@ -857,10 +888,11 @@ def _render_option(data: dict) -> str:
   </section>
 
   <section>
-    <h3><span class="tag">A vs B</span> What the two categories mean</h3>
+    <h3><span class="tag">A vs B</span> What the categories mean</h3>
     <p><b>MolecularInorganics does not create bonds. It declines to break the ones the molfile
     already has.</b> The old code breaks them by two different routes, and <code>-RecMet</code>
-    only reverses one:</p>
+    only reverses one. The route is the one the baseline states in its own Run A warning
+    ({_pathway_source(n)}):</p>
     <div class="scroll"><table>
       <thead><tr><th>route taken by the old code</th><th class="n">count</th><th>RecMet</th></tr></thead>
       <tbody>
@@ -870,15 +902,18 @@ def _render_option(data: dict) -> str:
           <td class="n">{_fmt(n["metal_pathway"])}</td><td>reverses it, differently</td></tr>
         <tr><td>salt disconnection</td>
           <td class="n">{_fmt(n["salt_pathway"])}</td><td>cannot undo it, no <span class="mono">/r</span></td></tr>
+        <tr><td>no disconnection &mdash; the baseline broke no bond to a metal</td>
+          <td class="n">{_fmt(n["no_disconnection"])}</td><td>nothing to reverse</td></tr>
       </tbody></table></div>
-    <p>The presence of an <span class="mono">/r</span> layer is the proxy for which route was taken.
-    It is checked per structure against the baseline&rsquo;s own warning from the
-    <code>-RecMet</code> re-run: &ldquo;Metal was disconnected&rdquo; should come with an
-    <span class="mono">/r</span> layer, &ldquo;Salt was disconnected&rdquo; alone without one.</p>
+    <p>The <span class="mono">/r</span> layer is the structural evidence for the route, and it is
+    checked against the stated route per structure: &ldquo;Metal was disconnected&rdquo; should
+    come with an <span class="mono">/r</span> layer, &ldquo;Salt was disconnected&rdquo; alone
+    without one.</p>
 {_route_table(option["route"])}
 {_specimen("MI reproduces the restored bonds", option["examples"]["equivalent"])}
 {_specimen("Salt route — RecMet cannot restore it", option["examples"]["salt_pathway"], "no /r layer — salt disconnection is not reversible by RecMet")}
 {_specimen("Metal route — the two disagree", option["examples"]["metal_pathway"])}
+{_specimen("No disconnection — the baseline broke no bond to a metal", option["examples"]["no_disconnection"])}
   </section>
 
   <section>
@@ -892,8 +927,8 @@ def _render_option(data: dict) -> str:
     <div class="callout flagged">
       <div class="eyebrow">needs chemical review</div>
       <p><b>{_fmt(n["metal_pathway"])} structures.</b> Both the old code and MI act on the metal,
-      and they still disagree. This is the only part of the report not explained by a stated
-      mechanism.</p>
+      and they still disagree.{_no_disconnection_note(n["no_disconnection"])} No stated
+      mechanism explains these.</p>
     </div>
   </section>
 

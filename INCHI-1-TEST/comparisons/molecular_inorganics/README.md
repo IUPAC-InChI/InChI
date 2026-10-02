@@ -129,9 +129,17 @@ them, so:
 
 - `recmet_equivalent` — the option's InChI equals the `-RecMet` reconnected
   (`/r`) layer: the old code disconnected the metal and `-RecMet` put it back.
-- `novel` with an `/r` layer — both reconnect, and disagree.
-- `novel` without one — the old code used salt disconnection, which `-RecMet`
-  cannot undo.
+- `novel` — anything else, split by the route the baseline states in its own
+  Run A warning:
+  - "Metal was disconnected" (alone or with "Salt was disconnected") — both
+    reconnect, and disagree (`novel_metal_pathway`);
+  - "Salt was disconnected" alone — the old code used salt disconnection, which
+    `-RecMet` cannot undo (`novel_salt_pathway`);
+  - neither — the baseline broke no bond to a metal, yet the option changed the
+    structure (`novel_no_disconnection`).
+
+  Classifications written before messages were stored fall back to the `/r`
+  layer as a proxy, which cannot tell salt disconnection from none.
 - `metal_free` — neither side's formula contains a metal (InChI's own list, the
   `METAL`/`METAL2` rows of `eldata.c`). The option only changes how bonds to
   metals are treated, so it has no mechanism to change these; any count here is
@@ -142,7 +150,7 @@ them, so:
 - `error_under_mi` / `error_in_reference` / `recmet_failed` / `recmet_missing` —
   one side produced no InChI.
 
-The `/r` layer is only a proxy for the route the old code took, so it is checked
+The `/r` layer is the structural evidence for the stated route, and it is checked
 per structure: the `-RecMet` re-run stores the baseline's warning message, and
 `route_check` records whether "Metal was disconnected" comes with an `/r` layer
 and "Salt was disconnected" alone without one (`agrees` / `disagrees`), whether
@@ -167,6 +175,7 @@ of structures can be fed straight into another tool:
 ids/
     metal_free.txt
     recmet_equivalent.txt     novel_metal_pathway.txt   novel_salt_pathway.txt
+    novel_no_disconnection.txt
     error_under_mi.txt        error_in_reference.txt
     recmet_failed.txt         recmet_missing.txt
 ```

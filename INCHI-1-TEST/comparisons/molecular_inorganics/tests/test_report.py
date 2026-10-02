@@ -477,3 +477,26 @@ def test_metal_free_warning_gate_is_not_checked_on_an_older_log(
         test_label="test",
     )
     assert data["a_vs_b"]["gates"]["metal_free_warnings"] is None
+
+
+def test_novel_split_uses_the_stated_route_when_messages_are_stored(tmp_path):
+    path = tmp_path / "classifications.csv"
+    fields = ["molfile_id", "sdf", "category", "reference_inchi", "dev_mi_inchi",
+              "recmet_inchi", "reference_message"]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        for i, (recmet, message) in enumerate([
+            (PTEN_RECMET, "Metal was disconnected"),
+            ("InChI=1/C8H11N.2ClH.Hg/c;;;", "Salt was disconnected"),
+            ("InChI=1/C8H11N.2ClH.Hg/c;;;", ""),   # the proxy would call it salt
+        ]):
+            writer.writerow(dict(molfile_id=str(i), sdf="A.sdf.gz", category="novel",
+                                 reference_inchi="InChI=1S/x", dev_mi_inchi="InChI=1B/y",
+                                 recmet_inchi=recmet, reference_message=message))
+
+    split = novel_split(load_classifications(path))
+    assert split["metal_pathway"] == 1
+    assert split["salt_pathway"] == 1
+    assert split["no_disconnection"] == 1
+    assert split["from_messages"] is True

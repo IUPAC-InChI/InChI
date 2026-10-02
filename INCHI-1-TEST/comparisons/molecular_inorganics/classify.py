@@ -266,7 +266,8 @@ ROUTE_CHECKS = ("agrees", "disagrees", "no_disconnection", "no_metal", "not_chec
 def route_check(recmet_result: dict | None) -> str:
     """Whether the `/r` layer names the route the baseline says it took.
 
-    The proxy reads an `/r` layer as metal disconnection, which `-RecMet`
+    `novel` is split by the stated route (`novel_pathway`); this keeps the `/r`
+    layer honest as the structural evidence for it. The proxy reads an `/r` layer as metal disconnection, which `-RecMet`
     reverses, and its absence as salt disconnection, which it cannot. The
     baseline states the route in its warnings, so the proxy is checked rather
     than assumed. `no_disconnection` is a structure for which the baseline broke
@@ -377,12 +378,14 @@ def write_report(
 # One file per cause, always written, so a consumer can rely on the filenames
 # rather than probing for them. `novel` is split by disconnection pathway because
 # that is the actual cause: the old code breaks bonds to metals by two routes and
-# `-RecMet` only reverses one of them.
+# `-RecMet` only reverses one of them. A structure the baseline did not
+# disconnect at all has neither route and is kept apart.
 ID_LIST_CAUSES = (
     "metal_free",
     "recmet_equivalent",
     "novel_metal_pathway",
     "novel_salt_pathway",
+    "novel_no_disconnection",
     "error_under_mi",
     "error_in_reference",
     "recmet_failed",
@@ -390,16 +393,49 @@ ID_LIST_CAUSES = (
 )
 
 
+def disconnection_route(message: str) -> str:
+    """The route the baseline says it took: `metal`, `salt`, `both` or `none`."""
+    metal = METAL_DISCONNECTED in message
+    salt = SALT_DISCONNECTED in message
+
+    return {(True, False): "metal", (False, True): "salt", (True, True): "both"}.get(
+        (metal, salt), "none"
+    )
+
+
+# How a `novel` structure's route maps to its cause bucket. `both` goes with
+# metal: the metal disconnection is the one `-RecMet` reverses, so MI and the
+# reconnected layer still disagree on a bond to a metal.
+_NOVEL_PATHWAY = {
+    "metal": "novel_metal_pathway",
+    "both": "novel_metal_pathway",
+    "salt": "novel_salt_pathway",
+    "none": "novel_no_disconnection",
+}
+
+
+def novel_pathway(reference_message: str | None, recmet_inchi: str) -> str:
+    """The cause bucket of a `novel` structure, from the route the baseline states.
+
+    The baseline's own message in Run A names the route. Classifications written
+    before messages were stored have none (`None`); for those the `/r` layer is
+    the proxy, which cannot tell a salt disconnection from no disconnection."""
+    if reference_message is None:
+        return (
+            "novel_metal_pathway"
+            if has_reconnected_layer(recmet_inchi)
+            else "novel_salt_pathway"
+        )
+
+    return _NOVEL_PATHWAY[disconnection_route(reference_message)]
+
+
 def cause_of(classification: Classification) -> str:
     """The cause bucket a classification belongs in, splitting `novel` by pathway."""
     if classification.category != "novel":
         return classification.category
 
-    return (
-        "novel_metal_pathway"
-        if has_reconnected_layer(classification.recmet_inchi)
-        else "novel_salt_pathway"
-    )
+    return novel_pathway(classification.reference_message, classification.recmet_inchi)
 
 
 def _id_sort_key(molfile_id: str):

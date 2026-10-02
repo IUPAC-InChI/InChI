@@ -362,22 +362,28 @@ def test_write_report_emits_csv_and_summary(tmp_path):
     assert summary["comparison"] == comparison_summary
 
 
-def _classification(molfile_id, category, recmet_inchi=""):
+METAL = "Metal was disconnected"
+SALT = "Salt was disconnected"
+
+
+def _classification(molfile_id, category, recmet_inchi="", reference_message=""):
     return Classification(
         molfile_id=molfile_id, sdf="A.sdf.gz", category=category,
         reference_inchi="InChI=1S/x", dev_mi_inchi="InChI=1B/x",
-        recmet_inchi=recmet_inchi,
+        recmet_inchi=recmet_inchi, reference_message=reference_message,
     )
 
 
 def test_cause_of_splits_novel_by_disconnection_pathway():
     from molecular_inorganics.classify import cause_of
 
-    # An /r layer means the old code disconnected the metal and -RecMet put it
-    # back; without one it used salt disconnection, which -RecMet cannot undo.
-    assert cause_of(_classification("1", "novel", PTEN_RECMET)) == "novel_metal_pathway"
-    assert cause_of(_classification("2", "novel", "InChI=1/C8H11N.2ClH.Hg")) == "novel_salt_pathway"
-    assert cause_of(_classification("3", "novel", "")) == "novel_salt_pathway"
+    # The route is the one the baseline states in Run A, not the /r proxy.
+    assert cause_of(_classification("1", "novel", PTEN_RECMET, METAL)) == "novel_metal_pathway"
+    assert cause_of(_classification("2", "novel", "InChI=1/C8H11N.2ClH.Hg", SALT)) == "novel_salt_pathway"
+    assert cause_of(_classification("3", "novel", PTEN_RECMET, f"{METAL}; {SALT}")) == "novel_metal_pathway"
+    # The proxy would call this salt: no /r layer. The baseline says it
+    # disconnected nothing, which is a cause of its own.
+    assert cause_of(_classification("6", "novel", "InChI=1/C8H11N.2ClH.Hg", "")) == "novel_no_disconnection"
     assert cause_of(_classification("4", "recmet_equivalent", PTEN_RECMET)) == "recmet_equivalent"
     assert cause_of(_classification("5", "error_under_mi")) == "error_under_mi"
 
@@ -388,8 +394,9 @@ def test_write_id_lists_one_file_per_cause(tmp_path):
     classifications = [
         _classification("300", "recmet_equivalent", PTEN_RECMET),
         _classification("42", "recmet_equivalent", PTEN_RECMET),
-        _classification("7", "novel", PTEN_RECMET),
-        _classification("1000", "novel", "InChI=1/no-r-layer"),
+        _classification("7", "novel", PTEN_RECMET, METAL),
+        _classification("1000", "novel", "InChI=1/no-r-layer", SALT),
+        _classification("11", "novel", "InChI=1/no-r-layer", ""),
         _classification("9", "error_under_mi"),
     ]
 
@@ -404,6 +411,7 @@ def test_write_id_lists_one_file_per_cause(tmp_path):
     assert (ids_dir / "recmet_equivalent.txt").read_text() == "42\n300\n"
     assert (ids_dir / "novel_metal_pathway.txt").read_text() == "7\n"
     assert (ids_dir / "novel_salt_pathway.txt").read_text() == "1000\n"
+    assert (ids_dir / "novel_no_disconnection.txt").read_text() == "11\n"
     assert (ids_dir / "error_under_mi.txt").read_text() == "9\n"
     assert (ids_dir / "recmet_missing.txt").read_text() == ""
 
@@ -417,8 +425,8 @@ def test_write_id_lists_handles_non_numeric_ids(tmp_path):
 
     write_id_lists(
         [
-            _classification("_Elements.#070", "novel", ""),
-            _classification("mcule-42", "novel", ""),
+            _classification("_Elements.#070", "novel", "", SALT),
+            _classification("mcule-42", "novel", "", SALT),
         ],
         tmp_path,
     )
@@ -602,3 +610,11 @@ def test_messages_of_all_three_sides_reach_the_classification():
     assert first.recmet_message == "Metal was disconnected"
     # Failures under MI are explained from the stored message, no re-run.
     assert explain_failures([first, second]) == {"2": "Unknown element"}
+
+
+def test_novel_pathway_falls_back_to_the_proxy_without_messages():
+    from molecular_inorganics.classify import novel_pathway
+
+    # Classifications written before messages were stored have no column.
+    assert novel_pathway(None, PTEN_RECMET) == "novel_metal_pathway"
+    assert novel_pathway(None, "InChI=1/C8H11N.2ClH.Hg") == "novel_salt_pathway"
