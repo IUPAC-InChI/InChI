@@ -240,7 +240,7 @@ def test_reconnected_layer_extracts_the_r_layer_without_a_prefix():
     assert reconnected_layer("InChI=1S/CH4O/c1-2/h2H,1H3") == "CH4O/c1-2/h2H,1H3"
 
 
-def test_classify_recmet_equivalent():
+def test_classify_reconnected_as_recmet():
     mismatches = [
         _mismatch("1", {"inchi": PTEN_MI, "key": "K1", "exit": 0},
                   {"inchi": PTEN_PLAIN, "key": "K0", "exit": 1})
@@ -249,19 +249,31 @@ def test_classify_recmet_equivalent():
 
     result = classify_mismatches(mismatches, recmet)
 
-    assert result[0].category == "recmet_equivalent"
+    assert result[0].category == "reconnected_as_recmet"
     # Raw strings, prefixes intact, are what gets reported.
     assert result[0].recmet_inchi == PTEN_RECMET
     assert result[0].dev_mi_inchi == PTEN_MI
     assert result[0].reference_inchi == PTEN_PLAIN
 
 
-def test_classify_novel():
+@pytest.mark.parametrize(
+    "message, recmet_inchi, category",
+    [
+        # The route is the one Run A states, not the /r proxy.
+        ("Metal was disconnected", "InChI=1/Z/c1/rW/c2", "reconnected_differently"),
+        ("Metal was disconnected; Salt was disconnected", "InChI=1/Z/c1/rW/c2", "reconnected_differently"),
+        ("Salt was disconnected", "InChI=1/Z/c1", "salt_kept_bonded"),
+        # The proxy would call this salt: no /r layer. 1.07.5 disconnected nothing.
+        ("Proton(s) added/removed", "InChI=1/Z/c1", "changed_without_disconnection"),
+    ],
+)
+def test_classify_what_recmet_does_not_reproduce_by_stated_route(message, recmet_inchi, category):
+    # Y is yttrium: the structure has a metal.
     mismatches = [_mismatch("2", {"inchi": "InChI=1B/X/c1", "key": "K", "exit": 0},
-                            {"inchi": "InChI=1S/Y/c1", "key": "K", "exit": 0})]
-    recmet = {"2": {"inchi": "InChI=1/Z/c1", "key": "K", "exit": 0}}
+                            {"inchi": "InChI=1S/Y/c1", "key": "K", "exit": 0, "message": message})]
+    recmet = {"2": {"inchi": recmet_inchi, "key": "K", "exit": 0, "message": message}}
 
-    assert classify_mismatches(mismatches, recmet)[0].category == "novel"
+    assert classify_mismatches(mismatches, recmet)[0].category == category
 
 
 def test_classify_error_under_mi_takes_precedence_over_recmet():
@@ -303,7 +315,7 @@ def test_a_warning_level_exit_is_never_a_failure_category():
                             {"inchi": PTEN_PLAIN, "key": "K", "exit": 1})]
     recmet = {"6": {"inchi": PTEN_RECMET, "key": "K", "exit": 1}}
 
-    assert classify_mismatches(mismatches, recmet)[0].category == "recmet_equivalent"
+    assert classify_mismatches(mismatches, recmet)[0].category == "reconnected_as_recmet"
 
 
 def test_classification_counts():
@@ -319,8 +331,8 @@ def test_classification_counts():
     }
 
     assert classification_counts(classify_mismatches(mismatches, recmet)) == {
-        "recmet_equivalent": 1,
-        "novel": 1,
+        "reconnected_as_recmet": 1,
+        "changed_without_disconnection": 1,
     }
 
 
@@ -330,10 +342,10 @@ from molecular_inorganics.classify import Classification, write_report
 
 def test_write_report_emits_csv_and_summary(tmp_path):
     classifications = [
-        Classification(molfile_id="1", sdf="A.sdf.gz", category="novel",
+        Classification(molfile_id="1", sdf="A.sdf.gz", category="salt_kept_bonded",
                        reference_inchi="InChI=1S/X/c1", dev_mi_inchi="InChI=1B/Y/c1",
                        recmet_inchi="InChI=1/Z/c1"),
-        Classification(molfile_id="2", sdf="A.sdf.gz", category="recmet_equivalent",
+        Classification(molfile_id="2", sdf="A.sdf.gz", category="reconnected_as_recmet",
                        reference_inchi=PTEN_PLAIN, dev_mi_inchi=PTEN_MI,
                        recmet_inchi=PTEN_RECMET),
     ]
@@ -351,13 +363,13 @@ def test_write_report_emits_csv_and_summary(tmp_path):
     with open(tmp_path / "classifications.csv", newline="", encoding="utf-8") as csv_file:
         rows = list(csv.DictReader(csv_file))
     assert [row["molfile_id"] for row in rows] == ["1", "2"]
-    assert rows[0]["category"] == "novel"
+    assert rows[0]["category"] == "salt_kept_bonded"
     # Raw InChIs with prefixes reach the CSV.
     assert rows[1]["recmet_inchi"] == PTEN_RECMET
     assert rows[1]["dev_mi_inchi"].startswith("InChI=1B/")
 
     summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
-    assert summary["counts"] == {"novel": 1, "recmet_equivalent": 1}
+    assert summary["counts"] == {"salt_kept_bonded": 1, "reconnected_as_recmet": 1}
     assert summary["total"] == 2
     assert summary["comparison"] == comparison_summary
 
@@ -374,29 +386,15 @@ def _classification(molfile_id, category, recmet_inchi="", reference_message="")
     )
 
 
-def test_cause_of_splits_novel_by_disconnection_pathway():
-    from molecular_inorganics.classify import cause_of
-
-    # The route is the one the baseline states in Run A, not the /r proxy.
-    assert cause_of(_classification("1", "novel", PTEN_RECMET, METAL)) == "novel_metal_pathway"
-    assert cause_of(_classification("2", "novel", "InChI=1/C8H11N.2ClH.Hg", SALT)) == "novel_salt_pathway"
-    assert cause_of(_classification("3", "novel", PTEN_RECMET, f"{METAL}; {SALT}")) == "novel_metal_pathway"
-    # The proxy would call this salt: no /r layer. The baseline says it
-    # disconnected nothing, which is a cause of its own.
-    assert cause_of(_classification("6", "novel", "InChI=1/C8H11N.2ClH.Hg", "")) == "novel_no_disconnection"
-    assert cause_of(_classification("4", "recmet_equivalent", PTEN_RECMET)) == "recmet_equivalent"
-    assert cause_of(_classification("5", "error_under_mi")) == "error_under_mi"
-
-
 def test_write_id_lists_one_file_per_cause(tmp_path):
-    from molecular_inorganics.classify import write_id_lists, ID_LIST_CAUSES
+    from molecular_inorganics.classify import write_id_lists, CATEGORIES
 
     classifications = [
-        _classification("300", "recmet_equivalent", PTEN_RECMET),
-        _classification("42", "recmet_equivalent", PTEN_RECMET),
-        _classification("7", "novel", PTEN_RECMET, METAL),
-        _classification("1000", "novel", "InChI=1/no-r-layer", SALT),
-        _classification("11", "novel", "InChI=1/no-r-layer", ""),
+        _classification("300", "reconnected_as_recmet", PTEN_RECMET),
+        _classification("42", "reconnected_as_recmet", PTEN_RECMET),
+        _classification("7", "reconnected_differently", PTEN_RECMET, METAL),
+        _classification("1000", "salt_kept_bonded", "InChI=1/no-r-layer", SALT),
+        _classification("11", "changed_without_disconnection", "InChI=1/no-r-layer", ""),
         _classification("9", "error_under_mi"),
     ]
 
@@ -405,18 +403,18 @@ def test_write_id_lists_one_file_per_cause(tmp_path):
     ids_dir = tmp_path / "ids"
     # Every cause gets a file, even when empty, so downstream tooling can rely
     # on the set of filenames rather than probing for them.
-    assert {p.name for p in ids_dir.iterdir()} == {f"{c}.txt" for c in ID_LIST_CAUSES}
+    assert {p.name for p in ids_dir.iterdir()} == {f"{c}.txt" for c in CATEGORIES}
 
     # Numeric IDs sort numerically, not as strings: 42 before 300.
-    assert (ids_dir / "recmet_equivalent.txt").read_text() == "42\n300\n"
-    assert (ids_dir / "novel_metal_pathway.txt").read_text() == "7\n"
-    assert (ids_dir / "novel_salt_pathway.txt").read_text() == "1000\n"
-    assert (ids_dir / "novel_no_disconnection.txt").read_text() == "11\n"
+    assert (ids_dir / "reconnected_as_recmet.txt").read_text() == "42\n300\n"
+    assert (ids_dir / "reconnected_differently.txt").read_text() == "7\n"
+    assert (ids_dir / "salt_kept_bonded.txt").read_text() == "1000\n"
+    assert (ids_dir / "changed_without_disconnection.txt").read_text() == "11\n"
     assert (ids_dir / "error_under_mi.txt").read_text() == "9\n"
     assert (ids_dir / "recmet_missing.txt").read_text() == ""
 
-    assert counts["recmet_equivalent"] == 2
-    assert counts["novel_metal_pathway"] == 1
+    assert counts["reconnected_as_recmet"] == 2
+    assert counts["reconnected_differently"] == 1
     assert counts["recmet_missing"] == 0
 
 
@@ -425,13 +423,13 @@ def test_write_id_lists_handles_non_numeric_ids(tmp_path):
 
     write_id_lists(
         [
-            _classification("_Elements.#070", "novel", "", SALT),
-            _classification("mcule-42", "novel", "", SALT),
+            _classification("_Elements.#070", "salt_kept_bonded", "", SALT),
+            _classification("mcule-42", "salt_kept_bonded", "", SALT),
         ],
         tmp_path,
     )
 
-    assert (tmp_path / "ids" / "novel_salt_pathway.txt").read_text() == (
+    assert (tmp_path / "ids" / "salt_kept_bonded.txt").read_text() == (
         "_Elements.#070\nmcule-42\n"
     )
 
@@ -487,7 +485,7 @@ def test_csv_columns_include_keys_and_exits(tmp_path):
     write_report(
         [
             Classification(
-                molfile_id="9", sdf="A.sdf.gz", category="novel",
+                molfile_id="9", sdf="A.sdf.gz", category="salt_kept_bonded",
                 reference_inchi="InChI=1S/Y", dev_mi_inchi="InChI=1B/X",
                 recmet_inchi="InChI=1/Z",
                 reference_key="K0", dev_mi_key="K1", recmet_key="K2",
@@ -534,7 +532,7 @@ def test_has_metal_reads_the_formula_layer_only():
     assert not has_metal("")
 
 
-def test_a_metal_free_mismatch_is_its_own_category():
+def test_a_mismatch_without_a_metal_is_its_own_category():
     # Mcule 7099468173: MI has no mechanism to change a structure without a metal.
     mismatches = [_mismatch(
         "7099468173",
@@ -543,12 +541,12 @@ def test_a_metal_free_mismatch_is_its_own_category():
     )]
 
     classification = classify_mismatches(mismatches, {})[0]
-    assert classification.category == "metal_free"
+    assert classification.category == "changed_without_metal"
     # Not `no_disconnection`, which on a structure with a metal is a finding.
     assert classification.route_check == "no_metal"
 
 
-def test_a_failure_wins_over_metal_free():
+def test_a_failure_wins_over_changed_without_metal():
     mismatches = [_mismatch("1", {"inchi": "", "key": "", "exit": 2},
                             {"inchi": "InChI=1S/CH4/h1H4", "key": "K", "exit": 0})]
 
@@ -612,43 +610,29 @@ def test_messages_of_all_three_sides_reach_the_classification():
     assert explain_failures([first, second]) == {"2": "Unknown element"}
 
 
-def test_novel_pathway_falls_back_to_the_proxy_without_messages():
-    from molecular_inorganics.classify import novel_pathway
-
-    # Classifications written before messages were stored have no column.
-    assert novel_pathway(None, PTEN_RECMET) == "novel_metal_pathway"
-    assert novel_pathway(None, "InChI=1/C8H11N.2ClH.Hg") == "novel_salt_pathway"
-
-
-def test_prefix_breakdown_splits_mismatches_by_prefix_and_recmet_layer(tmp_path):
+def test_prefix_breakdown_counts_each_category_by_prefix_change(tmp_path):
     from molecular_inorganics.classify import prefix_breakdown
 
-    def row(molfile_id, reference, current, recmet, category="novel"):
+    def row(molfile_id, reference, current, category):
         return Classification(molfile_id=molfile_id, sdf="A.sdf.gz", category=category,
                               reference_inchi=reference, dev_mi_inchi=current,
-                              recmet_inchi=recmet)
+                              recmet_inchi="")
 
     rows = [
-        # Prefix changed, -RecMet's /r layer is the new InChI.
-        row("1", PTEN_PLAIN, PTEN_MI, PTEN_RECMET, "recmet_equivalent"),
-        # Prefix changed, /r layer exists but is something else.
-        row("2", PTEN_PLAIN, PTEN_MI, "InChI=1/X/c1/rY/c2"),
-        # Prefix changed, -RecMet made no /r layer, or nothing at all.
-        row("3", "InChI=1S/C8H11N.2ClH.Hg/c;;;", "InChI=1B/C8H11N.Cl2Hg/c;1-3-2",
-            "InChI=1/C8H11N.2ClH.Hg/c;;;"),
-        row("4", "InChI=1S/C8H11N.2ClH.Hg/c;;;", "InChI=1B/C8H11N.Cl2Hg/c;1-3-2", "",
-            "recmet_failed"),
-        # Prefix kept: the #280 metal-free case.
-        row("5", "InChI=1S/C7H10N2/c1", "InChI=1S/C7H11N2/c1", "InChI=1/C7H10N2/c1",
-            "metal_free"),
+        row("1", PTEN_PLAIN, PTEN_MI, "reconnected_as_recmet"),
+        row("2", "InChI=1S/C8H11N.2ClH.Hg/c;;;", "InChI=1B/C8H11N.Cl2Hg/c;1-3-2", "salt_kept_bonded"),
+        # Prefix kept: the #280 case of a change without a metal.
+        row("3", "InChI=1S/C7H10N2/c1", "InChI=1S/C7H11N2/c1", "changed_without_metal"),
         # A failed side has no prefix and is left out.
-        row("6", "", PTEN_MI, "", "error_in_reference"),
+        row("4", "", PTEN_MI, "error_in_reference"),
     ]
 
-    assert prefix_breakdown(rows) == {
-        "prefix_changed": {"equals_new_inchi": 1, "differs": 1, "no_layer": 2},
-        "prefix_unchanged": {"equals_new_inchi": 0, "differs": 0, "no_layer": 1},
-    }
+    breakdown = prefix_breakdown(rows)
+    assert breakdown["prefix_changed"]["reconnected_as_recmet"] == 1
+    assert breakdown["prefix_changed"]["salt_kept_bonded"] == 1
+    assert breakdown["prefix_unchanged"]["changed_without_metal"] == 1
+    assert sum(breakdown["prefix_changed"].values()) + sum(breakdown["prefix_unchanged"].values()) == 3
+
     write_report(rows, tmp_path)
     summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
-    assert summary["prefix"]["prefix_changed"]["no_layer"] == 2
+    assert summary["prefix"]["prefix_changed"]["salt_kept_bonded"] == 1

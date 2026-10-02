@@ -32,7 +32,7 @@ passes, classifies the differences and writes everything to
 | --- | --- |
 | `report.html` | the rendered report |
 | `classifications.csv` | one row per mismatch |
-| `ids/` | mismatching IDs, one file per cause |
+| `ids/` | mismatching IDs, one file per category |
 | `summary.json` | counts and tallies |
 | `logs/` | the three pass logs |
 
@@ -109,8 +109,9 @@ it compares the InChI *body* plus a failure flag, where failure means `exit >= 2
 or an empty InChI. Exit code 1 is a warning, and a metal disconnection always
 warns, so treating it as failure would misclassify most of the structures of
 interest. The differences it ignores are counted and logged as `prefix_only`,
-`key_only`, `warning_only`, `message_only`, `metal_free_warning_only`,
-`metal_free_message_only`, `both_failed` and `failure_kind_only` —
+`key_only`, `warning_only`, `message_only`, `unaffected`,
+`without_metal_warning_only`, `without_metal_message_only`, `both_failed` and
+`failure_kind_only` —
 the last being two passes that both failed on the same body with different error
 codes.
 
@@ -123,32 +124,29 @@ References are namespaced by `--run-tag` (`<shard>.<tag>.regression_reference.sq
 and logs by `--log-tag`, so the comparison never reads or overwrites the
 committed references the regression tests use.
 
-Differences are then classified against the baseline's `-RecMet` output. The old
-code breaks bonds to metals by two routes and `-RecMet` only reverses one of
-them, so:
+Every mismatch then gets one category, named for what happened to the
+structure. The old code breaks bonds to metals by two routes and `-RecMet` only
+reverses one of them; the route is the one 1.07.5 states in its own Run A
+warning, "Metal was disconnected" or "Salt was disconnected". Checked in this
+order:
 
-- `recmet_equivalent` — the option's InChI equals the `-RecMet` reconnected
-  (`/r`) layer: the old code disconnected the metal and `-RecMet` put it back.
-- `novel` — anything else, split by the route the baseline states in its own
-  Run A warning:
-  - "Metal was disconnected" (alone or with "Salt was disconnected") — both
-    reconnect, and disagree (`novel_metal_pathway`);
-  - "Salt was disconnected" alone — the old code used salt disconnection, which
-    `-RecMet` cannot undo (`novel_salt_pathway`);
-  - neither — the baseline broke no bond to a metal, yet the option changed the
-    structure (`novel_no_disconnection`).
+| category | what happened |
+| --- | --- |
+| `error_in_reference` / `error_under_mi` | one side produced no InChI |
+| `changed_without_metal` | neither side's formula contains a metal (InChI's own list, the `METAL`/`METAL2` rows of `eldata.c`), yet the InChI changed. The option only changes how bonds to metals are treated, so any count here is unexpected and fails a gate |
+| `recmet_missing` / `recmet_failed` | no usable `-RecMet` result |
+| `reconnected_as_recmet` | the option's InChI equals 1.07.5's `-RecMet` reconnected (`/r`) layer: MI reproduces what `-RecMet` reconnected |
+| `reconnected_differently` | 1.07.5 disconnected the metal (alone or along with a salt) and `-RecMet` reconnects it, but differently from MI. Needs chemical review |
+| `salt_kept_bonded` | 1.07.5 disconnected a salt, which `-RecMet` cannot undo; MI keeps the bond |
+| `changed_without_disconnection` | 1.07.5 broke no bond to the metal, yet the InChI changed |
 
-  Classifications written before messages were stored fall back to the `/r`
-  layer as a proxy, which cannot tell salt disconnection from none.
-- `metal_free` — neither side's formula contains a metal (InChI's own list, the
-  `METAL`/`METAL2` rows of `eldata.c`). The option only changes how bonds to
-  metals are treated, so it has no mechanism to change these; any count here is
-  unexpected and fails a gate in the report. Checked after the error categories
-  and before the `-RecMet` comparison. A metal-free structure whose InChI matched
-  but whose warning changed is counted by pass B as `metal_free_warning_only` /
-  `metal_free_message_only` and fails a second gate.
-- `error_under_mi` / `error_in_reference` / `recmet_failed` / `recmet_missing` —
-  one side produced no InChI.
+Matched structures are counted by pass B: `unaffected` when the prefix changed
+and nothing else did (same body, exit code and message; the key then differs in
+its flag characters only), and, on structures without a metal, any warning
+change as `without_metal_warning_only` / `without_metal_message_only`, which
+fails a second gate. The report's *Prefix changes* table shows every outcome by
+whether the prefix changed; `unaffected_warning_changed` there is `prefix_only`
+minus `unaffected`.
 
 The `/r` layer is the structural evidence for the stated route, and it is checked
 per structure: the `-RecMet` re-run stores the baseline's warning message, and
@@ -156,7 +154,7 @@ per structure: the `-RecMet` re-run stores the baseline's warning message, and
 and "Salt was disconnected" alone without one (`agrees` / `disagrees`), whether
 the baseline disconnected nothing although the structure has a metal
 (`no_disconnection`), whether there is no metal and so no route (`no_metal`, the
-`metal_free` rows), or whether there was no usable `-RecMet` result
+`changed_without_metal` rows), or whether there was no usable `-RecMet` result
 (`not_checked`).
 
 `classifications.csv` carries one row per mismatch with the InChI, InChIKey, exit
@@ -166,24 +164,22 @@ logs. `error_under_mi_messages.json` lists the message of every structure that
 failed only under the option. An empty `recmet_*` cell means no re-computation was made
 for that structure.
 
-### Mismatch IDs per cause
+### Mismatch IDs per category
 
-Every run writes the molfile ID of each mismatch to one file per cause, so a set
-of structures can be fed straight into another tool:
+Every run writes the molfile ID of each mismatch to one file per category, so a
+set of structures can be fed straight into another tool:
 
 ```
 ids/
-    metal_free.txt
-    recmet_equivalent.txt     novel_metal_pathway.txt   novel_salt_pathway.txt
-    novel_no_disconnection.txt
-    error_under_mi.txt        error_in_reference.txt
-    recmet_failed.txt         recmet_missing.txt
+    changed_without_metal.txt     reconnected_as_recmet.txt
+    reconnected_differently.txt   salt_kept_bonded.txt
+    changed_without_disconnection.txt
+    error_under_mi.txt            error_in_reference.txt
+    recmet_failed.txt             recmet_missing.txt
 ```
 
-One ID per line, numerically sorted where the IDs are numeric. `novel` is split by
-disconnection pathway, which is the distinction that matters when following one
-up. Every file is written even when empty, so a consumer can rely on the
-filenames.
+One ID per line, numerically sorted where the IDs are numeric. Every file is
+written even when empty, so a consumer can rely on the filenames.
 
 ### Rebuilding the report
 

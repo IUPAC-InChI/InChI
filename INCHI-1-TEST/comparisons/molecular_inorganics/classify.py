@@ -11,11 +11,20 @@ version-and-kind prefix (`comparators.PrefixInsensitiveComparator`), and every
 A-vs-B mismatch is re-checked against v1.07.5 `-RecMet` by comparing that run's
 reconnected (`/r`) layer with the `-MolecularInorganics` InChI minus its prefix.
 
-A mismatch on a structure without any metal is its own category, `metal_free`:
-MolecularInorganics only changes how bonds to metals are treated, so it has no
-mechanism to change such a structure. The `-RecMet` re-run also keeps the
-baseline's warning message, which states which disconnection route it took, so
-the `/r` layer's use as a proxy for the route is checked per structure.
+Every mismatch gets one category, named for what happened to the structure:
+
+  changed_without_metal          no metal, yet the InChI changed
+  reconnected_as_recmet          MI reproduces what 1.07.5 -RecMet reconnected
+  reconnected_differently        both reconnect the metal, differently
+  salt_kept_bonded               1.07.5 disconnected a salt, which -RecMet cannot
+                                 undo; MI keeps the bond
+  changed_without_disconnection  1.07.5 broke no bond to the metal, yet the
+                                 InChI changed
+
+plus `error_in_reference`, `error_under_mi`, `recmet_missing` and
+`recmet_failed` where a side produced nothing to compare. The disconnection
+route is the one Run A's own warning states; the `/r` layer is checked against
+it per structure (`route_check`).
 """
 
 import argparse
@@ -238,6 +247,27 @@ def reconnected_layer(inchi: str) -> str:
     return reconnected if separator else body
 
 
+def disconnection_route(message: str) -> str:
+    """The route the baseline says it took: `metal`, `salt`, `both` or `none`."""
+    metal = METAL_DISCONNECTED in message
+    salt = SALT_DISCONNECTED in message
+
+    return {(True, False): "metal", (False, True): "salt", (True, True): "both"}.get(
+        (metal, salt), "none"
+    )
+
+
+# The category of a mismatch that -RecMet does not reproduce, by the route Run A
+# states. `both` goes with metal: the metal disconnection is the one -RecMet
+# reverses, so MI and the reconnected layer still disagree on a bond to a metal.
+_BY_ROUTE = {
+    "metal": "reconnected_differently",
+    "both": "reconnected_differently",
+    "salt": "salt_kept_bonded",
+    "none": "changed_without_disconnection",
+}
+
+
 def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
     if is_failed(mismatch.reference):
         return "error_in_reference"
@@ -246,7 +276,7 @@ def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
     if not has_metal(mismatch.reference["inchi"]) and not has_metal(
         mismatch.current["inchi"]
     ):
-        return "metal_free"
+        return "changed_without_metal"
     if recmet_result is None:
         return "recmet_missing"
     if is_failed(recmet_result):
@@ -254,9 +284,9 @@ def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
     if reconnected_layer(recmet_result["inchi"]) == inchi_body(
         mismatch.current["inchi"]
     ):
-        return "recmet_equivalent"
+        return "reconnected_as_recmet"
 
-    return "novel"
+    return _BY_ROUTE[disconnection_route(mismatch.reference.get("message", ""))]
 
 
 # Outcomes of checking the `/r` proxy against the baseline's own message.
@@ -266,12 +296,11 @@ ROUTE_CHECKS = ("agrees", "disagrees", "no_disconnection", "no_metal", "not_chec
 def route_check(recmet_result: dict | None) -> str:
     """Whether the `/r` layer names the route the baseline says it took.
 
-    `novel` is split by the stated route (`novel_pathway`); this keeps the `/r`
-    layer honest as the structural evidence for it. The proxy reads an `/r` layer as metal disconnection, which `-RecMet`
-    reverses, and its absence as salt disconnection, which it cannot. The
-    baseline states the route in its warnings, so the proxy is checked rather
-    than assumed. `no_disconnection` is a structure for which the baseline broke
-    no bond to a metal at all."""
+    The categories follow the route Run A states; this keeps the `/r` layer
+    honest as the structural evidence for it. An `/r` layer means metal
+    disconnection, which `-RecMet` reverses, and its absence salt disconnection,
+    which it cannot. `no_disconnection` is a structure with a metal for which the
+    baseline broke no bond to it at all."""
     if recmet_result is None or is_failed(recmet_result):
         return "not_checked"
     message = recmet_result.get("message", "")
@@ -309,7 +338,7 @@ def classify_mismatches(
                 # No metal, no route: kept apart from `no_disconnection`, which
                 # on a structure with a metal is a finding of its own.
                 route_check="no_metal"
-                if category == "metal_free"
+                if category == "changed_without_metal"
                 else route_check(recmet_result),
                 reference_key=mismatch.reference.get("key", ""),
                 dev_mi_key=mismatch.current.get("key", ""),
@@ -328,30 +357,13 @@ def inchi_prefix(inchi: str) -> str:
     return inchi.split("/", 1)[0] if "/" in inchi else ""
 
 
-# What the baseline's -RecMet re-run says about a mismatch: its `/r` layer equals
-# the option's InChI body, exists but differs, or does not exist -- including
-# when -RecMet produced nothing at all.
-RECMET_LAYERS = ("equals_new_inchi", "differs", "no_layer")
-
-
-def recmet_layer_status(classification: Classification) -> str:
-    recmet = classification.recmet_inchi
-    if not has_reconnected_layer(recmet):
-        return "no_layer"
-    if reconnected_layer(recmet) == inchi_body(classification.dev_mi_inchi):
-        return "equals_new_inchi"
-
-    return "differs"
-
-
 def prefix_breakdown(classifications: list[Classification]) -> dict[str, dict[str, int]]:
-    """Mismatches split by whether the prefix changed and by the -RecMet layer.
+    """Mismatches per category, split by whether the prefix changed.
 
     Only mismatches where both sides produced an InChI, since a prefix needs one.
-    The matched side of the same question is pass B's `only_prefix_changed`
-    tally."""
+    The matched side of the same question is pass B's `unaffected` tally."""
     breakdown = {
-        side: {status: 0 for status in RECMET_LAYERS}
+        side: {category: 0 for category in CATEGORIES}
         for side in ("prefix_changed", "prefix_unchanged")
     }
     for classification in classifications:
@@ -360,7 +372,7 @@ def prefix_breakdown(classifications: list[Classification]) -> dict[str, dict[st
         if not reference or not current:
             continue
         side = "prefix_changed" if reference != current else "prefix_unchanged"
-        breakdown[side][recmet_layer_status(classification)] += 1
+        breakdown[side][classification.category] += 1
 
     return breakdown
 
@@ -418,67 +430,19 @@ def write_report(
         )
 
 
-# One file per cause, always written, so a consumer can rely on the filenames
-# rather than probing for them. `novel` is split by disconnection pathway because
-# that is the actual cause: the old code breaks bonds to metals by two routes and
-# `-RecMet` only reverses one of them. A structure the baseline did not
-# disconnect at all has neither route and is kept apart.
-ID_LIST_CAUSES = (
-    "metal_free",
-    "recmet_equivalent",
-    "novel_metal_pathway",
-    "novel_salt_pathway",
-    "novel_no_disconnection",
+# Every category, in report order. One ID file each, always written, so a
+# consumer can rely on the filenames rather than probing for them.
+CATEGORIES = (
+    "changed_without_metal",
+    "reconnected_as_recmet",
+    "reconnected_differently",
+    "salt_kept_bonded",
+    "changed_without_disconnection",
     "error_under_mi",
     "error_in_reference",
     "recmet_failed",
     "recmet_missing",
 )
-
-
-def disconnection_route(message: str) -> str:
-    """The route the baseline says it took: `metal`, `salt`, `both` or `none`."""
-    metal = METAL_DISCONNECTED in message
-    salt = SALT_DISCONNECTED in message
-
-    return {(True, False): "metal", (False, True): "salt", (True, True): "both"}.get(
-        (metal, salt), "none"
-    )
-
-
-# How a `novel` structure's route maps to its cause bucket. `both` goes with
-# metal: the metal disconnection is the one `-RecMet` reverses, so MI and the
-# reconnected layer still disagree on a bond to a metal.
-_NOVEL_PATHWAY = {
-    "metal": "novel_metal_pathway",
-    "both": "novel_metal_pathway",
-    "salt": "novel_salt_pathway",
-    "none": "novel_no_disconnection",
-}
-
-
-def novel_pathway(reference_message: str | None, recmet_inchi: str) -> str:
-    """The cause bucket of a `novel` structure, from the route the baseline states.
-
-    The baseline's own message in Run A names the route. Classifications written
-    before messages were stored have none (`None`); for those the `/r` layer is
-    the proxy, which cannot tell a salt disconnection from no disconnection."""
-    if reference_message is None:
-        return (
-            "novel_metal_pathway"
-            if has_reconnected_layer(recmet_inchi)
-            else "novel_salt_pathway"
-        )
-
-    return _NOVEL_PATHWAY[disconnection_route(reference_message)]
-
-
-def cause_of(classification: Classification) -> str:
-    """The cause bucket a classification belongs in, splitting `novel` by pathway."""
-    if classification.category != "novel":
-        return classification.category
-
-    return novel_pathway(classification.reference_message, classification.recmet_inchi)
 
 
 def _id_sort_key(molfile_id: str):
@@ -490,14 +454,14 @@ def _id_sort_key(molfile_id: str):
 def write_id_lists(
     classifications: list[Classification], output_dir: Path
 ) -> dict[str, int]:
-    """Write the molfile IDs of every mismatch to one file per cause.
+    """Write the molfile IDs of every mismatch to one file per category.
 
-    Returns the count per cause. Files land in `<output_dir>/ids/<cause>.txt`,
+    Returns the count per category. Files land in `<output_dir>/ids/<category>.txt`,
     one ID per line, sorted."""
-    grouped: dict[str, list[str]] = {cause: [] for cause in ID_LIST_CAUSES}
+    grouped: dict[str, list[str]] = {category: [] for category in CATEGORIES}
 
     for classification in classifications:
-        grouped.setdefault(cause_of(classification), []).append(
+        grouped.setdefault(classification.category, []).append(
             classification.molfile_id
         )
 
@@ -505,12 +469,12 @@ def write_id_lists(
     ids_dir.mkdir(parents=True, exist_ok=True)
 
     counts: dict[str, int] = {}
-    for cause, molfile_ids in grouped.items():
+    for category, molfile_ids in grouped.items():
         molfile_ids.sort(key=_id_sort_key)
-        ids_dir.joinpath(f"{cause}.txt").write_text(
+        ids_dir.joinpath(f"{category}.txt").write_text(
             "".join(f"{molfile_id}\n" for molfile_id in molfile_ids), encoding="utf-8"
         )
-        counts[cause] = len(molfile_ids)
+        counts[category] = len(molfile_ids)
 
     return counts
 

@@ -218,6 +218,6 @@ printf '\n\033[1mComparison complete.\033[0m\n'
 echo "  everything in  $OUT"
 echo "    report.html          the rendered report"
 echo "    classifications.csv  one row per mismatch"
-echo "    ids/                 mismatching IDs, one file per cause"
+echo "    ids/                 mismatching IDs, one file per category"
 echo "    summary.json         counts and tallies"
 echo "    logs/                the three run logs"

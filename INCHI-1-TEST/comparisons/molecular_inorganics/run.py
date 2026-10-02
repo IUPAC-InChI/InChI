@@ -88,13 +88,13 @@ class MessageTallyingComparator(PrefixInsensitiveComparator):
 
     MolecularInorganics only changes how bonds to metals are treated, so on a
     structure without a metal even a warning change is unexpected. Those are
-    counted again as `metal_free_warning_only` and `metal_free_message_only`;
+    counted again as `without_metal_warning_only` and `without_metal_message_only`;
     a metal-free structure whose body changed is a mismatch and is classified as
-    `metal_free` by `classify.py`.
+    `changed_without_metal` by `classify.py`.
 
     `prefix_only` counts every matched structure whose raw InChI differs, even
-    when its warning changed too. `only_prefix_changed` is the strict subset:
-    the prefix differs and the exit code and message are identical. The key then
+    when its warning changed too. `unaffected` is the strict subset: the prefix
+    differs and the exit code and message are identical. The key then
     differs in its flag characters at most, since its hash blocks follow the
     body."""
 
@@ -103,9 +103,9 @@ class MessageTallyingComparator(PrefixInsensitiveComparator):
         self.counts.update(
             {
                 "message_only": 0,
-                "only_prefix_changed": 0,
-                "metal_free_warning_only": 0,
-                "metal_free_message_only": 0,
+                "unaffected": 0,
+                "without_metal_warning_only": 0,
+                "without_metal_message_only": 0,
             }
         )
 
@@ -122,12 +122,12 @@ class MessageTallyingComparator(PrefixInsensitiveComparator):
             and current["exit"] == reference["exit"]
             and not message_changed
         ):
-            self.counts["only_prefix_changed"] += 1
+            self.counts["unaffected"] += 1
         if not has_metal(current["inchi"]) and not has_metal(reference["inchi"]):
             if current["exit"] != reference["exit"]:
-                self.counts["metal_free_warning_only"] += 1
+                self.counts["without_metal_warning_only"] += 1
             if message_changed:
-                self.counts["metal_free_message_only"] += 1
+                self.counts["without_metal_message_only"] += 1
 
         return is_match
 

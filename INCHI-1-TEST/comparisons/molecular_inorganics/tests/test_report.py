@@ -6,7 +6,6 @@ from molecular_inorganics.classify import Mismatch
 from molecular_inorganics.report import (
     differing_fields,
     load_classifications,
-    novel_split,
     element_census,
     run_duration,
     build_report_data,
@@ -42,16 +41,16 @@ def classifications_path(tmp_path):
         path,
         [
             # metal pathway, MI reproduces the /r layer
-            dict(molfile_id="1", sdf="A.sdf.gz", category="recmet_equivalent",
+            dict(molfile_id="1", sdf="A.sdf.gz", category="reconnected_as_recmet",
                  reference_inchi="InChI=1S/x", dev_mi_inchi="InChI=1B/y",
                  recmet_inchi=PTEN_RECMET),
             # salt pathway: RecMet emitted no /r layer at all
-            dict(molfile_id="2", sdf="A.sdf.gz", category="novel",
+            dict(molfile_id="2", sdf="A.sdf.gz", category="salt_kept_bonded",
                  reference_inchi="InChI=1S/C8H11N.2ClH.Hg/c;;;",
                  dev_mi_inchi="InChI=1B/C8H11N.Cl2Hg/c;1-3-2",
                  recmet_inchi="InChI=1/C8H11N.2ClH.Hg/c;;;"),
             # metal pathway, but the two disagree
-            dict(molfile_id="3", sdf="B.sdf.gz", category="novel",
+            dict(molfile_id="3", sdf="B.sdf.gz", category="reconnected_differently",
                  reference_inchi="InChI=1S/C12H28Sn",
                  dev_mi_inchi="InChI=1B/C12H28Sn/c1-4",
                  recmet_inchi="InChI=1/C12H28Sn/c;/rC12H28Sn/c9-9"),
@@ -102,7 +101,7 @@ def run_c_log(tmp_path):
 def summary_path(tmp_path):
     path = tmp_path / "summary.json"
     path.write_text(json.dumps({
-        "counts": {"recmet_equivalent": 1, "novel": 2},
+        "counts": {"reconnected_as_recmet": 1, "salt_kept_bonded": 1, "reconnected_differently": 1},
         "total": 3,
         "comparison": {"matched": 97, "mismatched": 3, "prefix_only": 97,
                        "key_only": 97, "warning_only": 1, "both_failed": 0},
@@ -113,21 +112,11 @@ def summary_path(tmp_path):
 def test_load_classifications(classifications_path):
     rows = load_classifications(classifications_path)
     assert len(rows) == 3
-    assert rows[0]["category"] == "recmet_equivalent"
-
-
-def test_novel_split_uses_the_r_layer_as_the_pathway_proxy(classifications_path):
-    rows = load_classifications(classifications_path)
-    split = novel_split(rows)
-    # No /r layer => the old code broke the bond via salt disconnection, which
-    # -RecMet cannot undo.
-    assert split["salt_pathway"] == 1
-    # An /r layer means metal disconnection, which -RecMet does reverse.
-    assert split["metal_pathway"] == 1
+    assert rows[0]["category"] == "reconnected_as_recmet"
 
 
 def test_element_census_excludes_carbon_and_hydrogen(classifications_path):
-    rows = [r for r in load_classifications(classifications_path) if r["category"] == "novel"]
+    rows = [r for r in load_classifications(classifications_path) if r["category"] != "reconnected_as_recmet"]
     census = element_census(rows)
     assert census["Hg"] == 1
     assert census["Cl"] == 1
@@ -166,7 +155,8 @@ def test_build_report_data_keeps_the_comparisons_apart(
     option = data["a_vs_b"]
     assert option["total_structures"] == 100          # matched + mismatched
     assert option["mismatch_rate"] == pytest.approx(3.0)
-    assert option["novel"]["salt_pathway"] == 1
+    assert option["categories"]["salt_kept_bonded"] == 1
+    assert option["not_reproduced"] == 2
     assert option["gates"]["prefix"] is True          # 97 + 0 == 97
     assert option["gates"]["completeness"] is True    # 97 + 3 + 0 == 100
 
@@ -265,7 +255,7 @@ def test_an_unmeasured_comparison_is_not_a_100_percent_mismatch(
     100.00% changed over a total that was only the mismatch count, and passed the
     prefix gate on 0 + 0 == 0."""
     summary_path = tmp_path / "summary_no_comparison.json"
-    summary_path.write_text(json.dumps({"counts": {"recmet_equivalent": 1}}))
+    summary_path.write_text(json.dumps({"counts": {"reconnected_as_recmet": 1}}))
 
     data = build_report_data(
         classifications_path=classifications_path,
@@ -362,7 +352,7 @@ def test_specimen_captions_are_not_double_escaped(classifications_path, summary_
     )
     html = render_html(data)
     assert "&amp;mdash;" not in html
-    assert "Salt route — RecMet cannot restore it" in html
+    assert "no /r layer — salt disconnection is not reversible by RecMet" in html
 
 
 def test_render_html_is_self_contained_and_theme_aware(classifications_path, summary_path):
@@ -384,11 +374,11 @@ def test_render_html_is_self_contained_and_theme_aware(classifications_path, sum
     assert "cdnjs" not in html
     assert html.count("<script") == 0
     # Real measured numbers, not placeholders.
-    assert "100" in html and "recmet_equivalent" in html
+    assert "100" in html and "reconnected_as_recmet" in html
     assert "TODO" not in html and "lorem" not in html.lower()
 
 
-def test_metal_free_and_route_gates_need_a_classification_that_checked_them(
+def test_without_metal_and_route_gates_need_a_classification_that_checked_them(
     classifications_path, summary_path
 ):
     # The fixture's summary predates both checks: not checked, never a pass.
@@ -398,17 +388,17 @@ def test_metal_free_and_route_gates_need_a_classification_that_checked_them(
         baseline_label="base",
         test_label="test",
     )
-    assert data["a_vs_b"]["gates"]["metal_free"] is None
+    assert data["a_vs_b"]["gates"]["changed_without_metal"] is None
     assert data["a_vs_b"]["gates"]["route"] is None
     assert "Route check: not checked" in render_html(data)
 
 
-def test_metal_free_mismatches_and_route_disagreements_fail_their_gates(
+def test_changes_without_a_metal_and_route_disagreements_fail_their_gates(
     classifications_path, tmp_path
 ):
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(json.dumps({
-        "counts": {"recmet_equivalent": 1, "novel": 2, "metal_free": 4},
+        "counts": {"reconnected_as_recmet": 1, "salt_kept_bonded": 1, "reconnected_differently": 1, "changed_without_metal": 4},
         "route_check": {"agrees": 2, "disagrees": 1},
         "comparison": {"matched": 93, "mismatched": 7},
     }))
@@ -419,7 +409,7 @@ def test_metal_free_mismatches_and_route_disagreements_fail_their_gates(
         test_label="test",
     )
     option = data["a_vs_b"]
-    assert option["gates"]["metal_free"] is False
+    assert option["gates"]["changed_without_metal"] is False
     assert option["gates"]["route"] is False
     assert option["route"] == {
         "agrees": 2, "disagrees": 1, "no_disconnection": 0, "no_metal": 0, "not_checked": 0
@@ -427,13 +417,13 @@ def test_metal_free_mismatches_and_route_disagreements_fail_their_gates(
 
     html = _part(render_html(data), "a-vs-b")
     assert "4 structures without a metal changed their InChI." in html
-    assert "ids/metal_free.txt" in html
+    assert "ids/changed_without_metal.txt" in html
 
 
 def test_message_only_is_shown_in_the_option_part(classifications_path, tmp_path):
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(json.dumps({
-        "counts": {"recmet_equivalent": 1, "novel": 2},
+        "counts": {"reconnected_as_recmet": 1, "salt_kept_bonded": 1, "reconnected_differently": 1},
         "comparison": {"matched": 97, "mismatched": 3, "message_only": 12},
     }))
     data = build_report_data(
@@ -446,13 +436,13 @@ def test_message_only_is_shown_in_the_option_part(classifications_path, tmp_path
     assert '<td>message_only</td><td class="n">12</td>' in option
 
 
-def test_metal_free_warning_changes_fail_their_own_gate(classifications_path, tmp_path):
+def test_warning_changes_without_a_metal_fail_their_own_gate(classifications_path, tmp_path):
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(json.dumps({
-        "counts": {"recmet_equivalent": 1, "novel": 2},
+        "counts": {"reconnected_as_recmet": 1, "salt_kept_bonded": 1, "reconnected_differently": 1},
         "route_check": {"agrees": 3},
         "comparison": {"matched": 97, "mismatched": 3,
-                       "metal_free_warning_only": 2, "metal_free_message_only": 5},
+                       "without_metal_warning_only": 2, "without_metal_message_only": 5},
     }))
     data = build_report_data(
         classifications_path=classifications_path,
@@ -461,13 +451,13 @@ def test_metal_free_warning_changes_fail_their_own_gate(classifications_path, tm
         test_label="test",
     )
     option = data["a_vs_b"]
-    assert option["metal_free_warnings"] == 7
-    assert option["gates"]["metal_free_warnings"] is False
-    assert option["gates"]["metal_free"] is True
+    assert option["without_metal_warnings"] == 7
+    assert option["gates"]["without_metal_warnings"] is False
+    assert option["gates"]["changed_without_metal"] is True
     assert "7 warning changes on structures without a metal" in _part(render_html(data), "a-vs-b")
 
 
-def test_metal_free_warning_gate_is_not_checked_on_an_older_log(
+def test_without_metal_warning_gate_is_not_checked_on_an_older_log(
     classifications_path, summary_path
 ):
     data = build_report_data(
@@ -476,42 +466,18 @@ def test_metal_free_warning_gate_is_not_checked_on_an_older_log(
         baseline_label="base",
         test_label="test",
     )
-    assert data["a_vs_b"]["gates"]["metal_free_warnings"] is None
+    assert data["a_vs_b"]["gates"]["without_metal_warnings"] is None
 
 
-def test_novel_split_uses_the_stated_route_when_messages_are_stored(tmp_path):
-    path = tmp_path / "classifications.csv"
-    fields = ["molfile_id", "sdf", "category", "reference_inchi", "dev_mi_inchi",
-              "recmet_inchi", "reference_message"]
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields)
-        writer.writeheader()
-        for i, (recmet, message) in enumerate([
-            (PTEN_RECMET, "Metal was disconnected"),
-            ("InChI=1/C8H11N.2ClH.Hg/c;;;", "Salt was disconnected"),
-            ("InChI=1/C8H11N.2ClH.Hg/c;;;", ""),   # the proxy would call it salt
-        ]):
-            writer.writerow(dict(molfile_id=str(i), sdf="A.sdf.gz", category="novel",
-                                 reference_inchi="InChI=1S/x", dev_mi_inchi="InChI=1B/y",
-                                 recmet_inchi=recmet, reference_message=message))
-
-    split = novel_split(load_classifications(path))
-    assert split["metal_pathway"] == 1
-    assert split["salt_pathway"] == 1
-    assert split["no_disconnection"] == 1
-    assert split["from_messages"] is True
-
-
-def test_prefix_section_answers_the_three_questions(classifications_path, tmp_path):
+def test_prefix_section_names_each_outcome(classifications_path, tmp_path):
+    changed = {"reconnected_as_recmet": 40, "reconnected_differently": 7, "salt_kept_bonded": 11,
+               "changed_without_disconnection": 2}
+    unchanged = {"changed_without_metal": 5}
     summary_path = tmp_path / "summary.json"
     summary_path.write_text(json.dumps({
-        "counts": {"recmet_equivalent": 1, "novel": 2},
-        "prefix": {
-            "prefix_changed": {"equals_new_inchi": 40, "differs": 7, "no_layer": 13},
-            "prefix_unchanged": {"equals_new_inchi": 0, "differs": 0, "no_layer": 2},
-        },
-        "comparison": {"matched": 97, "mismatched": 62, "prefix_only": 90,
-                       "only_prefix_changed": 85},
+        "counts": {"reconnected_as_recmet": 1, "salt_kept_bonded": 1, "reconnected_differently": 1},
+        "prefix": {"prefix_changed": changed, "prefix_unchanged": unchanged},
+        "comparison": {"matched": 97, "mismatched": 65, "prefix_only": 90, "unaffected": 85},
     }))
     data = build_report_data(
         classifications_path=classifications_path,
@@ -520,15 +486,17 @@ def test_prefix_section_answers_the_three_questions(classifications_path, tmp_pa
         test_label="test",
     )
     option = _part(render_html(data), "a-vs-b")
-    for label, count in [
-        ("only the prefix changed: same body, exit code and message", "85"),
-        ("prefix and warning changed, same body", "5"),
-        ("prefix changed, 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer = new InChI", "40"),
-        ("prefix changed, no 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer", "13"),
-    ]:
-        assert f'{label}</b></td><td class="n">{count}</td>' in option or (
-            f'{label}</td><td class="n">{count}</td>' in option
-        ), label
+    section = option[option.index("Prefix changes"):option.index("What the categories mean")]
+
+    def row(name):
+        start = section.index(f'<td class="mono">{name}</td>')
+        return section[start:section.index("</tr>", start)]
+
+    assert '<td class="n">85</td>' in row("unaffected")
+    assert '<td class="n">5</td>' in row("unaffected_warning_changed")
+    assert '<td class="n">40</td>' in row("reconnected_as_recmet")
+    assert '<td class="n">11</td>' in row("salt_kept_bonded")
+    assert '<td class="n">5</td>' in row("changed_without_metal")
 
 
 def test_prefix_section_is_not_checked_on_older_output(classifications_path, summary_path):

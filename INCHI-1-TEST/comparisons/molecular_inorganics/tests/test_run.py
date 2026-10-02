@@ -178,7 +178,7 @@ class TestCheckReferenceFormat:
             check_reference_format(path)
 
 
-def test_warning_changes_on_metal_free_structures_are_tallied_apart():
+def test_warning_changes_without_a_metal_are_tallied_apart():
     comparator = MessageTallyingComparator()
     organic = "C2H6O/c1-2-3/h3H,2H2,1H3"
     comparator({"inchi": f"InChI=1B/{organic}", "key": "K", "exit": 0, "message": ""},
@@ -192,11 +192,11 @@ def test_warning_changes_on_metal_free_structures_are_tallied_apart():
     summary = comparator.summary()
     assert summary["message_only"] == 2
     assert summary["warning_only"] == 2
-    assert summary["metal_free_message_only"] == 1
-    assert summary["metal_free_warning_only"] == 1
+    assert summary["without_metal_message_only"] == 1
+    assert summary["without_metal_warning_only"] == 1
 
 
-def test_only_prefix_changed_excludes_warning_and_message_changes():
+def test_unaffected_excludes_warning_and_message_changes():
     comparator = MessageTallyingComparator()
     body = TestMessageTallyingComparator.BODY
     base = {"inchi": f"InChI=1S/{body}", "key": "K-SA", "exit": 1, "message": "m"}
@@ -208,4 +208,4 @@ def test_only_prefix_changed_excludes_warning_and_message_changes():
 
     summary = comparator.summary()
     assert summary["prefix_only"] == 3
-    assert summary["only_prefix_changed"] == 1
+    assert summary["unaffected"] == 1

@@ -9,19 +9,9 @@ block of its own; A vs C (the control, byte-for-byte) and A vs B (the option,
 prefix-insensitive) each get a part with their own figures, gates, blind spots
 and cost, built only from that pass's data.
 
-The one piece of interpretation baked in here is the pathway split, and it is
-derived from data rather than assumed. The old code breaks bonds to metals by two
-different routes and `-RecMet` only reverses one of them:
-
-  * metal disconnection  -- `-RecMet` reverses it and emits an `/r` layer, so a
-    structure `-MolecularInorganics` left alone matches that layer exactly.
-  * salt disconnection   -- `-RecMet` has no mechanism to undo it, so there is no
-    `/r` layer and nothing for the MI output to be compared against.
-
-`-MolecularInorganics` does not create bonds; it declines to break the ones the
-molfile already has. The presence of an `/r` layer in the `-RecMet` output is
-therefore a proxy for which route the old code took, and on the pilot corpus it
-separated the two perfectly (3875/3875 metal, 671/671 salt, 164/164 metal).
+Every category is named for what happened to the structure (see `classify.py`);
+the disconnection route behind them is the one Run A's own warning states, and
+the `/r` layer of the `-RecMet` re-run is checked against it per structure.
 """
 
 import argparse
@@ -34,10 +24,10 @@ from html import escape
 from pathlib import Path
 
 from molecular_inorganics.classify import (
+    CATEGORIES,
     ROUTE_CHECKS,
     Mismatch,
     has_reconnected_layer,
-    novel_pathway,
     parse_comparison_summary,
     parse_regression_log,
 )
@@ -57,23 +47,12 @@ def load_classifications(path: Path) -> list[dict]:
         return list(csv.DictReader(csv_file))
 
 
-def _row_pathway(row: dict) -> str:
-    """A `novel` row's cause bucket; older CSVs have no message column."""
-    return novel_pathway(row.get("reference_message"), row["recmet_inchi"])
-
-
-def novel_split(rows: list[dict]) -> dict[str, int]:
-    """Split the `novel` rows by which route the old code used to break the bond."""
-    pathways = Counter(_row_pathway(row) for row in rows if row["category"] == "novel")
-
-    return {
-        "total": sum(pathways.values()),
-        "metal_pathway": pathways["novel_metal_pathway"],
-        "salt_pathway": pathways["novel_salt_pathway"],
-        "no_disconnection": pathways["novel_no_disconnection"],
-        # Whether the split came from the baseline's messages or from the proxy.
-        "from_messages": bool(rows) and "reference_message" in rows[0],
-    }
+# Mismatches -RecMet does not reproduce: the ones a stated mechanism must explain.
+NOT_REPRODUCED = (
+    "reconnected_differently",
+    "salt_kept_bonded",
+    "changed_without_disconnection",
+)
 
 
 def element_census(rows: list[dict], limit: int = 14) -> dict[str, int]:
@@ -219,29 +198,16 @@ footer{border-top:1px solid var(--line);padding-top:20px;font-size:13px;color:va
 """
 
 
-_EXAMPLE_KEYS = {
-    "novel_metal_pathway": "metal_pathway",
-    "novel_salt_pathway": "salt_pathway",
-    "novel_no_disconnection": "no_disconnection",
-}
+_EXAMPLE_CATEGORIES = ("reconnected_as_recmet",) + NOT_REPRODUCED
 
 
 def _pick_examples(rows: list[dict]) -> dict[str, dict | None]:
-    """One representative row per mechanism, chosen deterministically."""
-    examples: dict[str, dict | None] = {
-        "equivalent": None,
-        "salt_pathway": None,
-        "metal_pathway": None,
-        "no_disconnection": None,
-    }
+    """The first row of each mechanism, so the choice is deterministic."""
+    examples: dict[str, dict | None] = {key: None for key in _EXAMPLE_CATEGORIES}
 
     for row in rows:
-        if row["category"] == "recmet_equivalent" and not examples["equivalent"]:
-            examples["equivalent"] = row
-        elif row["category"] == "novel":
-            key = _EXAMPLE_KEYS[_row_pathway(row)]
-            if not examples[key]:
-                examples[key] = row
+        if row["category"] in examples and not examples[row["category"]]:
+            examples[row["category"]] = row
         if all(examples.values()):
             break
 
@@ -460,22 +426,22 @@ def build_option_data(
     total = matched + mismatched if measured else None
     timeouts = _timeouts(run_b_log)
 
-    novel = novel_split(rows)
-    equivalent = counts.get("recmet_equivalent", 0)
     # The metal-free category and the route check exist only in classifications
     # written since they were added; an older summary has neither, and must not
-    # read as zero metal-free mismatches or a passed check.
+    # read as zero changes without a metal or a passed check.
     checked = "route_check" in summary
     route = {key: summary["route_check"].get(key, 0) for key in ROUTE_CHECKS} if checked else None
-    metal_free = counts.get("metal_free", 0) if checked else None
+    categories = {category: counts.get(category, 0) for category in CATEGORIES}
+    without_metal = categories["changed_without_metal"] if checked else None
     # Matched metal-free structures whose warning level or text changed; only
     # logged by passes run since the tally was added.
-    metal_free_warnings = (
-        comparison["metal_free_warning_only"] + comparison["metal_free_message_only"]
-        if "metal_free_warning_only" in comparison
-        and "metal_free_message_only" in comparison
+    without_metal_warnings = (
+        comparison["without_metal_warning_only"] + comparison["without_metal_message_only"]
+        if "without_metal_warning_only" in comparison
+        and "without_metal_message_only" in comparison
         else None
     )
+    not_reproduced = sum(categories[category] for category in NOT_REPRODUCED)
 
     return {
         "total_structures": total,
@@ -485,23 +451,22 @@ def build_option_data(
         "timeouts": timeouts,
         "comparison": comparison,
         "counts": counts,
-        "equivalent": equivalent,
-        "equivalent_share": _share(equivalent, mismatched),
-        "novel": novel,
-        "novel_share": _share(novel["total"], mismatched),
+        "categories": categories,
+        "reconnected_share": _share(categories["reconnected_as_recmet"], mismatched),
+        "not_reproduced": not_reproduced,
         "census": element_census(
-            [row for row in rows if row["category"] == "novel"]
+            [row for row in rows if row["category"] in NOT_REPRODUCED]
         ),
         "examples": _pick_examples(rows),
-        "metal_free": metal_free,
-        "metal_free_warnings": metal_free_warnings,
+        "changed_without_metal": without_metal,
+        "without_metal_warnings": without_metal_warnings,
         # Classifications and logs from before the breakdown have neither part.
         "prefix": summary.get("prefix"),
         "route": route,
         "gates": {
             # MI only changes how bonds to metals are treated.
-            "metal_free": _is_zero(metal_free),
-            "metal_free_warnings": _is_zero(metal_free_warnings),
+            "changed_without_metal": _is_zero(without_metal),
+            "without_metal_warnings": _is_zero(without_metal_warnings),
             # The `/r` layer names the route the baseline's own warning names.
             "route": _is_zero(route["disagrees"]) if route else None,
             # Every structure that produced an InChI flips prefix under MI; the rest
@@ -666,7 +631,7 @@ _ROUTE_LABELS = {
     "agrees": "proxy and message name the same route",
     "disagrees": "proxy and message name different routes",
     "no_disconnection": "the baseline disconnected nothing",
-    "no_metal": "no metal, so no route (<code>metal_free</code>)",
+    "no_metal": "no metal, so no route (<code>changed_without_metal</code>)",
     "not_checked": "no usable <code>-RecMet</code> result",
 }
 
@@ -687,87 +652,87 @@ def _route_table(route: dict | None) -> str:
       <tbody>{body}</tbody></table></div>"""
 
 
+_CATEGORY_LABELS = {
+    "changed_without_metal": "no metal, yet the InChI changed",
+    "reconnected_as_recmet": "MI reproduces what 1.07.5 <code>-RecMet</code> reconnected",
+    "reconnected_differently": "both reconnect the metal, with different results",
+    "salt_kept_bonded": "1.07.5 disconnected a salt, <code>-RecMet</code> cannot undo it, MI keeps the bond",
+    "changed_without_disconnection": "1.07.5 broke no bond to the metal, yet the InChI changed",
+    "error_under_mi": "MI produced no InChI, 1.07.5 did",
+    "error_in_reference": "1.07.5 produced no InChI, MI did",
+    "recmet_failed": "<code>-RecMet</code> produced no InChI",
+    "recmet_missing": "no <code>-RecMet</code> result",
+}
+
+
 def _prefix_section(option: dict) -> str:
-    """Prefix changes, split by what else changed and by the -RecMet layer."""
+    """Every outcome of A vs B, split by whether the prefix changed."""
     c = option["comparison"]
     p = option["prefix"]
-    only = c.get("only_prefix_changed")
-    with_warning = (
-        c["prefix_only"] - only if only is not None and "prefix_only" in c else None
+    unaffected = c.get("unaffected")
+    warning_changed = (
+        c["prefix_only"] - unaffected
+        if unaffected is not None and "prefix_only" in c
+        else None
     )
 
-    def cell(side: str, status: str):
-        return p[side][status] if p else None
+    def side(name: str, category: str):
+        return p[name].get(category, 0) if p else None
 
     rows = [
-        ("matched", "only the prefix changed: same body, exit code and message", only, True),
-        ("matched", "prefix and warning changed, same body", with_warning, False),
-        ("mismatched", "prefix changed, 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer = new InChI",
-         cell("prefix_changed", "equals_new_inchi"), True),
-        ("mismatched", "prefix changed, no 1.07.5 <code>-RecMet</code> <span class=\"mono\">/r</span> layer",
-         cell("prefix_changed", "no_layer"), True),
-        ("mismatched", "prefix changed, <span class=\"mono\">/r</span> layer differs from the new InChI",
-         cell("prefix_changed", "differs"), False),
-        ("mismatched", "prefix unchanged, <span class=\"mono\">/r</span> layer = new InChI",
-         cell("prefix_unchanged", "equals_new_inchi"), False),
-        ("mismatched", "prefix unchanged, no <span class=\"mono\">/r</span> layer",
-         cell("prefix_unchanged", "no_layer"), False),
-        ("mismatched", "prefix unchanged, <span class=\"mono\">/r</span> layer differs",
-         cell("prefix_unchanged", "differs"), False),
+        ("unaffected", "same InChI apart from the prefix and the key flag",
+         unaffected, None),
+        ("unaffected_warning_changed", "same InChI, but the warning level or text changed",
+         warning_changed, None),
+    ] + [
+        (category, _CATEGORY_LABELS[category],
+         side("prefix_changed", category), side("prefix_unchanged", category))
+        for category in CATEGORIES
+        if not category.startswith(("error_", "recmet_"))
     ]
     body = "".join(
-        f'<tr><td>{side}</td><td>{"<b>" if headline else ""}{label}{"</b>" if headline else ""}</td>'
-        f'<td class="n">{_fmt(count)}</td></tr>'
-        for side, label, count, headline in rows
+        f'<tr><td class="mono">{name}</td><td>{label}</td>'
+        f'<td class="n">{_fmt(changed)}</td>'
+        f'<td class="n">{"" if name.startswith("unaffected") else _fmt(unchanged)}</td></tr>'
+        for name, label, changed, unchanged in rows
     )
 
     return f"""  <section>
     <h3><span class="tag">A vs B</span> Prefix changes</h3>
-    <p>Every structure whose prefix differs from Run A&rsquo;s, by what else changed. Matched
-    structures come from Run B&rsquo;s tallies, mismatched ones from the classification; a
-    mismatch where either side failed has no prefix and is left out. The three rows in bold
-    answer: did only the prefix change, did the new InChI already exist as 1.07.5&rsquo;s
-    reconnected layer, or could 1.07.5 not reconnect at all.</p>
+    <p>Each outcome, by whether the prefix differs from Run A&rsquo;s. The two
+    <span class="mono">unaffected</span> rows come from Run B&rsquo;s tallies of matched
+    structures; the rest are the classified mismatches. A mismatch where either side failed has
+    no prefix and is left out.</p>
     <div class="scroll"><table>
-      <thead><tr><th>side</th><th>structures</th><th class="n">count</th></tr></thead>
+      <thead><tr><th>outcome</th><th>meaning</th><th class="n">prefix changed</th><th class="n">prefix unchanged</th></tr></thead>
       <tbody>{body}</tbody></table></div>
   </section>
 """
 
 
-def _pathway_source(n: dict) -> str:
-    if n["from_messages"]:
-        return "&ldquo;Metal was disconnected&rdquo; / &ldquo;Salt was disconnected&rdquo;"
-
-    return (
-        "these classifications predate stored messages, so the <span class=\"mono\">/r</span> "
-        "layer stands in for it and cannot tell salt disconnection from none"
-    )
-
-
-def _no_disconnection_note(count: int) -> str:
+def _without_disconnection_note(count: int) -> str:
     if not count:
         return ""
 
     return (
-        f" <b>{_fmt(count)} more</b> have a metal that the baseline did not disconnect,"
-        " yet MI changed them."
+        f" <b>{_fmt(count)} <span class=\"mono\">changed_without_disconnection</span></b>"
+        " have a metal that 1.07.5 did not disconnect, yet MI changed them."
     )
 
 
-def _metal_free_callout(metal_free: int | None, warnings: int | None) -> str:
+def _without_metal_callout(changed: int | None, warnings: int | None) -> str:
     """Flag any change to a structure without a metal, which MI cannot explain."""
     parts = []
-    if metal_free:
+    if changed:
         parts.append(
-            f"<b>{_fmt(metal_free)} structures without a metal changed their InChI.</b> "
-            "Their IDs are in <code>ids/metal_free.txt</code>."
+            f"<b>{_fmt(changed)} structures without a metal changed their InChI.</b> "
+            "Their IDs are in <code>ids/changed_without_metal.txt</code>."
         )
     if warnings:
         parts.append(
             f"<b>{_fmt(warnings)} warning changes on structures without a metal</b> "
-            "whose InChI is unchanged (<span class=\"mono\">metal_free_warning_only</span> "
-            "plus <span class=\"mono\">metal_free_message_only</span>)."
+            "whose InChI is unchanged (<span class=\"mono\">without_metal_warning_only</span> "
+            "plus <span class=\"mono\">without_metal_message_only</span>)."
         )
     if not parts:
         return ""
@@ -850,22 +815,34 @@ def _render_control(data: dict) -> str:
 def _render_option(data: dict) -> str:
     option = data["a_vs_b"]
     c = option["comparison"]
-    n = option["novel"]
+    k = option["categories"]
     gates = option["gates"]
     census = "".join(
         f'<span class="el"><b>{escape(el)}</b><span>{count}</span></span>'
         for el, count in option["census"].items()
     )
     counts_rows = "".join(
-        f'<tr><td>{escape(k)}</td><td class="n">{_fmt(v)}</td>'
-        f'<td class="n">{_pct(_share(v, option["mismatched"]), 1)}</td></tr>'
-        for k, v in option["counts"].items()
+        f'<tr><td class="mono">{escape(category)}</td><td>{_CATEGORY_LABELS[category]}</td>'
+        f'<td class="n">{_fmt(count)}</td>'
+        f'<td class="n">{_pct(_share(count, option["mismatched"]), 1)}</td></tr>'
+        for category, count in k.items()
     )
     total = option["total_structures"]
     mismatch_pct = option["mismatch_rate"]
-    eq_pct = _share(option["equivalent"], total)
-    novel_pct = _share(n["total"], total)
     matched_pct = _share(option["matched"], total)
+    cascade = "".join(
+        f'<div class="bar-row"><div class="lab">&rarr; {category}</div>'
+        f'<div class="bar-track"><div class="bar-fill" style="width:{_bar(_share(k[category], total)):.3f}%;'
+        f'min-width:2px;background:var({colour})"></div></div>'
+        f'<div class="val">{_fmt(k[category])}</div></div>'
+        for category, colour in (
+            ("reconnected_as_recmet", "--base"),
+            ("salt_kept_bonded", "--base"),
+            ("reconnected_differently", "--flag"),
+            ("changed_without_disconnection", "--flag"),
+            ("changed_without_metal", "--flag"),
+        )
+    )
 
     return f"""
 <section class="part part-b" id="a-vs-b">
@@ -881,7 +858,7 @@ def _render_option(data: dict) -> str:
     <h3><span class="tag">A vs B</span> Result</h3>
     <div class="figs">
       {_fig(_pct(mismatch_pct), "body changed", f"{_fmt(option['mismatched'])} structures differ chemically.", "is-mi")}
-      {_fig(_pct(option["equivalent_share"], 1), "of those reproduce RecMet", f"{_fmt(option['equivalent'])} equal the baseline&rsquo;s reconnected <span class=\"mono\">/r</span> layer.", "is-base")}
+      {_fig(_pct(option["reconnected_share"], 1), "reconnected_as_recmet", f"{_fmt(k['reconnected_as_recmet'])} equal what 1.07.5 <code>-RecMet</code> reconnected.", "is-base")}
       {_fig(_fmt(option["timeouts"]), "timed out", "Never compared. Expected ones are listed in the data config.")}
     </div>
   </section>
@@ -898,12 +875,7 @@ def _render_option(data: dict) -> str:
       <div class="bar-row"><div class="lab">mismatched</div>
         <div class="bar-track"><div class="bar-fill" style="width:{_bar(mismatch_pct):.3f}%;min-width:3px;background:var(--mi)"></div></div>
         <div class="val">{_fmt(option["mismatched"])}</div></div>
-      <div class="bar-row"><div class="lab">&rarr; recmet_equivalent</div>
-        <div class="bar-track"><div class="bar-fill" style="width:{_bar(eq_pct):.3f}%;min-width:3px;background:var(--base)"></div></div>
-        <div class="val">{_fmt(option["equivalent"])}</div></div>
-      <div class="bar-row"><div class="lab">&rarr; novel</div>
-        <div class="bar-track"><div class="bar-fill" style="width:{_bar(novel_pct):.3f}%;min-width:2px;background:var(--flag)"></div></div>
-        <div class="val">{_fmt(n["total"])}</div></div>
+      {cascade}
     </div>
   </section>
 
@@ -922,14 +894,15 @@ def _render_option(data: dict) -> str:
         <tr><td>key_only</td><td class="n">{_fmt(c.get("key_only"))}</td></tr>
         <tr><td>warning_only</td><td class="n">{_fmt(c.get("warning_only"))}</td></tr>
         <tr><td>message_only</td><td class="n">{_fmt(c.get("message_only"))}</td></tr>
-        <tr><td>metal_free_warning_only</td><td class="n">{_fmt(c.get("metal_free_warning_only"))}</td></tr>
-        <tr><td>metal_free_message_only</td><td class="n">{_fmt(c.get("metal_free_message_only"))}</td></tr>
+        <tr><td>unaffected</td><td class="n">{_fmt(c.get("unaffected"))}</td></tr>
+        <tr><td>without_metal_warning_only</td><td class="n">{_fmt(c.get("without_metal_warning_only"))}</td></tr>
+        <tr><td>without_metal_message_only</td><td class="n">{_fmt(c.get("without_metal_message_only"))}</td></tr>
         <tr><td>both_failed</td><td class="n">{_fmt(c.get("both_failed"))}</td></tr>
         <tr><td>failure_kind_only</td><td class="n">{_fmt(c.get("failure_kind_only"))}</td></tr>
       </tbody></table></div>
     {_gates([
-        (gates["metal_free"], "metal-free mismatches = 0", "MI touches metals only"),
-        (gates["metal_free_warnings"], "metal-free warning changes = 0", "MI touches metals only"),
+        (gates["changed_without_metal"], "changed_without_metal = 0", "MI touches metals only"),
+        (gates["without_metal_warnings"], "warning changes without a metal = 0", "MI touches metals only"),
         (gates["route"], "<span class=\"mono\">/r</span> proxy disagrees with the baseline message = 0", "route proxy"),
         (gates["prefix"], "prefix_only + both_failed = matched", "prefix flip"),
         (gates["completeness"], "matched + mismatched + timed out = reference rows", "completeness"),
@@ -942,44 +915,47 @@ def _render_option(data: dict) -> str:
     <h3><span class="tag">A vs B</span> What the categories mean</h3>
     <p><b>MolecularInorganics does not create bonds. It declines to break the ones the molfile
     already has.</b> The old code breaks them by two different routes, and <code>-RecMet</code>
-    only reverses one. The route is the one the baseline states in its own Run A warning
-    ({_pathway_source(n)}):</p>
+    only reverses one. The route is the one 1.07.5 states in its own Run A warning,
+    &ldquo;Metal was disconnected&rdquo; or &ldquo;Salt was disconnected&rdquo;:</p>
     <div class="scroll"><table>
-      <thead><tr><th>route taken by the old code</th><th class="n">count</th><th>RecMet</th></tr></thead>
+      <thead><tr><th>category</th><th>route taken by 1.07.5</th><th class="n">count</th><th>RecMet</th></tr></thead>
       <tbody>
-        <tr><td>metal disconnection &mdash; MI output equals the restored bonds</td>
-          <td class="n">{_fmt(option["equivalent"])}</td><td>reverses it, emits <span class="mono">/r</span></td></tr>
-        <tr><td>metal disconnection &mdash; but the two disagree</td>
-          <td class="n">{_fmt(n["metal_pathway"])}</td><td>reverses it, differently</td></tr>
-        <tr><td>salt disconnection</td>
-          <td class="n">{_fmt(n["salt_pathway"])}</td><td>cannot undo it, no <span class="mono">/r</span></td></tr>
-        <tr><td>no disconnection &mdash; the baseline broke no bond to a metal</td>
-          <td class="n">{_fmt(n["no_disconnection"])}</td><td>nothing to reverse</td></tr>
+        <tr><td class="mono">reconnected_as_recmet</td><td>metal disconnection; MI equals the restored bonds</td>
+          <td class="n">{_fmt(k["reconnected_as_recmet"])}</td><td>reverses it, emits <span class="mono">/r</span></td></tr>
+        <tr><td class="mono">reconnected_differently</td><td>metal disconnection; the two disagree</td>
+          <td class="n">{_fmt(k["reconnected_differently"])}</td><td>reverses it, differently</td></tr>
+        <tr><td class="mono">salt_kept_bonded</td><td>salt disconnection</td>
+          <td class="n">{_fmt(k["salt_kept_bonded"])}</td><td>cannot undo it, no <span class="mono">/r</span></td></tr>
+        <tr><td class="mono">changed_without_disconnection</td><td>none; 1.07.5 broke no bond to the metal</td>
+          <td class="n">{_fmt(k["changed_without_disconnection"])}</td><td>nothing to reverse</td></tr>
       </tbody></table></div>
     <p>The <span class="mono">/r</span> layer is the structural evidence for the route, and it is
     checked against the stated route per structure: &ldquo;Metal was disconnected&rdquo; should
     come with an <span class="mono">/r</span> layer, &ldquo;Salt was disconnected&rdquo; alone
     without one.</p>
 {_route_table(option["route"])}
-{_specimen("MI reproduces the restored bonds", option["examples"]["equivalent"])}
-{_specimen("Salt route — RecMet cannot restore it", option["examples"]["salt_pathway"], "no /r layer — salt disconnection is not reversible by RecMet")}
-{_specimen("Metal route — the two disagree", option["examples"]["metal_pathway"])}
-{_specimen("No disconnection — the baseline broke no bond to a metal", option["examples"]["no_disconnection"])}
+{_specimen("reconnected_as_recmet", option["examples"]["reconnected_as_recmet"])}
+{_specimen("salt_kept_bonded", option["examples"]["salt_kept_bonded"], "no /r layer — salt disconnection is not reversible by RecMet")}
+{_specimen("reconnected_differently", option["examples"]["reconnected_differently"])}
+{_specimen("changed_without_disconnection", option["examples"]["changed_without_disconnection"], "no /r layer — 1.07.5 disconnected nothing")}
   </section>
 
   <section>
     <h3><span class="tag">A vs B</span> Categories</h3>
     <div class="scroll"><table>
-      <thead><tr><th>category</th><th class="n">count</th><th class="n">share of mismatches</th></tr></thead>
+      <thead><tr><th>category</th><th>meaning</th><th class="n">count</th><th class="n">share of mismatches</th></tr></thead>
       <tbody>{counts_rows}</tbody></table></div>
-    <p>Elements other than C and H across the <span class="mono">novel</span> formulae:</p>
+    <p>Elements other than C and H across the mismatches <code>-RecMet</code> does not
+    reproduce (<span class="mono">reconnected_differently</span>,
+    <span class="mono">salt_kept_bonded</span>,
+    <span class="mono">changed_without_disconnection</span>):</p>
     <div class="census">{census}</div>
-{_metal_free_callout(option["metal_free"], option["metal_free_warnings"])}
+{_without_metal_callout(option["changed_without_metal"], option["without_metal_warnings"])}
     <div class="callout flagged">
       <div class="eyebrow">needs chemical review</div>
-      <p><b>{_fmt(n["metal_pathway"])} structures.</b> Both the old code and MI act on the metal,
-      and they still disagree.{_no_disconnection_note(n["no_disconnection"])} No stated
-      mechanism explains these.</p>
+      <p><b>{_fmt(k["reconnected_differently"])} <span class="mono">reconnected_differently</span>.</b>
+      Both 1.07.5 and MI act on the metal, and they still disagree.{_without_disconnection_note(k["changed_without_disconnection"])}
+      No stated mechanism explains these.</p>
     </div>
   </section>
 
@@ -1053,7 +1029,7 @@ def render_html(data: dict) -> str:
     <span class="badge">A vs B &middot; MolecularInorganics</span>
     <div class="n">{_pct(option["mismatch_rate"])}</div>
     <div class="d">of structures change their InChI body
-    ({_fmt(option["mismatched"])}); {_pct(option["equivalent_share"], 1)} of those reproduce RecMet.</div>
+    ({_fmt(option["mismatched"])}); {_pct(option["reconnected_share"], 1)} of those are <span class="mono">reconnected_as_recmet</span>.</div>
   </a>
 </section>
 {_render_reference(data)}
