@@ -305,3 +305,13 @@ python INCHI-1-TEST/tests/test_library/inchi_tests/run_tests.py --test=<test> --
 ```
 
 with `<test>` being one of "regression", "regression-reference", or "invariance".
+
+## Comparisons
+
+`INCHI-1-TEST/comparisons` holds one-off comparisons: questions about InChI output
+answered once over a large dataset, rather than tests that guard every change.
+Each lives in its own directory with its implementation, a Docker setup and a
+README, and none of them runs in CI.
+
+- [`molecular_inorganics`](comparisons/molecular_inorganics/README.md): what
+  `-MolecularInorganics` changes relative to a released version.
