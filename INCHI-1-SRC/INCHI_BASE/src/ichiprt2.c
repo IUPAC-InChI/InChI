@@ -2488,64 +2488,13 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     return tot_len;
 }
 
-/* Class digits of grouped double bonds, as in /s */
-#define B_CLASS_FLAT 0
-#define B_CLASS_REL  2
-#define B_CLASS_RAC  3
-
-/**
- * @brief Mark the stereo bonds of one component that are in OR or AND
- *        bond collections: cls[j] = class, group[j] = collection index
- *
- * Only defined bonds ('-', '+') join a group: an unknown or undefined
- * ("either") bond is not an OR/AND bond and stays where standard /b puts it.
- */
-static void MarkBondGroups( const INChI     *pINChI,
-                            const INChI_Aux *pAux,
-                            int             **lists,
-                            int             n_lists,
-                            int             b_class,
-                            S_CHAR          *cls,
-                            int             *group )
-{
-    const INChI_Stereo *st = pINChI->Stereo;
-    int map_size = 0;
-    int *map = make_orig_to_canon_map( pAux, &map_size );
-
-    for (int i = 0; lists != NULL && i < n_lists; i++) {
-
-        /* Bonds are atom pairs: [n, 2 * bonds, a1, b1, a2, b2, ...] */
-        for (int k = 2; k < lists[i][1] + 2; k += 2) {
-            int a = lookup_canonical_atom_number( map, map_size, pAux, lists[i][k] );
-            int b = lookup_canonical_atom_number( map, map_size, pAux, lists[i][k + 1] );
-            if (a == -1 || b == -1) {
-                continue; /* other component */
-            }
-
-            for (int j = 0; j < st->nNumberOfStereoBonds; j++) {
-                int same = (st->nBondAtom1[j] == a && st->nBondAtom2[j] == b) ||
-                           (st->nBondAtom1[j] == b && st->nBondAtom2[j] == a);
-                int defined = st->b_parity[j] == AB_PARITY_ODD || st->b_parity[j] == AB_PARITY_EVEN;
-                if (same && defined) {
-                    cls[j] = (S_CHAR)b_class;
-                    group[j] = i;
-                }
-            }
-        }
-    }
-
-    if (map != NULL) {
-        inchi_free( map );
-    }
-}
-
 /**
  * @brief Enhanced /b of one component: standard flat entries for absolute
  *        and ungrouped bonds, then the OR groups, then the AND groups
  *
- * Example: "4-2+,2(5-3-),3(6-1-,8-7+)(9-2-)". A group flips as a whole so
- * that its lowest bond reads '-'; the others keep their geometry relative
- * to it, so (E,Z) and (Z,E) give one string and (E,E), (Z,Z) another.
+ * Example: "4-2+,2(5-3-),3(6-1-,8-7+)(9-2-)". Parities arrive normalised
+ * (normalise_bond_groups); the flip below only repeats it, so a caller that
+ * skipped normalisation still gets the canonical string.
  */
 static void MakeBlayerComponent( const INChI      *pINChI,
                                  const INChI_Aux  *pAux,
@@ -2571,8 +2520,8 @@ static void MakeBlayerComponent( const INChI      *pINChI,
         return;
     }
 
-    MarkBondGroups( pINChI, pAux, v3k->lists_stebrel, v3k->n_stebrel, B_CLASS_REL, cls, group );
-    MarkBondGroups( pINChI, pAux, v3k->lists_stebrac, v3k->n_stebrac, B_CLASS_RAC, cls, group );
+    mark_bond_groups( pINChI, pAux, v3k->lists_stebrel, v3k->n_stebrel, B_CLASS_REL, cls, group );
+    mark_bond_groups( pINChI, pAux, v3k->lists_stebrac, v3k->n_stebrac, B_CLASS_RAC, cls, group );
 
     /* Absolute and ungrouped bonds, as standard /b: "4-2+,5-3-" */
     for (j = 0; j < n; j++) {

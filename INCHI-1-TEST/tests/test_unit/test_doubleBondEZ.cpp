@@ -237,3 +237,40 @@ TEST( test_doubleBondEZ, malformed_collections_dropped )
                                            "M  V30 MDLV30/STEBRAC1 BONDS=(1 8)\n" ), kEnh ),
                flat );
 }
+
+/* Two BrClC=CClF components (bonds 1 and 6); 'z_first'/'z_second' swap
+   Br/Cl on that copy, i.e. draw it Z instead of E */
+static std::string two_bromo( bool z_first, bool z_second, const std::string &collection )
+{
+    return molblock( { { "C", 0, 0 }, { "C", 1.3, 0 }, { z_first ? "Cl" : "Br", -0.65, 1.1 },
+                       { z_first ? "Br" : "Cl", -0.65, -1.1 }, { "Cl", 1.95, 1.1 },
+                       { "F", 1.95, -1.1 }, { "C", 5, 0 }, { "C", 6.3, 0 },
+                       { z_second ? "Cl" : "Br", 4.35, 1.1 }, { z_second ? "Br" : "Cl", 4.35, -1.1 },
+                       { "Cl", 6.95, 1.1 }, { "F", 6.95, -1.1 } },
+                     { { 1, 2, 2, FLAT }, { 1, 3, 1, FLAT }, { 1, 4, 1, FLAT },
+                       { 2, 5, 1, FLAT }, { 2, 6, 1, FLAT }, { 7, 8, 2, FLAT },
+                       { 7, 9, 1, FLAT }, { 7, 10, 1, FLAT }, { 8, 11, 1, FLAT },
+                       { 8, 12, 1, FLAT } },
+                     collection );
+}
+
+/* Components equal in all standard layers are ordered by their enhanced
+   classes, not by input order or by the meaningless drawn geometry of an
+   OR/AND bond */
+TEST( test_doubleBondEZ, component_order_invariance )
+{
+    const std::string rel1 = "M  V30 MDLV30/STEBREL1 BONDS=(1 1)\n";
+    const std::string rel6 = "M  V30 MDLV30/STEBREL1 BONDS=(1 6)\n";
+    const std::string rac1 = "M  V30 MDLV30/STEBRAC1 BONDS=(1 1)\n";
+    const std::string rac6 = "M  V30 MDLV30/STEBRAC1 BONDS=(1 6)\n";
+    const std::string two = "InChI=1B/2C2BrCl2F/c2*3-1(4)2(5)6";
+
+    EXPECT_EQ( inchi( two_bromo( false, false, rel1 + rac6 ), kEnh ), two + "/b2(2-1-);3(2-1-)" );
+    EXPECT_EQ( inchi( two_bromo( false, false, rel6 + rac1 ), kEnh ), two + "/b2(2-1-);3(2-1-)" );
+    EXPECT_EQ( inchi( two_bromo( false, false, rac6 ), kEnh ), two + "/b2-1-;3(2-1-)" );
+    EXPECT_EQ( inchi( two_bromo( false, false, rac1 ), kEnh ), two + "/b2-1-;3(2-1-)" );
+
+    /* OR copy drawn E, AND copy drawn Z, and the other way round */
+    EXPECT_EQ( inchi( two_bromo( false, true, rel1 + rac6 ), kEnh ),
+               inchi( two_bromo( true, false, rel1 + rac6 ), kEnh ) );
+}

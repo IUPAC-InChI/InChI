@@ -5392,6 +5392,109 @@ int isotopic_stereo_view( const INChI *inchi,
 }
 
 /**
+ * @brief Mark the stereo bonds of one component that are in OR or AND
+ *        bond collections: cls[j] = b_class, group[j] = collection index
+ *
+ * Only defined bonds ('-', '+') join a group: an unknown or undefined
+ * ("either") bond is not an OR/AND bond and stays where standard /b puts it.
+ */
+void mark_bond_groups( const INChI *inchi,
+                       const INChI_Aux *aux,
+                       int **lists,
+                       int n_lists,
+                       int b_class,
+                       S_CHAR *cls,
+                       int *group )
+{
+    const INChI_Stereo *st = inchi->Stereo;
+    int map_size = 0;
+    int *map = make_orig_to_canon_map( aux, &map_size );
+
+    for (int i = 0; lists != NULL && i < n_lists; i++) {
+
+        /* Bonds are atom pairs: [n, 2 * bonds, a1, b1, a2, b2, ...] */
+        for (int k = 2; k < lists[i][1] + 2; k += 2) {
+            int a = lookup_canonical_atom_number( map, map_size, aux, lists[i][k] );
+            int b = lookup_canonical_atom_number( map, map_size, aux, lists[i][k + 1] );
+            if (a == -1 || b == -1) {
+                continue; /* other component */
+            }
+
+            for (int j = 0; j < st->nNumberOfStereoBonds; j++) {
+                int same = (st->nBondAtom1[j] == a && st->nBondAtom2[j] == b) ||
+                           (st->nBondAtom1[j] == b && st->nBondAtom2[j] == a);
+                int defined = st->b_parity[j] == AB_PARITY_ODD || st->b_parity[j] == AB_PARITY_EVEN;
+                if (same && defined) {
+                    cls[j] = (S_CHAR)b_class;
+                    group[j] = i;
+                }
+            }
+        }
+    }
+
+    if (map != NULL) {
+        inchi_free( map );
+    }
+}
+
+/**
+ * @brief Flip each OR/AND double-bond group so its lowest bond reads '-'
+ *
+ * The drawn geometry of an OR/AND group means "this or all inverted", so
+ * only the parities relative to the lowest bond are kept. Done in the
+ * stereo structs, before the components are sorted, so the sort sees
+ * (E,Z) and (Z,E) of one group as equal.
+ */
+static void normalise_bond_groups( const ORIG_ATOM_DATA *orig_inp_data,
+                                   const INChI *inchi,
+                                   const INChI_Aux *aux )
+{
+    const OAD_V3000 *v3k = orig_inp_data->v3000;
+    INChI_Stereo *st = inchi ? inchi->Stereo : NULL;
+
+    if (st == NULL || aux == NULL || st->nNumberOfStereoBonds <= 0 ||
+        aux->nOrigAtNosInCanonOrd == NULL) {
+        return;
+    }
+    if (v3k->n_stebrel <= 0 && v3k->n_stebrac <= 0) {
+        return;
+    }
+
+    int n = st->nNumberOfStereoBonds;
+    S_CHAR *cls = (S_CHAR *)inchi_calloc( n, sizeof(S_CHAR) );
+    int *group = (int *)inchi_calloc( n, sizeof(int) );
+    if (cls == NULL || group == NULL) {
+        inchi_free( cls );
+        inchi_free( group );
+        return;
+    }
+
+    mark_bond_groups( inchi, aux, v3k->lists_stebrel, v3k->n_stebrel, B_CLASS_REL, cls, group );
+    mark_bond_groups( inchi, aux, v3k->lists_stebrac, v3k->n_stebrac, B_CLASS_RAC, cls, group );
+
+    /* Bonds are in canonical order: the first member met is the group's lowest.
+       Each group is visited once; its members are then unmarked. */
+    for (int j = 0; j < n; j++) {
+        int b_class = cls[j], flip = st->b_parity[j] == AB_PARITY_EVEN;
+        if (b_class == B_CLASS_FLAT) {
+            continue;
+        }
+        for (int m = j; m < n; m++) {
+            if (cls[m] != b_class || group[m] != group[j]) {
+                continue;
+            }
+            if (flip) {
+                st->b_parity[m] = (S_CHAR)( AB_PARITY_ODD + AB_PARITY_EVEN - st->b_parity[m] );
+            }
+            cls[m] = B_CLASS_FLAT;
+        }
+    }
+
+    inchi_free( cls );
+    inchi_free( group );
+}
+
+/**
  * @brief Set the enhanced stereochemistry information for t- and m-layers,
  *        non-isotopic and isotopic
  */
@@ -5410,11 +5513,25 @@ void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
     }
 
     normalise_stereo_layer( orig_inp_data, inchi, aux );
+    normalise_bond_groups( orig_inp_data, inchi, aux );
 
     /* Centres stereogenic only through isotopes exist only here, e.g. /i1+1/t3- */
     if (isotopic_stereo_view( inchi, aux, &iso_inchi, &iso_aux ))
     {
         normalise_stereo_layer( orig_inp_data, &iso_inchi, &iso_aux );
+    }
+
+    /* Isotopic stereo bonds: the same view, needed even without isotopic centres */
+    if (inchi != NULL && aux != NULL && inchi->StereoIsotopic != NULL)
+    {
+        iso_inchi = *inchi;
+        iso_inchi.Stereo = inchi->StereoIsotopic;
+        iso_aux = *aux;
+        if (aux->nIsotopicOrigAtNosInCanonOrd != NULL)
+        {
+            iso_aux.nOrigAtNosInCanonOrd = aux->nIsotopicOrigAtNosInCanonOrd;
+        }
+        normalise_bond_groups( orig_inp_data, &iso_inchi, &iso_aux );
     }
 }
 
