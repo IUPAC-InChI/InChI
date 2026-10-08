@@ -2032,9 +2032,10 @@ int InvertStereo( sp_ATOM    *at,
         {
             j1 = nAtomNumberCanon[(int) pCS->LinearCTStereoDble[i].at_num1 - 1];
             cumulene_len = BOND_CHAIN_LEN( at[j1].stereo_bond_parity[0] );
-            if (cumulene_len % 2)
+            if (cumulene_len % 2 ||
+                 IS_ATROP_AXIS( at, j1, at[j1].stereo_bond_parity[0], at[j1].stereo_bond_ord[0] ))
             {
-                /* invert only in case of allene */
+                /* invert only in case of allene or atropisomer axis */
                 j2 = nAtomNumberCanon[(int) pCS->LinearCTStereoDble[i].at_num2 - 1];
                 /* checks for debug only */
                 if (1 < MAX_NUM_STEREO_BONDS)

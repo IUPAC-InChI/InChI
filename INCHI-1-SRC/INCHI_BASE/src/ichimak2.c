@@ -452,6 +452,11 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
                 }
                 /* next_j is the central atom */
             }
+            else if (IS_ATROP_AXIS( at, j, at[j].stereo_bond_parity2[0], at[j].stereo_bond_ord2[0] ))
+            {
+                next_j = pCanonOrd[(int) LinearCTStereoDble->at_num2 - 1]; /* lower-numbered axis end */
+                cumulene_len = 0;
+            }
             else
             {
                 cumulene_len = -1; /* not an allene */
@@ -472,6 +477,11 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
                     next_j = at[next_j].neighbor[next_neigh];
                 }
             }
+            else if (IS_ATROP_AXIS( at, j, at[j].stereo_bond_parity[0], at[j].stereo_bond_ord[0] ))
+            {
+                next_j = pCanonOrd[(int) LinearCTStereoDble->at_num2 - 1]; /* lower-numbered axis end */
+                cumulene_len = 0;
+            }
             else
             {
                 cumulene_len = -1; /* not an allene */
@@ -480,7 +490,7 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
 
         if (!cumulene_len)
         {
-            /* allene has been found; insert new stereocenter and parity */
+            /* allene or atropisomer axis has been found; insert new stereocenter and parity */
 
             AT_NUMB *nNumber;
             S_CHAR  *t_parity;

@@ -2115,7 +2115,7 @@ int ReadCommandLineParms(int argc,
     ip->bINChIOutputOptions2 = bINChIOutputOptions2;
 
     ip->bEnhancedStereo = bEnhancedStereochemistry;
-    ip->bTautFlags |= bEnhancedStereochemistry ? TG_FLAG_ALLENE_ONE_WEDGE : 0;
+    ip->bTautFlags |= ( bEnhancedStereochemistry || bAtropisomers ) ? TG_FLAG_ALLENE_ONE_WEDGE : 0;
 
     ip->Atropisomers = bAtropisomers;
 

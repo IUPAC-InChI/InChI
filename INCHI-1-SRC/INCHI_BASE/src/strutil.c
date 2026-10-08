@@ -5228,57 +5228,6 @@ int invert_parities(const INChI *inchi,
 }
 
 /**
- * @brief Set t- and m-layers object for atropisomer stereochemistry
- *
- * @param orig_inp_data Pointer to original input atom data
- * @param inchi Pointer to INChI structure
- * @param aux Pointer to INChI auxiliary data
- * @return int
- */
-int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
-                                const INChI *inchi,
-                                const INChI_Aux *aux)
-{
-    int ret = 0;
-
-    if (orig_inp_data == NULL)
-    {
-        return ret;
-    }
-
-    if (inchi == NULL || aux == NULL)
-    {
-        return ret;
-    }
-
-    if (aux->nOrigAtNosInCanonOrd == NULL ||
-        aux->nNumberOfAtoms <= 0) {
-        return ret;
-    }
-
-    if (inchi->Stereo == NULL) {
-        return ret;
-    }
-
-    //TODO
-    // - t layer parities for atropisomers
-    //    -> t-parity[atom] = 1 (-)
-    //    -> should parity be set to (+) ???
-    // - m layer for atropisomers
-    //    -> enantiomeric atropisomers: m1 (inchi->Stereo->nCompInv2Abs = -1; //m1) (are mirror images)
-    //    -> diastereomeric atropisomers: m0 (inchi->Stereo->nCompInv2Abs = 1; //m0) ???
-    //        -> rules?
-
-    if (orig_inp_data->bAtropisomer) {
-
-
-    }
-
-
-    return ret;
-}
-
-/**
  * @brief Does any atom of these collections belong to this component?
  *
  * The V3000 collection lists are structure-wide, so a multi-component structure

@@ -14,6 +14,7 @@
 #include "ichicomp.h"
 #include "ichicant.h"
 #include "util.h"
+#include "atropisomers.h"
 
 #include "bcf_s.h"
 
@@ -3058,6 +3059,225 @@ static void allene_one_wedge_z( inp_ATOM *at,
 }
 
 
+/****************************************************************************
+ Atropisomer axis (spec 4): a hindered single bond between two sp2 carbons,
+ e.g. a biaryl. Chiral like an allene, but the "cumulene chain" has no
+ middle atom, so it is stored as a stereo bond of chain length 0 on a
+ SINGLE bond; IS_ATROP_AXIS() tells it from a double bond downstream
+ (canonical ranking prunes it, InvertStereo() flips it for /m and
+ Copy2StereoBondOrAllene() cites it as a /t centre on the lower atom).
+
+        Br          Cl
+          \        /            parity = sign of the triple product
+     (A)   C ---- C   (B)       ( z_dir1, A->B, z_dir2 ), exactly as
+          /        \            for an allene end pair
+        Cl          Br
+
+ Only the ends flagged by find_atropisomeric_atoms_and_bonds() qualify;
+ the predicate is re-checked here because a flag marks an atom, not a bond.
+****************************************************************************/
+static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
+                               AT_RANK *nAtomLevel, S_CHAR *cSource )
+{
+    int at_2 = (int) at[at_1].neighbor[ord_1];
+
+    if (!at[at_1].bAtropisomeric || !at[at_2].bAtropisomeric)
+    {
+        return 0;
+    }
+
+    /* v1 scope: C-C single bond, both ends three-connected without H */
+    if (BOND_SINGLE != ( at[at_1].bond_type[ord_1] & BOND_TYPE_MASK ) ||
+         at[at_1].el_number != EL_NUMBER_C || at[at_2].el_number != EL_NUMBER_C ||
+         at[at_1].valence != 3 || at[at_2].valence != 3 ||
+         at[at_1].num_H || at[at_2].num_H)
+    {
+        return 0;
+    }
+
+    /* A small ring locks the rotation */
+    if (q && at[at_1].nRingSystem == at[at_2].nRingSystem &&
+         0 < is_bond_in_Nmax_memb_ring( at, at_1, ord_1, q, nAtomLevel, cSource,
+                                        (AT_RANK) ( ATROP_MIN_ROTATABLE_RING + 1 ) ))
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+
+/****************************************************************************
+ Store one axis in the non-isotopic or isotopic stereo bond slots,
+ mirroring what set_stereo_bonds_parity() does for allenes.
+****************************************************************************/
+typedef enum tagAtropLayer
+{
+    ATROP_LAYER_MAIN,       /* stereo_bond_*[], parity   */
+    ATROP_LAYER_ISOTOPIC    /* stereo_bond_*2[], parity2 */
+} ATROP_LAYER;
+
+static int save_atrop_axis( sp_ATOM *out_at, inp_ATOM *at, ATROP_LAYER layer,
+                            int at_1, int ord_1, int at_2, int ord_2,
+                            int z_prod, int action, int parity_1, int parity_2,
+                            S_CHAR *z_dir1, S_CHAR *z_dir2 )
+{
+    sp_ATOM *a1 = out_at + at_1, *a2 = out_at + at_2;
+    int saved = ( layer == ATROP_LAYER_ISOTOPIC )
+        ? save_a_stereo_bond( z_prod, action,
+                              at_1, ord_1, a1->stereo_bond_neighbor2, a1->stereo_bond_ord2,
+                              a1->stereo_bond_z_prod2, a1->stereo_bond_parity2,
+                              at_2, ord_2, a2->stereo_bond_neighbor2, a2->stereo_bond_ord2,
+                              a2->stereo_bond_z_prod2, a2->stereo_bond_parity2 )
+        : save_a_stereo_bond( z_prod, action,
+                              at_1, ord_1, a1->stereo_bond_neighbor, a1->stereo_bond_ord,
+                              a1->stereo_bond_z_prod, a1->stereo_bond_parity,
+                              at_2, ord_2, a2->stereo_bond_neighbor, a2->stereo_bond_ord,
+                              a2->stereo_bond_z_prod, a2->stereo_bond_parity );
+    if (!saved)
+    {
+        return 0;
+    }
+
+    if (layer == ATROP_LAYER_ISOTOPIC)
+    {
+        a1->parity2 = (S_CHAR) parity_1;
+        a2->parity2 = (S_CHAR) parity_2;
+    }
+    else
+    {
+        a1->parity = (S_CHAR) parity_1;
+        a2->parity = (S_CHAR) parity_2;
+    }
+    memcpy( a1->z_dir, z_dir1, sizeof( a1->z_dir ) );
+    memcpy( a2->z_dir, z_dir2, sizeof( a2->z_dir ) );
+    a1->bAmbiguousStereo |= at[at_1].bAmbiguousStereo;
+    a2->bAmbiguousStereo |= at[at_2].bAmbiguousStereo;
+
+    return 1;
+}
+
+
+/****************************************************************************
+ Axial parity of the single bond at[at_1]-at[at_2] from the allene
+ primitives: half-bond planes + triple product (the one-wedge rule applies).
+ Returns the number of axis ends registered (0 or 2) or an error code.
+****************************************************************************/
+static int set_atrop_axis_parity( sp_ATOM *out_at, inp_ATOM *at,
+                                  int at_1, int ord_1, int at_2, int ord_2,
+                                  inp_ATOM *at_removed_H, int num_removed_H,
+                                  int bPointedEdgeStereo, int vABParityUnknown )
+{
+    S_CHAR z_dir1[3] = { 0 }, z_dir2[3] = { 0 };
+    int parity_1, parity_2, action_1, action_2, action, z_prod = 0, num_saved = 0;
+
+    parity_1 = half_stereo_bond_parity( at, at_1, at_removed_H, num_removed_H,
+                                        z_dir1, bPointedEdgeStereo, vABParityUnknown );
+    parity_2 = half_stereo_bond_parity( at, at_2, at_removed_H, num_removed_H,
+                                        z_dir2, bPointedEdgeStereo, vABParityUnknown );
+    if (RETURNED_ERROR( parity_1 ) || RETURNED_ERROR( parity_2 ))
+    {
+        return CT_CALC_STEREO_ERR;
+    }
+    if (parity_1 == AB_PARITY_NONE || abs( parity_1 ) == AB_PARITY_IISO ||
+         parity_2 == AB_PARITY_NONE || abs( parity_2 ) == AB_PARITY_IISO)
+    {
+        return 0;
+    }
+
+    /* Handedness of the twist; too flat (no wedge, no z) => undefined */
+    if (ATOM_PARITY_WELL_DEF( abs( parity_1 ) ) && ATOM_PARITY_WELL_DEF( abs( parity_2 ) ))
+    {
+        if (bPointedEdgeStereo & PES_BIT_ALLENE_ONE_WEDGE)
+        {
+            allene_one_wedge_z( at, at_1, z_dir1, at_2, z_dir2 );
+        }
+        z_prod = triple_prod_char( at, at_1, ord_1, z_dir1, at_2, ord_2, z_dir2 );
+    }
+
+    /* Non-isotopic layer */
+    action_1 = half_stereo_bond_action( parity_1, 0, 0, vABParityUnknown );
+    action_2 = half_stereo_bond_action( parity_2, 0, 0, vABParityUnknown );
+    action = inchi_min( action_1, action_2 );
+    if (action == -1)
+    {
+        return CT_CALC_STEREO_ERR;
+    }
+    if (abs( z_prod ) < MIN_DOT_PROD)
+    {
+        action = inchi_min( action, AB_PARITY_UNDF );
+    }
+    if (action != AB_PARITY_NONE && parity_1 > 0 && parity_2 > 0)
+    {
+        num_saved += save_atrop_axis( out_at, at, ATROP_LAYER_MAIN, at_1, ord_1, at_2, ord_2,
+                                      z_prod, action, parity_1, parity_2, z_dir1, z_dir2 );
+    }
+
+    /* Isotopic layer (parities counting isotopic H) */
+    action_1 = half_stereo_bond_action( parity_1, 0, 1, vABParityUnknown );
+    action_2 = half_stereo_bond_action( parity_2, 0, 1, vABParityUnknown );
+    action = inchi_min( action_1, action_2 );
+    if (action == -1)
+    {
+        return CT_CALC_STEREO_ERR;
+    }
+    if (abs( z_prod ) < MIN_DOT_PROD)
+    {
+        action = inchi_min( action, AB_PARITY_UNDF );
+    }
+    if (action != AB_PARITY_NONE)
+    {
+        num_saved += save_atrop_axis( out_at, at, ATROP_LAYER_ISOTOPIC, at_1, ord_1, at_2, ord_2,
+                                      z_prod, action, abs( parity_1 ), abs( parity_2 ),
+                                      z_dir1, z_dir2 );
+    }
+
+    return num_saved ? 2 : 0;
+}
+
+
+/****************************************************************************
+ Register every flagged atropisomer axis; returns number of axis ends.
+****************************************************************************/
+static int set_atrop_axes_parity( sp_ATOM *out_at, inp_ATOM *at, int num_at,
+                                  inp_ATOM *at_removed_H, int num_removed_H,
+                                  QUEUE *q, AT_RANK *nAtomLevel, S_CHAR *cSource,
+                                  int bPointedEdgeStereo, int vABParityUnknown )
+{
+    int at_1, at_2, ord_1, ord_2, ret, num_ends = 0;
+
+    for (at_1 = 0; at_1 < num_at; at_1++)
+    {
+        if (!at[at_1].bAtropisomeric)
+        {
+            continue;
+        }
+        for (ord_1 = 0; ord_1 < at[at_1].valence; ord_1++)
+        {
+            at_2 = (int) at[at_1].neighbor[ord_1];
+            if (at_2 < at_1 || !is_atrop_axis_bond( at, at_1, ord_1, q, nAtomLevel, cSource ))
+            {
+                continue;
+            }
+            for (ord_2 = 0; (int) at[at_2].neighbor[ord_2] != at_1; ord_2++)
+            {
+                ;
+            }
+            ret = set_atrop_axis_parity( out_at, at, at_1, ord_1, at_2, ord_2,
+                                         at_removed_H, num_removed_H,
+                                         bPointedEdgeStereo, vABParityUnknown );
+            if (RETURNED_ERROR( ret ))
+            {
+                return ret;
+            }
+            num_ends += ret;
+        }
+    }
+
+    return num_ends;
+}
+
+
 /****************************************************************************/
 int set_stereo_bonds_parity( sp_ATOM *out_at,
                              inp_ATOM *at,
@@ -4659,6 +4879,22 @@ int set_stereo_parity( CANON_GLOBALS *pCG,
         }
         num_stereo += ( is_stereo != 0 );
         /* djb-rwth: removing redundant code */
+    }
+
+    /* Atropisomer axes (-Atropisomers): flagged single bonds become stereo bonds */
+    if (!RETURNED_ERROR( num_3D_stereo_atoms ))
+    {
+        is_stereo = set_atrop_axes_parity( at_output, at, num_at, at + num_at, num_removed_H,
+                                           q, nAtomLevel, cSource,
+                                           bPointedEdgeStereo, vABParityUnknown );
+        if (RETURNED_ERROR( is_stereo ))
+        {
+            num_3D_stereo_atoms = is_stereo;
+        }
+        else
+        {
+            num_stereo_bonds += is_stereo;
+        }
     }
 
     /* Added to fix bug reported by Burt Leland - 2009-02-05 DT */
