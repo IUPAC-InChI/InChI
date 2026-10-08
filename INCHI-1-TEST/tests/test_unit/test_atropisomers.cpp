@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 #include <cstring>
+#include <chrono>
 
 extern "C"
 {
@@ -107,7 +108,6 @@ TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__null_parameters) {
 
     int ret = find_atropisomeric_atoms_and_bonds(nullptr,
                                                  0,
-                                                 nullptr,
                                                  nullptr);
 
 
@@ -130,19 +130,14 @@ TEST(test_atropisomers, find_atropisomeric_atoms_and_bonds__atoms_below_min_vale
     atoms[1].bond_type[0] = 1;
     atoms[1].x = 1.5; atoms[1].y = 0.0; atoms[1].z = 0.0;
 
-    RingSystems *ring_result = find_rings(atoms, num_atoms);
-    ASSERT_NE(ring_result, nullptr);
-
     ORIG_ATOM_DATA orig_data = {};
 
-    int ret = find_atropisomeric_atoms_and_bonds(atoms, num_atoms, ring_result, &orig_data);
+    int ret = find_atropisomeric_atoms_and_bonds(atoms, num_atoms, &orig_data);
 
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(atoms[0].bAtropisomeric, 0);
     EXPECT_EQ(atoms[1].bAtropisomeric, 0);
     EXPECT_EQ(orig_data.bAtropisomer, 0);
-
-    free_ring_system(ring_result);
 }
 
 TEST(test_atropisomers, test_dummy_1_atropisomer)
@@ -1245,17 +1240,14 @@ TEST(test_atropisomers, predicate_acyclic_3plus3_single_bond_is_candidate) {
     link_bond(at, 0, 2, 1); link_bond(at, 0, 3, 1);
     link_bond(at, 1, 4, 1); link_bond(at, 1, 5, 1);
 
-    RingSystems *rs = find_rings(at, n);
-    ASSERT_NE(rs, nullptr);
     ORIG_ATOM_DATA orig = {};
-    int ret = find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+    int ret = find_atropisomeric_atoms_and_bonds(at, n, &orig);
 
     EXPECT_EQ(ret, 1);
     EXPECT_EQ(orig.bAtropisomer, 1);
     EXPECT_EQ(at[0].bAtropisomeric, 1);
     EXPECT_EQ(at[1].bAtropisomeric, 1);
     EXPECT_EQ(at[2].bAtropisomeric, 0); // terminal, valence 1
-    free_ring_system(rs);
 }
 
 TEST(test_atropisomers, predicate_single_bond_in_small_ring_is_not_candidate) {
@@ -1268,14 +1260,11 @@ TEST(test_atropisomers, predicate_single_bond_in_small_ring_is_not_candidate) {
     for (int i = 0; i < 6; i++) link_bond(at, i, (i + 1) % 6, 1); // ring
     for (int i = 0; i < 6; i++) link_bond(at, i, 6 + i, 1);       // substituents
 
-    RingSystems *rs = find_rings(at, n);
-    ASSERT_NE(rs, nullptr);
     ORIG_ATOM_DATA orig = {};
-    int ret = find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+    int ret = find_atropisomeric_atoms_and_bonds(at, n, &orig);
 
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(orig.bAtropisomer, 0);
-    free_ring_system(rs);
 }
 
 TEST(test_atropisomers, predicate_is_order_independent) {
@@ -1288,15 +1277,12 @@ TEST(test_atropisomers, predicate_is_order_independent) {
     link_bond(at, 4, 0, 1); link_bond(at, 4, 1, 1);
     link_bond(at, 5, 2, 1); link_bond(at, 5, 3, 1);
 
-    RingSystems *rs = find_rings(at, n);
-    ASSERT_NE(rs, nullptr);
     ORIG_ATOM_DATA orig = {};
-    int ret = find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+    int ret = find_atropisomeric_atoms_and_bonds(at, n, &orig);
 
     EXPECT_EQ(ret, 1);
     EXPECT_EQ(at[4].bAtropisomeric, 1);
     EXPECT_EQ(at[5].bAtropisomeric, 1);
-    free_ring_system(rs);
 }
 
 TEST(test_atropisomers, parity_flat_no_wedge_is_undefined) {
@@ -1371,10 +1357,8 @@ TEST(test_atropisomers, detector_populates_axis_record) {
     link_bond(at, 1, 4, 1); link_bond(at, 1, 5, 1);
     for (int i = 0; i < n; i++) at[i].orig_at_number = (AT_NUMB)(i + 1);
 
-    RingSystems *rs = find_rings(at, n);
-    ASSERT_NE(rs, nullptr);
     ORIG_ATOM_DATA orig = {};
-    find_atropisomeric_atoms_and_bonds(at, n, rs, &orig);
+    find_atropisomeric_atoms_and_bonds(at, n, &orig);
 
     ASSERT_EQ(orig.num_atrop_axes, 1);
     ASSERT_NE(orig.atrop_axes, nullptr);
@@ -1382,7 +1366,6 @@ TEST(test_atropisomers, detector_populates_axis_record) {
     EXPECT_EQ(orig.atrop_axes[0].at2, 1);
 
     if (orig.atrop_axes) inchi_free(orig.atrop_axes);
-    free_ring_system(rs);
 }
 
 // ---------------------------------------------------------------------------
@@ -1680,4 +1663,26 @@ TEST(test_atropisomers, unhindered_axis_not_emitted) {
         "M  END\n";
     EXPECT_EQ(run_inchi(bipyridine, "-Atropisomers"),
               "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H");
+}
+
+// Candidate detection must stay polynomial: a 150-atom / 292-bond metal
+// cluster (InChI_TestSet_ext.sdf record 126) stalled for >20 s in ring
+// enumeration. Without -Atropisomers it is instant.
+TEST(test_atropisomers, dense_cluster_completes_quickly) {
+    const double max_seconds = 5.0;
+    std::ifstream f(FIXTURES_DIR "/atrop_dense_cluster.sdf", std::ios::binary);
+    ASSERT_TRUE(f.is_open());
+    std::stringstream buf;
+    buf << f.rdbuf();
+    std::string mol = buf.str();
+    mol = mol.substr(0, mol.find("$$$$"));
+
+    int ret = -1;
+    auto t0 = std::chrono::steady_clock::now();
+    std::string s = run_inchi(mol, "-Atropisomers", &ret);
+    double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
+
+    EXPECT_LT(secs, max_seconds);
+    EXPECT_GE(ret, 0);
+    EXPECT_EQ(s.compare(0, 7, "InChI=1"), 0);
 }

@@ -1,6 +1,6 @@
 
 #include "inpdef.h"
-#include "ring_detection.h"
+#include "ichiring.h"
 
 #ifndef ATROP_MIN_ROTATABLE_RING
 /* Axis bonds trapped in a ring of size <= this are rotation-locked and are NOT
@@ -12,14 +12,14 @@
 /* Deterministic predicate: is the single bond a1-a2 a candidate atropisomer axis?
    Returns 1 if bond is single, both ends have valence >= 3, and the bond is not
    part of a ring of size <= ATROP_MIN_ROTATABLE_RING. */
-int is_candidate_atrop_axis(const inp_ATOM *at,
-                            int num_atoms,
-                            const RingSystems *rs,
-                            int a1, int a2);
+int is_candidate_atrop_axis(inp_ATOM *at,
+                            int a1, int a2,
+                            QUEUE *q,
+                            AT_RANK *nAtomLevel,
+                            S_CHAR *cSource);
 
 int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
                                        int num_atoms,
-                                       RingSystems *ring_result,
                                        ORIG_ATOM_DATA *orig_inp_data);
 
 /* Geometric axial parity for candidate axis a1-a2, via the allene stereo

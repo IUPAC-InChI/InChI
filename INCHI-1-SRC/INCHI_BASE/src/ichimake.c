@@ -20,7 +20,6 @@
 #include "bcf_s.h"
 
 #include "atropisomers.h"
-#include "ring_detection.h"
 
 /*
     Local functions
@@ -3894,11 +3893,7 @@ int  Create_INChI(CANON_GLOBALS* pCG,
 
     orig_inp_data->bAtropisomer = 0;
     if (ip->Atropisomers) {
-        RingSystems *ring_result = find_rings(out_at, num_atoms);
-
-        // print_ring_result(ring_result);
-
-        int ret_ai = find_atropisomeric_atoms_and_bonds(out_at, num_atoms, ring_result, orig_inp_data);
+        int ret_ai = find_atropisomeric_atoms_and_bonds(out_at, num_atoms, orig_inp_data);
 
         /* Map the per-atom flags back to the original atom order. out_at was
            renumbered by remove_terminal_HDT() (heavy atoms shift down by the
@@ -3915,8 +3910,6 @@ int  Create_INChI(CANON_GLOBALS* pCG,
                 }
             }
         }
-
-        free_ring_system(ring_result);
 
         if (orig_inp_data->atrop_axes) {
             inchi_free(orig_inp_data->atrop_axes);

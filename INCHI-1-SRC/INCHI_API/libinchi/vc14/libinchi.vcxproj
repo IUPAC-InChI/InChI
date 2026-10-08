@@ -281,7 +281,6 @@
     <ClCompile Include="..\..\..\INCHI_BASE\src\sha2.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\strutil.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\atropisomers.c" />
-    <ClCompile Include="..\..\..\INCHI_BASE\src\ring_detection.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\util.c" />
     <ClCompile Include="..\src\ichilnct.c" />
     <ClCompile Include="..\src\inchi_dll.c" />
@@ -333,7 +332,6 @@
     <ClInclude Include="..\..\..\INCHI_BASE\src\sha2.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\strutil.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\atropisomers.h" />
-    <ClInclude Include="..\..\..\INCHI_BASE\src\ring_detection.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\util.h" />
     <ClInclude Include="..\src\inchi_dll.h" />
     <ClInclude Include="..\src\inchi_dll_a.h" />
