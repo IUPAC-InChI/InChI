@@ -189,6 +189,12 @@ const char *EquString( int EquVal );
                           int              num_components,
                           int              nCtMode,
                           int              *bOverflow );
+    int MakeBlayerString( ORIG_ATOM_DATA   *orig_inp_data,
+                          INCHI_SORT       *pINChISort,
+                          INCHI_IOS_STRING *strbuf,
+                          int              bOutType,
+                          int              num_components,
+                          int              *bOverflow );
     int MakeCRVString( ORIG_INFO *OrigInfo,
                        int nLenCT,
                        int bAddDelim,

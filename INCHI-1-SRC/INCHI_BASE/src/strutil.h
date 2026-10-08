@@ -88,6 +88,23 @@ extern "C"
                                       const INChI *inchi,
                                       const INChI_Aux *aux);
 
+/* Class digits of grouped double bonds, as in /s */
+#define B_CLASS_FLAT 0
+#define B_CLASS_REL  2
+#define B_CLASS_RAC  3
+
+    /**
+     * @brief Mark the stereo bonds of one component that are in OR or AND
+     *        bond collections: cls[j] = b_class, group[j] = collection index
+     */
+    void mark_bond_groups( const INChI *inchi,
+                           const INChI_Aux *aux,
+                           int **lists,
+                           int n_lists,
+                           int b_class,
+                           S_CHAR *cls,
+                           int *group );
+
     /**
      * @brief Get the canonical atom number object
      *

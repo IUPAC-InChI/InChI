@@ -3110,3 +3110,50 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_2)
         check(r.molblock, options_enhanced, r.expected_enhanced, "enhanced" + at);
     }
 }
+
+/* Two CBrClFI components drawn alike: which copy carries OR and which AND
+   must not change the InChI (components equal in all standard layers are
+   ordered by their enhanced classes, not by input order) */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_component_order)
+{
+    const char *head =
+        "\n  test\n\n  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 10 8 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 0 0 0 0\n"
+        "M  V30 2 Br 0 1.3 0 0\n"
+        "M  V30 3 Cl 1.1 -0.6 0 0\n"
+        "M  V30 4 F -1.1 -0.6 0 0\n"
+        "M  V30 5 I 0 -1.3 0 0\n"
+        "M  V30 6 C 5 0 0 0\n"
+        "M  V30 7 Br 5 1.3 0 0\n"
+        "M  V30 8 Cl 6.1 -0.6 0 0\n"
+        "M  V30 9 F 3.9 -0.6 0 0\n"
+        "M  V30 10 I 5 -1.3 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2 CFG=1\n"
+        "M  V30 2 1 1 3\n"
+        "M  V30 3 1 1 4\n"
+        "M  V30 4 1 1 5\n"
+        "M  V30 5 1 6 7 CFG=1\n"
+        "M  V30 6 1 6 8\n"
+        "M  V30 7 1 6 9\n"
+        "M  V30 8 1 6 10\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    const char *tail = "M  V30 END COLLECTION\nM  V30 END CTAB\nM  END\n";
+    const char *expected = "InChI=1B/2CBrClFI/c2*2-1(3,4)5/t2*1-/s2;3";
+
+    for (const char *coll : { "M  V30 MDLV30/STEREL1 ATOMS=(1 1)\nM  V30 MDLV30/STERAC1 ATOMS=(1 6)\n",
+                              "M  V30 MDLV30/STEREL1 ATOMS=(1 6)\nM  V30 MDLV30/STERAC1 ATOMS=(1 1)\n" }) {
+        std::string mol = std::string(head) + coll + tail;
+        char options[] = "-EnhancedStereochemistry";
+        inchi_Output output = {};
+
+        MakeINCHIFromMolfileText(mol.c_str(), options, &output);
+        EXPECT_STREQ(output.szInChI, expected);
+        FreeINCHI(&output);
+    }
+}

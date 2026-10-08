@@ -3575,7 +3575,18 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             szGetTag( IdentLbl, io->nTag, io->bTag2 = io->bTag1 | IL_DBND, io->szTag2, &io->bAlways, 1 );
             inchi_strbuf_reset( strbuf );
             io->tot_len = 0;
-            if (INCHI_SEGM_FILL == io->nSegmAction)
+            /* OR/AND double-bond groups: grouped /b in the main layer.
+               ponytail: fixed-H and isotopic /b stay flat; group them too if needed */
+            if (INCHI_SEGM_FILL == io->nSegmAction && io->nCurINChISegment == DIFL_M &&
+                orig_inp_data->v3000 &&
+                (orig_inp_data->v3000->n_stebrel > 0 || orig_inp_data->v3000->n_stebrac > 0))
+            {
+                io->tot_len = MakeBlayerString( orig_inp_data, io->pINChISort, strbuf, io->bOutType,
+                                                io->num_components, &io->bOverflow );
+
+                io->bNonTautNonIsoIdentifierNotEmpty += io->bSecondNonTautPass;
+            }
+            else if (INCHI_SEGM_FILL == io->nSegmAction)
             {
                 io->tot_len = str_Sp2( io->pINChISort, io->pINChISort2, strbuf, &io->bOverflow,
                                        io->bOutType, io->TAUT_MODE, io->num_components,

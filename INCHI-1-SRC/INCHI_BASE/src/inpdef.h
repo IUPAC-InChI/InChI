@@ -371,6 +371,14 @@ typedef struct OAD_V3000
     int **lists_sterac; /* sterac[k][0] - n from "STERACn" tag                          */
                         /* sterac[k][1] -  number of members in collection              */
                         /* sterac[k][2..] - member atom numbers                      */
+    /* Enhanced stereo on double bonds; laid out like the atom lists above,
+       with [k][1] = 2 * number of bonds and [k][2..] = atom pairs a1,b1,a2,b2,... */
+    int n_stebabs;
+    int **lists_stebabs;
+    int n_stebrel;
+    int **lists_stebrel;
+    int n_stebrac;
+    int **lists_stebrac;
 } OAD_V3000;
 
 /* Atropisomer candidate axis record (geometric axial parity), see atropisomers.c/.h. */
@@ -887,6 +895,8 @@ extern "C"
      * @param v3k Pointer to V3000 data structure
      */
     void FreeExtOrigAtData(OAD_Polymer *pd, OAD_V3000 *v3k);
+    int **CopyIntLists(int **src, int n);
+    void FreeIntLists(int **lists, int n);
 
     /**
      * @brief Free input atom data

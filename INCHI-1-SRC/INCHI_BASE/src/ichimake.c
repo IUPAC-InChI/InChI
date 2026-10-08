@@ -2005,6 +2005,16 @@ int CompINChI2(const INCHI_SORT* p1,
 }
 
 
+/****************************************************************************
+ Compare the enhanced-stereo keys of two components (see SortAndPrintINChI);
+ a missing key sorts as empty
+****************************************************************************/
+static int CompEnhKey(const INCHI_SORT* p1, const INCHI_SORT* p2)
+{
+    return strcmp(p1->enh_key ? p1->enh_key : "", p2->enh_key ? p2->enh_key : "");
+}
+
+
 /****************************************************************************/
 int CompINChINonTaut2(const void* p1, const void* p2)
 {
@@ -2017,6 +2027,11 @@ int CompINChINonTaut2(const void* p1, const void* p2)
         ret = CompINChI2((const INCHI_SORT*)p1, (const INCHI_SORT*)p2, TAUT_YES, 1);
     }
 #endif
+    if (!ret)
+    {
+        /* equal in every standard layer: order by enhanced-stereo classes */
+        ret = CompEnhKey((const INCHI_SORT*)p1, (const INCHI_SORT*)p2);
+    }
     if (!ret)
     {
         /* stable sort */
@@ -2039,6 +2054,11 @@ int CompINChITaut2(const void* p1, const void* p2)
         ret = CompINChI2((const INCHI_SORT*)p1, (const INCHI_SORT*)p2, TAUT_NON, 1);
     }
 #endif
+    if (!ret)
+    {
+        /* equal in every standard layer: order by enhanced-stereo classes */
+        ret = CompEnhKey((const INCHI_SORT*)p1, (const INCHI_SORT*)p2);
+    }
     if (!ret)
     {
         /* stable sort */

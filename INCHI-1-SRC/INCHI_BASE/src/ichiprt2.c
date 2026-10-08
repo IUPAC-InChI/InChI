@@ -2488,6 +2488,150 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     return tot_len;
 }
 
+/**
+ * @brief Enhanced /b of one component: standard flat entries for absolute
+ *        and ungrouped bonds, then the OR groups, then the AND groups
+ *
+ * Example: "4-2+,2(5-3-),3(6-1-,8-7+)(9-2-)". Parities arrive normalised
+ * (normalise_bond_groups); the flip below only repeats it, so a caller that
+ * skipped normalisation still gets the canonical string.
+ */
+static void MakeBlayerComponent( const INChI      *pINChI,
+                                 const INChI_Aux  *pAux,
+                                 const OAD_V3000  *v3k,
+                                 INCHI_IOS_STRING *buf )
+{
+    static const char parity_char[] = "!-+u?";
+    const INChI_Stereo *st = pINChI ? pINChI->Stereo : NULL;
+    int n, j, m;
+
+    if (st == NULL || pAux == NULL || st->nNumberOfStereoBonds <= 0) {
+        return;
+    }
+    n = st->nNumberOfStereoBonds;
+
+    S_CHAR *cls = (S_CHAR *)inchi_calloc( n, sizeof(S_CHAR) );
+    S_CHAR *done = (S_CHAR *)inchi_calloc( n, sizeof(S_CHAR) );
+    int *group = (int *)inchi_calloc( n, sizeof(int) );
+    if (cls == NULL || done == NULL || group == NULL) {
+        inchi_free( cls );
+        inchi_free( done );
+        inchi_free( group );
+        return;
+    }
+
+    mark_bond_groups( pINChI, pAux, v3k->lists_stebrel, v3k->n_stebrel, B_CLASS_REL, cls, group );
+    mark_bond_groups( pINChI, pAux, v3k->lists_stebrac, v3k->n_stebrac, B_CLASS_RAC, cls, group );
+
+    /* Absolute and ungrouped bonds, as standard /b: "4-2+,5-3-" */
+    for (j = 0; j < n; j++) {
+        int p = st->b_parity[j];
+        if (cls[j] != B_CLASS_FLAT) {
+            continue;
+        }
+        inchi_strbuf_printf( buf, "%s%d-%d%c", buf->nUsedLength ? "," : "",
+                             st->nBondAtom1[j], st->nBondAtom2[j],
+                             (0 <= p && p <= 4) ? parity_char[p] : parity_char[0] );
+    }
+
+    /* OR then AND groups, ordered by their lowest bond: ",2(5-3-),3(4-2-)" */
+    for (int c = B_CLASS_REL; c <= B_CLASS_RAC; c++) {
+        int opened = 0;
+
+        for (j = 0; j < n; j++) {
+            if (cls[j] != c || done[j]) {
+                continue;
+            }
+            if (!opened) {
+                inchi_strbuf_printf( buf, "%s%d", buf->nUsedLength ? "," : "", c );
+                opened = 1;
+            }
+
+            /* Bond j is the group's lowest: flip the group if it reads '+' */
+            int flip = st->b_parity[j] == AB_PARITY_EVEN;
+            inchi_strbuf_printf( buf, "(" );
+            for (m = j; m < n; m++) {
+                if (cls[m] != c || group[m] != group[j]) {
+                    continue;
+                }
+                int p = flip ? AB_PARITY_ODD + AB_PARITY_EVEN - st->b_parity[m] : st->b_parity[m];
+                inchi_strbuf_printf( buf, "%s%d-%d%c", m == j ? "" : ",",
+                                     st->nBondAtom1[m], st->nBondAtom2[m], parity_char[p] );
+                done[m] = 1;
+            }
+            inchi_strbuf_printf( buf, ")" );
+        }
+    }
+
+    inchi_free( cls );
+    inchi_free( done );
+    inchi_free( group );
+}
+
+/**
+ * @brief Create the /b layer when double bonds carry OR/AND collections
+ *
+ * One substring per component, joined like standard layers:
+ * runs of equal non-empty substrings fold into "count*substring".
+ *
+ * @return Length added to strbuf
+ */
+int MakeBlayerString( ORIG_ATOM_DATA   *orig_inp_data,
+                      INCHI_SORT       *pINChISort,
+                      INCHI_IOS_STRING *strbuf,
+                      int              bOutType,
+                      int              num_components,
+                      int              *bOverflow )
+{
+    int ii, start = strbuf->nUsedLength;
+    INCHI_IOS_STRING *parts;
+
+    if (num_components < 1) {
+        return 0;
+    }
+
+    parts = (INCHI_IOS_STRING *)inchi_calloc( num_components, sizeof(INCHI_IOS_STRING) );
+    if (parts == NULL) {
+        *bOverflow = 1;
+        return 0;
+    }
+
+    /* One /b substring per component */
+    for (int c = 0; c < num_components; c++) {
+        const INCHI_SORT *is = pINChISort + c;
+        INChI *pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
+        INChI_Aux *pAux = ( 0 <= ii ) ? is->pINChI_Aux[ii] : NULL;
+
+        inchi_strbuf_init( &parts[c], INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT );
+        MakeBlayerComponent( pINChI, pAux, orig_inp_data->v3000, &parts[c] );
+    }
+
+    /* Join: "4-3-", "4-3-", "" -> "2*4-3-;" */
+    for (int c = 0; c < num_components; ) {
+        int run = 1;
+        while (parts[c].nUsedLength > 0 && c + run < num_components &&
+               strcmp( parts[c].pStr, parts[c + run].pStr ) == 0) {
+            run++;
+        }
+
+        if (c > 0) {
+            MakeDelim( ";", strbuf, bOverflow );
+        }
+        if (run > 1) {
+            inchi_strbuf_printf( strbuf, "%d*", run );
+        }
+        inchi_strbuf_printf( strbuf, "%s", parts[c].nUsedLength ? parts[c].pStr : "" );
+        c += run;
+    }
+
+    for (int c = 0; c < num_components; c++) {
+        inchi_strbuf_close( &parts[c] );
+    }
+    inchi_free( parts );
+
+    return strbuf->nUsedLength - start;
+}
+
 #ifdef ALPHA_BASE
 #if ( ALPHA_BASE != 27 )
 #error ALPHA_BASE definitions mismatch
