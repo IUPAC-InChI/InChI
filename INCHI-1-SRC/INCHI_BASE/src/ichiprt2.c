@@ -2358,7 +2358,7 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     const INCHI_SORT   *is = NULL;
     const INCHI_SORT  *is0 = pINChISort;
 
-    // INChI        *pINChI = NULL;
+    INChI        *pINChI = NULL;
     INChI_Aux    *pAux = NULL;
 
     if (num_components < 1) {
@@ -2376,14 +2376,18 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
 
     int n_entries = 0;
 
+    /* The one class digit shared by every component with stereocentres, if any */
+    char uniform_digit = '\0';
+    int  uniform = 1;
+
     INCHI_IOS_STRING tmpbuf  = {0};
 
     for (int cur_c = 0; !*bOverflow && cur_c < num_components; cur_c++)
     {
 
         is = is0 + cur_c;
-        // pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
-        pAux = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI_Aux[ii] : NULL;
+        pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
+        pAux = ( 0 <= ii ) ? is->pINChI_Aux[ii] : NULL;
 
         inchi_strbuf_init(&tmpbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
 
@@ -2446,6 +2450,17 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         }
 
         size_t len = strlen(tmpbuf.pStr);
+
+        // Uniform: each component is a bare digit, all the same, or has no sp3 stereo
+        int has_sp3 = pINChI && pINChI->Stereo && pINChI->Stereo->nNumberOfStereoCenters > 0;
+        if (len == 0) {
+            uniform = uniform && !has_sp3;
+        } else if (len == 1 && (uniform_digit == '\0' || uniform_digit == tmpbuf.pStr[0])) {
+            uniform_digit = tmpbuf.pStr[0];
+        } else {
+            uniform = 0;
+        }
+
         substrings[n_entries] = (char*)inchi_calloc(len + 1, sizeof(char));
         if (substrings[n_entries] == NULL) {
             *bOverflow = 1;
@@ -2454,6 +2469,16 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
             n_entries++;
         }
         inchi_strbuf_close(&tmpbuf);
+    }
+
+    // All components share one class: standard InChI's single digit, e.g.
+    // "1", "1", "", "" -> "1" (standard /s1), not "2*1;;"
+    if (uniform && uniform_digit != '\0') {
+        tot_len = inchi_strbuf_printf(strbuf, "%c", uniform_digit);
+        for (int i = 0; i < n_entries; i++) {
+            inchi_free(substrings[i]);
+        }
+        n_entries = 0;
     }
 
     // Fold only runs of consecutive equal substrings into count*substring, one ';'

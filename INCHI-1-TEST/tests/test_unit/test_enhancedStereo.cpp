@@ -466,12 +466,12 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_s_layer_is_positional)
           "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
           "M  V30 MDLV30/STERAC1 ATOMS=(1 7)\n",
           "/s3;;;" },
-        /* Na+ OH-, one AND group per alcohol */
+        /* Na+ OH-, one AND group per alcohol: uniform, so standard's bare /s3 */
         { "M  V30 COUNTS 13 9 0 0 0\n",
           "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
           "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
           "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
-          "/s2*3;;" },
+          "/s3" },
     };
 
     for (const PositionalCase &c : cases)
@@ -586,7 +586,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
         { alcohols_with_naoh_head,
           "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
           "InChI=1B/C5H12O.C4H10O.Na.H2O/c1-3-4-5(2)6;1-3-4(2)5;;/h5-6H,3-4H2,1-2H3;"
-          "4-5H,3H2,1-2H3;;1H2/q;;+1;/p-1/t5-;4-;;/s2*3;;" },
+          "4-5H,3H2,1-2H3;;1H2/q;;+1;/p-1/t5-;4-;;/s3" },
         /* pentanol AND, butanol ungrouped: '.' on the racemic pentanol */
         { pentanol_first_head,
           "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
@@ -611,36 +611,49 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
     }
 }
 
-/* Pentan-2-ol (atoms 1-5, centre 2) and butan-2-ol (atoms 6-11, centre 7) as
-   two components; the butanol wedge and the collection block vary. */
-static std::string TwoAlcoholsMolblock(const char *butanol_cfg, const char *collections)
+enum class Spectators
 {
+    NONE,
+    NAOH
+};
+
+/* Pentan-2-ol (atoms 1-5, centre 2) and butan-2-ol (atoms 6-11, centre 7) as
+   two components, optionally plus Na+ OH-; the butanol wedge and the
+   collection block vary. */
+static std::string TwoAlcoholsMolblock(const char *butanol_cfg, const char *collections,
+                                       Spectators spectators = Spectators::NONE)
+{
+    const bool naoh = spectators == Spectators::NAOH;
+
     return std::string(
                "two_alcohols\n"
                "     RDKit          2D\n"
                "\n"
                "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
-               "M  V30 BEGIN CTAB\n"
-               "M  V30 COUNTS 11 9 0 0 0\n"
-               "M  V30 BEGIN ATOM\n"
-               "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
-               "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
-               "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
-               "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
-               "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
-               "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
-               "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
-               "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
-               "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
-               "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
-               "M  V30 11 C -2.874760 4.174794 0.000000 0\n"
-               "M  V30 END ATOM\n"
-               "M  V30 BEGIN BOND\n"
-               "M  V30 1 1 2 1 CFG=3\n"
-               "M  V30 2 1 2 3\n"
-               "M  V30 3 1 2 4\n"
-               "M  V30 4 1 4 5\n"
-               "M  V30 5 1 7 6 ") + butanol_cfg + "\n"
+               "M  V30 BEGIN CTAB\n") +
+           (naoh ? "M  V30 COUNTS 13 9 0 0 0\n" : "M  V30 COUNTS 11 9 0 0 0\n") +
+           "M  V30 BEGIN ATOM\n"
+           "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
+           "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
+           "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
+           "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
+           "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
+           "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
+           "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
+           "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
+           "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
+           "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
+           "M  V30 11 C -2.874760 4.174794 0.000000 0\n" +
+           (naoh ? "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+                   "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n"
+                 : "") +
+           "M  V30 END ATOM\n"
+           "M  V30 BEGIN BOND\n"
+           "M  V30 1 1 2 1 CFG=3\n"
+           "M  V30 2 1 2 3\n"
+           "M  V30 3 1 2 4\n"
+           "M  V30 4 1 4 5\n"
+           "M  V30 5 1 7 6 " + butanol_cfg + "\n"
            "M  V30 6 1 7 8\n"
            "M  V30 7 1 7 9\n"
            "M  V30 8 1 9 10\n"
@@ -651,6 +664,51 @@ static std::string TwoAlcoholsMolblock(const char *butanol_cfg, const char *coll
            "M  V30 END COLLECTION\n"
            "M  V30 END CTAB\n"
            "M  END\n";
+}
+
+/* When every component with stereocentres reduces to the same bare class digit
+   and the rest carry no stereo, /s is that one digit, as in standard InChI: the
+   whole string equals -SAbs (default) / -SRel / -SRac apart from the prefix.
+   Used to emit /s2*1, /s2*1;;, /s2*2, /s2*3;;. Groups cannot span components
+   (rejected by the reader), so per-component classes mean what standard says. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_standard)
+{
+    struct UniformCase
+    {
+        const char *collections;
+        Spectators spectators;
+        const char *ref_option;
+        const char *ref_prefix;
+    };
+    const UniformCase cases[] = {
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NONE, "", "InChI=1S/" },
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NAOH, "", "InChI=1S/" },
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\nM  V30 MDLV30/STEREL2 ATOMS=(1 7)\n",
+          Spectators::NONE, "-SRel", "InChI=1/" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
+          Spectators::NAOH, "-SRac", "InChI=1/" },
+    };
+
+    for (const UniformCase &c : cases)
+    {
+        const std::string molblock = TwoAlcoholsMolblock("CFG=1", c.collections, c.spectators);
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+        const std::string enh = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        std::string options_ref = c.ref_option;
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), &options_ref[0], poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen(c.ref_prefix)))
+            << "enhanced: " << enh << "\nreference: " << ref;
+    }
 }
 
 /* A wedged centre in no collection keeps its /m digit: its configuration is
