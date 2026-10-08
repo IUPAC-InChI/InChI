@@ -5321,6 +5321,21 @@ static int component_has_collection_atom( const INChI *inchi,
 
 
 /**
+ * @brief Does this component have a stereocentre in an OR or AND group?
+ */
+int has_rel_rac_centre( const OAD_V3000 *v3000,
+                        const INChI *inchi,
+                        const INChI_Aux *aux )
+{
+    if (v3000 == NULL) {
+        return 0;
+    }
+
+    return component_has_collection_atom( inchi, aux, v3000->lists_sterel, v3000->n_sterel ) ||
+           component_has_collection_atom( inchi, aux, v3000->lists_sterac, v3000->n_sterac );
+}
+
+/**
  * @brief Set the enhanced stereochemistry information for t- and m-layers
  *
  * @param orig_inp_data Pointer to original input atom data
@@ -5337,7 +5352,9 @@ void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
                                     const INChI *inchi,
                                     const INChI_Aux *aux)
 {
-    if (!orig_inp_data->v3000)
+    /* NULL in the AuxInfo-only pass for the reconnected (-RecMet) structure;
+       the INChI pass before it already normalised the same components */
+    if (orig_inp_data == NULL || !orig_inp_data->v3000)
     {
         return;
     }

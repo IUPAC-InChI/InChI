@@ -1779,6 +1779,111 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_disconnect
     }
 }
 
+/* Butane-2,3-diol: C2 and C3 equivalent, so up/down is meso. Standard InChI
+   gives a meso component no /m and no /s. One OR (or AND) group per centre
+   makes every drawing the same substance, so one InChI with its /s. The
+   meso drawing used to lose /s entirely (/t3-,4-), because the /s segment
+   followed standard InChI's meso decision, taken before the groups were
+   normalised. All-ABS meso stays standard: no /s. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_meso_component_keeps_s)
+{
+    auto diol = [](const char *cfg_c3, const char *collections) {
+        return std::string("butane-2,3-diol\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 6 5 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 C 0.0 0.0 0 0\n"
+                           "M  V30 2 C 0.866 0.5 0 0\n"
+                           "M  V30 3 C 1.732 0.0 0 0\n"
+                           "M  V30 4 C 2.598 0.5 0 0\n"
+                           "M  V30 5 O 0.866 1.5 0 0\n"
+                           "M  V30 6 O 1.732 -1.0 0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 1 2\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 3 4\n"
+                           "M  V30 4 1 2 5 CFG=1\n"
+                           "M  V30 5 1 3 6 ") + cfg_c3 + "\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n" +
+               collections +
+               "M  V30 END COLLECTION\n"
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+    auto make = [](const std::string &molblock) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi.substr(inchi.find("/t"));
+    };
+
+    struct MesoCase
+    {
+        const char *collections;
+        const char *expected_t_m_s;
+    };
+    const MesoCase cases[] = {
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\nM  V30 MDLV30/STEREL2 ATOMS=(1 3)\n",
+          "/t3-,4-/s2(3)(4)" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 3)\n",
+          "/t3-,4-/s3(3)(4)" },
+    };
+
+    for (const MesoCase &c : cases)
+    {
+        EXPECT_EQ(make(diol("CFG=1", c.collections)), c.expected_t_m_s) << "chiral drawing";
+        EXPECT_EQ(make(diol("CFG=3", c.collections)), c.expected_t_m_s) << "meso drawing";
+    }
+
+    /* all ABS: as standard, meso has neither /m nor /s */
+    EXPECT_EQ(make(diol("CFG=3", "M  V30 MDLV30/STEABS ATOMS=(2 2 3)\n")), "/t3-,4+");
+}
+
+/* -RecMet also emits the reconnected structure (/r) and its AuxInfo. The
+   AuxInfo-only pass has no input data, and the /t-/m normalisation read
+   through that NULL (a crash under valgrind; garbage natively, e.g. /r
+   without /s). One AND group per Mg ligand: every wedge set is the same
+   substance, so one InChI, and /r carries /s3. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_reconnected_metal_layer)
+{
+    std::string first;
+
+    for (const char *cfg_b : {"CFG=1", "CFG=3"})
+    {
+        const std::string molblock = MagnesiumBisButanolateMolblock(
+            "CFG=1", cfg_b,
+            "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n"
+            "M  V30 MDLV30/STERAC2 ATOMS=(1 8)\n");
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry -RecMet";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 2);
+        const std::string inchi = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        const size_t r_pos = inchi.find("/r");
+        ASSERT_NE(r_pos, std::string::npos) << inchi;
+        EXPECT_NE(inchi.find("/s3", r_pos), std::string::npos) << inchi;
+
+        if (first.empty())
+        {
+            first = inchi;
+        }
+        EXPECT_EQ(inchi, first) << cfg_b;
+    }
+}
+
 /* With -MolecularInorganics a haptically bound alkene stays in the metal's
    component, so an AND group over a centre on it and a centre on another
    ligand does not span components. The reader's CTab-only check ignored

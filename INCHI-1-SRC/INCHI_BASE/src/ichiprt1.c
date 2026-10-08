@@ -3518,6 +3518,39 @@ static int bHasAbsStereoComponent( INCHI_SORT *pINChISort,
 
 
 /**
+ * @brief Check whether any component has a stereocentre in an OR/AND group.
+ *
+ * The /s segment presence was decided by CompINChILayers() as for standard
+ * InChI, which gives a meso component neither /m nor /s. With OR/AND groups
+ * the component still needs its /s, e.g. /t3-,4-/s3(3)(4).
+ *
+ * @return Returns 1 if a component has an OR/AND stereocentre, else 0.
+ */
+static int bHasRelRacComponent( const ORIG_ATOM_DATA *orig_inp_data,
+                                INCHI_SORT           *pINChISort,
+                                int                   bOutType,
+                                int                   num_components )
+{
+    int i, ii;
+
+    for (i = 0; i < num_components; i++)
+    {
+        INCHI_SORT *is = pINChISort + i;
+
+        if (0 > (ii = GET_II( bOutType, is )))
+        {
+            continue;
+        }
+        if (has_rel_rac_centre( orig_inp_data->v3000, is->pINChI[ii], is->pINChI_Aux[ii] ))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/**
  * @brief Output InChI: stereo layer with sublayers for enhanced stereochemistry (absolute, relative, racemic).
  *
  * @param pCG Pointer to the CANON_GLOBALS structure containing global canonicalization data.
@@ -3641,8 +3674,16 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
 
         /* stereo type */
 
-        /* s-layer */
-        if ((io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_s_STYPE] )))
+        /* s-layer; forced in the main layer for a meso component with OR/AND groups */
+        io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_s_STYPE] );
+        if (!io->nSegmAction && io->nCurINChISegment == DIFL_M &&
+            INCHI_SEGM_FILL == INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_t_SATOMS] ) &&
+            orig_inp_data->v3000 &&
+            bHasRelRacComponent( orig_inp_data, io->pINChISort, io->bOutType, io->num_components ))
+        {
+            io->nSegmAction = INCHI_SEGM_FILL;
+        }
+        if (io->nSegmAction)
         {
             const char *p_stereo = io->bRelativeStereo[io->iCurTautMode] ? x_rel :
                 io->bRacemicStereo[io->iCurTautMode] ? x_rac : x_abs;
