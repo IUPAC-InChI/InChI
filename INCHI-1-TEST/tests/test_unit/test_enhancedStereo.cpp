@@ -617,10 +617,10 @@ enum class Spectators
     NAOH
 };
 
-/* Pentan-2-ol (atoms 1-5, centre 2) and butan-2-ol (atoms 6-11, centre 7) as
-   two components, optionally plus Na+ OH-; the butanol wedge and the
+/* Butan-2-ol (atoms 1-5, centre 2) and pentan-2-ol (atoms 6-11, centre 7) as
+   two components, optionally plus Na+ OH-; the pentanol wedge and the
    collection block vary. */
-static std::string TwoAlcoholsMolblock(const char *butanol_cfg, const char *collections,
+static std::string TwoAlcoholsMolblock(const char *pentanol_cfg, const char *collections,
                                        Spectators spectators = Spectators::NONE)
 {
     const bool naoh = spectators == Spectators::NAOH;
@@ -653,7 +653,7 @@ static std::string TwoAlcoholsMolblock(const char *butanol_cfg, const char *coll
            "M  V30 2 1 2 3\n"
            "M  V30 3 1 2 4\n"
            "M  V30 4 1 4 5\n"
-           "M  V30 5 1 7 6 " + butanol_cfg + "\n"
+           "M  V30 5 1 7 6 " + pentanol_cfg + "\n"
            "M  V30 6 1 7 8\n"
            "M  V30 7 1 7 9\n"
            "M  V30 8 1 9 10\n"
@@ -796,7 +796,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_ungrouped_wedge_keeps_m)
 {
     struct UngroupedCase
     {
-        const char *butanol_cfg;
+        const char *pentanol_cfg;
         const char *expected_t_m_s;
     };
     const UngroupedCase cases[] = {
@@ -806,9 +806,9 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_ungrouped_wedge_keeps_m)
 
     for (const UngroupedCase &c : cases)
     {
-        /* AND on pentanol, butanol ungrouped */
+        /* AND on butanol, pentanol ungrouped */
         const std::string molblock =
-            TwoAlcoholsMolblock(c.butanol_cfg, "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n");
+            TwoAlcoholsMolblock(c.pentanol_cfg, "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n");
 
         inchi_Output output;
         inchi_Output *poutput = &output;
