@@ -121,6 +121,20 @@ int MolfileV3000Init(MOL_FMT_CTAB *ctab,
         return -1;
     }
 
+    /* STEBABS, STEBREL, STEBRAC */
+    ctab->v3000->n_stebabs = ctab->v3000->n_stebrel = ctab->v3000->n_stebrac = 0;
+    ctab->v3000->stebabs = (NUM_LISTS *)inchi_calloc(1, sizeof(NUM_LISTS));
+    ctab->v3000->stebrel = (NUM_LISTS *)inchi_calloc(1, sizeof(NUM_LISTS));
+    ctab->v3000->stebrac = (NUM_LISTS *)inchi_calloc(1, sizeof(NUM_LISTS));
+    if (!ctab->v3000->stebabs || !ctab->v3000->stebrel || !ctab->v3000->stebrac ||
+        NumLists_Alloc(ctab->v3000->stebabs, 1) < 0 ||
+        NumLists_Alloc(ctab->v3000->stebrel, 4) < 0 ||
+        NumLists_Alloc(ctab->v3000->stebrac, 4) < 0)
+    {
+        AddErrorMessage(pStrErr, "Out of RAM");
+        return -1;
+    }
+
     return ret;
 }
 
@@ -164,6 +178,24 @@ int DeleteMolfileV3000Info(MOL_FMT_v3000 *v3000)
         {
             NumLists_Free(v3000->sterac);
             free(v3000->sterac);
+        }
+
+        if (v3000->stebabs)
+        {
+            NumLists_Free(v3000->stebabs);
+            free(v3000->stebabs);
+        }
+
+        if (v3000->stebrel)
+        {
+            NumLists_Free(v3000->stebrel);
+            free(v3000->stebrel);
+        }
+
+        if (v3000->stebrac)
+        {
+            NumLists_Free(v3000->stebrac);
+            free(v3000->stebrac);
         }
 
         inchi_free(v3000);
@@ -704,6 +736,109 @@ static int StereoCollectionsAreMalformed(MOL_FMT_CTAB *ctab, char *pStrErr)
 }
 
 /****************************************************************************
+ Check the double-bond stereo collections like the atom ones: at most one
+ STEBABS, a group number names one group, every bond is known and in one
+ collection only. Bonds are atom pairs here, compared unordered.
+****************************************************************************/
+static int BondCollectionsAreMalformed(MOL_FMT_CTAB *ctab, char *pStrErr)
+{
+    NUM_LISTS *colls[3];
+    int n_atoms, i, j, k, i2, j2, k2;
+
+    colls[0] = ctab->v3000->stebabs;
+    colls[1] = ctab->v3000->stebrel;
+    colls[2] = ctab->v3000->stebrac;
+    n_atoms = ctab->v3000->n_non_star_atoms + ctab->v3000->n_star_atoms;
+
+    if (ctab->v3000->n_stebabs > 1)
+    {
+        AddErrorMessage(pStrErr, "V3000 collections: more than one STEBABS collection");
+        return 1;
+    }
+
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < colls[i]->used; j++)
+        {
+            int *lst = colls[i]->lists[j];
+
+            /* Group number names one group */
+            for (j2 = j + 1; i > 0 && j2 < colls[i]->used; j2++)
+            {
+                if (lst[0] == colls[i]->lists[j2][0])
+                {
+                    AddErrorMessage(pStrErr, "V3000 collections: bond group number used by more than one collection");
+                    return 1;
+                }
+            }
+
+            /* Bonds occupy lst[2 .. lst[1]+1] as atom pairs */
+            for (k = 2; k < lst[1] + 2; k += 2)
+            {
+                if (lst[k] < 1 || lst[k] > n_atoms || lst[k + 1] < 1 || lst[k + 1] > n_atoms)
+                {
+                    AddErrorMessage(pStrErr, "V3000 collections: unknown bond in a stereo collection");
+                    return 1;
+                }
+
+                /* Same bond again, later in this list or in a later list */
+                for (i2 = i; i2 < 3; i2++)
+                {
+                    for (j2 = (i2 == i) ? j : 0; j2 < colls[i2]->used; j2++)
+                    {
+                        int *lst2 = colls[i2]->lists[j2];
+                        for (k2 = (i2 == i && j2 == j) ? k + 2 : 2; k2 < lst2[1] + 2; k2 += 2)
+                        {
+                            if ((lst[k] == lst2[k2] && lst[k + 1] == lst2[k2 + 1]) ||
+                                (lst[k] == lst2[k2 + 1] && lst[k + 1] == lst2[k2]))
+                            {
+                                AddErrorMessage(pStrErr, "V3000 collections: bond in more than one stereo collection");
+                                return 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+/****************************************************************************
+ Turn a STEB* list of bond indices [n, nb, bond1, ...] into the bonds'
+ atom pairs [n, 2*nb, a1, b1, ...]. An index the bond block does not have
+ becomes the pair (0, 0), which BondCollectionsAreMalformed rejects.
+ Frees bond_list; returns NULL when out of memory.
+****************************************************************************/
+static int *BondsToAtomPairs(MOL_FMT_CTAB *ctab, int *bond_list)
+{
+    int k, nb = bond_list[1];
+    int *pairs = (int *)inchi_calloc((long long)2 * nb + 3, sizeof(int));
+
+    if (pairs)
+    {
+        pairs[0] = bond_list[0];
+        pairs[1] = 2 * nb;
+        for (k = 0; k < nb; k++)
+        {
+            /* ponytail: the V3000 bond index is taken as the bond line order, which
+               haptic bonds break (they are stored apart); with haptic bonds present
+               the bonds count as unknown. Store the bond index if that matters. */
+            int ib = bond_list[2 + k] - 1;
+            if (ctab->v3000->n_haptic_bonds == 0 && 0 <= ib && ib < ctab->v3000->n_non_haptic_bonds)
+            {
+                pairs[2 + 2 * k] = ctab->bonds[ib].atnum1;
+                pairs[3 + 2 * k] = ctab->bonds[ib].atnum2;
+            }
+        }
+    }
+    inchi_free(bond_list);
+
+    return pairs;
+}
+
+/****************************************************************************
  Read V3000 collections
 ****************************************************************************/
 int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
@@ -740,6 +875,8 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
         int stereo_kind = MOL_FMT_V3000_STENON;
         /* stereo collection of interest */
         NUM_LISTS *ste_coll = NULL;
+        int *n_ste = NULL;
+        const char *members = "ATOMS"; /* "BONDS" for double-bond collections */
 
         nread = read_upto_delim(&p, field, max_field_len, "/");
         if (nread < 6)
@@ -759,6 +896,28 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
             n_coll = 1;
             stereo_kind = MOL_FMT_V3000_STEABS;
             ste_coll = ctab->v3000->steabs;
+            n_ste = &ctab->v3000->n_steabs;
+        }
+        else if (!strcmp(field, "/STEBABS"))
+        {
+            n_coll = 1;
+            stereo_kind = MOL_FMT_V3000_STEABS;
+            ste_coll = ctab->v3000->stebabs;
+            n_ste = &ctab->v3000->n_stebabs;
+            members = "BONDS";
+        }
+        else if (!strcmp(field, "/STEBREL") || !strcmp(field, "/STEBRAC"))
+        {
+            int rel = !strcmp(field, "/STEBREL");
+            if (0 > MolfileV3000ReadField(&n_coll, MOL_FMT_CHAR_INT_DATA, &p))
+            {
+                failed = 1;
+                break;
+            }
+            stereo_kind = rel ? MOL_FMT_V3000_STEREL : MOL_FMT_V3000_STERAC;
+            ste_coll = rel ? ctab->v3000->stebrel : ctab->v3000->stebrac;
+            n_ste = rel ? &ctab->v3000->n_stebrel : &ctab->v3000->n_stebrac;
+            members = "BONDS";
         }
         else if (!strcmp(field, "/STEREL"))
         {
@@ -770,6 +929,7 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
             }
             stereo_kind = MOL_FMT_V3000_STEREL;
             ste_coll = ctab->v3000->sterel;
+            n_ste = &ctab->v3000->n_sterel;
         }
         else if (!strcmp(field, "/STERAC"))
         {
@@ -781,6 +941,7 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
             }
             stereo_kind = MOL_FMT_V3000_STERAC;
             ste_coll = ctab->v3000->sterac;
+            n_ste = &ctab->v3000->n_sterac;
         }
         else
         {
@@ -793,7 +954,7 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
             /* consume atoms= */
             if ((len = MolfileV3000ReadKeyword(field, &p) > 0)) /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
             {
-                if (!strcmp(field, "ATOMS"))
+                if (!strcmp(field, members))
                 {
                     int res, *num_list = NULL;
 
@@ -804,6 +965,21 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
                     else if (!num_list)
                     {
                         failed = 1;
+                    }
+                    else if (!strcmp(members, "BONDS"))
+                    {
+                        /* bonds stored as atom pairs, already in the final atom order */
+                        num_list[0] = n_coll;
+                        num_list = BondsToAtomPairs(ctab, num_list);
+                        if (!num_list || NumLists_Append(ste_coll, num_list) < 0)
+                        {
+                            failed = 1;
+                        }
+                        else
+                        {
+                            (*n_ste)++;
+                            ctab->v3000->n_collections++;
+                        }
                     }
                     else
                     {
@@ -915,6 +1091,15 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
         NumLists_Free(ctab->v3000->sterac);
         ctab->v3000->n_steabs = ctab->v3000->n_sterel = ctab->v3000->n_sterac = 0;
         ctab->v3000->n_collections = 0;
+    }
+
+    if (BondCollectionsAreMalformed(ctab, pStrErr))
+    {
+        /* As above: drop the double-bond collections, keep standard /b */
+        NumLists_Free(ctab->v3000->stebabs);
+        NumLists_Free(ctab->v3000->stebrel);
+        NumLists_Free(ctab->v3000->stebrac);
+        ctab->v3000->n_stebabs = ctab->v3000->n_stebrel = ctab->v3000->n_stebrac = 0;
     }
 
     // /* Error: No V3000 Collection end marker */

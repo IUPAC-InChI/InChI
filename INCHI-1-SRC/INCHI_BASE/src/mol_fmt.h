@@ -556,6 +556,16 @@ typedef struct A_MOL_FMT_v3000
     NUM_LISTS *sterac; /* sterac[k][0] - n from "STERACn" tag              */
                        /* sterac[k][1] -  number of members in collection  */
                        /* sterac[k][2..] - member atom numbers          */
+    /* Enhanced stereo on double bonds (STEBABS/STEBRELn/STEBRACn): each
+       bond stored as its two atoms, so the lists move like atom lists */
+    int n_stebabs;
+    NUM_LISTS *stebabs; /* stebabs[k][0] - not used                         */
+                        /* stebabs[k][1] - 2 * number of bonds              */
+                        /* stebabs[k][2..] - atom pairs a1,b1,a2,b2,...     */
+    int n_stebrel;
+    NUM_LISTS *stebrel; /* as stebabs; [k][0] - n from "STEBRELn" tag       */
+    int n_stebrac;
+    NUM_LISTS *stebrac; /* as stebabs; [k][0] - n from "STEBRACn" tag       */
 } MOL_FMT_v3000;
 
 /**
