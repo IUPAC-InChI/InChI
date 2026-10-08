@@ -2431,6 +2431,11 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
 
         tot_len += len_abs + len_rel + len_rac;
 
+        // Wedged centres in no collection are absolute; beside them a single
+        // OR/AND group is not the whole component, so it stays grouped: "2(3)"
+        int n_ungrouped = 0;
+        absolute_centres( orig_inp_data->v3000, pINChI, pAux, NULL, &n_ungrouped );
+
         // A component whose only enhanced-stereo collection is ABS says nothing
         // beyond standard absolute stereo, so it reduces to the bare "1" (SAbs).
         if (len_abs > 0 && len_rel == 0 && len_rac == 0) {
@@ -2443,12 +2448,14 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         // so it reduces to the bare "2" (SRel); analogously a single AND group
         // reduces to the bare "3" (SRac). Multiple OR/AND groups on the same
         // component are left grouped, since the grouping itself is meaningful.
-        else if (len_rel > 0 && len_abs == 0 && len_rac == 0 && num_groups_rel == 1) {
+        else if (len_rel > 0 && len_abs == 0 && len_rac == 0 && num_groups_rel == 1 &&
+                 n_ungrouped == 0) {
             inchi_strbuf_reset(&tmpbuf);
             tot_len -= len_rel;
             tot_len += MakeDelim( x_rel, &tmpbuf, bOverflow );
         }
-        else if (len_rac > 0 && len_abs == 0 && len_rel == 0 && num_groups_rac == 1) {
+        else if (len_rac > 0 && len_abs == 0 && len_rel == 0 && num_groups_rac == 1 &&
+                 n_ungrouped == 0) {
             inchi_strbuf_reset(&tmpbuf);
             tot_len -= len_rac;
             tot_len += MakeDelim( x_rac, &tmpbuf, bOverflow );

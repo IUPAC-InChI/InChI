@@ -711,6 +711,39 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_
     }
 }
 
+/* 3-chlorobutan-2-ol: C1 CH3, C2 (OH, centre), C3 (Cl, centre), C4 CH3.
+   Wedges on C2 and C3 and the collection block vary. */
+static std::string ChlorobutanolMolblock(const char *cfg_c2, const char *cfg_c3,
+                                         const char *collections)
+{
+    return std::string("3-chlorobutan-2-ol\n"
+                       "  test\n"
+                       "\n"
+                       "  0  0  0     0  0            999 V3000\n"
+                       "M  V30 BEGIN CTAB\n"
+                       "M  V30 COUNTS 6 5 0 0 0\n"
+                       "M  V30 BEGIN ATOM\n"
+                       "M  V30 1 C 0.0 0.0 0 0\n"
+                       "M  V30 2 C 0.866 0.5 0 0\n"
+                       "M  V30 3 C 1.732 0.0 0 0\n"
+                       "M  V30 4 C 2.598 0.5 0 0\n"
+                       "M  V30 5 O 0.866 1.5 0 0\n"
+                       "M  V30 6 Cl 1.732 -1.0 0 0\n"
+                       "M  V30 END ATOM\n"
+                       "M  V30 BEGIN BOND\n"
+                       "M  V30 1 1 1 2\n"
+                       "M  V30 2 1 2 3\n"
+                       "M  V30 3 1 3 4\n"
+                       "M  V30 4 1 2 5 ") + cfg_c2 + "\n"
+           "M  V30 5 1 3 6 " + cfg_c3 + "\n"
+           "M  V30 END BOND\n"
+           "M  V30 BEGIN COLLECTION\n" +
+           collections +
+           "M  V30 END COLLECTION\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
 /* Only stereocentres take part in /s and in the /m membership test. A
    collection atom that is not a stereocentre (CH3, CH2, a spectator) used to
    reach /s as an orphan group, e.g. 3(1,3) for 3(3), a bare 1 for a component
@@ -775,32 +808,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ign
     for (const ChlorobutanolCase &c : chloro_cases)
     {
         const std::string chlorobutanol =
-            std::string("3-chlorobutan-2-ol\n"
-                        "  test\n"
-                        "\n"
-                        "  0  0  0     0  0            999 V3000\n"
-                        "M  V30 BEGIN CTAB\n"
-                        "M  V30 COUNTS 6 5 0 0 0\n"
-                        "M  V30 BEGIN ATOM\n"
-                        "M  V30 1 C 0.0 0.0 0 0\n"
-                        "M  V30 2 C 0.866 0.5 0 0\n"
-                        "M  V30 3 C 1.732 0.0 0 0\n"
-                        "M  V30 4 C 2.598 0.5 0 0\n"
-                        "M  V30 5 O 0.866 1.5 0 0\n"
-                        "M  V30 6 Cl 1.732 -1.0 0 0\n"
-                        "M  V30 END ATOM\n"
-                        "M  V30 BEGIN BOND\n"
-                        "M  V30 1 1 1 2\n"
-                        "M  V30 2 1 2 3\n"
-                        "M  V30 3 1 3 4\n"
-                        "M  V30 4 1 2 5 ") + c.cfg_c2 + "\n"
-            "M  V30 5 1 3 6 " + c.cfg_c3 + "\n"
-            "M  V30 END BOND\n"
-            "M  V30 BEGIN COLLECTION\n" +
-            c.collections +
-            "M  V30 END COLLECTION\n"
-            "M  V30 END CTAB\n"
-            "M  END\n";
+            ChlorobutanolMolblock(c.cfg_c2, c.cfg_c3, c.collections);
 
         inchi_Output output;
         inchi_Output *poutput = &output;
@@ -812,6 +820,70 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ign
         EXPECT_EQ(inchi.substr(inchi.find("/t")), c.expected_t_m_s)
             << c.cfg_c2 << " " << c.cfg_c3 << " " << c.collections;
         FreeINCHI(poutput);
+    }
+}
+
+/* The absolute centres of a component, STEABS members plus wedged centres in
+   no collection, flip as one set and toggle /m. Each case lists the four wedge
+   combinations of 3-chlorobutan-2-ol grouped into substances: an AND or OR
+   group on one centre makes its two epimers one substance. One substance, one
+   InChI; different substances, different InChIs. Used to fail both ways: ABS
+   flips forced /m1 instead of toggling it, so mirror images collided; and an
+   OR group reduced to bare /s2 and dropped /m beside an ungrouped wedge. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_absolute_set_flips_as_one)
+{
+    struct WedgeSet
+    {
+        const char *cfg_c2;
+        const char *cfg_c3;
+    };
+    struct SubstanceCase
+    {
+        const char *collections;
+        WedgeSet substance_a[2];
+        WedgeSet substance_b[2];
+    };
+    const SubstanceCase cases[] = {
+        /* ABS on C2, AND on C3: C3 epimers are one substance */
+        { "M  V30 MDLV30/STEABS ATOMS=(1 2)\nM  V30 MDLV30/STERAC1 ATOMS=(1 3)\n",
+          { {"CFG=1", "CFG=1"}, {"CFG=1", "CFG=3"} },
+          { {"CFG=3", "CFG=3"}, {"CFG=3", "CFG=1"} } },
+        /* C3 ungrouped (absolute), AND on C2 */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          { {"CFG=1", "CFG=1"}, {"CFG=3", "CFG=1"} },
+          { {"CFG=3", "CFG=3"}, {"CFG=1", "CFG=3"} } },
+        /* C3 ungrouped (absolute), OR on C2 */
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\n",
+          { {"CFG=1", "CFG=1"}, {"CFG=3", "CFG=1"} },
+          { {"CFG=3", "CFG=3"}, {"CFG=1", "CFG=3"} } },
+    };
+
+    auto make = [](const char *collections, const WedgeSet &w) {
+        const std::string molblock = ChlorobutanolMolblock(w.cfg_c2, w.cfg_c3, collections);
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi;
+    };
+
+    for (const SubstanceCase &c : cases)
+    {
+        const std::string a0 = make(c.collections, c.substance_a[0]);
+        const std::string a1 = make(c.collections, c.substance_a[1]);
+        const std::string b0 = make(c.collections, c.substance_b[0]);
+        const std::string b1 = make(c.collections, c.substance_b[1]);
+
+        EXPECT_EQ(a0, a1) << c.collections;
+        EXPECT_EQ(b0, b1) << c.collections;
+        EXPECT_NE(a0, b0) << c.collections;
+
+        /* an absolute centre is present, so /m is too */
+        EXPECT_NE(a0.find("/m"), std::string::npos) << a0;
     }
 }
 

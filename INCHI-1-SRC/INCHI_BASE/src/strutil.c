@@ -5257,8 +5257,9 @@ int invert_parities(const INChI *inchi,
                 }
             }
 
+            // Displayed absolute parities inverted: /m flips with them
             if (is_absolute) {
-                inchi->Stereo->nCompInv2Abs = -1; //m1
+                inchi->Stereo->nCompInv2Abs = -inchi->Stereo->nCompInv2Abs;
             }
         }
     }
@@ -5358,7 +5359,18 @@ void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
         return;
     }
 
-    invert_parities(inchi, aux, orig_inp_data->v3000->lists_steabs, orig_inp_data->v3000->n_steabs, 1);
+    /* The absolute set (STEABS plus wedged centres in no collection) flips as one
+       group: its parities are tied to each other through /m. Laid out as one
+       collection list, [unused, n, orig atoms...]. */
+    int n_abs = 0;
+    int *abs_list = (int *)inchi_calloc( inchi->Stereo->nNumberOfStereoCenters + 2, sizeof(int) );
+    if (abs_list != NULL) {
+        n_abs = absolute_centres( orig_inp_data->v3000, inchi, aux, abs_list + 2, NULL );
+        abs_list[1] = n_abs;
+        invert_parities(inchi, aux, &abs_list, 1, 1);
+        inchi_free( abs_list );
+    }
+
     invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
     invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
 
@@ -5370,15 +5382,111 @@ void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
        segment altogether (see OutputINCHI_StereoLayer_EnhancedStereo).
        Tested per component, not from the structure-wide collection counts: in a
        multi-component structure an ABS collection on one component must not keep
-       /m alive on an OR/AND-only sibling. */
-    if (!component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_steabs,
-                                        orig_inp_data->v3000->n_steabs ) &&
+       /m alive on an OR/AND-only sibling. An ungrouped wedge is an absolute
+       reference too. */
+    if (n_abs == 0 &&
         (component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_sterel,
                                         orig_inp_data->v3000->n_sterel ) ||
          component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_sterac,
                                         orig_inp_data->v3000->n_sterac ))) {
         inchi->Stereo->nCompInv2Abs = 0;
     }
+}
+
+/**
+ * @brief Absolute centres of a component: STEABS stereocentres plus wedged
+ *        stereocentres in no collection
+ *
+ * A wedged centre outside every collection is drawn with a definite
+ * configuration, so it belongs with ABS: it flips with the ABS set and keeps
+ * /m alive. Unknown/undefined parities ('u', '?') are not absolute.
+ *
+ * @param v3000 Collections of the structure
+ * @param inchi Pointer to INChI structure of the component
+ * @param aux Pointer to INChI auxiliary data of the component
+ * @param abs_atoms Receives original atom numbers, room for
+ *        nNumberOfStereoCenters entries; may be NULL
+ * @param n_ungrouped Receives how many of them are in no collection; may be NULL
+ * @return Number of absolute centres
+ */
+int absolute_centres( const OAD_V3000 *v3000,
+                      const INChI *inchi,
+                      const INChI_Aux *aux,
+                      int *abs_atoms,
+                      int *n_ungrouped )
+{
+    enum { CLASS_NONE, CLASS_ABS, CLASS_REL_RAC };
+
+    int count = 0;
+    int ungrouped = 0;
+
+    if (n_ungrouped != NULL) {
+        *n_ungrouped = 0;
+    }
+    if (v3000 == NULL || inchi == NULL || aux == NULL || inchi->Stereo == NULL ||
+        inchi->Stereo->t_parity == NULL || inchi->Stereo->nNumber == NULL ||
+        inchi->Stereo->nNumberOfStereoCenters <= 0 || aux->nOrigAtNosInCanonOrd == NULL) {
+        return 0;
+    }
+
+    int n_centres = inchi->Stereo->nNumberOfStereoCenters;
+    S_CHAR *centre_class = (S_CHAR *)inchi_calloc( n_centres, sizeof(S_CHAR) );
+    if (centre_class == NULL) {
+        return 0;
+    }
+
+    /* Class of each /t centre from the collections */
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+    int **lists[3] = { v3000->lists_steabs, v3000->lists_sterel, v3000->lists_sterac };
+    int n_lists[3] = { v3000->n_steabs, v3000->n_sterel, v3000->n_sterac };
+
+    for (int t = 0; t < 3; t++) {
+        for (int i = 0; lists[t] != NULL && i < n_lists[t]; i++) {
+            for (int j = 0; j < lists[t][i][1]; j++) {
+                int canon = lookup_stereo_centre( inchi, orig_to_canon, map_size, aux,
+                                                  lists[t][i][2 + j] );
+                if (canon == -1) {
+                    continue;
+                }
+                int idx = get_parity_idx_from_canonical_atom_number( canon,
+                                                                     inchi->Stereo->nNumber,
+                                                                     n_centres );
+                centre_class[idx] = (t == 0) ? CLASS_ABS : CLASS_REL_RAC;
+            }
+        }
+    }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
+    /* ABS members, and defined centres in no collection */
+    for (int k = 0; k < n_centres; k++) {
+        S_CHAR parity = inchi->Stereo->t_parity[k];
+        int defined = parity == AB_PARITY_ODD || parity == AB_PARITY_EVEN;
+
+        if (centre_class[k] == CLASS_REL_RAC) {
+            continue;
+        }
+        if (centre_class[k] == CLASS_NONE) {
+            if (!defined) {
+                continue;
+            }
+            ungrouped++;
+        }
+        if (abs_atoms != NULL) {
+            abs_atoms[count] = aux->nOrigAtNosInCanonOrd[inchi->Stereo->nNumber[k] - 1];
+        }
+        count++;
+    }
+
+    inchi_free( centre_class );
+
+    if (n_ungrouped != NULL) {
+        *n_ungrouped = ungrouped;
+    }
+    return count;
 }
 
 /****************************************************************************
