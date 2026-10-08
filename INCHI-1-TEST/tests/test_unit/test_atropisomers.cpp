@@ -153,9 +153,9 @@ TEST(test_atropisomers, test_dummy_1_atropisomer)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H";
+    const char expected_inchi[] = "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -228,9 +228,9 @@ TEST(test_atropisomers, test_dummy_2_atropisomer)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3";
+    const char expected_inchi[] = "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -296,9 +296,9 @@ TEST(test_atropisomers, test_dummy_3_atropismer)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C20H16O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-11,18,21-22H,12H2";
+    const char expected_inchi[] = "InChI=1B/C20H16O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-11,18,21-22H,12H2/t18?,19-/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -908,9 +908,9 @@ TEST(test_atropisomers, test_dummy_12_atropisomer)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C15H14/c1-3-10-14-12(6-1)8-5-9-13-7-2-4-11-15(13)14/h1-4,6-7,10-11H,5,8-9H2";
+    const char expected_inchi[] = "InChI=1B/C15H14/c1-3-10-14-12(6-1)8-5-9-13-7-2-4-11-15(13)14/h1-4,6-7,10-11H,5,8-9H2/t14-/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -1086,7 +1086,9 @@ TEST(test_atropisomers, test_dummy_14_atropisomer)
     memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
+    // N-N axis (2,2'-diethyl-1,1'-biindole): outside the v1 carbon-only scope
+    // (AT-R11), so no stereo layer and no warning -> return code 0.
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -1133,32 +1135,32 @@ TEST(test_atropisomers, test_dummy_15_test_file_1)
     }
 
     std::vector<std::string> list_expected_inchis = {
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m0/s1",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m1/s1",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m0/s1",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m1/s1",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m0/s1",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m1/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
         "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
         "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
-        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
-        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
-        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
-        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m0/s1",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m0/s1",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m1/s1",
         "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
         "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
         "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3",
@@ -1168,20 +1170,20 @@ TEST(test_atropisomers, test_dummy_15_test_file_1)
         "InChI=1B/C14H15NO/c1-10(2)12-8-9-14(16)15(12)13-7-5-4-6-11(13)3/h4-9H,1-3H3",
         "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H",
         "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H",
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
-        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)",
-        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
-        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H",
-        "InChI=1B/C14H26/c1-9(2)13(10(3)4)14(11(5)6)12(7)8/h9,11H,1-8H3",
-        "InChI=1B/C12H17NO/c1-5-10-8-6-7-9(2)11(10)12(14)13(3)4/h6-8H,5H2,1-4H3",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m1/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m0/s1",
+        "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m1/s1",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m1/s1",
+        "InChI=1B/C14H8N2O8/c17-13(18)7-3-1-5-9(15(21)22)11(7)12-8(14(19)20)4-2-6-10(12)16(23)24/h1-6H,(H,17,18)(H,19,20)/t11-/m0/s1",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m0/s1",
+        "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
+        "InChI=1B/C14H26/c1-9(2)13(10(3)4)14(11(5)6)12(7)8/h9,11H,1-8H3/t13-/m1/s1",
+        "InChI=1B/C12H17NO/c1-5-10-8-6-7-9(2)11(10)12(14)13(3)4/h6-8H,5H2,1-4H3/t11-/m1/s1",
         "InChI=1B/C15H22ClNO2/c1-5-13-8-6-7-11(2)15(13)17(14(18)9-16)12(3)10-19-4/h6-8,12H,5,9-10H2,1-4H3/t12-/m0/s1",
         "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23-",
         "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23-",
         "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23+",
-        "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23+",
+        "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23+"
     };
 
     int nof_inchis = 49;
@@ -1381,4 +1383,301 @@ TEST(test_atropisomers, detector_populates_axis_record) {
 
     if (orig.atrop_axes) inchi_free(orig.atrop_axes);
     free_ring_system(rs);
+}
+
+// ---------------------------------------------------------------------------
+// Sub-project B gates: native /t + /m emission for a stereogenic single-bond
+// axis (spec 4, AT-R5..R9, gates T6/T7).
+// ---------------------------------------------------------------------------
+
+static const char *k_dummy1_connectivity =
+    "/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H";
+
+// Runs a molblock and returns the InChI (empty on failure); *ret gets the code.
+static std::string run_inchi(const std::string &molblock, const char *options, int *ret = nullptr) {
+    inchi_Output out;
+    memset(&out, 0, sizeof(out));
+    std::string opts(options);
+    int r = MakeINCHIFromMolfileText(molblock.c_str(), &opts[0], &out);
+    if (ret) { *ret = r; }
+    std::string s = out.szInChI ? out.szInChI : "";
+    FreeINCHI(&out);
+    return s;
+}
+
+// Replaces the first occurrence of `from` by `to` in a molblock copy.
+static std::string edit_molblock(const char *molblock, const std::string &from, const std::string &to) {
+    std::string s(molblock);
+    size_t p = s.find(from);
+    EXPECT_NE(p, std::string::npos) << "pattern not found: " << from;
+    if (p != std::string::npos) { s.replace(p, from.size(), to); }
+    return s;
+}
+
+// Mirror image of a 2D drawing: every wedge becomes a hash.
+static std::string mirror_wedges(const char *molblock) {
+    std::string s = edit_molblock(molblock, "  2  3  1  1", "  2  3  1  6");
+    return edit_molblock(s.c_str(), "  8  7  1  1", "  8  7  1  6");
+}
+
+static const char *k_biaryl3d_p44 =
+    "biaryl dihedral 44\n"
+    "  gen3d\n"
+    "\n"
+    " 16 17  0  0  0  0  0  0  0  0999 V2000\n"
+    "   -0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400    1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400    1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -3.5400    0.0000   -0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400   -1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400   -1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150    2.6096   -1.0544 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150   -2.6096    1.0544 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400    1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400    1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.5400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400   -1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400   -1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150    2.6096    1.0544 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150   -2.6096   -1.0544 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  2  2  0  0  0  0\n"
+    "  2  3  1  0  0  0  0\n"
+    "  3  4  2  0  0  0  0\n"
+    "  4  5  1  0  0  0  0\n"
+    "  5  6  2  0  0  0  0\n"
+    "  6  1  1  0  0  0  0\n"
+    "  2  7  1  0  0  0  0\n"
+    "  6  8  1  0  0  0  0\n"
+    "  9 10  2  0  0  0  0\n"
+    " 10 11  1  0  0  0  0\n"
+    " 11 12  2  0  0  0  0\n"
+    " 12 13  1  0  0  0  0\n"
+    " 13 14  2  0  0  0  0\n"
+    " 14  9  1  0  0  0  0\n"
+    " 10 15  1  0  0  0  0\n"
+    " 14 16  1  0  0  0  0\n"
+    "  1  9  1  0  0  0  0\n"
+    "M  END\n"
+    ;
+static const char *k_biaryl3d_p90 =
+    "biaryl dihedral 90\n"
+    "  gen3d\n"
+    "\n"
+    " 16 17  0  0  0  0  0  0  0  0999 V2000\n"
+    "   -0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400    0.8573   -0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400    0.8573   -0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -3.5400    0.0000   -0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400   -0.8573    0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400   -0.8573    0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150    1.9902   -1.9902 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150   -1.9902    1.9902 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400    0.8573    0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400    0.8573    0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.5400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400   -0.8573   -0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400   -0.8573   -0.8573 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150    1.9902    1.9902 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150   -1.9902   -1.9902 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  2  2  0  0  0  0\n"
+    "  2  3  1  0  0  0  0\n"
+    "  3  4  2  0  0  0  0\n"
+    "  4  5  1  0  0  0  0\n"
+    "  5  6  2  0  0  0  0\n"
+    "  6  1  1  0  0  0  0\n"
+    "  2  7  1  0  0  0  0\n"
+    "  6  8  1  0  0  0  0\n"
+    "  9 10  2  0  0  0  0\n"
+    " 10 11  1  0  0  0  0\n"
+    " 11 12  2  0  0  0  0\n"
+    " 12 13  1  0  0  0  0\n"
+    " 13 14  2  0  0  0  0\n"
+    " 14  9  1  0  0  0  0\n"
+    " 10 15  1  0  0  0  0\n"
+    " 14 16  1  0  0  0  0\n"
+    "  1  9  1  0  0  0  0\n"
+    "M  END\n"
+    ;
+static const char *k_biaryl3d_p120 =
+    "biaryl dihedral 120\n"
+    "  gen3d\n"
+    "\n"
+    " 16 17  0  0  0  0  0  0  0  0999 V2000\n"
+    "   -0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400    0.6062   -1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400    0.6062   -1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -3.5400    0.0000   -0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400   -0.6062    1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400   -0.6062    1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150    1.4073   -2.4375 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150   -1.4073    2.4375 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400    0.6062    1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400    0.6062    1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.5400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400   -0.6062   -1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400   -0.6062   -1.0500 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150    1.4073    2.4375 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150   -1.4073   -2.4375 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  2  2  0  0  0  0\n"
+    "  2  3  1  0  0  0  0\n"
+    "  3  4  2  0  0  0  0\n"
+    "  4  5  1  0  0  0  0\n"
+    "  5  6  2  0  0  0  0\n"
+    "  6  1  1  0  0  0  0\n"
+    "  2  7  1  0  0  0  0\n"
+    "  6  8  1  0  0  0  0\n"
+    "  9 10  2  0  0  0  0\n"
+    " 10 11  1  0  0  0  0\n"
+    " 11 12  2  0  0  0  0\n"
+    " 12 13  1  0  0  0  0\n"
+    " 13 14  2  0  0  0  0\n"
+    " 14  9  1  0  0  0  0\n"
+    " 10 15  1  0  0  0  0\n"
+    " 14 16  1  0  0  0  0\n"
+    "  1  9  1  0  0  0  0\n"
+    "M  END\n"
+    ;
+static const char *k_biaryl3d_m44 =
+    "biaryl dihedral -44\n"
+    "  gen3d\n"
+    "\n"
+    " 16 17  0  0  0  0  0  0  0  0999 V2000\n"
+    "   -0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400    1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400    1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -3.5400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.8400   -1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.4400   -1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150    2.6096    1.0544 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.5150   -2.6096   -1.0544 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.7400    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400    1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400    1.1242   -0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.5400    0.0000   -0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.8400   -1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.4400   -1.1242    0.4542 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150    2.6096   -1.0544 Br  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.5150   -2.6096    1.0544 Cl  0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  2  2  0  0  0  0\n"
+    "  2  3  1  0  0  0  0\n"
+    "  3  4  2  0  0  0  0\n"
+    "  4  5  1  0  0  0  0\n"
+    "  5  6  2  0  0  0  0\n"
+    "  6  1  1  0  0  0  0\n"
+    "  2  7  1  0  0  0  0\n"
+    "  6  8  1  0  0  0  0\n"
+    "  9 10  2  0  0  0  0\n"
+    " 10 11  1  0  0  0  0\n"
+    " 11 12  2  0  0  0  0\n"
+    " 12 13  1  0  0  0  0\n"
+    " 13 14  2  0  0  0  0\n"
+    " 14  9  1  0  0  0  0\n"
+    " 10 15  1  0  0  0  0\n"
+    " 14 16  1  0  0  0  0\n"
+    "  1  9  1  0  0  0  0\n"
+    "M  END\n"
+    ;
+
+// T7: the axis is cited once, on the lower-numbered axis atom, with /m and /s.
+TEST(test_atropisomers, gate_t7_axis_cited_on_lower_atom) {
+    std::string s = run_inchi(k_dummy1_molblock, "-Atropisomers");
+    EXPECT_EQ(s, std::string("InChI=1B") + k_dummy1_connectivity + "/t11-/m0/s1");
+}
+
+// T6: enantiomer pair shares skeleton and /t, differs only in /m.
+TEST(test_atropisomers, gate_t6_enantiomer_flips_m) {
+    std::string ra = run_inchi(k_dummy1_molblock, "-Atropisomers");
+    std::string sa = run_inchi(mirror_wedges(k_dummy1_molblock), "-Atropisomers");
+    EXPECT_EQ(ra, std::string("InChI=1B") + k_dummy1_connectivity + "/t11-/m0/s1");
+    EXPECT_EQ(sa, std::string("InChI=1B") + k_dummy1_connectivity + "/t11-/m1/s1");
+}
+
+// T6: 3D rotamers (44, 90, 120 deg) of one enantiomer give one InChI; the
+// -44 deg twist is the other enantiomer.
+TEST(test_atropisomers, gate_t6_rotamers_one_inchi) {
+    std::string p44 = run_inchi(k_biaryl3d_p44, "-Atropisomers");
+    std::string p90 = run_inchi(k_biaryl3d_p90, "-Atropisomers");
+    std::string p120 = run_inchi(k_biaryl3d_p120, "-Atropisomers");
+    std::string m44 = run_inchi(k_biaryl3d_m44, "-Atropisomers");
+    EXPECT_EQ(p44, p90);
+    EXPECT_EQ(p44, p120);
+    EXPECT_NE(p44, m44);
+    EXPECT_EQ(p44.substr(0, p44.size() - 5), m44.substr(0, m44.size() - 5)); // differ in /mX/s1 only
+    EXPECT_NE(p44.find("/t11-/m"), std::string::npos);
+    EXPECT_NE(m44.find("/t11-/m"), std::string::npos);
+}
+
+// AT-R5: an end with two identical substituents (2,6-dichloro ring) is not
+// stereogenic: the axis is pruned by canonical equivalence, nothing emitted.
+TEST(test_atropisomers, dissymmetry_symmetric_end_pruned) {
+    std::string sym = edit_molblock(k_dummy1_molblock,
+        "    7.5821   -7.4750    0.0000 Br ", "    7.5821   -7.4750    0.0000 Cl ");
+    std::string s = run_inchi(sym, "-Atropisomers");
+    EXPECT_EQ(s, "InChI=1B/C12H6BrCl3/c13-7-3-1-4-8(14)11(7)12-9(15)5-2-6-10(12)16/h1-6H");
+}
+
+// AT-R9: one wedge (IUPAC) defines the axis like two do.
+TEST(test_atropisomers, single_wedge_defines_axis) {
+    std::string one = edit_molblock(k_dummy1_molblock, "  8  7  1  1", "  8  7  1  0");
+    EXPECT_EQ(run_inchi(one, "-Atropisomers"), run_inchi(k_dummy1_molblock, "-Atropisomers"));
+}
+
+// A flat drawing without wedges has undefined axial geometry: omitted (with
+// the usual "omitted undefined stereo" warning), never guessed.
+TEST(test_atropisomers, flat_axis_is_omitted) {
+    std::string flat = edit_molblock(k_dummy1_molblock, "  2  3  1  1", "  2  3  1  0");
+    flat = edit_molblock(flat.c_str(), "  8  7  1  1", "  8  7  1  0");
+    int ret = 0;
+    std::string s = run_inchi(flat, "-Atropisomers", &ret);
+    EXPECT_EQ(s, std::string("InChI=1B") + k_dummy1_connectivity);
+    EXPECT_EQ(ret, 1);
+}
+
+// Backward compatibility: without -Atropisomers nothing changes.
+TEST(test_atropisomers, standard_output_unchanged) {
+    EXPECT_EQ(run_inchi(k_dummy1_molblock, ""), std::string("InChI=1S") + k_dummy1_connectivity);
+    EXPECT_EQ(run_inchi(k_dummy1_molblock, "-EnhancedStereochemistry"),
+              std::string("InChI=1B") + k_dummy1_connectivity);
+    EXPECT_EQ(run_inchi(k_biaryl3d_p44, ""), std::string("InChI=1S") + k_dummy1_connectivity);
+}
+
+// [ATROP] stability heuristic: fewer than three substituted ortho positions
+// (3,3'-bipyridine, fixture mol 34, drawn with a wedge) is not an axis.
+TEST(test_atropisomers, unhindered_axis_not_emitted) {
+    const char *bipyridine =
+        "3,3'-bipyridine\n"
+        "  ChemDraw03052609262D\n"
+        "\n"
+        " 12 13  0  0  0  0  0  0  0  0999 V2000\n"
+        "    0.7145    1.6500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.7145    0.8250    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.0000    2.0625    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.0000    0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "   -0.7144    1.6500    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "   -0.7144    0.8250    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "   -0.0000   -0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.7145   -0.8250    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "   -0.7145   -0.8250    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.7144   -1.6501    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "   -0.7145   -1.6500    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "   -0.0001   -2.0625    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "  1  2  1  0\n"
+        "  1  3  2  0\n"
+        "  2  4  2  0\n"
+        "  3  5  1  0\n"
+        "  4  6  1  1\n"
+        "  4  7  1  0\n"
+        "  5  6  2  0\n"
+        "  7  8  1  0\n"
+        "  7  9  2  0\n"
+        "  8 10  2  0\n"
+        "  9 11  1  0\n"
+        " 10 12  1  0\n"
+        " 11 12  2  0\n"
+        "M  END\n";
+    EXPECT_EQ(run_inchi(bipyridine, "-Atropisomers"),
+              "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H");
 }
