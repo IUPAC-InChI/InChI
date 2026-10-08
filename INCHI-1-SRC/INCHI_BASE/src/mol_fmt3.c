@@ -121,6 +121,9 @@ int MolfileV3000Init(MOL_FMT_CTAB *ctab,
         return -1;
     }
 
+    /* V3000 bond indices, for BONDS=(...) in collections */
+    ctab->v3000->bond_index_orig = ctab->n_bonds > 0 ? (int *)inchi_calloc(ctab->n_bonds, sizeof(int)) : NULL;
+
     /* STEBABS, STEBREL, STEBRAC */
     ctab->v3000->n_stebabs = ctab->v3000->n_stebrel = ctab->v3000->n_stebrac = 0;
     ctab->v3000->stebabs = (NUM_LISTS *)inchi_calloc(1, sizeof(NUM_LISTS));
@@ -154,6 +157,11 @@ int DeleteMolfileV3000Info(MOL_FMT_v3000 *v3000)
         if (v3000->atom_index_fin)
         {
             inchi_free(v3000->atom_index_fin);
+        }
+
+        if (v3000->bond_index_orig)
+        {
+            inchi_free(v3000->bond_index_orig);
         }
 
         if (v3000->haptic_bonds)
@@ -806,9 +814,10 @@ static int BondCollectionsAreMalformed(MOL_FMT_CTAB *ctab, char *pStrErr)
 }
 
 /****************************************************************************
- Turn a STEB* list of bond indices [n, nb, bond1, ...] into the bonds'
+ Turn a STEB* list of V3000 bond indices [n, nb, bond1, ...] into the bonds'
  atom pairs [n, 2*nb, a1, b1, ...]. An index the bond block does not have
- becomes the pair (0, 0), which BondCollectionsAreMalformed rejects.
+ (or a haptic bond) becomes the pair (0, 0), which BondCollectionsAreMalformed
+ rejects.
  Frees bond_list; returns NULL when out of memory.
 ****************************************************************************/
 static int *BondsToAtomPairs(MOL_FMT_CTAB *ctab, int *bond_list)
@@ -822,14 +831,16 @@ static int *BondsToAtomPairs(MOL_FMT_CTAB *ctab, int *bond_list)
         pairs[1] = 2 * nb;
         for (k = 0; k < nb; k++)
         {
-            /* ponytail: the V3000 bond index is taken as the bond line order, which
-               haptic bonds break (they are stored apart); with haptic bonds present
-               the bonds count as unknown. Store the bond index if that matters. */
-            int ib = bond_list[2 + k] - 1;
-            if (ctab->v3000->n_haptic_bonds == 0 && 0 <= ib && ib < ctab->v3000->n_non_haptic_bonds)
+            /* Find the bond by its V3000 index, not its line position */
+            int ib;
+            for (ib = 0; ctab->v3000->bond_index_orig && ib < ctab->v3000->n_non_haptic_bonds; ib++)
             {
-                pairs[2 + 2 * k] = ctab->bonds[ib].atnum1;
-                pairs[3 + 2 * k] = ctab->bonds[ib].atnum2;
+                if (ctab->v3000->bond_index_orig[ib] == bond_list[2 + k])
+                {
+                    pairs[2 + 2 * k] = ctab->bonds[ib].atnum1;
+                    pairs[3 + 2 * k] = ctab->bonds[ib].atnum2;
+                    break;
+                }
             }
         }
     }
@@ -973,6 +984,7 @@ int MolfileV3000ReadCollections(MOL_FMT_CTAB *ctab,
                         num_list = BondsToAtomPairs(ctab, num_list);
                         if (!num_list || NumLists_Append(ste_coll, num_list) < 0)
                         {
+                            inchi_free(num_list); /* not taken over on failure */
                             failed = 1;
                         }
                         else
@@ -1801,6 +1813,10 @@ int MolfileV3000ReadBondsBlock(MOL_FMT_CTAB *ctab,
                 ctab->bonds[ii].atnum2 = atnum2;
                 ctab->bonds[ii].bond_type = bond_type;
                 ctab->bonds[ii].bond_stereo = stereo;
+                if (ctab->v3000->bond_index_orig && ii < ctab->n_bonds)
+                {
+                    ctab->v3000->bond_index_orig[ii] = index;
+                }
                 ctab->v3000->n_non_haptic_bonds++;
             }
         } /* if ctab->bonds */

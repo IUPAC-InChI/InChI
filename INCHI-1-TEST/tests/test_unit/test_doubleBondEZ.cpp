@@ -274,3 +274,19 @@ TEST( test_doubleBondEZ, component_order_invariance )
     EXPECT_EQ( inchi( two_bromo( false, true, rel1 + rac6 ), kEnh ),
                inchi( two_bromo( true, false, rel1 + rac6 ), kEnh ) );
 }
+
+/* Collections name bonds by their V3000 index, not their line position:
+   reordered and gapped bond indices group the same bonds */
+TEST( test_doubleBondEZ, bond_index_not_line_order )
+{
+    const std::string ref = inchi( diene( false, false, kRac38 ), kEnh );
+    std::string mol = diene( false, false, "M  V30 MDLV30/STEBRAC1 BONDS=(2 3 20)\n" );
+
+    /* Bond 8 renamed 20, and its line moved to the front of the bond block */
+    const std::string line8 = "M  V30 8 2 7 9\n";
+    mol.erase( mol.find( line8 ), line8.size() );
+    mol.insert( mol.find( "M  V30 1 1 1 2\n" ), "M  V30 20 2 7 9\n" );
+
+    EXPECT_EQ( ref, kDiene + "/b3(4-2-,5-3+)" );
+    EXPECT_EQ( inchi( mol, kEnh ), ref );
+}

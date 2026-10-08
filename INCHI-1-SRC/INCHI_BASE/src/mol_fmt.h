@@ -535,6 +535,7 @@ typedef struct A_MOL_FMT_v3000
     int n_star_atoms;
     int *atom_index_orig; /* index as supplied for atoms                      */
     int *atom_index_fin;  /* = index or -1 for star atom                      */
+    int *bond_index_orig; /* V3000 index of each stored (non-haptic) bond    */
     int n_sgroups;        /* currently, we do not use this.                   */
     int n_3d_constraints; /* currently, we do not use this.                   */
     int n_collections;
