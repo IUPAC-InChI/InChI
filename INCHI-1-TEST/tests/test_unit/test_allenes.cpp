@@ -189,3 +189,45 @@ TEST( test_allenes, A6_allene_plus_tetrahedral )
     EXPECT_EQ( inchi( molblock( atoms, bonds, kAbs + "M  V30 MDLV30/STERAC1 ATOMS=(1 6)\n" ), kEnh ),
                base + "/m1/s1(2)3(3)" );
 }
+
+/* GetINCHI and the staged INCHIGEN API must agree on a one-wedge allene */
+TEST( test_allenes, A3_single_stereobond_inchigen )
+{
+    inchi_Atom atoms[7] = {};
+    for (int i = 0; i < 7; i++) {
+        atoms[i].x = kAllene[i].x;
+        atoms[i].y = kAllene[i].y;
+        strcpy( atoms[i].elname, kAllene[i].el );
+        atoms[i].num_iso_H[0] = -1; /* add implicit H */
+    }
+    for (const Bond &b : allene_bonds( UP, FLAT )) {
+        inchi_Atom &a = atoms[b.a - 1];
+        a.neighbor[a.num_bonds] = (AT_NUM)( b.b - 1 );
+        a.bond_type[a.num_bonds] = (S_CHAR)b.order;
+        a.bond_stereo[a.num_bonds] = b.cfg == UP ? INCHI_BOND_STEREO_SINGLE_1UP : INCHI_BOND_STEREO_NONE;
+        a.num_bonds++;
+    }
+    char opts[] = "-EnhancedStereochemistry";
+    inchi_Input inp = {};
+    inp.atom = atoms;
+    inp.num_atoms = 7;
+    inp.szOptions = opts;
+    const std::string expected = "InChI=1B/C4H3BrClF" + kAxis + "/m1/s1";
+
+    inchi_Output out = {};
+    GetINCHI( &inp, &out );
+    EXPECT_STREQ( out.szInChI, expected.c_str() );
+    FreeINCHI( &out );
+
+    INCHIGEN_DATA gen = {};
+    inchi_Output gen_out = {};
+    INCHIGEN_HANDLE h = INCHIGEN_Create();
+    ASSERT_NE( h, nullptr );
+    INCHIGEN_Setup( h, &gen, &inp );
+    INCHIGEN_DoNormalization( h, &gen );
+    INCHIGEN_DoCanonicalization( h, &gen );
+    INCHIGEN_DoSerialization( h, &gen, &gen_out );
+    EXPECT_STREQ( gen_out.szInChI, expected.c_str() );
+    INCHIGEN_Reset( h, &gen, &gen_out );
+    INCHIGEN_Destroy( h );
+}
