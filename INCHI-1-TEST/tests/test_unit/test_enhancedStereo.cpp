@@ -714,8 +714,9 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_
 /* Only stereocentres take part in /s and in the /m membership test. A
    collection atom that is not a stereocentre (CH3, CH2, a spectator) used to
    reach /s as an orphan group, e.g. 3(1,3) for 3(3), a bare 1 for a component
-   whose only centre is ungrouped, or a 1 on OH-; and an ABS label on a CH2 kept
-   /m alive on an AND-only component (/m10 for /m1.). */
+   whose only centre is ungrouped, or a 1 on OH-; an ABS label on a CH2 kept
+   /m alive on an AND-only component (/m10 for /m1.); and a CH3 as a group's
+   lowest atom skipped the group's sign normalisation in /t. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ignored)
 {
     struct OrphanCase
@@ -751,43 +752,67 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ign
         FreeINCHI(poutput);
     }
 
-    /* 3-chlorobutan-2-ol: ABS on C3, AND on C2 plus the CH3 next to it */
-    const char *chlorobutanol =
-        "3-chlorobutan-2-ol\n"
-        "  test\n"
-        "\n"
-        "  0  0  0     0  0            999 V3000\n"
-        "M  V30 BEGIN CTAB\n"
-        "M  V30 COUNTS 6 5 0 0 0\n"
-        "M  V30 BEGIN ATOM\n"
-        "M  V30 1 C 0.0 0.0 0 0\n"
-        "M  V30 2 C 0.866 0.5 0 0\n"
-        "M  V30 3 C 1.732 0.0 0 0\n"
-        "M  V30 4 C 2.598 0.5 0 0\n"
-        "M  V30 5 O 0.866 1.5 0 0\n"
-        "M  V30 6 Cl 1.732 -1.0 0 0\n"
-        "M  V30 END ATOM\n"
-        "M  V30 BEGIN BOND\n"
-        "M  V30 1 1 1 2\n"
-        "M  V30 2 1 2 3\n"
-        "M  V30 3 1 3 4\n"
-        "M  V30 4 1 2 5 CFG=1\n"
-        "M  V30 5 1 3 6 CFG=1\n"
-        "M  V30 END BOND\n"
-        "M  V30 BEGIN COLLECTION\n"
-        "M  V30 MDLV30/STEABS ATOMS=(1 2)\n"
-        "M  V30 MDLV30/STERAC1 ATOMS=(2 3 4)\n"
-        "M  V30 END COLLECTION\n"
-        "M  V30 END CTAB\n"
-        "M  END\n";
+    /* 3-chlorobutan-2-ol. A CH3 in the group must neither reach /s nor, as the
+       group's lowest canonical atom, stop its sign normalisation (/t4+ for 4-). */
+    struct ChlorobutanolCase
+    {
+        const char *cfg_c2;
+        const char *cfg_c3;
+        const char *collections;
+        const char *expected_t_m_s;
+    };
+    const ChlorobutanolCase chloro_cases[] = {
+        /* ABS on C2, AND on C3 plus the CH3 next to it */
+        { "CFG=1", "CFG=1", "M  V30 MDLV30/STEABS ATOMS=(1 2)\nM  V30 MDLV30/STERAC1 ATOMS=(2 3 4)\n",
+          "/t3-,4-/m1/s1(4)3(3)" },
+        /* ABS on C3, AND on C2 plus the CH3 next to it, both wedge combinations needing a flip */
+        { "CFG=1", "CFG=3", "M  V30 MDLV30/STEABS ATOMS=(1 3)\nM  V30 MDLV30/STERAC1 ATOMS=(2 1 2)\n",
+          "/t3-,4-/m0/s1(3)3(4)" },
+        { "CFG=3", "CFG=1", "M  V30 MDLV30/STEABS ATOMS=(1 3)\nM  V30 MDLV30/STERAC1 ATOMS=(2 1 2)\n",
+          "/t3-,4-/m1/s1(3)3(4)" },
+    };
 
-    inchi_Output output;
-    inchi_Output *poutput = &output;
+    for (const ChlorobutanolCase &c : chloro_cases)
+    {
+        const std::string chlorobutanol =
+            std::string("3-chlorobutan-2-ol\n"
+                        "  test\n"
+                        "\n"
+                        "  0  0  0     0  0            999 V3000\n"
+                        "M  V30 BEGIN CTAB\n"
+                        "M  V30 COUNTS 6 5 0 0 0\n"
+                        "M  V30 BEGIN ATOM\n"
+                        "M  V30 1 C 0.0 0.0 0 0\n"
+                        "M  V30 2 C 0.866 0.5 0 0\n"
+                        "M  V30 3 C 1.732 0.0 0 0\n"
+                        "M  V30 4 C 2.598 0.5 0 0\n"
+                        "M  V30 5 O 0.866 1.5 0 0\n"
+                        "M  V30 6 Cl 1.732 -1.0 0 0\n"
+                        "M  V30 END ATOM\n"
+                        "M  V30 BEGIN BOND\n"
+                        "M  V30 1 1 1 2\n"
+                        "M  V30 2 1 2 3\n"
+                        "M  V30 3 1 3 4\n"
+                        "M  V30 4 1 2 5 ") + c.cfg_c2 + "\n"
+            "M  V30 5 1 3 6 " + c.cfg_c3 + "\n"
+            "M  V30 END BOND\n"
+            "M  V30 BEGIN COLLECTION\n" +
+            c.collections +
+            "M  V30 END COLLECTION\n"
+            "M  V30 END CTAB\n"
+            "M  END\n";
 
-    char options[] = "-EnhancedStereochemistry";
-    ASSERT_EQ(MakeINCHIFromMolfileText(chlorobutanol, options, poutput), 0);
-    EXPECT_STREQ(poutput->szInChI, "InChI=1B/C4H9ClO/c1-3(5)4(2)6/h3-4,6H,1-2H3/t3-,4-/m1/s1(4)3(3)");
-    FreeINCHI(poutput);
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(chlorobutanol.c_str(), options, poutput), 0);
+
+        const std::string inchi = poutput->szInChI;
+        EXPECT_EQ(inchi.substr(inchi.find("/t")), c.expected_t_m_s)
+            << c.cfg_c2 << " " << c.cfg_c3 << " " << c.collections;
+        FreeINCHI(poutput);
+    }
 }
 
 /* A wedged centre in no collection keeps its /m digit: its configuration is

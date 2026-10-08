@@ -5216,15 +5216,16 @@ int invert_parities(const INChI *inchi,
     for (int i = 0; i < nof_lists; i++) {
         int nof_atoms = list_atoms[i][1];
 
-        AT_NUMB min_c_atom_num = (AT_NUMB)INT_MAX;
+        // Lowest stereocentre of the group; a non-centre (e.g. a CH3) must not win
+        int min_c_atom_num = INT_MAX;
         for (int j = 0; j < nof_atoms; j++) {
             int orig_atom_num = list_atoms[i][2 + j];
-            AT_NUMB canon_atom_num = (AT_NUMB)lookup_canonical_atom_number(orig_to_canon, map_size, aux, orig_atom_num);
-            if (canon_atom_num < min_c_atom_num) {
+            int canon_atom_num = lookup_stereo_centre(inchi, orig_to_canon, map_size, aux, orig_atom_num);
+            if (canon_atom_num != -1 && canon_atom_num < min_c_atom_num) {
                 min_c_atom_num = canon_atom_num;
             }
         }
-        if (min_c_atom_num == (AT_NUMB)INT_MAX) {
+        if (min_c_atom_num == INT_MAX) {
             continue;
         }
         int min_c_parity_idx = get_parity_idx_from_canonical_atom_number(min_c_atom_num,
