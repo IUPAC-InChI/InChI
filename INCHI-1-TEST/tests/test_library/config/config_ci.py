@@ -32,6 +32,10 @@ config = DataConfig(
             "PUBCHEM_COMPOUND_CID-102182973",
             "PUBCHEM_COMPOUND_CID-92178689",
         },
-        "invariance": {"D4h-allene", "PUBCHEM_COMPOUND_CID-102182973"},
+        "invariance": {
+            "iso-H-Bridge",
+            "3442296542",
+            "1980967343",
+        },
     },
 )

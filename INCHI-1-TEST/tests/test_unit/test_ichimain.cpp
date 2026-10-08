@@ -14,6 +14,9 @@ extern "C"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichimain.h"
 }
 
+/* Absolute path to the fixture directory, supplied by CMake so the tests do not
+   depend on the working directory they happen to be launched from. The literal
+   below is only a fallback for builds that do not define it. */
 #ifndef FIXTURES_DIR
 #define FIXTURES_DIR "../../../../../INCHI-1-TEST/tests/test_unit/fixtures"
 #endif

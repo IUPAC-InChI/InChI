@@ -203,6 +203,7 @@ ichimap1.o	\
 ichimap2.o	\
 ichimap4.o	\
 ichinorm.o	\
+aromaticity.o	\
 ichiparm.o	\
 ichiprt1.o	\
 ichiprt2.o	\
@@ -246,6 +247,8 @@ runichi3.o	\
 runichi4.o	\
 sha2.o	\
 strutil.o	\
+eldata.o	\
+molecular_inorganics_data.o	\
 util.o \
 bcf_s.o
 # === InChI Library link rule =========

@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 
 /*
@@ -47,6 +12,7 @@ Underivatization, ring-chain tautomerism, OriGAtData edits, etc.
 
 #include "mode.h"
 #include "ichinorm.h"
+#include "aromaticity.h"
 #include "ichierr.h"
 
 #include "bcf_s.h"
@@ -621,9 +587,6 @@ typedef struct tagAtPair
 
 
 /* Local functions */
-int mark_arom_bonds( struct tagINCHI_CLOCK *ic,
-                     struct tagCANON_GLOBALS *pCG,
-                     inp_ATOM *at, int num_atoms );
 void set_R2C_el_numbers( void );
 int subtract_DT_from_num_H( int num_atoms, inp_ATOM *at );
 int add_inp_ATOM( inp_ATOM *at, int len_at, int len_cur,
@@ -777,22 +740,6 @@ int add_inp_ATOM( inp_ATOM *at,
     }
 
     return len_cur + len_add;
-}
-
-
-/****************************************************************************/
-int mark_arom_bonds( struct tagINCHI_CLOCK *ic, struct tagCANON_GLOBALS *pCG, inp_ATOM *at, int num_atoms )
-{
-    INCHI_MODE bTautFlags = 0, bTautFlagsDone = 0;
-    inp_ATOM *at_fixed_bonds_out = NULL;
-    T_GROUP_INFO *t_group_info = NULL;
-    int ret;
-
-    ret = mark_alt_bonds_and_taut_groups( ic, pCG, at, at_fixed_bonds_out, num_atoms,
-                                          NULL,
-                                          t_group_info, &bTautFlags, &bTautFlagsDone, 0, NULL );
-
-    return ret;
 }
 
 
@@ -1191,8 +1138,6 @@ int unmark_atoms_cFlags( inp_ATOM *at,
 
 int is_C_or_S_DB_O( inp_ATOM *at, int i );
 int is_C_DB_O( inp_ATOM *at, int i );
-int is_C_unsat_not_arom( inp_ATOM *at, int i );
-int is_Aryl( inp_ATOM *at, int outside_point, int attachment_pont );
 int is_Saturated_C( inp_ATOM *at, int attachment_pont );
 int is_C_Alk( inp_ATOM *at, int i, char cFlags );
 
@@ -1222,13 +1167,6 @@ int is_DERIV_RING2_PRRLDD_PPRDN( inp_ATOM *at,
                                  int from_ord,
                                  DERIV_AT *da,
                                  DERIV_AT *da1 );
-#endif
-#ifdef DERIV_DANSYL
-int check_arom_chain( inp_ATOM *at,
-                      int first,
-                      int first_from,
-                      int last,
-                      int len );
 #endif
 int is_Dansyl( inp_ATOM *at,
                int cur_atom,
@@ -1345,10 +1283,6 @@ int mark_deriv_agents( inp_ATOM *at,
                        int num_cuts_to_check,
                        AT_NUMB *pnum_comp,
                        int *pcur_num_at );
-int replace_arom_bonds( inp_ATOM *at,
-                        int num_atoms,
-                        inp_ATOM *at2,
-                        int num_atoms2 );
 int add_explicit_H( INP_ATOM_DATA *inp_cur_data );
 void free_underiv_temp_data( R2C_ATPAIR *ap,
                              DERIV_AT *da,
@@ -1452,58 +1386,6 @@ int is_C_DB_O( inp_ATOM *at, int i )
     return 0;
 }
 
-
-/****************************************************************************/
-int is_C_unsat_not_arom( inp_ATOM *at, int i )
-{
-    int j, neigh, num_arom, num_DB;
-    if (at[i].el_number != EL_NUMBER_C ||
-         at[i].valence == at[i].chem_bonds_valence || /* no double/triple bonds */
-         at[i].valence + 1 < at[i].chem_bonds_valence || /* >1 double bond or >=1 triple bond */
-         at[i].chem_bonds_valence + at[i].num_H != 4 || /* C has wrong valence */
-         at[i].charge || at[i].radical)
-        return 0;
-    num_arom = num_DB = 0;
-    for (j = 0; j < at[i].valence; j++)
-    {
-        neigh = at[i].neighbor[j];
-        num_arom += at[i].bond_type[j] == BOND_TYPE_ALTERN;
-        if (( at[neigh].el_number == EL_NUMBER_O ||
-              at[neigh].el_number == EL_NUMBER_S ) &&
-             !at[neigh].num_H && 1 == at[neigh].valence &&
-             2 == at[neigh].chem_bonds_valence)
-        {
-            continue; /* do not count double bonds to terminal =O or =S */
-        }
-        num_DB += at[i].bond_type[j] == BOND_TYPE_DOUBLE;
-    }
-
-    return num_DB && !num_arom;
-}
-
-
-/****************************************************************************/
-int is_Aryl( inp_ATOM *at, int outside_point, int attachment_pont )
-{
-    int i, num_arom_bonds, neigh;
-    if (at[attachment_pont].el_number == EL_NUMBER_C &&
-         at[attachment_pont].valence == 3 && at[attachment_pont].chem_bonds_valence == 4 &&
-         !at[attachment_pont].num_H && !at[attachment_pont].charge && !at[attachment_pont].radical)
-    {
-        for (i = 0, num_arom_bonds = 0; i < at[attachment_pont].valence; i++)
-        {
-            neigh = at[attachment_pont].neighbor[i];
-            if (neigh != outside_point)
-            {
-                num_arom_bonds += ( at[attachment_pont].bond_type[i] == BOND_ALTERN &&
-                    ( at[neigh].el_number == EL_NUMBER_C || at[neigh].el_number == EL_NUMBER_N ) );
-            }
-        }
-        return ( num_arom_bonds == 2 );
-    }
-
-    return 0;
-}
 
 /****************************************************************************/
 int is_Saturated_C( inp_ATOM *at, int attachment_pont )
@@ -2275,45 +2157,6 @@ check_next_derivative:
 
 
 #ifdef DERIV_DANSYL
-
-
-/****************************************************************************/
-int check_arom_chain( inp_ATOM *at,
-                      int cur /* first*/,
-                      int from,
-                      int last,
-                      int len )
-{
-    int i, num;
-    num = 0;
-    do
-    {
-        /* check this on all except at[last], which is typically different */
-        if (at[cur].el_number != EL_NUMBER_C ||
-             at[cur].valence != 2 ||
-             at[cur].chem_bonds_valence != 3 ||
-             at[cur].num_H != 1)
-        {
-            goto check_next_derivative;
-        }
-        /* bond to the next atom - check on all, cur..last, atoms */
-        i = ( at[cur].neighbor[0] == from ); /* index of a bond to the next atom */
-        if (at[cur].bond_type[i] != BOND_ALTERN)
-        {
-            goto check_next_derivative;
-        }
-        num++; /* checks are complete */
-               /* prepare for the next atom */
-        from = cur;
-        cur = at[cur].neighbor[i];
-    } while (cur != last && num < len);
-
-    return ( cur == last && ++num == len );
-
-check_next_derivative:
-
-    return 0;
-}
 
 
 /****************************************************************************
@@ -5794,73 +5637,6 @@ exit_r2c_num:
 }
 
 
-#ifdef FIX_UNDERIV_TO_SDF
-
-
-/****************************************************************************
-Input: at2[] has original bonds; at[] has normalized bonds
-Description:
-this function finds aromatic or other non-single-double-triple
-bonds in at[] and replaces them with bonds between atoms, which has
-the same orig_at_number, from at2[].
-This tolerates permutation of atom locations in at[] because
-orig_at_number do not change.
-****************************************************************************/
-int replace_arom_bonds( inp_ATOM *at,
-                        int num_atoms,
-                        inp_ATOM *at2,
-                        int num_atoms2 )
-{
-    int i, j, num_err = 0;
-
-    for (i = 0; i < num_atoms; i++)
-    {
-        for (j = 0; j < at[i].valence; j++)
-        {
-            if (at[i].bond_type[j] > BOND_TRIPLE)
-            {
-                /* find pairs of atoms using orig. atom numbers */
-                int i1, i2;
-                char bSuccess = 0;
-                int neigh = at[i].neighbor[j];
-                AT_NUMB orig_no1 = at[i].orig_at_number;
-                AT_NUMB orig_no2 = at[neigh].orig_at_number;
-                for (i1 = 0; i1 < num_atoms2 && at2[i1].orig_at_number != orig_no1; i1++)
-                {
-                    ;
-                }
-                for (i2 = 0; i2 < num_atoms2 && at2[i2].orig_at_number != orig_no2; i2++)
-                {
-                    ;
-                }
-                if (i1 < num_atoms2 && i2 < num_atoms2)
-                {
-                    AT_NUMB *p1 = is_in_the_list( at2[i1].neighbor, (AT_NUMB) i2, at[i1].valence );
-                    AT_NUMB *pneigh = is_in_the_list( at[neigh].neighbor, (AT_NUMB) i, at[neigh].valence );
-                    if (p1 && pneigh)
-                    {
-                        int n1 = p1 - at2[i1].neighbor;
-                        int nneigh = pneigh - at[neigh].neighbor;
-                        at[i].bond_type[j] = at[neigh].bond_type[nneigh] = at2[i1].bond_type[n1];
-                        bSuccess = 1;
-                    }
-                }
-                if (!bSuccess)
-                {
-#ifdef _DEBUG
-                    int stop_here = 1;
-#endif
-                    num_err++;
-                }
-            }
-        }
-    }
-
-    return num_err;
-}
-#endif  /* FIX_UNDERIV_TO_SDF */
-
-
 #ifdef UNDERIV_ADD_EXPLICIT_H
 
 
@@ -5994,7 +5770,7 @@ int OAD_Edit_Underivatize( struct tagINCHI_CLOCK *ic,
     /*set_R2C_el_numbers( );*/
 
 #ifndef UNDERIV_ADD_EXPLICIT_H
-    num_atoms = remove_terminal_HDT( orig_inp_data->num_inp_atoms, at, 1 );
+    num_atoms = remove_terminal_HDT( orig_inp_data->num_inp_atoms, at, 1, NULL );
     /*^^^^^ always accomodate accomodate FIX_TERM_H_CHRG_BUG - IPl, July 2008*/
     num_removed_H = orig_inp_data->num_inp_atoms - num_atoms;
     orig_inp_data->num_inp_atoms = num_atoms;
@@ -6022,7 +5798,7 @@ int OAD_Edit_Underivatize( struct tagINCHI_CLOCK *ic,
         }
 
 #ifdef UNDERIV_ADD_EXPLICIT_H
-        num_atoms = remove_terminal_HDT(inp_cur_data[i_component].num_at, inp_cur_data[i_component].at, 1);
+        num_atoms = remove_terminal_HDT(inp_cur_data[i_component].num_at, inp_cur_data[i_component].at, 1, NULL);
         inp_cur_data[i_component].num_removed_H = inp_cur_data[i_component].num_at - num_atoms;
         inp_cur_data[i_component].num_at = num_atoms;
 #endif
@@ -7373,7 +7149,7 @@ int Ring2Chain( struct tagINCHI_CLOCK *ic,
 
     /*set_R2C_el_numbers( );*/
 
-    num_atoms = remove_terminal_HDT( orig_inp_data->num_inp_atoms, at, 1 );
+    num_atoms = remove_terminal_HDT( orig_inp_data->num_inp_atoms, at, 1, NULL );
     /*^^^^^ always accomodate accomodate FIX_TERM_H_CHRG_BUG - IPl, July 2008*/
     orig_inp_data->num_inp_atoms = num_atoms;
 

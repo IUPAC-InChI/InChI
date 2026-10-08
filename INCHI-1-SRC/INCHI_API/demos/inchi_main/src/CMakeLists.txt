@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
-project(InChIMain_API VERSION 1.7)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../cmake/InChIVersion.cmake)
+
+project(InChIMain_API VERSION ${INCHI_VERSION_FULL})
+
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../../../cmake/inchi_version_rc.h.in
+	${PROJECT_BINARY_DIR}/inchi_version_rc.h
+	@ONLY
+)
 
 add_library(inchimain_compiler_flags INTERFACE)
 target_compile_features(inchimain_compiler_flags INTERFACE c_std_11)
@@ -82,7 +90,7 @@ if(MATH_LIBRARY)
     target_link_libraries(inchi_main PUBLIC ${MATH_LIBRARY})
 endif()
 
-target_compile_definitions(inchi_main PRIVATE 
+target_compile_definitions(inchi_main PRIVATE
 	BUILD_LINK_AS_DLL
 	TARGET_EXE_USING_API
 )

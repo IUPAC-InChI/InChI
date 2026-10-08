@@ -1,41 +1,6 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
  */
 
 #include <stdlib.h>
@@ -48,6 +13,7 @@
 #include "mode.h"
 #include "ichinorm.h"               /* @nnuk */
 #include "strutil.h"
+#include "molecular_inorganics_data.h"
 #include "ichister.h"
 #include "ichi_io.h"
 #include "ichimain.h"
@@ -616,20 +582,6 @@ int fix_non_uniform_drawn_amidiniums(int num_atoms,
 
     return 0;
 }
-
-/****************************************************************************
-Not used --
-int FixAromaticOxygenAndSulfur( inp_ATOM *atom )
-{
-if ( !atom->elname[1] && (atom->elname[0]=='O' || atom->elname[0]=='S') &&
-atom->valence==2 && !atom->charge && !atom->radical &&
-atom->bond_type[0] + atom->bond_type[1] == 3 ) {
-atom->charge = 1;
-return 1; // fixed
-}
-return 0;
-}
-****************************************************************************/
 
 /****************************************************************************/
 int fix_odd_things(int num_atoms,
@@ -3755,7 +3707,7 @@ static int is_only_HDT_neighbors(const inp_ATOM* at, int num_atoms, int metal_id
 /****************************************************************************
 Return value: new number of atoms > 0 or -1=out of RAM
 ****************************************************************************/
-int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg)
+int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg, const unsigned char* keep_explicit_HDT)
 {
     AT_NUMB *new_ord;
     inp_ATOM *new_at;
@@ -3805,7 +3757,11 @@ int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg)
      * Note: This must be consistent with MOL_FMT_to_atom()
      * treatment of isotopic Hn aliases.
      */
-    if (2 == num_H && 2 == num_atoms && !NUMH(at, 0) && !NUMH(at, 1))
+    if (2 == num_H && 2 == num_atoms &&
+        !NUMH(at, 0) && !NUMH(at, 1) &&
+        (!keep_explicit_HDT ||
+         (!keep_explicit_HDT[0] &&
+             !keep_explicit_HDT[1])))
     {
 
         if (at[0].iso_atw_diff >= at[1].iso_atw_diff)
@@ -3836,10 +3792,11 @@ int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg)
                                                                                    : kMax;
             n = (int)at[i].neighbor[0];
             if (k < kMax && at[i].valence == 1 && at[i].chem_bonds_valence == 1 &&
+                (!keep_explicit_HDT || !keep_explicit_HDT[i]) &&
                 /*  the order of comparison is important */
                 ((n > i) /* at[n] has not been encountered yet*/ ||
-                 (int)new_ord[n] < num_atoms - num_hydrogens) /* at[n] might have been encountered; it has not been moved */ &&
-                 (!is_el_a_metal(at[n].el_number) || is_only_HDT_neighbors(at, num_atoms, n))/*@nnuk*/ )
+                    (int)new_ord[n] < num_atoms - num_hydrogens) /* at[n] might have been encountered; it has not been moved */ &&
+                (!is_el_a_metal(at[n].el_number) || is_only_HDT_neighbors(at, num_atoms, n))/*@nnuk*/)
             {
                 /*  found an explicit terminal hydrogen */
                 num_hydrogens++;
@@ -4103,2079 +4060,6 @@ int get_iat_number(int el_number)
  *
  * (Summary) : Type of the element has changed from METAL -> MolInOrg.
  ******************************************************************************/
-const MolecularInorganicsElData MolecularInorganicsArray[] =
-    {
-        /*       avg  norm                         El   No  -------- Valence(s) of an ion or neutral atom -------------*/
-        /*        mw  mass  exact mw       type   neg   H    -2          -1          0           +1         +2          */
-        {"H", 1, 1, 1.007825035, 0, 21, 0, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                1,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"D", 2, 2, 2.014101778, 0, 21, 0, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                1,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"T", 3, 3, 3.016049268, 0, 21, 0, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                1,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"He", 4, 4, 4.002600000, 0, 0, 0, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"Li", 7, 7, 7.016000000, MolInOrg1, 10, 0, {{
-                                                         0,
-                                                     },
-                                                     {
-                                                         0,
-                                                     },
-                                                     {
-                                                         1,
-                                                     },
-                                                     {
-                                                         0,
-                                                     },
-                                                     {
-                                                         0,
-                                                     }}},
-        {"Be", 9, 9, 9.012180000, MolInOrg1, 15, 0, {{
-                                                         0,
-                                                     },
-                                                     {
-                                                         0,
-                                                     },
-                                                     {
-                                                         2,
-                                                     },
-                                                     {
-                                                         1,
-                                                     },
-                                                     {
-                                                         0,
-                                                     }}},
-        {"B", 11, 11, 11.009300000, 0, 20, 0, {{
-                                                   3,
-                                               },
-                                               {
-                                                   4,
-                                               },
-                                               {
-                                                   3,
-                                               },
-                                               {
-                                                   2,
-                                               },
-                                               {
-                                                   1,
-                                               }}},
-        {"C", 12, 12, 12.000000000, 0, 25, 0, {{
-                                                   2,
-                                               },
-                                               {
-                                                   3,
-                                               },
-                                               {
-                                                   4,
-                                               },
-                                               {
-                                                   3,
-                                               },
-                                               {
-                                                   2,
-                                               }}},
-        {"N", 14, 14, 14.003074000, 0, 30, 0, {{
-                                                   1,
-                                               },
-                                               {
-                                                   2,
-                                               },
-                                               {3, 5},
-                                               {
-                                                   4,
-                                               },
-                                               {
-                                                   3,
-                                               }}},
-        {"O", 16, 16, 15.994914630, 0, 35, 0, {{
-                                                   0,
-                                               },
-                                               {
-                                                   1,
-                                               },
-                                               {
-                                                   2,
-                                               },
-                                               {
-                                                   3,
-                                                   5,
-                                               },
-                                               {
-                                                   4,
-                                               }}},
-        {"F", 19, 19, 18.998403220, 0, 40, 0, {{
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   1,
-                                               },
-                                               {
-                                                   2,
-                                               },
-                                               {3, 5}}},
-        {"Ne", 20, 20, 19.992440000, 0, 0, 0, {{
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               }}},
-        {"Na", 23, 23, 22.989770000, MolInOrg1, 9, 0, {{
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           1,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       }}},
-        {"Mg", 24, 24, 23.985000000, MolInOrg1, 12, 0, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                        },
-                                                        {
-                                                            1,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Al", 27, 27, 26.981540000, MolInOrg1, 15, 0, {{
-                                                            3,
-                                                            5,
-                                                        },
-                                                        {
-                                                            4,
-                                                        },
-                                                        {
-                                                            3,
-                                                        },
-                                                        {
-                                                            2,
-                                                        },
-                                                        {
-                                                            1,
-                                                        }}},
-        {"Si", 28, 28, 27.976927100, 0, 18, 0, {{
-                                                    2,
-                                                },
-                                                {3, 5},
-                                                {
-                                                    4,
-                                                },
-                                                {
-                                                    3,
-                                                },
-                                                {
-                                                    2,
-                                                }}},
-        {"P", 31, 31, 30.973762000, 0, 21, 0, {{
-                                                   1,
-                                                   3,
-                                                   5,
-                                                   7,
-                                               },
-                                               {
-                                                   2,
-                                                   4,
-                                                   6,
-                                               },
-                                               {
-                                                   3,
-                                                   5,
-                                               },
-                                               {
-                                                   4,
-                                               },
-                                               {
-                                                   3,
-                                               }}},
-        {"S", 32, 32, 31.972070700, 0, 25, 0, {{
-                                                   0,
-                                               },
-                                               {
-                                                   1,
-                                                   3,
-                                                   5,
-                                                   7,
-                                               },
-                                               {2, 4, 6},
-                                               {
-                                                   3,
-                                                   5,
-                                               },
-                                               {
-                                                   4,
-                                               }}},
-        {"Cl", 35, 35, 34.968852730, 0, 30, 0, {{
-                                                    0,
-                                                },
-                                                {
-                                                    0,
-                                                },
-                                                {1, 3, 5, 7},
-                                                {2, 4, 6},
-                                                {
-                                                    3,
-                                                    5,
-                                                }}},
-        {"Ar", 40, 40, 39.962400000, 0, 0, 0, {{
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               }}},
-        {"K", 39, 39, 38.963700000, MolInOrg1, 8, 0, {{
-                                                          0,
-                                                      },
-                                                      {
-                                                          0,
-                                                      },
-                                                      {
-                                                          1,
-                                                      },
-                                                      {
-                                                          0,
-                                                      },
-                                                      {
-                                                          0,
-                                                      }}},
-        {"Ca", 40, 40, 39.962600000, MolInOrg1, 10, 0, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                        },
-                                                        {
-                                                            1,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Sc", 45, 45, 44.955910000, MolInOrg1, 13, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            3,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Ti", 48, 48, 47.947950000, MolInOrg2, 15, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {3, 4},
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"V", 51, 51, 50.943960000, MolInOrg4, 16, 1, {{
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           2,
-                                                           3,
-                                                           4,
-                                                           5,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       }}},
-        {"Cr", 52, 52, 51.940500000, MolInOrg2, 16, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                            3,
-                                                            6,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Mn", 55, 55, 54.938050000, MolInOrg1, 15, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                            3,
-                                                            4,
-                                                            6,
-                                                            7,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Fe", 56, 56, 55.934900000, MolInOrg2, 18, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                            3,
-                                                            4,
-                                                            6,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Co", 59, 59, 58.933200000, MolInOrg2, 18, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                            3,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Ni", 59, 58, 57.935300000, MolInOrg1, 18, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                            3,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Cu", 64, 63, 62.929600000, MolInOrg2, 19, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            1,
-                                                            2,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Zn", 65, 64, 63.929147000, MolInOrg1, 16, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Ga", 70, 69, 68.925600000, MolInOrg1, 18, 0, {{
-                                                            3,
-                                                            5,
-                                                        },
-                                                        {
-                                                            4,
-                                                        },
-                                                        {
-                                                            3,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            1,
-                                                        }}},
-        {"Ge", 73, 74, 73.921177400, 0, 18, 0, {{
-                                                    2,
-                                                    4,
-                                                    6,
-                                                },
-                                                {
-                                                    3,
-                                                    5,
-                                                },
-                                                {
-                                                    4,
-                                                },
-                                                {
-                                                    3,
-                                                },
-                                                {
-                                                    0,
-                                                }}},
-        {"As", 75, 75, 74.921594200, 0, 20, 0, {{
-                                                    1,
-                                                    3,
-                                                    5,
-                                                    7,
-                                                },
-                                                {
-                                                    2,
-                                                    4,
-                                                    6,
-                                                },
-                                                {
-                                                    3,
-                                                    5,
-                                                },
-                                                {
-                                                    4,
-                                                },
-                                                {
-                                                    3,
-                                                }}},
-        {"Se", 79, 80, 79.916519600, 0, 24, 0, {{
-                                                    0,
-                                                },
-                                                {
-                                                    1,
-                                                    3,
-                                                    5,
-                                                    7,
-                                                },
-                                                {
-                                                    2,
-                                                    4,
-                                                    6,
-                                                },
-                                                {
-                                                    3,
-                                                    5,
-                                                },
-                                                {
-                                                    4,
-                                                }}},
-        {"Br", 80, 79, 78.918336100, 0, 28, 0, {{
-                                                    0,
-                                                },
-                                                {
-                                                    0,
-                                                },
-                                                {
-                                                    1,
-                                                    3,
-                                                    5,
-                                                    7,
-                                                },
-                                                {
-                                                    2,
-                                                    4,
-                                                    6,
-                                                },
-                                                {
-                                                    3,
-                                                    5,
-                                                }}},
-        {"Kr", 84, 84, 83.911500000, 0, 0, 0, {{
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               },
-                                               {
-                                                   0,
-                                               }}},
-        {"Rb", 85, 85, 84.911800000, MolInOrg1, 8, 0, {{
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           1,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       }}},
-        {"Sr", 88, 88, 87.905600000, MolInOrg1, 10, 0, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            2,
-                                                        },
-                                                        {
-                                                            1,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Y", 89, 89, 88.905860000, MolInOrg1, 12, 1, {{
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           3,
-                                                       },
-                                                       {
-                                                           0,
-                                                       },
-                                                       {
-                                                           0,
-                                                       }}},
-        {"Zr", 91, 90, 89.904700000, MolInOrg1, 14, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            4,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Nb", 93, 93, 92.906400000, MolInOrg2, 16, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            3,
-                                                            5,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Mo", 96, 98, 97.905400000, MolInOrg4, 18, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            3,
-                                                            4,
-                                                            5,
-                                                            6,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Tc", 98, 98, 97.907200000, MolInOrg1, 19, 1, {{
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            7,
-                                                        },
-                                                        {
-                                                            0,
-                                                        },
-                                                        {
-                                                            0,
-                                                        }}},
-        {"Ru", 101, 102, 101.904300000, MolInOrg2, 22, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                               3,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Rh", 103, 103, 102.905500000, MolInOrg2, 22, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                               3,
-                                                               4,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Pd", 106, 106, 105.903500000, MolInOrg1, 22, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Ag", 108, 107, 106.905100000, MolInOrg1, 19, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               1,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Cd", 112, 114, 113.903400000, MolInOrg1, 17, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"In", 115, 115, 114.903900000, MolInOrg1, 17, 0, {{
-                                                               3,
-                                                               5,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               3,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               1,
-                                                           }}},
-        {"Sn", 119, 120, 119.902200000, MolInOrg2, 18, 0, {{
-                                                               2,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {3, 5},
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               3,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Sb", 122, 121, 120.903800000, MolInOrg2, 19, 0, {{
-                                                               1,
-                                                               3,
-                                                               5,
-                                                               7,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {
-                                                               3,
-                                                               5,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               3,
-                                                           }}},
-        {"Te", 128, 130, 129.906200000, 0, 21, 0, {{
-                                                       0,
-                                                   },
-                                                   {
-                                                       1,
-                                                       3,
-                                                       5,
-                                                       7,
-                                                   },
-                                                   {
-                                                       2,
-                                                       4,
-                                                       6,
-                                                   },
-                                                   {
-                                                       3,
-                                                       5,
-                                                   },
-                                                   {
-                                                       2,
-                                                       4,
-                                                   }}},
-        {"I", 127, 127, 126.904500000, 0, 25, 0, {{
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  },
-                                                  {
-                                                      1,
-                                                      3,
-                                                      5,
-                                                      7,
-                                                  },
-                                                  {2, 4, 6},
-                                                  {
-                                                      3,
-                                                      5,
-                                                  }}},
-        {"Xe", 131, 132, 131.904100000, 0, 0, 0, {{
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  }}},
-        {"Cs", 133, 133, 132.905430000, MolInOrg1, 7, 0, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Ba", 137, 138, 137.905200000, MolInOrg1, 9, 0, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              2,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"La", 139, 139, 138.906360000, MolInOrg1, 11, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               3,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Ce", 140, 140, 139.905400000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Pr", 141, 141, 140.907660000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Nd", 144, 142, 141.907719000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Pm", 145, 145, 144.912800000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Sm", 150, 152, 151.919700000, MolInOrg2, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              2,
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Eu", 152, 153, 152.921200000, MolInOrg2, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              2,
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Gd", 157, 158, 157.924099000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Tb", 159, 159, 158.925350000, MolInOrg2, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Dy", 163, 164, 163.929200000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}}, /*  mw rounding uncertain */
-        {"Ho", 165, 165, 164.930300000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Er", 167, 166, 165.930300000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Tm", 169, 169, 168.934230000, MolInOrg2, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              2,
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Yb", 173, 174, 173.938900000, MolInOrg2, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              2,
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Lu", 175, 175, 174.940800000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Hf", 178, 180, 179.946600000, MolInOrg1, 13, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               4,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Ta", 181, 181, 180.948010000, MolInOrg1, 15, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               5,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"W", 184, 184, 183.951000000, MolInOrg4, 17, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                              5,
-                                                              6,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Re", 186, 187, 186.955800000, MolInOrg4, 19, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                               6,
-                                                               7,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Os", 190, 192, 191.961500000, MolInOrg3, 22, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                               3,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Ir", 192, 193, 192.962900000, MolInOrg2, 22, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                               3,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Pt", 195, 195, 194.964800000, MolInOrg1, 22, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Au", 197, 197, 196.966560000, MolInOrg2, 24, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               1,
-                                                               3,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Hg", 201, 202, 201.970617000, MolInOrg2, 19, 1, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               1,
-                                                               2,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Tl", 204, 205, 204.974400000, MolInOrg1, 18, 0, {{
-                                                               3,
-                                                               5,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               1,
-                                                               3,
-                                                           },
-                                                           {
-                                                               0,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Pb", 207, 208, 207.976627000, MolInOrg1, 18, 0, {{
-                                                               2,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {3, 5},
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               3,
-                                                           },
-                                                           {
-                                                               0,
-                                                           }}},
-        {"Bi", 209, 209, 208.980390000, MolInOrg1, 19, 0, {{
-                                                               1,
-                                                               3,
-                                                               5,
-                                                               7,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {
-                                                               3,
-                                                               5,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                           },
-                                                           {
-                                                               3,
-                                                           }}},
-        {"Po", 209, 209, 208.982400000, MolInOrg2, 20, 0, {{
-                                                               0,
-                                                           },
-                                                           {
-                                                               1,
-                                                               3,
-                                                               5,
-                                                               7,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                               6,
-                                                           },
-                                                           {
-                                                               3,
-                                                               5,
-                                                           },
-                                                           {
-                                                               2,
-                                                               4,
-                                                           }}},
-        {"At", 210, 210, 209.987100000, 0, 22, 0, {{
-                                                       0,
-                                                   },
-                                                   {
-                                                       0,
-                                                   },
-                                                   {
-                                                       1,
-                                                       3,
-                                                       5,
-                                                       7,
-                                                   },
-                                                   {2, 4, 6},
-                                                   {
-                                                       3,
-                                                       5,
-                                                   }}},
-        {"Rn", 222, 222, 222.017500000, 0, 0, 0, {{
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  },
-                                                  {
-                                                      0,
-                                                  }}},
-        {"Fr", 223, 223, 223.019700000, MolInOrg1, 0, 0, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Ra", 226, 226, 226.025410000, MolInOrg1, 0, 0, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              2,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Ac", 227, 227, 227.027750000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Th", 232, 232, 232.038050000, MolInOrg2, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Pa", 231, 231, 231.035880000, MolInOrg3, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                              5,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"U", 238, 238, 238.050790000, MolInOrg4, 0, 1, {{
-                                                             0,
-                                                         },
-                                                         {
-                                                             0,
-                                                         },
-                                                         {
-                                                             3,
-                                                             4,
-                                                             5,
-                                                             6,
-                                                         },
-                                                         {
-                                                             0,
-                                                         },
-                                                         {
-                                                             0,
-                                                         }}},
-        {"Np", 237, 237, 237.048170000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                              5,
-                                                              6,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Pu", 244, 244, 244.064200000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                              5,
-                                                              6,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Am", 243, 243, 243.061370000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                              5,
-                                                              6,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Cm", 247, 247, 247.070300000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Bk", 247, 247, 247.070300000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                              4,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Cf", 251, 251, 251.079600000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Es", 252, 252, 252.082800000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Fm", 257, 257, 257.095100000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Md", 258, 258, 258.098600000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              3,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"No", 259, 259, 259.100900000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Lr", 260, 260, 260.105400000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        {"Rf", 261, 261, 261.108700000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-
-        /*
-            The elements below were added after v. 1.03.
-            When available, the mass is given for isotope with the longest half-life.
-            Standard valences given here are just placeholders.
-            v. 1.04: added elements 105-112.
-                        Ref.: M. E. WIESER AND T. B. COPLEN.
-                        Atomic weights of the elements 2009 (IUPAC Technical Report).
-                        Pure Appl. Chem., Vol. 83, No. 2, pp. 359-396, 2011.
-            v. 1.05: added elements 114 and 116;
-                        updated data for elements 105-112.
-                        Ref.: J. Meija, T.B. Coplen, M.Berglund et al.
-                        Atomic weights of the elements 2013 (IUPAC Technical Report).
-                        Pure Appl. Chem., Vol. 88, No. 3, pp. 265-291, 2016.
-                    added elements 113, 115, 117, and 118, according to IUPAC provisional recommendations:
-                        Ref.: L. Ohrstrom, J. Reedijk.
-                        Names and Symbols of the Elements with Atomic Numbers 113, 115, 117 and 118.
-                        Pure Appl. Chem., May 1, 2016, Manuscript ID PAC-REC-16-05-01
-                        http://iupac.org/cms/wp-content/uploads/2016/06/names-and-symbols-of-elements.pdf
-        */
-
-        /* 105 dubnium Db                ? Like: Ta */
-        {"Db", 270, 270, 270.131000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 106 seaborgium Sg            ? Like: W */
-        {"Sg", 269, 269, 269.129000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 107 bohrium Bh                ? Like: Re */
-        {"Bh", 270, 270, 270.133000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 108 hassium Hs                ? Like: Os */
-        {"Hs", 270, 270, 270.134000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 109 meitnerium Mt            ? Like: Ir */
-        {"Mt", 278, 278, 278.156000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 110 darmstadtium Ds            ? Like: Pt */
-        {"Ds", 281, 281, 281.165000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 111 roentgenium Rg            ? Like: Au */
-        {"Rg", 281, 281, 281.166000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 112 copernicium Cn            ? Like: Hg */
-        {"Cn", 285, 285, 285.177000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 113 nihonium Nh                ? Like: ? */
-        {"Nh", 278, 278, 278.000000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 114 flerovium Fl                ? Like: Pb */
-        {"Fl", 289, 289, 289.190000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 115 moscovium Mc                ? Like: ? */
-        {"Mc", 289, 289, 289.000000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 116 livermorium Lv            ? Like: Po */
-        {"Lv", 293, 293, 293.204000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 117 tennessine Ts            ? Like: ? */
-        {"Ts", 297, 297, 297.000000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* 118 oganesson Og            ? Like: ? */
-        {"Og", 294, 294, 294.000000000, MolInOrg1, 0, 1, {{
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              1,
-                                                          },
-                                                          {
-                                                              0,
-                                                          },
-                                                          {
-                                                              0,
-                                                          }}},
-        /* End of added in v. 1.04 - 1.05 */
-        {"Zy", 0, 0, 0.000000000, 0, 0, 1, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                1,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"Zz", 0, 0, 0.000000000, 0, 0, 1, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                1,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-#ifdef INCHI_ZFRAG
-        {"Zu", 0, 0, 0.000000000, 0, 0, 1, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                1,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"Zv", 0, 0, 0.000000000, 0, 0, 1, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                2,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"Zw", 0, 0, 0.000000000, 0, 0, 1, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                3,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-        {"Zx", 0, 0, 0.000000000, 0, 0, 1, {{
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                1,
-                                                2,
-                                            },
-                                            {
-                                                0,
-                                            },
-                                            {
-                                                0,
-                                            }}},
-#endif
-
-        {"", 0, 0, 0.000000000, 0, 0, 0, {{
-                                              0,
-                                          },
-                                          {
-                                              0,
-                                          },
-                                          {
-                                              0,
-                                          },
-                                          {
-                                              0,
-                                          },
-                                          {
-                                              0,
-                                          }}},
-};
 
 /****************************************************************************
  * (@nnuk : Nauman Ullah Khan)
@@ -6188,7 +4072,7 @@ int getElValenceforMolecularInorganics(int nPeriodicNum, int charge, int val_num
         return 0;
     }
 
-    return MolecularInorganicsArray[nPeriodicNum > 1 ? nPeriodicNum + 1 : 0].cValence[NEUTRAL_STATE + charge][val_num];
+    return (int) MolecularInorganicsArray[nPeriodicNum > 1 ? nPeriodicNum + 1 : 0].cValence[NEUTRAL_STATE + charge][val_num];
 }
 
 /****************************************************************************
@@ -6240,142 +4124,6 @@ int MolecularInorganicsIsMetalToDisconnect(inp_ATOM *at, int atom_idx)
     /* Default: Valence greater than usual or the atom is isolated hence no disconnection */
     return 0;
 }
-
-#define NUM_ELEMENTS 118 /* Adjust according to the number of elements in the array */
-/*****************************************************************************
- * (@nnuk : Nauman Ullah Khan)
- * Elements Array for for molecular inorganics
- ******************************************************************************/
-
-ElementsMolecularInorganics elementListMolecularInorganics[NUM_ELEMENTS] =
-    {
-        {1, "H"}, {2, "He"}, {3, "Li"}, {4, "Be"}, {5, "B"}, {6, "C"}, {7, "N"}, {8, "O"}, {9, "F"}, {10, "Ne"}, {11, "Na"}, {12, "Mg"}, {13, "Al"}, {14, "Si"}, {15, "P"}, {16, "S"}, {17, "Cl"}, {18, "Ar"}, {19, "K"}, {20, "Ca"}, {21, "Sc"}, {22, "Ti"}, {23, "V"}, {24, "Cr"}, {25, "Mn"}, {26, "Fe"}, {27, "Co"}, {28, "Ni"}, {29, "Cu"}, {30, "Zn"}, {31, "Ga"}, {32, "Ge"}, {33, "As"}, {34, "Se"}, {35, "Br"}, {36, "Kr"}, {37, "Rb"}, {38, "Sr"}, {39, "Y"}, {40, "Zr"}, {41, "Nb"}, {42, "Mo"}, {43, "Tc"}, {44, "Ru"}, {45, "Rh"}, {46, "Pd"}, {47, "Ag"}, {48, "Cd"}, {49, "In"}, {50, "Sn"}, {51, "Sb"}, {52, "Te"}, {53, "I"}, {54, "Xe"}, {55, "Cs"}, {56, "Ba"}, {57, "La"}, {58, "Ce"}, {59, "Pr"}, {60, "Nd"}, {61, "Pm"}, {62, "Sm"}, {63, "Eu"}, {64, "Gd"}, {65, "Tb"}, {66, "Dy"}, {67, "Ho"}, {68, "Er"}, {69, "Tm"}, {70, "Yb"}, {71, "Lu"}, {72, "Hf"}, {73, "Ta"}, {74, "W"}, {75, "Re"}, {76, "Os"}, {77, "Ir"}, {78, "Pt"}, {79, "Au"}, {80, "Hg"}, {81, "Tl"}, {82, "Pb"}, {83, "Bi"}, {84, "Po"}, {85, "At"}, {86, "Rn"}, {87, "Fr"}, {88, "Ra"}, {89, "Ac"}, {90, "Th"}, {91, "Pa"}, {92, "U"}, {93, "Np"}, {94, "Pu"}, {95, "Am"}, {96, "Cm"}, {97, "Bk"}, {98, "Cf"}, {99, "Es"}, {100, "Fm"}, {101, "Md"}, {102, "No"}, {103, "Lr"}, {104, "Rf"}, {105, "Db"}, {106, "Sg"}, {107, "Bh"}, {108, "Hs"}, {109, "Mt"}, {110, "Ds"}, {111, "Rg"}, {112, "Cn"}, {113, "Nh"}, {114, "Fl"}, {115, "Mc"}, {116, "Lv"}, {117, "Ts"}, {118, "Og"}};
-
-/*************************************************************************
- * (@nnuk : NaumanUllahKhan)
- * Binary Array of all the Electronegativity values between Elements
- **************************************************************************/
-
-const int binaryArrayMolecularInorganics[NUM_ELEMENTS][NUM_ELEMENTS] = {
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-};
 
 /*****************************************************************************
  * (@nnuk : Nauman Ullah Khan)
@@ -6436,23 +4184,6 @@ void updateNeighborListMolecularInorganics(inp_ATOM *at, int atom_idx, int neigh
             break;
         }
     }
-}
-
-/************************************************************************
- * @nnuk
- * @brief Determine whether a metal-ligand bond must always be preserved
- *        during Molecular Inorganics preprocessing.
- ***********************************************************************/
-int MolecularInorganicsKeepBond(inp_ATOM *at, int metal_idx, int neigh_idx, int bond_pos)
-{
-    int bond_type = at[metal_idx].bond_type[bond_pos];
-
-    if (is_el_a_metal(at[neigh_idx].el_number) || (bond_type > 1 && bond_type != COORDINATIVE_BOND))
-    {
-        return 1;
-    }
-
-    return 0;
 }
 
 /*****************************************************************************
@@ -6534,11 +4265,123 @@ static void ConvertCoordinativeBondsToSingle(inp_ATOM *at, int num_atoms)
 }
 
 /*****************************************************************************
+ * @nnuk
+ * Determine whether an element is a Group 1 or Group 2 metal.
+ *
+ * Hydrogen is excluded because it is not treated as a metal by the
+ * Molecular Inorganics preprocessing.
+ *
+ * @param el_number  number in the periodic table
+ *
+ * @return 1 or 0
+ *****************************************************************************/
+static int MolecularInorganicsIsGroup1or2Metal(int el_number)
+{
+    switch (el_number)
+    {
+        /* Group 1 */
+    case 3:   /* Li */
+    case 11:  /* Na */
+    case 19:  /* K  */
+    case 37:  /* Rb */
+    case 55:  /* Cs */
+    case 87:  /* Fr */
+
+        /* Group 2 */
+    case 4:   /* Be */
+    case 12:  /* Mg */
+    case 20:  /* Ca */
+    case 38:  /* Sr */
+    case 56:  /* Ba */
+    case 88:  /* Ra */
+        return 1;
+
+    default:
+        return 0;
+    }
+}
+
+/*****************************************************************************
+ * @nnuk
+ * @brief Count C, N, and O atoms in the metal's perceived ring system.
+ *
+ * Implements the chelate-ring criterion from the 2026-07-16 Molecular
+ * Inorganics decision tree. Group 1 and Group 2 metals are excluded and
+ * therefore return zero.
+ *
+ * @param at Input   atom array
+ * @param num_at     atom number
+ * @param metal_idx  index of the metal atom
+ *
+ * @return Number of C, N, and O atoms in the same ring system, or zero when
+ *         the metal is in Group 1 or Group 2 or is not part of a ring system.
+ *****************************************************************************/
+static int MolecularInorganicsCountRingCNOAtoms(const inp_ATOM* at, int num_at, int metal_idx)
+{
+    int atom_idx;
+    int ring_cno_count = 0;
+    AT_NUMB ring_id;
+
+    if (!MolecularInorganicsIsGroup1or2Metal(at[metal_idx].el_number) && at[metal_idx].nRingSystem)
+    {
+        ring_id = at[metal_idx].nRingSystem;
+
+        for (atom_idx = 0; atom_idx < num_at; atom_idx++)
+        {
+            if (at[atom_idx].nRingSystem == ring_id &&
+                (at[atom_idx].el_number == 6 ||  /* C */
+                    at[atom_idx].el_number == 7 ||  /* N */
+                    at[atom_idx].el_number == 8))   /* O */
+            {
+                ring_cno_count++;
+            }
+        }
+    }
+
+    return ring_cno_count;
+}
+
+
+/*****************************************************************************
+ * @nnuk
+ * Determine whether an input bond has stereochemical direction information
+ * stored on either endpoint of the bond.
+ *
+ * @param at          input atom array
+ * @param atom_idx    index of the atom
+ * @param bond_pos    bond position
+ *
+ * @return            if bond has stereo or not
+ *****************************************************************************/
+static int MolecularInorganicsBondHasStereo(const inp_ATOM* at, int atom_idx, int bond_pos)
+{
+    int neigh_pos;
+    int neighbor_idx;
+    int bond_has_stereo;
+
+    neighbor_idx = at[atom_idx].neighbor[bond_pos];
+    bond_has_stereo = (at[atom_idx].bond_stereo[bond_pos] != 0);
+
+    for (neigh_pos = 0; !bond_has_stereo && neigh_pos < at[neighbor_idx].valence; neigh_pos++)
+    {
+        if (at[neighbor_idx].neighbor[neigh_pos] == atom_idx)
+        {
+            bond_has_stereo = (at[neighbor_idx].bond_stereo[neigh_pos] != 0);
+            break;
+        }
+    }
+
+    return bond_has_stereo;
+}
+
+/*****************************************************************************
  * (@nnuk :: Nauman Ullah Khan)
- * @brief Function to preprocess molecular inorganics structures by disconnecting metal bonds and handling salts + ammonium salts.
+ * @brief Function to preprocess molecular inorganics structures by disconnecting metal bonds and
+ * handling salts + ammonium salts.
  *
  * This function processes a given molecular structure, identifies metal atoms,
- * and performs bond disconnections based on electronegativity differences. After metal disconnections,
+ * and performs bond disconnections based on electronegativity differences,
+ * coordination number and valence. After metal disconnections,
  * it also checks for ammonium salt patterns and disconnects them where applicable.
  *
  * @param orig_at_data Pointer to the original atom data structure.
@@ -6573,20 +4416,21 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     int num_disconnected = 0;
 
     /* variables declared */
-    int i, j, n, k, t;
+    int i, j, n, k;
     int binaryValue;
     int disconnectDecision;
     int neigh_pos;
-    int num_metals, current_component;
+    int neighbor_idx;
+    int num_metals;
+    int all_metal_atoms_terminal;
+    int has_single_bond_to_metal;
+    int keep_all_metal_bonds;
 
     /* memory allocation */
     S_CHAR* dfs_visited = (S_CHAR*)inchi_calloc(num_at, sizeof(S_CHAR));
     int* dfs_stack = (int*)inchi_malloc(num_at * sizeof(int));
-    int* ligand_elem_array = (int*)inchi_malloc(num_at * sizeof(int));
-    int* structure_id = (int*)inchi_malloc(num_at * sizeof(int));
-    int* structure_metal_count = (int*)inchi_calloc(num_at, sizeof(int));
 
-    if (!dfs_visited || !dfs_stack || !ligand_elem_array || !structure_id || !structure_metal_count)
+    if (!dfs_visited || !dfs_stack)
     {
         ret_code = -1;
         goto cleanup;
@@ -6604,6 +4448,13 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
         }
     }
 
+    /*
+     * Detect ring systems before the charge-separated bond pass so that a
+     * qualifying metal-containing chelate ring is not disconnected before
+     * the chelate protection rule can be applied.
+     */
+    MarkRingSystemsInp(at, num_at, 0);
+
     /* Disconnect charge-separated metal-ligand bonds, preserving the drawn
      * formal charges. A metal and ligand carrying opposite formal charges
      * across a single (type 1) or coordinative (type 9) bond depict an ionic
@@ -6614,11 +4465,19 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
      * also decrements valence and chem_bonds_valence on both atoms (a type-9
      * bond counts as single), so no charge is added or removed here: each ion
      * keeps exactly the charge drawn in the input. Higher-order bonds (e.g. a
-     * drawn M=O double bond) are genuine covalent bonds and are left intact. */
+     * drawn M=O double bond) are genuine covalent bonds and are left intact.
+     *
+     *
+     * An exception is made for non-Group-1/2 metals that belong to a ring
+     * containing at least three carbon, nitrogen, or oxygen atoms. Such bonds
+     * form part of a qualifying chelate ring and must remain connected.*/
     for (i = 0; i < num_at; i++)
     {
         for (k = 0; k < at[i].valence; )
         {
+            int metal_idx;
+            int ring_cno_count = 0;
+
             j = at[i].neighbor[k];
 
             /* Process each undirected bond once, from its lower-indexed atom,
@@ -6626,10 +4485,31 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
              * bonds. */
             if (j <= i || j >= num_at ||
                 (at[i].bond_type[k] != COORDINATIVE_BOND &&
-                 at[i].bond_type[k] != BOND_TYPE_SINGLE) ||
-                is_el_a_metal(at[i].el_number) == is_el_a_metal(at[j].el_number) ||
+                    at[i].bond_type[k] != BOND_TYPE_SINGLE) ||
+                is_el_a_metal(at[i].el_number) ==
+                is_el_a_metal(at[j].el_number) ||
                 !((at[i].charge > 0 && at[j].charge < 0) ||
-                  (at[i].charge < 0 && at[j].charge > 0)))
+                    (at[i].charge < 0 && at[j].charge > 0)))
+            {
+                k++;
+                continue;
+            }
+
+            metal_idx = is_el_a_metal(at[i].el_number) ? i : j;
+
+            /*
+             * Deliberately apply the chelate-ring protection in this preliminary
+             * charge-separated bond pass. Without this check, an explicitly charged
+             * chelate of a non-Group-1/2 metal could be disconnected before the main
+             * decision-tree pass evaluates whether its metal bonds must be retained.
+             *
+             * The ring criterion follows the 2026-07-16 Molecular Inorganics decision
+             * tree: the metal-containing ring system must contain at least three atoms
+             * selected from C, N, and O.
+            */
+            ring_cno_count = MolecularInorganicsCountRingCNOAtoms(at, num_at, metal_idx);
+
+            if (ring_cno_count >= 3)
             {
                 k++;
                 continue;
@@ -6638,87 +4518,197 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
             DisconnectInpAtBond(at, nOldCompNumber, i, k);
             num_disconnected++;
             ip->bMolecularInorganicsReconnectedInChI = 1;
-            /* neighbor k was removed; the next neighbor shifted into its slot,
-             * so do not advance k here. */
         }
     }
 
     /* Realize the remaining (uncharged) coordinative (type 9) bonds as single
      * bonds, so the rest of the pipeline treats them like the equivalent
-     * single-bonded structure. */
+     * single-bonded structure.
+    */
     ConvertCoordinativeBondsToSingle(at, num_at);
 
-    /* Function call to Mark ring systems */
+    /*
+     * Re-perceive ring systems after the charge-separated bond disconnections,
+     * because those graph changes may alter the ring membership used by the
+     * main Molecular Inorganics decision-tree evaluation.
+    */
     MarkRingSystemsInp(at, num_at, 0);
 
-    /* Compute metal list */
+    /* Compute the number of metals and whether every metal is terminal. */
     num_metals = 0;
+    all_metal_atoms_terminal = 1;
+
     for (i = 0; i < num_at; i++)
     {
         if (is_el_a_metal(at[i].el_number))
         {
             num_metals++;
+
+            if (at[i].valence != 1 || at[i].bond_type[0] != BOND_TYPE_SINGLE)
+            {
+                all_metal_atoms_terminal = 0;
+            }
         }
     }
 
-    /*
-     * Precompute structure components (DFS RUN ONCE) to satisfy this rule below,
-     * (if there is a path from this metal to ANY other metal,
-     * keep all bonds for this metal)
-    */
-    for (i = 0; i < num_at; i++)
+    if (!num_metals)
     {
-        structure_id[i] = -1;
+        goto cleanup;
     }
 
-    current_component = 0;
+    /* Check whether at least one single bond remains attached to a metal. */
+    has_single_bond_to_metal = 0;
 
-    for (i = 0; i < num_at; i++)
+    for (i = 0; i < num_at && !has_single_bond_to_metal; i++)
     {
-        if (structure_id[i] >= 0)
+        if (!is_el_a_metal(at[i].el_number))
         {
             continue;
         }
 
-        int dfs_stack_size = 0;
-        dfs_stack[dfs_stack_size++] = i;
-        structure_id[i] = current_component;
-
-        while (dfs_stack_size)
+        for (n = 0; n < at[i].valence; n++)
         {
-            int current_atom = dfs_stack[--dfs_stack_size];
-
-            if (is_el_a_metal(at[current_atom].el_number))
+            if (at[i].bond_type[n] == BOND_TYPE_SINGLE)
             {
-                structure_metal_count[current_component]++;
+                has_single_bond_to_metal = 1;
+                break;
+            }
+        }
+    }
+
+    if (!has_single_bond_to_metal)
+    {
+        goto cleanup;
+    }
+
+    /* Evaluate the complete decision tree before changing any remaining
+     * metal-ligand bond. If one bond must be retained, all remaining bonds to
+     * metal atoms are retained. */
+    keep_all_metal_bonds = 0;
+
+    for (i = 0; i < num_at && !keep_all_metal_bonds; i++)
+    {
+        int ring_cno_count = 0;
+        int current_metal_is_group_1_or_2;
+
+        if (!is_el_a_metal(at[i].el_number))
+        {
+            continue;
+        }
+
+        current_metal_is_group_1_or_2 = MolecularInorganicsIsGroup1or2Metal(at[i].el_number);
+
+        /*
+         * Count C, N, and O atoms in the same ring system as the metal.
+         * Group 1 and Group 2 metals are excluded from chelate protection.
+         */
+        ring_cno_count = MolecularInorganicsCountRingCNOAtoms(at, num_at, i);
+
+        disconnectDecision = MolecularInorganicsIsMetalToDisconnect(at, i);
+
+        for (n = 0; n < at[i].valence; n++)
+        {
+            int bond_has_stereo = 0;
+            int bond_links_to_other_metal = 0;
+            int dfs_stack_size;
+
+            neighbor_idx = at[i].neighbor[n];
+
+            if (neighbor_idx < 0 || neighbor_idx >= num_at)
+            {
+                continue;
             }
 
-            for (neigh_pos = 0; neigh_pos < at[current_atom].valence; neigh_pos++)
+            bond_has_stereo = MolecularInorganicsBondHasStereo(at, i, n);
+
+            /* The actual bond must be a non-stereogenic single bond. */
+            if (at[i].bond_type[n] != BOND_TYPE_SINGLE || bond_has_stereo)
             {
-                int neighbor_atom = at[current_atom].neighbor[neigh_pos];
+                keep_all_metal_bonds = 1;
+                break;
+            }
 
-                if (neighbor_atom < 0 || neighbor_atom >= num_at)
+            if (disconnectDecision != 1)
+            {
+                keep_all_metal_bonds = 1;
+                break;
+            }
+
+            /* The bonded atom pair must satisfy the binary disconnection table. */
+            binaryValue = shouldBondBeCut(at[i].el_number, at[neighbor_idx].el_number);
+
+            if (binaryValue != 1)
+            {
+                keep_all_metal_bonds = 1;
+                break;
+            }
+
+            /* Determine whether the actual bond is part of a path from this
+             * metal atom to another metal atom. The current metal is excluded
+             * from the traversal so that only paths starting through this bond
+             * are considered. */
+            memset(dfs_visited, 0, num_at * sizeof(*dfs_visited));
+            dfs_stack_size = 0;
+            dfs_visited[i] = 1;
+            dfs_visited[neighbor_idx] = 1;
+            dfs_stack[dfs_stack_size++] = neighbor_idx;
+
+            while (dfs_stack_size && !bond_links_to_other_metal)
+            {
+                int current_atom = dfs_stack[--dfs_stack_size];
+
+                if (is_el_a_metal(at[current_atom].el_number))
                 {
-                    continue;
+                    bond_links_to_other_metal = 1;
+                    break;
                 }
 
-                if (structure_id[neighbor_atom] >= 0)
+                for (neigh_pos = 0; neigh_pos < at[current_atom].valence; neigh_pos++)
                 {
-                    continue;
-                }
+                    int neighbor_atom = at[current_atom].neighbor[neigh_pos];
 
-                structure_id[neighbor_atom] = current_component;
+                    if (neighbor_atom < 0 || neighbor_atom >= num_at || dfs_visited[neighbor_atom])
+                    {
+                        continue;
+                    }
 
-                if (dfs_stack_size < num_at)
-                {
+                    dfs_visited[neighbor_atom] = 1;
                     dfs_stack[dfs_stack_size++] = neighbor_atom;
                 }
             }
-        }
 
-        current_component++;
+            /*
+             * Retain a linkage to another metal unless:
+             * 1) all metal atoms are terminal, or
+             * 2) the current metal belongs to Group 1 or Group 2.
+            */
+            if (bond_links_to_other_metal && !all_metal_atoms_terminal && !current_metal_is_group_1_or_2)
+            {
+                keep_all_metal_bonds = 1;
+                break;
+            }
+
+            /*
+             * Protect a qualifying chelate ring. Group 1 and Group 2 metals return
+             * zero from MolecularInorganicsCountRingCNOAtoms().
+            */
+            if (ring_cno_count >= 3)
+            {
+                keep_all_metal_bonds = 1;
+                break;
+            }
+        }
     }
 
+    if (keep_all_metal_bonds)
+    {
+        ip->bMolecularInorganicsReconnectedInChI = 1;
+        goto cleanup;
+    }
+
+    /* All remaining metal bonds satisfy the complete decision tree and may be
+     * disconnected.
+    **/
     for (i = 0; i < num_at; i++)
     {
         if (!is_el_a_metal(at[i].el_number))
@@ -6726,139 +4716,12 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
             continue;
         }
 
-       /*@nnuk
-        *If there exists any path between this metal and any other metal OR
-        *the atom belongs to a ring system containing at least one metal, then keep all bonds for this metal.
-       */
-        int keep_all_ligand_for_this_metal = 0;
-
-        /* @nnuk
-         *if this metal is part of a ring system that contains at least one metal,
-         *keep all bonds for this metal
-        */
-        if (at[i].nRingSystem)
-        {
-            /* scan atoms that are in same ring system and check for a metal */
-            AT_NUMB ring_id = at[i].nRingSystem;
-
-            for (k = 0; k < num_at; k++)
-            {
-                if (k != i && at[k].nRingSystem == ring_id && is_el_a_metal(at[k].el_number))
-                {
-                    keep_all_ligand_for_this_metal = 1;
-                    break;
-                }
-            }
-        }
-
-        /*@nnuk
-         *if there is a path from this metal to ANY other metal,
-         *keep all bonds for this metal.
-        */
-        if (!keep_all_ligand_for_this_metal && num_metals > 1)
-        {
-            int processed_structure = structure_id[i];
-
-            if (structure_metal_count[processed_structure] > 1)
-            {
-                keep_all_ligand_for_this_metal = 1;
-            }
-        }
-
-        if (keep_all_ligand_for_this_metal)
-        {
-            ip->bMolecularInorganicsReconnectedInChI = 1;
-            continue;
-        }
-
-        /*@nnuk
-         *If central metal is bound to different ligand atom element types
-         *AND at least one of the bonds must be kept according to existing bond rules,
-         *then keep ALL bonds
-        */
-        {
-            int ligand_type_count = 0;
-            int must_keep_neighbor = 0;
-
-            for (n = 0; n < at[i].valence; n++)
-            {
-                int neigh_idx = at[i].neighbor[n];
-
-                if (neigh_idx < 0 || neigh_idx >= num_at)
-                {
-                    continue;
-                }
-
-                int neigh_elem = at[neigh_idx].el_number;
-                int found = 0;
-
-                for (t = 0; t < ligand_type_count; t++)
-                {
-                    if (ligand_elem_array[t] == neigh_elem)
-                    {
-                        found = 1;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    ligand_elem_array[ligand_type_count++] = neigh_elem;
-                }
-
-                if (MolecularInorganicsKeepBond(at, i, neigh_idx, n))
-                {
-                    must_keep_neighbor = 1;
-                }
-                else
-                {
-                    binaryValue = shouldBondBeCut(at[i].el_number, neigh_elem);
-
-                    if (binaryValue != 1)
-                    {
-                        must_keep_neighbor = 1;
-                    }
-                }
-            }
-
-            if (ligand_type_count > 1 && must_keep_neighbor)
-            {
-                ip->bMolecularInorganicsReconnectedInChI = 1;
-                continue;
-            }
-        }
-
-        /* Call the MolecularInorganicsIsMetalToDisconnect function */
-        disconnectDecision = MolecularInorganicsIsMetalToDisconnect(at, i);
-
-        if (disconnectDecision != 1) /* If disconnectDecision = 1, then disconnection procedure will be followed if applicable */
-        {
-            /* (@nnuk) : No disconnection if the metal atom bounding capacity is greater than
-             * the limit set inside Molecular Inorganics elements array or if the metal atom is
-             * isolated. */
-            ip->bMolecularInorganicsReconnectedInChI = 1;
-            continue;
-        }
-
-        /* Proceed with electronegativity and disconnection logic */
         for (n = at[i].valence - 1; n >= 0; n--)
         {
-            int neighbor_idx = at[i].neighbor[n];
+            neighbor_idx = at[i].neighbor[n];
 
-            /* Check if the neighboring atom has more than 1 bond connected to the metal atom or
-             * if the neighbour is also a metal atom. In both cases no disconnection has to be done */
-            if (MolecularInorganicsKeepBond(at, i, neighbor_idx, n))
+            if (neighbor_idx < 0 || neighbor_idx >= num_at)
             {
-                ip->bMolecularInorganicsReconnectedInChI = 1;
-                continue; /* Skip disconnection for this bond */
-            }
-
-            binaryValue = shouldBondBeCut(at[i].el_number, at[neighbor_idx].el_number);
-
-            if (binaryValue != 1)
-            {
-                /* (@nnuk : Keep the bonds, no disconnection) */
-                ip->bMolecularInorganicsReconnectedInChI = 1;
                 continue;
             }
 
@@ -6878,9 +4741,6 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
 cleanup:
     if (dfs_visited) inchi_free(dfs_visited);
     if (dfs_stack) inchi_free(dfs_stack);
-    if (ligand_elem_array) inchi_free(ligand_elem_array);
-    if (structure_id) inchi_free(structure_id);
-    if (structure_metal_count) inchi_free(structure_metal_count);
 
     return (ret_code < 0) ? ret_code : num_disconnected;
 }
@@ -7136,6 +4996,82 @@ int get_canonical_atom_number( const INChI_Aux *aux,
 }
 
 /**
+ * @brief Build a reverse (original -> canonical) atom number map
+ *
+ * Replaces repeated get_canonical_atom_number() linear scans in the enhanced
+ * stereo loops. Entry [orig] holds the canonical number, 0 means "not present";
+ * on duplicate original numbers the lowest canonical number wins, matching
+ * get_canonical_atom_number().
+ *
+ * @param aux Pointer to INChI auxiliary data
+ * @param map_size Receives the number of entries in the returned map (0 on failure)
+ * @return Newly allocated map (free with inchi_free), or NULL if unavailable
+ */
+int *make_orig_to_canon_map( const INChI_Aux *aux,
+                             int *map_size )
+{
+    if (map_size != NULL) {
+        *map_size = 0;
+    }
+
+    if (aux == NULL || aux->nOrigAtNosInCanonOrd == NULL || aux->nNumberOfAtoms <= 0) {
+        return NULL;
+    }
+
+    int max_orig = 0;
+    for (int canon_num = 1; canon_num <= aux->nNumberOfAtoms; canon_num++) {
+        int orig_atom_num = (int)aux->nOrigAtNosInCanonOrd[canon_num - 1];
+        if (orig_atom_num > max_orig) {
+            max_orig = orig_atom_num;
+        }
+    }
+
+    int size = max_orig + 1;
+    int *map = (int *)inchi_calloc( (size_t)size, sizeof(int) );
+    if (map == NULL) {
+        return NULL;
+    }
+
+    for (int canon_num = 1; canon_num <= aux->nNumberOfAtoms; canon_num++) {
+        int orig_atom_num = (int)aux->nOrigAtNosInCanonOrd[canon_num - 1];
+        if (orig_atom_num > 0 && map[orig_atom_num] == 0) {
+            map[orig_atom_num] = canon_num;
+        }
+    }
+
+    if (map_size != NULL) {
+        *map_size = size;
+    }
+
+    return map;
+}
+
+/**
+ * @brief Get the canonical atom number via a reverse map, with scan fallback
+ *
+ * @param map Map from make_orig_to_canon_map(), or NULL
+ * @param map_size Number of entries in map
+ * @param aux Pointer to INChI auxiliary data (used when map is NULL)
+ * @param orig_atom_num Original atom number
+ * @return Returns the canonical atom number, or -1 if not found
+ */
+int lookup_canonical_atom_number( const int *map,
+                                  int map_size,
+                                  const INChI_Aux *aux,
+                                  int orig_atom_num )
+{
+    if (map == NULL) {
+        return get_canonical_atom_number( aux, orig_atom_num );
+    }
+
+    if (orig_atom_num < 1 || orig_atom_num >= map_size || map[orig_atom_num] == 0) {
+        return -1;
+    }
+
+    return map[orig_atom_num];
+}
+
+/**
  * @brief Get the parity idx from canonical atom number object
  *
  * @param canon_atom_num Canonical atom number
@@ -7161,6 +5097,37 @@ int get_parity_idx_from_canonical_atom_number( int canon_atom_num,
         }
     }
     return -1;
+}
+
+/**
+ * @brief Canonical number of an original atom if it is an sp3 stereocentre
+ *        of this component, else -1
+ *
+ * Collections may name atoms that are not stereocentres (a CH3, a spectator);
+ * those must not reach /s or the /m membership test.
+ */
+int lookup_stereo_centre( const INChI *inchi,
+                          const int *map,
+                          int map_size,
+                          const INChI_Aux *aux,
+                          int orig_atom_num )
+{
+    if (inchi == NULL || inchi->Stereo == NULL) {
+        return -1;
+    }
+
+    int canon_atom_num = lookup_canonical_atom_number( map, map_size, aux, orig_atom_num );
+    if (canon_atom_num == -1) {
+        return -1;
+    }
+
+    if (get_parity_idx_from_canonical_atom_number( canon_atom_num,
+                                                   inchi->Stereo->nNumber,
+                                                   inchi->Stereo->nNumberOfStereoCenters ) == -1) {
+        return -1;
+    }
+
+    return canon_atom_num;
 }
 
 /**
@@ -7199,18 +5166,22 @@ int invert_parities(const INChI *inchi,
 
     S_CHAR *t_parity = inchi->Stereo->t_parity;
 
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+
     for (int i = 0; i < nof_lists; i++) {
         int nof_atoms = list_atoms[i][1];
 
-        AT_NUMB min_c_atom_num = (AT_NUMB)INT_MAX;
+        // Lowest stereocentre of the group; a non-centre (e.g. a CH3) must not win
+        int min_c_atom_num = INT_MAX;
         for (int j = 0; j < nof_atoms; j++) {
             int orig_atom_num = list_atoms[i][2 + j];
-            AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, orig_atom_num);
-            if (canon_atom_num < min_c_atom_num) {
+            int canon_atom_num = lookup_stereo_centre(inchi, orig_to_canon, map_size, aux, orig_atom_num);
+            if (canon_atom_num != -1 && canon_atom_num < min_c_atom_num) {
                 min_c_atom_num = canon_atom_num;
             }
         }
-        if (min_c_atom_num == (AT_NUMB)INT_MAX) {
+        if (min_c_atom_num == INT_MAX) {
             continue;
         }
         int min_c_parity_idx = get_parity_idx_from_canonical_atom_number(min_c_atom_num,
@@ -7226,7 +5197,7 @@ int invert_parities(const INChI *inchi,
 
             for (int j = 0; j < nof_atoms; j++) {
                 int orig_atom_num = list_atoms[i][2 + j];
-                AT_NUMB canon_atom_num = (AT_NUMB)get_canonical_atom_number(aux, orig_atom_num);
+                AT_NUMB canon_atom_num = (AT_NUMB)lookup_canonical_atom_number(orig_to_canon, map_size, aux, orig_atom_num);
                 int parity_idx = get_parity_idx_from_canonical_atom_number(canon_atom_num,
                                                                             inchi->Stereo->nNumber,
                                                                             inchi->Stereo->nNumberOfStereoCenters);
@@ -7242,11 +5213,17 @@ int invert_parities(const INChI *inchi,
                 }
             }
 
+            // Displayed absolute parities inverted: /m flips with them
             if (is_absolute) {
-                inchi->Stereo->nCompInv2Abs = -1; //m1
+                inchi->Stereo->nCompInv2Abs = -inchi->Stereo->nCompInv2Abs;
             }
         }
     }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
     return 0;
 }
 
@@ -7302,52 +5279,290 @@ int set_Atropisomer_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
 }
 
 /**
- * @brief Set the enhanced stereochemistry information for t- and m-layers
+ * @brief Does any atom of these collections belong to this component?
+ *
+ * The V3000 collection lists are structure-wide, so a multi-component structure
+ * must ask per component: an atom of another component has no canonical number
+ * in this component's numbering. This is deliberately the same test that
+ * MakeEnhStereoString() applies when deciding which groups reach the /s layer,
+ * so /m and /s agree on which classes the component carries.
+ *
+ * @param aux Pointer to INChI auxiliary data of one component
+ * @param list_atoms Pointer to list of atom lists for abs, rel or rac information
+ * @param nof_lists Number of lists
+ * @return Returns 1 if at least one listed atom belongs to this component, else 0
+ */
+static int component_has_collection_atom( const INChI *inchi,
+                                          const INChI_Aux *aux,
+                                          int            **list_atoms,
+                                          int              nof_lists )
+{
+    int found = 0;
+    int map_size = 0;
+    int *orig_to_canon;
+
+    if (list_atoms == NULL || nof_lists <= 0) {
+        return 0;
+    }
+
+    orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+
+    for (int i = 0; i < nof_lists && !found; i++) {
+        int nof_atoms = list_atoms[i][1];
+
+        for (int j = 0; j < nof_atoms; j++) {
+            if (lookup_stereo_centre( inchi, orig_to_canon, map_size, aux,
+                                      list_atoms[i][2 + j] ) != -1) {
+                found = 1;
+                break;
+            }
+        }
+    }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
+    return found;
+}
+
+
+/**
+ * @brief Does this component have a stereocentre in an OR or AND group?
+ */
+int has_rel_rac_centre( const OAD_V3000 *v3000,
+                        const INChI *inchi,
+                        const INChI_Aux *aux )
+{
+    if (v3000 == NULL) {
+        return 0;
+    }
+
+    return component_has_collection_atom( inchi, aux, v3000->lists_sterel, v3000->n_sterel ) ||
+           component_has_collection_atom( inchi, aux, v3000->lists_sterac, v3000->n_sterac );
+}
+
+/**
+ * @brief Normalise one stereo layer (non-isotopic, or an isotopic view) for
+ *        enhanced stereochemistry: group sign flips and /m
  *
  * @param orig_inp_data Pointer to original input atom data
  * @param inchi Pointer to INChI structure
  * @param aux Pointer to INChI auxiliary data
- * @return Retruns 1 if not V3000, otherwise 0
+ *
+ * Nothing here can fail: the three invert_parities() calls return non-zero
+ * only to say "this collection list is empty", which is the ordinary case for
+ * any structure not carrying all three collection types, and the one
+ * allocation they make degrades to a linear scan when it cannot be served.
+ * There is therefore no status worth returning, and no caller ever read one.
  */
-int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
-                                   const INChI *inchi,
-                                   const INChI_Aux *aux)
+static void normalise_stereo_layer( const ORIG_ATOM_DATA *orig_inp_data,
+                                    const INChI *inchi,
+                                    const INChI_Aux *aux)
 {
-    int ret = 0;
-
-    if (!orig_inp_data->v3000)
-    {
-        return 1;
-    }
-
     if (inchi == NULL || aux == NULL)
     {
-        return 1;
+        return;
     }
 
     if (inchi->Stereo == NULL ||
         inchi->Stereo->t_parity == NULL ||
         inchi->Stereo->nNumber == NULL ||
         inchi->Stereo->nNumberOfStereoCenters <= 0) {
-        return 1;
+        return;
     }
 
     if (aux->nOrigAtNosInCanonOrd == NULL ||
         aux->nNumberOfAtoms <= 0) {
-        return 1;
+        return;
     }
 
-    int ret_abs = invert_parities(inchi, aux, orig_inp_data->v3000->lists_steabs, orig_inp_data->v3000->n_steabs, 1);
-    int ret_rac = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
-    int ret_rel = invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
-
-    if ((orig_inp_data->v3000->n_steabs == 0) &&
-        (orig_inp_data->v3000->n_sterel > 0 ||
-         orig_inp_data->v3000->n_sterac)) {
-        inchi->Stereo->nCompInv2Abs = 1; //m0
+    /* The absolute set (STEABS plus wedged centres in no collection) flips as one
+       group: its parities are tied to each other through /m. Laid out as one
+       collection list, [unused, n, orig atoms...]. */
+    int n_abs = 0;
+    int *abs_list = (int *)inchi_calloc( inchi->Stereo->nNumberOfStereoCenters + 2, sizeof(int) );
+    if (abs_list != NULL) {
+        n_abs = absolute_centres( orig_inp_data->v3000, inchi, aux, abs_list + 2, NULL );
+        abs_list[1] = n_abs;
+        invert_parities(inchi, aux, &abs_list, 1, 1);
+        inchi_free( abs_list );
     }
 
-    return ret;
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterac, orig_inp_data->v3000->n_sterac, 0);
+    invert_parities(inchi, aux, orig_inp_data->v3000->lists_sterel, orig_inp_data->v3000->n_sterel, 0);
+
+    /* /m states which of the two enantiomers the /t parities describe,
+       so it is meaningful only for a component that has an absolute reference.
+       A component whose centres are all OR/AND has none, so it must not carry
+       /m: zero makes str_StereoAbsInv() emit the '.' placeholder for it, and a
+       structure in which no component keeps a non-zero value drops the /m
+       segment altogether (see OutputINCHI_StereoLayer_EnhancedStereo).
+       Tested per component, not from the structure-wide collection counts: in a
+       multi-component structure an ABS collection on one component must not keep
+       /m alive on an OR/AND-only sibling. An ungrouped wedge is an absolute
+       reference too. */
+    if (n_abs == 0 &&
+        (component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_sterel,
+                                        orig_inp_data->v3000->n_sterel ) ||
+         component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_sterac,
+                                        orig_inp_data->v3000->n_sterac ))) {
+        inchi->Stereo->nCompInv2Abs = 0;
+    }
+}
+
+/**
+ * @brief Isotopic view of a component: the same INChI/INChI_Aux with Stereo
+ *        and the canonical order taken from the isotopic layer
+ *
+ * Shallow copies: the parities and /m flag still live in the real
+ * StereoIsotopic, so the enhanced-stereo code edits the isotopic layer
+ * through it unchanged.
+ *
+ * @return Returns 1 if the component has isotopic sp3 stereo, else 0
+ */
+int isotopic_stereo_view( const INChI *inchi,
+                          const INChI_Aux *aux,
+                          INChI *iso_inchi,
+                          INChI_Aux *iso_aux )
+{
+    if (inchi == NULL || aux == NULL || inchi->StereoIsotopic == NULL ||
+        inchi->StereoIsotopic->nNumberOfStereoCenters <= 0) {
+        return 0;
+    }
+
+    *iso_inchi = *inchi;
+    iso_inchi->Stereo = inchi->StereoIsotopic;
+
+    *iso_aux = *aux;
+    if (aux->nIsotopicOrigAtNosInCanonOrd != NULL) {
+        iso_aux->nOrigAtNosInCanonOrd = aux->nIsotopicOrigAtNosInCanonOrd;
+    }
+
+    return 1;
+}
+
+/**
+ * @brief Set the enhanced stereochemistry information for t- and m-layers,
+ *        non-isotopic and isotopic
+ */
+void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+                                    const INChI *inchi,
+                                    const INChI_Aux *aux)
+{
+    INChI iso_inchi;
+    INChI_Aux iso_aux;
+
+    /* NULL in the AuxInfo-only pass for the reconnected (-RecMet) structure;
+       the INChI pass before it already normalised the same components */
+    if (orig_inp_data == NULL || !orig_inp_data->v3000)
+    {
+        return;
+    }
+
+    normalise_stereo_layer( orig_inp_data, inchi, aux );
+
+    /* Centres stereogenic only through isotopes exist only here, e.g. /i1+1/t3- */
+    if (isotopic_stereo_view( inchi, aux, &iso_inchi, &iso_aux ))
+    {
+        normalise_stereo_layer( orig_inp_data, &iso_inchi, &iso_aux );
+    }
+}
+
+/**
+ * @brief Absolute centres of a component: STEABS stereocentres plus wedged
+ *        stereocentres in no collection
+ *
+ * A wedged centre outside every collection is drawn with a definite
+ * configuration, so it belongs with ABS: it flips with the ABS set and keeps
+ * /m alive. Unknown/undefined parities ('u', '?') are not absolute.
+ *
+ * @param v3000 Collections of the structure
+ * @param inchi Pointer to INChI structure of the component
+ * @param aux Pointer to INChI auxiliary data of the component
+ * @param abs_atoms Receives original atom numbers, room for
+ *        nNumberOfStereoCenters entries; may be NULL
+ * @param n_ungrouped Receives how many of them are in no collection; may be NULL
+ * @return Number of absolute centres
+ */
+int absolute_centres( const OAD_V3000 *v3000,
+                      const INChI *inchi,
+                      const INChI_Aux *aux,
+                      int *abs_atoms,
+                      int *n_ungrouped )
+{
+    enum { CLASS_NONE, CLASS_ABS, CLASS_REL_RAC };
+
+    int count = 0;
+    int ungrouped = 0;
+
+    if (n_ungrouped != NULL) {
+        *n_ungrouped = 0;
+    }
+    if (v3000 == NULL || inchi == NULL || aux == NULL || inchi->Stereo == NULL ||
+        inchi->Stereo->t_parity == NULL || inchi->Stereo->nNumber == NULL ||
+        inchi->Stereo->nNumberOfStereoCenters <= 0 || aux->nOrigAtNosInCanonOrd == NULL) {
+        return 0;
+    }
+
+    int n_centres = inchi->Stereo->nNumberOfStereoCenters;
+    S_CHAR *centre_class = (S_CHAR *)inchi_calloc( n_centres, sizeof(S_CHAR) );
+    if (centre_class == NULL) {
+        return 0;
+    }
+
+    /* Class of each /t centre from the collections */
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+    int **lists[3] = { v3000->lists_steabs, v3000->lists_sterel, v3000->lists_sterac };
+    int n_lists[3] = { v3000->n_steabs, v3000->n_sterel, v3000->n_sterac };
+
+    for (int t = 0; t < 3; t++) {
+        for (int i = 0; lists[t] != NULL && i < n_lists[t]; i++) {
+            for (int j = 0; j < lists[t][i][1]; j++) {
+                int canon = lookup_stereo_centre( inchi, orig_to_canon, map_size, aux,
+                                                  lists[t][i][2 + j] );
+                if (canon == -1) {
+                    continue;
+                }
+                int idx = get_parity_idx_from_canonical_atom_number( canon,
+                                                                     inchi->Stereo->nNumber,
+                                                                     n_centres );
+                centre_class[idx] = (t == 0) ? CLASS_ABS : CLASS_REL_RAC;
+            }
+        }
+    }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
+    /* ABS members, and defined centres in no collection */
+    for (int k = 0; k < n_centres; k++) {
+        S_CHAR parity = inchi->Stereo->t_parity[k];
+        int defined = parity == AB_PARITY_ODD || parity == AB_PARITY_EVEN;
+
+        if (centre_class[k] == CLASS_REL_RAC) {
+            continue;
+        }
+        if (centre_class[k] == CLASS_NONE) {
+            if (!defined) {
+                continue;
+            }
+            ungrouped++;
+        }
+        if (abs_atoms != NULL) {
+            abs_atoms[count] = aux->nOrigAtNosInCanonOrd[inchi->Stereo->nNumber[k] - 1];
+        }
+        count++;
+    }
+
+    inchi_free( centre_class );
+
+    if (n_ungrouped != NULL) {
+        *n_ungrouped = ungrouped;
+    }
+    return count;
 }
 
 /****************************************************************************
@@ -8467,7 +6682,7 @@ void add_bond_if_unseen(subgraf_pathfinder *spf,
             break;
         }
     }
-    if (!seen)
+    if (!seen && bonds)
     {
         bonds[*nbonds][0] = at1;
         bonds[*nbonds][1] = at2;

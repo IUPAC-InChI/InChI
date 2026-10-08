@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
-project(LibInChI_API VERSION 1.7)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/InChIVersion.cmake)
+
+project(LibInChI_API VERSION ${INCHI_VERSION_FULL})
+
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/../../../../cmake/inchi_version_rc.h.in
+	${PROJECT_BINARY_DIR}/inchi_version_rc.h
+	@ONLY
+)
 
 add_library(libinchi_compiler_flags INTERFACE)
 target_compile_features(libinchi_compiler_flags INTERFACE c_std_11)
@@ -84,6 +92,8 @@ target_sources(libinchi PRIVATE
 	${P_BASE}/ichimap4.c
 	${P_BASE}/ichinorm.c
 	${P_BASE}/ichinorm.h
+	${P_BASE}/aromaticity.c
+	${P_BASE}/aromaticity.h
 	${P_BASE}/ichiparm.c
 	${P_BASE}/ichiprt1.c
 	${P_BASE}/ichiprt2.c
@@ -139,9 +149,12 @@ target_sources(libinchi PRIVATE
 	${P_BASE}/sha2.h
 	${P_BASE}/stb_sprintf.h
 	${P_BASE}/strutil.c
+	${P_BASE}/molecular_inorganics_data.c
 	${P_BASE}/strutil.h
 	${P_BASE}/util.c
 	${P_BASE}/util.h
+	${P_BASE}/eldata.c
+	${P_BASE}/eldata.h
 	${P_VC}/resource.h
 )
 
@@ -153,7 +166,10 @@ if(WIN32 AND MSVC)
 endif()
 
 set(CMAKE_DEBUG_POSTFIX d)
-set_target_properties(libinchi PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+set_target_properties(libinchi PROPERTIES
+	DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX}
+	SOVERSION ${INCHI_SOVERSION}
+)
 
 target_link_libraries(libinchi PUBLIC libinchi_compiler_flags)
 
@@ -168,7 +184,9 @@ target_compile_definitions(libinchi PRIVATE
 	TARGET_API_LIB
 )
 
-target_include_directories(libinchi PUBLIC "${PROJECT_BINARY_DIR}")
+target_include_directories(libinchi PUBLIC
+	"${PROJECT_BINARY_DIR}"
+)
 
 string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")

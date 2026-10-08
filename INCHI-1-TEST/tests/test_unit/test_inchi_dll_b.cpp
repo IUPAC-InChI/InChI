@@ -56,3 +56,16 @@ TEST(test_inchi_dll_b, test_MakeINCHIFromMolfileText)
 
     FreeINCHI(poutput);
 }
+
+TEST(test_inchi_dll_b, test_GetStructFromINCHI_rejects_negative_isotope_mass)
+{
+    char inchi[] = "InChI=1/T/q+1/i12-112T";
+    inchi_InputINCHI input = {};
+    input.szInChI = inchi;
+    inchi_OutputStruct output = {};
+
+    EXPECT_EQ(GetStructFromINCHI(&input, &output), inchi_Ret_ERROR);
+    EXPECT_EQ(output.num_atoms, 0);
+
+    FreeStructFromINCHI(&output);
+}

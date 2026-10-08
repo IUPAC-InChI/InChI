@@ -127,6 +127,7 @@ $(P_BASE)/ichimap2.c	\
 $(P_BASE)/ichimap4.c	\
 $(P_BASE)/ichimak2.c	\
 $(P_BASE)/ichinorm.c	\
+$(P_BASE)/aromaticity.c	\
 $(P_BASE)/ichiparm.c	\
 $(P_BASE)/ichiprt1.c	\
 $(P_BASE)/ichiprt2.c	\
@@ -153,6 +154,8 @@ $(P_BASE)/runichi3.c	\
 $(P_BASE)/runichi4.c	\
 $(P_BASE)/sha2.c	\
 $(P_BASE)/strutil.c	\
+$(P_BASE)/eldata.c	\
+$(P_BASE)/molecular_inorganics_data.c	\
 $(P_BASE)/util.c	\
 $(P_BASE)/permutation_util.c	\
 $(P_MAIN)/dispstru.c	\
@@ -176,6 +179,7 @@ ichimap1.o	\
 ichimap2.o	\
 ichimap4.o	\
 ichinorm.o	\
+aromaticity.o	\
 ichiprt1.o	\
 ichiprt2.o	\
 ichiprt3.o	\
@@ -207,6 +211,8 @@ runichi3.o	\
 runichi4.o	\
 sha2.o	\
 strutil.o	\
+eldata.o	\
+molecular_inorganics_data.o	\
 util.o	\
 dispstru.o	\
 permutation_util.o	\

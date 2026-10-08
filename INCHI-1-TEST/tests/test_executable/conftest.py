@@ -71,3 +71,39 @@ def run_inchi_exe(request, tmp_path: Path) -> Callable:
         )
 
     return _run_inchi_exe
+
+
+@pytest.fixture
+def run_inchi_exe_stdin(request) -> Callable:
+    """Run the executable feeding the structure via stdin (no input file arg).
+
+    Mirrors the classic Unix invocation "cat file.mol | inchi-1 -STDIO ...".
+    Only options are passed on the command line; output/log go to the standard
+    streams, so the result is captured from stdout/stderr.
+    """
+
+    def _run_inchi_exe_stdin(input: str, args: str = "") -> InchiResult:
+
+        if "ami" in args.lower():
+            raise ValueError("'AMI' is not supported by the test wrapper.")
+
+        exe_path: str = request.config.getoption("--exe-path")
+        if not Path(exe_path).exists():
+            raise FileNotFoundError(f"InChI executable not found at {exe_path}.")
+
+        result = subprocess.run(
+            [exe_path, *adapt_args_to_platform(args)],
+            input=input,
+            capture_output=True,
+            text=True,
+        )
+
+        return InchiResult(
+            stdout=result.stdout,
+            stderr=result.stderr,
+            output="",
+            log="",
+            problem="",
+        )
+
+    return _run_inchi_exe_stdin

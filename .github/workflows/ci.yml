@@ -13,7 +13,7 @@ jobs:
     container: python:3.12
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - id: setup
         run: ./.devcontainer/post_create_commands.sh
@@ -50,7 +50,7 @@ jobs:
 
       # We need to install git before checking out the repository.
       # Otherwise, the repository will be downloaded using the GitHub REST API instead of git.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Show Python version
         run: |
@@ -89,4 +89,6 @@ jobs:
         with:
           artifact-name: regression-test-results_musl_gcc
 
-      # FIXME: We don't run invariance test on alpine yet because of difficulties with RDKit installation.
+      - uses: ./.github/actions/invariance_tests
+        with:
+          artifact-name: invariance-test-results_musl_gcc

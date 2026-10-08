@@ -1,41 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,6 +20,19 @@
 #include <windows.h>
 #endif
 #endif
+
+/* Portable "is stdin an interactive terminal?" test (see the input-file guard
+   below): _isatty/_fileno on Windows (MSVC and MinGW), isatty/fileno elsewhere. */
+#if defined(_WIN32)
+#include <io.h>
+#define INCHI_ISATTY _isatty
+#define INCHI_FILENO _fileno
+#else
+#include <unistd.h>
+#define INCHI_ISATTY isatty
+#define INCHI_FILENO fileno
+#endif
+
 #include "../../../INCHI_BASE/src/mode.h"
 
 #if( BUILD_WITH_AMI == 1 && defined( _MSC_VER ) && MSC_AMI == 1 )
@@ -629,12 +608,30 @@ int ProcessSingleInputFile(int argc, char* argv[])
         return 0;
     }
 
-    /* djb-rwth: disallowing endless execution if no file(s) is given as the first argument */
-    if (argc >= 2 && ((argv[1][0] == INCHI_OPTION_PREFX)) && (strcmp(argv[1] + 1, "v") || strcmp(argv[1] + 1, "V") || strcmp(argv[1] + 1, "?") || inchi_stricmp(argv[1] + 1, "help")))
+    /* Disallow endless execution when no input file is given AND stdin is an
+       interactive terminal: falling through would block forever waiting for
+       input that never ends. An input file is any non-option argument -
+       ReadCommandLineParms() assigns the first such token to the input path
+       regardless of where it sits among the options - so scan the whole list
+       rather than only argv[1]. When stdin is a pipe or redirect (e.g.
+       "cat file.mol | inchi-1 -STDIO") there is real input with an EOF, so
+       proceed and read it as before. */
     {
-        HelpCommandLineParms(plog);
-        inchi_ios_flush(plog);
-        return 0;
+        int have_input_file = 0;
+        for (int ac = 1; ac < argc; ac++)
+        {
+            if (argv[ac][0] != INCHI_OPTION_PREFX)
+            {
+                have_input_file = 1;
+                break;
+            }
+        }
+        if (!have_input_file && INCHI_ISATTY(INCHI_FILENO(stdin)))
+        {
+            HelpCommandLineParms(plog);
+            inchi_ios_flush(plog);
+            return 0;
+        }
     }
 
     /*  original input structure */

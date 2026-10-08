@@ -1,10 +1,14 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <cstring>
+#include <string>
+
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mol_fmt.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichi_io.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/ichierr.h"
 }
 
 TEST(test_mol_fmt, test_MolfileStrnread)
@@ -840,4 +844,190 @@ TEST(test_mol_fmt, test_ReadMolfile_v3000_collection_2)
 
     inchi_ios_free_str(&input_stream);
     FreeMolfileData(result);
+}
+
+/****************************************************************************
+ Malformed V3000 stereo collections must be diagnosed and discarded.
+
+ Enhanced stereochemical representation rules: a stereogenic centre belongs to exactly one stereochemical group,
+ and a structure carries at most one ABS collection. Violations used to be
+ accepted silently and then laundered into a plausible-looking /s layer -- and,
+ where two collections overlap, into a corrupted /t (see
+ InChI-specs/enhanced-stereo/datasets/malformed/). The reader now names the
+ violation in pStrErr and drops all stereo collections, so the enhanced layer
+ degrades to standard behaviour instead of encoding a different substance.
+
+ The structure itself still parses: err stays 0 and the atom/bond blocks are
+ unaffected, because standard InChI does not use collections at all.
+****************************************************************************/
+
+namespace
+{
+/* 3-stereocentre skeleton (atoms 1, 4, 5) shared by the collection cases;
+   only the COLLECTION block differs between them. Derived from
+   RDKit test_data/two_centers_or.mol. */
+static std::string StereoCollectionMolblock(const char *collection_lines)
+{
+    return std::string(
+               "collections\n"
+               "  Mrv1810 02111915062D          \n"
+               "\n"
+               "  0  0  0  0  0  0            999 V3000\n"
+               "M  V30 BEGIN CTAB\n"
+               "M  V30 COUNTS 8 7 0 0 1\n"
+               "M  V30 BEGIN ATOM\n"
+               "M  V30 1 C -1.5 6.16 0 0\n"
+               "M  V30 2 C -2.84 5.39 0 0\n"
+               "M  V30 3 Br -0.17 5.39 0 0\n"
+               "M  V30 4 C -1.5 7.7 0 0\n"
+               "M  V30 5 C -2.57 5.07 0 0\n"
+               "M  V30 6 F -1.33 5.98 0 0\n"
+               "M  V30 7 C -4.15 7.22 0 0\n"
+               "M  V30 8 C -2.4 3.54 0 0\n"
+               "M  V30 END ATOM\n"
+               "M  V30 BEGIN BOND\n"
+               "M  V30 1 1 1 2\n"
+               "M  V30 2 1 1 4\n"
+               "M  V30 3 1 4 5\n"
+               "M  V30 4 1 5 6\n"
+               "M  V30 5 1 4 7 CFG=1\n"
+               "M  V30 6 1 5 8 CFG=1\n"
+               "M  V30 7 1 1 3 CFG=1\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n") +
+           collection_lines +
+           "M  V30 END COLLECTION\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
+struct MolfileReadResult
+{
+    MOL_FMT_DATA *data;
+    INCHI_IOSTREAM stream;
+    char err_msg[STR_ERR_LEN];
+    int err;
+
+    ~MolfileReadResult()
+    {
+        inchi_ios_free_str(&stream);
+        FreeMolfileData(data);
+    }
+};
+
+static void ReadStereoCollectionMolblock(MolfileReadResult *out, const char *collection_lines)
+{
+    const std::string molblock = StereoCollectionMolblock(collection_lines);
+
+    memset(out->err_msg, 0, sizeof(out->err_msg));
+    out->err = 0;
+
+    inchi_ios_init(&out->stream, INCHI_IOS_TYPE_STRING, nullptr);
+    inchi_ios_print_nodisplay(&out->stream, "%s", molblock.c_str());
+
+    out->data = ReadMolfile(&out->stream, nullptr, nullptr, 0, 0, 0,
+                            nullptr, 0, nullptr, nullptr, nullptr,
+                            &out->err, out->err_msg, 0);
+}
+
+/* All stereo collections dropped. */
+static void ExpectNoCollectionsKept(const MolfileReadResult &r)
+{
+    ASSERT_NE(r.data, nullptr);
+    ASSERT_NE(r.data->ctab.v3000, nullptr);
+    EXPECT_EQ(r.data->ctab.v3000->n_collections, 0);
+    EXPECT_EQ(r.data->ctab.v3000->n_steabs, 0);
+    EXPECT_EQ(r.data->ctab.v3000->n_sterel, 0);
+    EXPECT_EQ(r.data->ctab.v3000->n_sterac, 0);
+    EXPECT_EQ(r.data->ctab.v3000->steabs->used, 0);
+    EXPECT_EQ(r.data->ctab.v3000->sterel->used, 0);
+    EXPECT_EQ(r.data->ctab.v3000->sterac->used, 0);
+}
+
+/* The structure still reads: standard InChI does not use collections. */
+static void ExpectStructureStillParsed(const MolfileReadResult &r)
+{
+    EXPECT_EQ(r.err, 0);
+    EXPECT_EQ(r.data->ctab.n_atoms, 8);
+    EXPECT_EQ(r.data->ctab.n_bonds, 7);
+}
+} // namespace
+
+TEST(test_mol_fmt, test_malformed_collections_atom_in_two_collections_is_diagnosed_and_dropped)
+{
+    MolfileReadResult r;
+    ReadStereoCollectionMolblock(&r,
+                      "M  V30 MDLV30/STEABS ATOMS=(2 1 4)\n"
+                      "M  V30 MDLV30/STERAC1 ATOMS=(2 4 5)\n");
+
+    EXPECT_THAT(r.err_msg, testing::HasSubstr("in more than one stereo collection"));
+    ExpectNoCollectionsKept(r);
+    ExpectStructureStillParsed(r);
+}
+
+TEST(test_mol_fmt, test_malformed_collections_second_abs_collection_is_diagnosed_and_dropped)
+{
+    MolfileReadResult r;
+    ReadStereoCollectionMolblock(&r,
+                      "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+                      "M  V30 MDLV30/STEABS ATOMS=(2 4 5)\n");
+
+    EXPECT_THAT(r.err_msg, testing::HasSubstr("more than one STEABS collection"));
+    ExpectNoCollectionsKept(r);
+    ExpectStructureStillParsed(r);
+}
+
+TEST(test_mol_fmt, test_malformed_collections_atom_repeated_within_collection_is_diagnosed_and_dropped)
+{
+    MolfileReadResult r;
+    ReadStereoCollectionMolblock(&r,
+                      "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+                      "M  V30 MDLV30/STEREL1 ATOMS=(3 4 4 5)\n");
+
+    EXPECT_THAT(r.err_msg, testing::HasSubstr("listed twice in one stereo collection"));
+    ExpectNoCollectionsKept(r);
+    ExpectStructureStillParsed(r);
+}
+
+TEST(test_mol_fmt, test_malformed_collections_unresolvable_atom_index_is_diagnosed_and_dropped)
+{
+    MolfileReadResult r;
+    ReadStereoCollectionMolblock(&r,
+                      "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+                      "M  V30 MDLV30/STEREL1 ATOMS=(2 4 99)\n");
+
+    EXPECT_THAT(r.err_msg, testing::HasSubstr("unknown atom"));
+    ExpectNoCollectionsKept(r);
+    ExpectStructureStillParsed(r);
+}
+
+TEST(test_mol_fmt, test_malformed_collections_repeated_group_id_is_diagnosed_and_dropped)
+{
+    /* Two STEREL1 lines: one group split in two, or two groups sharing an id?
+       Unknowable from the file, and reading them as two changed /t. Reject. */
+    MolfileReadResult r;
+    ReadStereoCollectionMolblock(&r,
+                      "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+                      "M  V30 MDLV30/STEREL1 ATOMS=(1 4)\n"
+                      "M  V30 MDLV30/STEREL1 ATOMS=(1 5)\n");
+
+    EXPECT_THAT(r.err_msg, testing::HasSubstr("group number 1 used by more than one"));
+    ExpectNoCollectionsKept(r);
+    ExpectStructureStillParsed(r);
+}
+
+TEST(test_mol_fmt, test_malformed_collections_well_formed_collections_are_kept)
+{
+    /* Over-rejection guard: one ABS plus two disjoint OR groups is legal. */
+    MolfileReadResult r;
+    ReadStereoCollectionMolblock(&r,
+                      "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+                      "M  V30 MDLV30/STEREL1 ATOMS=(1 4)\n"
+                      "M  V30 MDLV30/STEREL2 ATOMS=(1 5)\n");
+
+    EXPECT_STREQ(r.err_msg, "");
+    EXPECT_EQ(r.data->ctab.v3000->n_collections, 3);
+    EXPECT_EQ(r.data->ctab.v3000->n_steabs, 1);
+    EXPECT_EQ(r.data->ctab.v3000->n_sterel, 2);
+    ExpectStructureStillParsed(r);
 }

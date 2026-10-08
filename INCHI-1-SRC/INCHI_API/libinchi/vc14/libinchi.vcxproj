@@ -231,6 +231,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\INCHI_BASE\src\bcf_s.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\eldata.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichican2.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichicano.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichicans.c" />
@@ -242,6 +243,7 @@
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichimap2.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichimap4.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichinorm.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\aromaticity.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichiparm.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichiprt1.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichiprt2.c" />
@@ -269,6 +271,8 @@
     <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt2.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt3.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\mol_fmt4.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\molecular_inorganics_data.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\permutation_util.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\readinch.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\runichi.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\runichi2.c" />
@@ -305,6 +309,7 @@
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichimain.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichimake.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichinorm.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\aromaticity.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichiring.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichirvrs.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichisize.h" />
@@ -323,6 +328,7 @@
     <ClInclude Include="..\..\..\INCHI_BASE\src\logging.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\mode.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\mol_fmt.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\permutation_util.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\readinch.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\sha2.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\strutil.h" />

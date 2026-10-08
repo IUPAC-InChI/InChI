@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -3715,6 +3680,7 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     inp_ATOM* inp_at,
     INP_ATOM_DATA* out_norm_data[2],
     int num_inp_at,
+    const unsigned char* keep_explicit_HDT,
     INCHI_MODE nUserMode,
     INCHI_MODE* pbTautFlags,
     INCHI_MODE* pbTautFlagsDone,
@@ -3755,7 +3721,8 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     int        bPointedEdgeStereo = ((TG_FLAG_POINTED_EDGE_STEREO & *pbTautFlags) ? PES_BIT_POINT_EDGE_STEREO : 0)
         | ((TG_FLAG_PHOSPHINE_STEREO & *pbTautFlags) ? PES_BIT_PHOSPHINE_STEREO : 0)
         | ((TG_FLAG_ARSINE_STEREO & *pbTautFlags) ? PES_BIT_ARSINE_STEREO : 0)
-        | ((TG_FLAG_FIX_SP3_BUG & *pbTautFlags) ? PES_BIT_FIX_SP3_BUG : 0);
+        | ((TG_FLAG_FIX_SP3_BUG & *pbTautFlags) ? PES_BIT_FIX_SP3_BUG : 0)
+        | ((TG_FLAG_ALLENE_ONE_WEDGE & *pbTautFlags) ? PES_BIT_ALLENE_ONE_WEDGE : 0);
     INCHI_MODE bTautFlags = (*pbTautFlags & (~(INCHI_MODE)TG_FLAG_ALL_TAUTOMERIC));
     INCHI_MODE bTautFlagsDone = (*pbTautFlagsDone /*& (~(INCHI_MODE)TG_FLAG_ALL_TAUTOMERIC) */);
 #if ( bRELEASE_VERSION == 0 )
@@ -3896,7 +3863,7 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     }
     else
     {
-        num_at_tg = num_atoms = remove_terminal_HDT(num_inp_at, out_at, bFixTermHChrg);
+        num_at_tg = num_atoms = remove_terminal_HDT(num_inp_at, out_at, bFixTermHChrg, keep_explicit_HDT);
         num_removed_H = num_inp_at - num_atoms;
         t_group_info->tni.nNumRemovedExplicitH = num_removed_H;
         add_DT_to_num_H(num_atoms, out_at);

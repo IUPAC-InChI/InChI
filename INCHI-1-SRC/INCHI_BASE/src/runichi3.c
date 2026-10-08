@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 
 /*
@@ -485,6 +450,145 @@ exit_function:
             - save reconnected structure in prep_inp_data+1 if requested
             - make Disconnected structure in prep_inp_data
 ****************************************************************************/
+/****************************************************************************
+ Free the STEABS/STEREL/STERAC lists of one V3000 block and zero their counts.
+****************************************************************************/
+static void DropStereoCollections(OAD_V3000 *v3k)
+{
+    int **lists[3];
+    int k, t;
+
+    if (!v3k)
+    {
+        return;
+    }
+
+    lists[0] = v3k->lists_steabs;
+    lists[1] = v3k->lists_sterel;
+    lists[2] = v3k->lists_sterac;
+    for (t = 0; t < 3; t++)
+    {
+        int n = (t == 0) ? v3k->n_steabs : (t == 1) ? v3k->n_sterel : v3k->n_sterac;
+        for (k = 0; lists[t] && k < n; k++)
+        {
+            inchi_free(lists[t][k]);
+        }
+        inchi_free(lists[t]);
+    }
+
+    v3k->lists_steabs = v3k->lists_sterel = v3k->lists_sterac = NULL;
+    v3k->n_steabs = v3k->n_sterel = v3k->n_sterac = 0;
+}
+
+/****************************************************************************
+ Does an OR/AND group have atoms in more than one InChI component?
+
+ Such a group couples the components (e.g. (R,R) and (S,S) of a salt pair),
+ which the per-component /s layer cannot express. Components are InChI's own,
+ after salt and metal disconnection, so a group over two ligands of a metal
+ is caught and a haptically bound ligand kept by -MolecularInorganics is not.
+ ABS couples nothing and may span components.
+
+ ponytail: tests every collection atom, stereocentre or not (stereocentres
+ are not known yet here); a non-centre in another component also rejects.
+
+ Returns 1 and names the group in msg if one spans components.
+****************************************************************************/
+static int StereoGroupSpansComponents(const ORIG_ATOM_DATA *oad, char *msg)
+{
+    int k, j, t, max_orig = 0, bad = 0;
+    int *component_of;
+
+    if (!oad->v3000 || !oad->at)
+    {
+        return 0;
+    }
+
+    /* Component of each original atom number */
+    for (k = 0; k < oad->num_inp_atoms; k++)
+    {
+        if (oad->at[k].orig_at_number > max_orig)
+        {
+            max_orig = oad->at[k].orig_at_number;
+        }
+    }
+    component_of = (int *)inchi_calloc((long long)max_orig + 1, sizeof(int));
+    if (!component_of)
+    {
+        return 0; /* out of memory: leave the data alone */
+    }
+    for (k = 0; k < oad->num_inp_atoms; k++)
+    {
+        component_of[oad->at[k].orig_at_number] = oad->at[k].component;
+    }
+
+    /* Every atom of an OR (t=0) or AND (t=1) group in one component */
+    for (t = 0; t < 2 && !bad; t++)
+    {
+        int **lists = (t == 0) ? oad->v3000->lists_sterel : oad->v3000->lists_sterac;
+        int n_lists = (t == 0) ? oad->v3000->n_sterel : oad->v3000->n_sterac;
+
+        for (k = 0; lists && k < n_lists && !bad; k++)
+        {
+            int first = 0;
+
+            for (j = 0; j < lists[k][1]; j++)
+            {
+                int a = lists[k][2 + j];
+                int c = (a >= 1 && a <= max_orig) ? component_of[a] : 0;
+
+                if (c == 0)
+                {
+                    continue;
+                }
+                if (first == 0)
+                {
+                    first = c;
+                }
+                else if (c != first)
+                {
+                    sprintf(msg, "V3000 collections: %s%d spans more than one component",
+                            t == 0 ? "STEREL" : "STERAC", lists[k][0]);
+                    bad = 1;
+                    break;
+                }
+            }
+        }
+    }
+
+    inchi_free(component_of);
+
+    return bad;
+}
+
+/****************************************************************************
+ Enhanced stereo: drop all stereo collections, with a warning, if an OR/AND
+ group spans InChI components. Output then equals standard InChI with 1B.
+****************************************************************************/
+static void CheckStereoGroupComponents(STRUCT_DATA *sd,
+                                       INPUT_PARMS *ip,
+                                       ORIG_ATOM_DATA *orig_inp_data,
+                                       ORIG_ATOM_DATA *prep_inp_data)
+{
+    char msg[128];
+
+    if (!ip->bEnhancedStereo || !StereoGroupSpansComponents(prep_inp_data, msg))
+    {
+        return;
+    }
+
+    WarningMessage(sd->pStrErrStruct, msg);
+    if (sd->nErrorType < _IS_WARNING)
+    {
+        sd->nErrorType = _IS_WARNING;
+    }
+
+    /* orig, disconnected and reconnected copies each own their lists */
+    DropStereoCollections(orig_inp_data->v3000);
+    DropStereoCollections(prep_inp_data->v3000);
+    DropStereoCollections((prep_inp_data + 1)->v3000);
+}
+
 int PreprocessOneStructure(struct tagINCHI_CLOCK* ic,
     STRUCT_DATA* sd,
     INPUT_PARMS* ip,
@@ -665,6 +769,7 @@ int PreprocessOneStructure(struct tagINCHI_CLOCK* ic,
               /* (@nnuk -> Nauman Ullah Khan) :: In case of Metals with MolecularInorganics parameter we need to skip this pre-processing of Metals */
     if ( ip->bMolecularInorganics )
     {
+        CheckStereoGroupComponents(sd, ip, orig_inp_data, prep_inp_data);
         return 0;             /* Skipping over current functionality */
     }
     else if ( prep_inp_data->bDisconnectCoord )
@@ -806,6 +911,9 @@ int PreprocessOneStructure(struct tagINCHI_CLOCK* ic,
             }
         }
     }
+
+    /* Components are final here, metals included */
+    CheckStereoGroupComponents(sd, ip, orig_inp_data, prep_inp_data);
 
 exit_function:
 
@@ -1561,6 +1669,10 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
         subtype = pd->units[0]->subtype;
         if ( subtype == POLYMER_SST_RAN || subtype == POLYMER_SST_ALT || subtype == POLYMER_SST_BLK )
         {
+            /** @nnuk:
+             * 9002 remains assigned to this validation; its former use for
+             *unsupported polymer H end groups was removed with GHI #252.
+            */
             TREAT_ERR(err, 9002, "Single polymer unit may not be RAN/ALT/BLO");
             goto exit_function;
         }
@@ -1571,7 +1683,7 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
     {
         /* Check if unit data makes sense */
         u = pd->units[i];
-        if ( u->nb != 0 && u->nb != 2 )
+        if ( u->nb != 0 && u->nb != 2)
         {
             TREAT_ERR(err, 9003, "Number of crossing bonds in polymer unit is not 0 or 2");
             goto exit_function;
@@ -1835,20 +1947,11 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
             {
                 /* Check that there are no H end groups */
                 a1 = u->blist[2 * k]; a2 = u->blist[2 * k + 1];
-                if ( !strcmp(orig_at_data->at[a1 - 1].elname, "H") ||
-                    !strcmp(orig_at_data->at[a1 - 1].elname, "D") ||
-                    !strcmp(orig_at_data->at[a1 - 1].elname, "T") )
-                {
-                    TREAT_ERR(err, 9030, "H as polymer end group is not supported");
-                    goto exit_function;
-                }
-                if ( !strcmp(orig_at_data->at[a2 - 1].elname, "H") ||
-                    !strcmp(orig_at_data->at[a2 - 1].elname, "D") ||
-                    !strcmp(orig_at_data->at[a2 - 1].elname, "T") )
-                {
-                    TREAT_ERR(err, 9031, "H as polymer end group is not supported");
-                    goto exit_function;
-                }
+
+                /**
+                *@nnuk: GHI#252 addressed and redundant logic removed
+                */
+
                 /* Ensure that caps of polymer unit lie outside it */
                 a1_is_not_in_alist = a1_is_star_atom = 0;
                 a2_is_not_in_alist = a2_is_star_atom = 0;

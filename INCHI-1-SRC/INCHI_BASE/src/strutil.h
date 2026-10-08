@@ -1,41 +1,6 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
  */
 
 #ifndef _STRUTIL_H_
@@ -113,46 +78,13 @@ extern "C"
     int getElTypeforMolecularInorganics(int nPeriodicNum);
 
     /**
-     * @nnuk
-     *
-     * @brief Determine whether a metal-ligand bond must always be preserved
-     *        during Molecular Inorganics preprocessing. The metal ligand
-     *        bond must always be kept when the neighbour is another metal
-     *        atom or the bond is Coordinative bond or the bond type is
-     *        greater than 1.
-     *
-     *        Some description on
-     *        how InChI sees the bond types:
-     *        Bond type 1 = Single Bond
-     *        Bond type 2 = Double Bond
-     *        Bond type 3 = Triple Bond
-     *        Bond type 4 = Aromatic Bond
-     *        Bond type 9 = Coordinative Bond
-     *
-     *
-     * @param at         Input atom array.
-     * @param metal_idx  Index of the metal atom.
-     * @param neigh_idx  Index of the neighboring atom.
-     * @param bond_pos   Position of the bond in the metal neighbor list.
-     *
-     * @return int
-     *  1 if the bond must be preserved.
-     *  0 if the bond may still be evaluated for disconnection.
-     */
-    int MolecularInorganicsKeepBond(inp_ATOM* at,
-                                    int metal_idx,
-                                    int neigh_idx,
-                                    int bond_pos);
-
-    /**
      * @brief Set the enhanced stereochemistry for t- and m-layers
      *
      * @param orig_inp_data
      * @param inchi
      * @param aux
-     * @return int
      */
-    int set_EnhancedStereo_t_m_layers(const ORIG_ATOM_DATA *orig_inp_data,
+    void set_EnhancedStereo_t_m_layers(const ORIG_ATOM_DATA *orig_inp_data,
                                       const INChI *inchi,
                                       const INChI_Aux *aux);
 
@@ -179,6 +111,30 @@ extern "C"
                                    int orig_atom_num);
 
     /**
+     * @brief Build a reverse (original -> canonical) atom number map
+     *
+     * @param aux Pointer to INChI_Aux data structure
+     * @param map_size Receives the number of entries in the returned map (0 on failure)
+     * @return Newly allocated map (free with inchi_free), or NULL if unavailable
+     */
+    int *make_orig_to_canon_map( const INChI_Aux *aux,
+                                 int *map_size );
+
+    /**
+     * @brief Get the canonical atom number via a reverse map, with scan fallback
+     *
+     * @param map Map from make_orig_to_canon_map(), or NULL to scan aux directly
+     * @param map_size Number of entries in map
+     * @param aux Pointer to INChI_Aux data structure
+     * @param orig_atom_num Original atom number
+     * @return Returns canonical atom number if found, -1 if not
+     */
+    int lookup_canonical_atom_number( const int *map,
+                                      int map_size,
+                                      const INChI_Aux *aux,
+                                      int orig_atom_num );
+
+    /**
      * @brief Get the parity index from canonical atom number
      *
      * @param canon_atom_num Canonical atom number
@@ -189,6 +145,38 @@ extern "C"
     int get_parity_idx_from_canonical_atom_number( int canon_atom_num,
                                                    const AT_NUMB *nNumber,
                                                    int nof_atoms);
+
+    /**
+     * @brief Canonical number of an original atom if it is an sp3 stereocentre
+     *        of this component
+     *
+     * @param inchi Pointer to INChI structure of the component
+     * @param map orig->canon map from make_orig_to_canon_map(), may be NULL
+     * @param map_size Size of map
+     * @param aux Pointer to INChI auxiliary data of the component
+     * @param orig_atom_num Original atom number
+     * @return Returns the canonical number, -1 if absent or not a stereocentre
+     */
+    int isotopic_stereo_view( const INChI *inchi,
+                              const INChI_Aux *aux,
+                              INChI *iso_inchi,
+                              INChI_Aux *iso_aux );
+
+    int has_rel_rac_centre( const OAD_V3000 *v3000,
+                            const INChI *inchi,
+                            const INChI_Aux *aux );
+
+    int absolute_centres( const OAD_V3000 *v3000,
+                          const INChI *inchi,
+                          const INChI_Aux *aux,
+                          int *abs_atoms,
+                          int *n_ungrouped );
+
+    int lookup_stereo_centre( const INChI *inchi,
+                              const int *map,
+                              int map_size,
+                              const INChI_Aux *aux,
+                              int orig_atom_num );
 
     /**
      * @brief Invert the parities for enhanced stereochemistry t- and m-layers
@@ -298,6 +286,7 @@ extern "C"
      * @param inp_at Pointer to atom array
      * @param inp_norm_data Pointer to normalized atom data
      * @param num_inp_at Number of atoms
+     * @param keep_explicit_HDT keep HDT atoms in case of polymers with leaving group
      * @param nUserMode User mode
      * @param pbTautFlags Tautomer flags
      * @param pbTautFlagsDone Tautomer flags completed
@@ -315,6 +304,7 @@ extern "C"
                      inp_ATOM *inp_at,
                      INP_ATOM_DATA *inp_norm_data[2],
                      int num_inp_at,
+                     const unsigned char* keep_explicit_HDT,
                      INCHI_MODE nUserMode,
                      INCHI_MODE *pbTautFlags,
                      INCHI_MODE *pbTautFlagsDone,

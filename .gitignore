@@ -32,4 +32,6 @@ CMake_build/
 INCHI-1-SRC/INCHI_API/libinchi/src/build/
 .codegraph/
 .planning/
+.superpowers/
+/docs/superpowers/
 CLAUDE.md

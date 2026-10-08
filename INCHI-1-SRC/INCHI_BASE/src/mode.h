@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 
 #ifndef _MODE_H_
@@ -636,8 +601,6 @@ extern "C" {
                                        /* 0=> allow other definitions (below) to be active */
 #define ONE_BAD_SB_NEIGHBOR         1  /* 1 => allow 1 "bad" bond type neighbor to a stereobond atom. 2004-06-02 */
 
-#define ENH_STEREO_DICT_SIZE        100 /* 100 => size of the dictionary for enhanced stereo */
-
 /* more stereo settings */
 #define BREAK_ONE_MORE_SC_TIE       1   /* break one more tie when comparing possible stereocenter neighbors */
 #define BREAK_ALSO_NEIGH_TIE        0   /* post 1.12Beta 2004-08-20: if fixed neighbor has equ neighbors, fix the one with smaller canon. rank */
@@ -977,6 +940,7 @@ extern "C" {
 #define TG_FLAG_ARSINE_STEREO            0x00010000   /* add arsine sp3 stereo */
 #define TG_FLAG_H_ALREADY_REMOVED        0x00020000   /* processing structure restored from InChI */
 #define TG_FLAG_FIX_SP3_BUG              0x00040000   /* fix sp3 stereo bug: overlapping 2D stereo bond & coordinate scaling */
+#define TG_FLAG_ALLENE_ONE_WEDGE         0x20000000   /* one wedge at one allene terminal defines the axis */
 
 #define TG_FLAG_KETO_ENOL_TAUT           0x00080000   /* turn on keto-enol tautomerism detection */
 #define TG_FLAG_1_5_TAUT                 0x00100000   /* turn on 1,5 tautomerism detection */

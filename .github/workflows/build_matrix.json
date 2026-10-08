@@ -3,18 +3,18 @@
         "os": "ubuntu-22.04",
         "slug": "linux",
         "name": "Ubuntu 22.04",
-        "pre_build": "sudo apt update && sudo apt install -y cmake && python3 -m pip install -e INCHI-1-TEST[invariance-tests]",
+        "pre_build": "sudo apt update && sudo apt install -y cmake && python3 -m pip install -e INCHI-1-TEST",
         "build_exe": "cmake --build CMake_build/cli_build",
         "build_lib": "cmake --build CMake_build/libinchi_build",
         "exe_path": "CMake_build/cli_build/bin/inchi-1",
-        "lib_path": "CMake_build/libinchi_build/bin/libinchi.so",
+        "lib_path": "CMake_build/libinchi_build/bin/libinchi.so.@INCHI_SOVERSION@",
         "main_path": "CMake_build/libinchi_build/bin/inchi_main"
     },
     {
         "os": "windows-2022",
         "slug": "windows",
         "name": "Windows Server 2022",
-        "pre_build": "python -m pip install -e INCHI-1-TEST[invariance-tests]",
+        "pre_build": "python -m pip install -e INCHI-1-TEST",
         "build_exe": "cmake --build CMake_build/cli_build --config Release",
         "build_lib": "cmake --build CMake_build/libinchi_build --config Release",
         "exe_path": "CMake_build/cli_build/bin/Release/inchi-1.exe",
@@ -26,11 +26,11 @@
         "os": "macos-14",
         "slug": "macos",
         "name": "MacOS 14",
-        "pre_build": "python -m pip install -e INCHI-1-TEST[invariance-tests]",
+        "pre_build": "python -m pip install -e INCHI-1-TEST",
         "build_exe": "cmake --build CMake_build/cli_build",
         "build_lib": "cmake --build CMake_build/libinchi_build",
         "exe_path": "CMake_build/cli_build/bin/inchi-1",
-        "lib_path": "CMake_build/libinchi_build/bin/libinchi.dylib",
+        "lib_path": "CMake_build/libinchi_build/bin/libinchi.@INCHI_SOVERSION@.dylib",
         "main_path": "CMake_build/libinchi_build/bin/inchi_main"
     }
 ]

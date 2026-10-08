@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 #include <math.h>
 #include <string.h>
@@ -3005,6 +2970,94 @@ int half_stereo_bond_action( int nParity,
 }
 
 
+/* Min in-plane part (of |z_dir| = 100) a lone allene wedge must tilt the plane by */
+#define ALLENE_MIN_TILT 20
+
+
+/****************************************************************************
+ Is this stereo bond end drawn in 2D (the atom and its neighbours at z = 0)?
+****************************************************************************/
+static int is_2d_end( inp_ATOM *at, int cur_at )
+{
+    int j;
+
+    if (at[cur_at].z != 0.0)
+    {
+        return 0;
+    }
+    for (j = 0; j < at[cur_at].valence; j++)
+    {
+        if (at[at[cur_at].neighbor[j]].z != 0.0)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+/****************************************************************************
+ Allene drawn with a wedge at one end only (IUPAC): the flat end lies in the
+ drawing plane, so the wedged end lies in the perpendicular plane through the
+ axis. Replace the wedged end's tilted plane normal by its in-plane part
+ perpendicular to the axis. The triple product keeps its sign but clears
+ MIN_DOT_PROD (a lone wedge alone only tilts the normal ~45 degrees).
+
+      F              Cl (wedge)
+        \           /
+         C == C == C        z_dir (-25,-44,86) -> (0,-100,0)
+        /           \   (left end flat)
+      Br             CH3
+****************************************************************************/
+static void allene_one_wedge_z( inp_ATOM *at,
+                                int at_1, S_CHAR *z_dir1,
+                                int at_2, S_CHAR *z_dir2 )
+{
+    int flat1 = !z_dir1[0] && !z_dir1[1];
+    int flat2 = !z_dir2[0] && !z_dir2[1];
+    S_CHAR *z_dir = flat1 ? z_dir2 : z_dir1;
+    double ax, ay, len, dot, px, py;
+
+    /* Both ends flat or both wedged: the drawing defines the geometry */
+    if (flat1 == flat2)
+    {
+        return;
+    }
+
+    /* Real 3D coordinates and 0D parities carry their own geometry */
+    if (at[at_1].bUsed0DParity || at[at_2].bUsed0DParity ||
+        !is_2d_end( at, at_1 ) || !is_2d_end( at, at_2 ))
+    {
+        return;
+    }
+
+    ax = at[at_2].x - at[at_1].x;
+    ay = at[at_2].y - at[at_1].y;
+    len = sqrt( ax * ax + ay * ay );
+    if (len < MIN_BOND_LEN)
+    {
+        return;
+    }
+    ax /= len;
+    ay /= len;
+
+    /* In-plane part of z_dir perpendicular to the axis; a wedge along the axis has none */
+    dot = z_dir[0] * ax + z_dir[1] * ay;
+    px = z_dir[0] - dot * ax;
+    py = z_dir[1] - dot * ay;
+    len = sqrt( px * px + py * py );
+    if (len < ALLENE_MIN_TILT)
+    {
+        return;
+    }
+
+    z_dir[0] = (S_CHAR) ( px >= 0.0 ? floor( 0.5 + 100.0 * px / len ) : -floor( 0.5 - 100.0 * px / len ) );
+    z_dir[1] = (S_CHAR) ( py >= 0.0 ? floor( 0.5 + 100.0 * py / len ) : -floor( 0.5 - 100.0 * py / len ) );
+    z_dir[2] = 0;
+}
+
+
 /****************************************************************************/
 int set_stereo_bonds_parity( sp_ATOM *out_at,
                              inp_ATOM *at,
@@ -3571,6 +3624,12 @@ int set_stereo_bonds_parity( sp_ATOM *out_at,
                            triple_prod_char( at, at_1, i_next_at_1, z_dir1, at_2, i_next_at_2, z_dir2 ) :
                            dot_prodchar3(z_dir1, z_dir2);
             */
+
+            if (( bPointedEdgeStereo & PES_BIT_ALLENE_ONE_WEDGE ) &&
+                 chain_len_bits && BOND_CHAIN_LEN( chain_len_bits ) % 2)
+            {
+                allene_one_wedge_z( at, at_1, z_dir1, at_2, z_dir2 );
+            }
 
             dot_prod_z = ( chain_len_bits && BOND_CHAIN_LEN( chain_len_bits ) % 2 )
                 ?  triple_prod_char( at, at_1, i_next_at_1, z_dir1, at_2, i_next_at_2, z_dir2 )

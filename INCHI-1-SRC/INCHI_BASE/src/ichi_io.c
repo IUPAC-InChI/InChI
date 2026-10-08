@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -649,8 +614,46 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios,
             /* output */
             /* djb-rwth: fixing oss-fuzz issue #67676 */
             my_va_start(argList, lpszFormat);
-            ret = vsprintf(ios->s.pStr + ios->s.nUsedLength, lpszFormat, argList); /* djb-rwth: not using vsnprintf due to variable length argument; fixing GHI #71 */
+            size_t remaining_length = (size_t)(ios->s.nAllocatedLength - ios->s.nUsedLength);
+            ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, remaining_length, lpszFormat, argList);
             va_end(argList);
+
+            /* djb-rwth: if vsnprintf fails, try again with + 1 */
+            if (ret < 0 || (size_t)ret >= remaining_length)
+            {
+                long long str_length_extension;
+                if (ret >= 0)
+                {
+                    str_length_extension = (long long)ret + 1;
+                }
+                else
+                {
+                    str_length_extension = (long long)max_len + 1;
+                }
+                long long new_str_length = (long long)ios->s.nAllocatedLength + str_length_extension;
+                char* new_str = (char*)inchi_calloc(new_str_length, sizeof(new_str[0]));
+                if (!new_str)
+                {
+                    return -1;
+                }
+                if (ios->s.pStr)
+                {
+                    if (ios->s.nUsedLength > 0)
+                    {
+                        memcpy(new_str, ios->s.pStr, sizeof(new_str[0]) * ios->s.nUsedLength);
+                    }
+                    inchi_free(ios->s.pStr);
+                }
+                ios->s.pStr = new_str;
+                ios->s.nAllocatedLength += (int)str_length_extension;
+
+                // try printing again
+                my_va_start(argList, lpszFormat);
+                size_t remainingLength2 = (size_t)(ios->s.nAllocatedLength - ios->s.nUsedLength);
+                ret = vsnprintf(ios->s.pStr + ios->s.nUsedLength, remainingLength2, lpszFormat, argList);
+                va_end(argList);
+            }
+
             if (ret >= 0)
             {
                 ios->s.nUsedLength += ret;
@@ -1696,7 +1699,7 @@ int _inchi_trace(const char* format, ...)
     return 1;
 }
 #else
-int _inchi_trace(char* format, ...)
+int _inchi_trace(const char* format, ...)
 {
     return 1;
 }
