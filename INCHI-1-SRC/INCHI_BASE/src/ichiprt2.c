@@ -2365,14 +2365,11 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         return 0;
     }
 
-    /* At most one distinct /s substring per component, so the component count is
-       an exact upper bound for the dictionary - no cap, no growing. */
-    char **dictionary = (char**)inchi_calloc(num_components, sizeof(char*));
-    int *counts = (int*)inchi_calloc(num_components, sizeof(int));
+    /* One /s substring per component, kept in component order: /s is positional
+       like every other layer. */
+    char **substrings = (char**)inchi_calloc(num_components, sizeof(char*));
 
-    if (dictionary == NULL || counts == NULL) {
-        inchi_free(dictionary);
-        inchi_free(counts);
+    if (substrings == NULL) {
         *bOverflow = 1;
         return 0;
     }
@@ -2448,43 +2445,43 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
             tot_len += MakeDelim( x_rac, &tmpbuf, bOverflow );
         }
 
-        int found = 0;
-        for (int i = 0; i < n_entries; i++) {
-            if (strcmp(tmpbuf.pStr, dictionary[i]) == 0) {
-                counts[i]++;
-                found = 1;
-                break;
-            }
-        }
-        if (!found) {
-            size_t len = strlen(tmpbuf.pStr);
-            dictionary[n_entries] = (char*)inchi_calloc(len + 1, sizeof(char));
-            if (dictionary[n_entries] == NULL) {
-                *bOverflow = 1;
-            } else {
-                memcpy(dictionary[n_entries], tmpbuf.pStr, len + 1);
-                counts[n_entries] = 1;
-                n_entries++;
-            }
+        size_t len = strlen(tmpbuf.pStr);
+        substrings[n_entries] = (char*)inchi_calloc(len + 1, sizeof(char));
+        if (substrings[n_entries] == NULL) {
+            *bOverflow = 1;
+        } else {
+            memcpy(substrings[n_entries], tmpbuf.pStr, len + 1);
+            n_entries++;
         }
         inchi_strbuf_close(&tmpbuf);
     }
 
-    // String deduplication based on dictionary and counts
-    for (int i = 0; i < n_entries; i++) {
+    // Fold only runs of consecutive equal substrings into count*substring, one ';'
+    // slot per run. Empty slots are never folded, as in /t:
+    // "3", "3", "", "" -> "2*3;;"
+    for (int i = 0; i < n_entries; ) {
+        int run = 1;
+        while (substrings[i][0] != '\0' && i + run < n_entries &&
+               strcmp(substrings[i], substrings[i + run]) == 0) {
+            run++;
+        }
+
         if (i > 0) {
             tot_len += MakeDelim( ";", strbuf, bOverflow );
         }
-        if (counts[i] > 1) {
-            tot_len = inchi_strbuf_printf(strbuf, "%d*%s", counts[i], dictionary[i]);
+        if (run > 1) {
+            tot_len = inchi_strbuf_printf(strbuf, "%d*%s", run, substrings[i]);
         } else {
-            tot_len = inchi_strbuf_printf(strbuf, "%s", dictionary[i]);
+            tot_len = inchi_strbuf_printf(strbuf, "%s", substrings[i]);
         }
-        inchi_free(dictionary[i]);
+
+        for (int k = i; k < i + run; k++) {
+            inchi_free(substrings[k]);
+        }
+        i += run;
     }
 
-    inchi_free(dictionary);
-    inchi_free(counts);
+    inchi_free(substrings);
 
     return tot_len;
 }

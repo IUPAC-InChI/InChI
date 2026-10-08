@@ -397,6 +397,106 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_m_layer_is_per_component)
     }
 }
 
+/* /s is positional like every other layer: one ';' slot per component, n* only
+   over consecutive equal components. Pentan-2-ol and butan-2-ol, each wedged,
+   plus stereo-free spectators. Merging non-adjacent equal substrings used to
+   emit /s2*;3 for the water case, i.e. the water read as racemic. Only /s is
+   asserted; /m is out of scope here. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_s_layer_is_positional)
+{
+    const char *molblock_head =
+        "two_alcohols_with_spectators\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n";
+    const char *alcohol_atoms =
+        "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
+        "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
+        "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
+        "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
+        "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
+        "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
+        "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
+        "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
+        "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
+        "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
+        "M  V30 11 C -2.874760 4.174794 0.000000 0\n";
+    const char *alcohol_bonds =
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=3\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 2 4\n"
+        "M  V30 4 1 4 5\n"
+        "M  V30 5 1 7 6 CFG=1\n"
+        "M  V30 6 1 7 8\n"
+        "M  V30 7 1 7 9\n"
+        "M  V30 8 1 9 10\n"
+        "M  V30 9 1 10 11\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    const char *molblock_tail =
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    /* component order: pentanol, butanol, then the spectators */
+    struct PositionalCase
+    {
+        const char *counts;
+        const char *spectator_atoms;
+        const char *collection;
+        const char *expected_s;
+    };
+    const PositionalCase cases[] = {
+        /* water, AND on butanol */
+        { "M  V30 COUNTS 12 9 0 0 0\n",
+          "M  V30 12 O 5.0 0.0 0.0 0\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          "/s;3;" },
+        /* Na+ OH-, AND on butanol */
+        { "M  V30 COUNTS 13 9 0 0 0\n",
+          "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+          "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          "/s;3;;" },
+        /* Na+ OH-, AND on pentanol */
+        { "M  V30 COUNTS 13 9 0 0 0\n",
+          "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+          "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 7)\n",
+          "/s3;;;" },
+        /* Na+ OH-, one AND group over both alcohols */
+        { "M  V30 COUNTS 13 9 0 0 0\n",
+          "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+          "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(2 2 7)\n",
+          "/s2*3;;" },
+    };
+
+    for (const PositionalCase &c : cases)
+    {
+        const std::string molblock = std::string(molblock_head) + c.counts +
+                                     "M  V30 BEGIN ATOM\n" + alcohol_atoms +
+                                     c.spectator_atoms + "M  V30 END ATOM\n" +
+                                     alcohol_bonds + c.collection + molblock_tail;
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+
+        // /s is the last layer here: no /i, no AuxInfo in szInChI
+        const std::string inchi = poutput->szInChI;
+        const size_t s_pos = inchi.find("/s");
+        ASSERT_NE(s_pos, std::string::npos) << inchi;
+        EXPECT_EQ(inchi.substr(s_pos), c.expected_s) << inchi;
+
+        FreeINCHI(poutput);
+    }
+}
+
 /* Across the Mobile-H/Fixed-H split: an OR-only component with a mobile-H
    group must drop /m from the main layer and keep the /f sublayer intact, staying
    byte-identical to -SRel -FixedH apart from the version prefix. */
