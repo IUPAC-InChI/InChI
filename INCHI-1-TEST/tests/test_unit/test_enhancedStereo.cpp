@@ -481,7 +481,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_s_layer_is_positional)
                                      c.spectator_atoms + "M  V30 END ATOM\n" +
                                      alcohol_bonds + c.collection + molblock_tail;
 
-        inchi_Output output;
+        inchi_Output output = {};
         inchi_Output *poutput = &output;
 
         char options_enh[] = "-EnhancedStereochemistry";
@@ -600,7 +600,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
 
         for (const char *opts : {"-EnhancedStereochemistry", "-EnhancedStereochemistry -AuxNone"})
         {
-            inchi_Output output;
+            inchi_Output output = {};
             inchi_Output *poutput = &output;
 
             std::string options = opts;
@@ -693,7 +693,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_
     {
         const std::string molblock = TwoAlcoholsMolblock("CFG=1", c.collections, c.spectators);
 
-        inchi_Output output;
+        inchi_Output output = {};
         inchi_Output *poutput = &output;
 
         char options_enh[] = "-EnhancedStereochemistry";
@@ -774,7 +774,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ign
     {
         const std::string molblock = TwoAlcoholsMolblock("CFG=1", c.collections, c.spectators);
 
-        inchi_Output output;
+        inchi_Output output = {};
         inchi_Output *poutput = &output;
 
         char options[] = "-EnhancedStereochemistry";
@@ -810,7 +810,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ign
         const std::string chlorobutanol =
             ChlorobutanolMolblock(c.cfg_c2, c.cfg_c3, c.collections);
 
-        inchi_Output output;
+        inchi_Output output = {};
         inchi_Output *poutput = &output;
 
         char options[] = "-EnhancedStereochemistry";
@@ -861,7 +861,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_absolute_set_flips_as_one
     auto make = [](const char *collections, const WedgeSet &w) {
         const std::string molblock = ChlorobutanolMolblock(w.cfg_c2, w.cfg_c3, collections);
 
-        inchi_Output output;
+        inchi_Output output = {};
         inchi_Output *poutput = &output;
 
         char options[] = "-EnhancedStereochemistry";
@@ -907,7 +907,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_ungrouped_wedge_keeps_m)
         const std::string molblock =
             TwoAlcoholsMolblock(c.pentanol_cfg, "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n");
 
-        inchi_Output output;
+        inchi_Output output = {};
         inchi_Output *poutput = &output;
 
         char options[] = "-EnhancedStereochemistry";
@@ -935,7 +935,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_components
     {
         const std::string molblock = TwoAlcoholsMolblock("CFG=1", collection);
 
-        inchi_Output output;
+        inchi_Output output = {};
         inchi_Output *poutput = &output;
 
         char options[] = "-EnhancedStereochemistry";
@@ -952,7 +952,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_components
     const std::string molblock =
         TwoAlcoholsMolblock("CFG=1", "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n");
 
-    inchi_Output output;
+    inchi_Output output = {};
     inchi_Output *poutput = &output;
 
     char options[] = "-EnhancedStereochemistry";
@@ -1701,6 +1701,203 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_4_mols)
     poutput->szMessage = nullptr;
 
     FreeINCHI(poutput);
+}
+
+/* Magnesium bis(butan-2-olate): one CTab component, but InChI disconnects the
+   metal into Mg and two butan-2-olates. Wedges on the two centres vary. */
+static std::string MagnesiumBisButanolateMolblock(const char *cfg_a, const char *cfg_b,
+                                                  const char *collections)
+{
+    return std::string("mg_bis_butanolate\n"
+                       "  test\n"
+                       "\n"
+                       "  0  0  0     0  0            999 V3000\n"
+                       "M  V30 BEGIN CTAB\n"
+                       "M  V30 COUNTS 11 10 0 0 0\n"
+                       "M  V30 BEGIN ATOM\n"
+                       "M  V30 1 C -1.8 -0.75 0 0\n"
+                       "M  V30 2 C -0.5 0.0 0 0\n"
+                       "M  V30 3 O -0.5 1.5 0 0\n"
+                       "M  V30 4 C 0.78 -0.75 0 0\n"
+                       "M  V30 5 C 2.08 0.0 0 0\n"
+                       "M  V30 6 Mg 0.8 2.5 0 0\n"
+                       "M  V30 7 O 2.1 1.5 0 0\n"
+                       "M  V30 8 C 3.4 2.2 0 0\n"
+                       "M  V30 9 C 3.4 3.7 0 0\n"
+                       "M  V30 10 C 4.7 1.5 0 0\n"
+                       "M  V30 11 C 6.0 2.2 0 0\n"
+                       "M  V30 END ATOM\n"
+                       "M  V30 BEGIN BOND\n"
+                       "M  V30 1 1 2 1 ") + cfg_a + "\n"
+           "M  V30 2 1 2 3\n"
+           "M  V30 3 1 2 4\n"
+           "M  V30 4 1 4 5\n"
+           "M  V30 5 1 3 6\n"
+           "M  V30 6 1 6 7\n"
+           "M  V30 7 1 7 8\n"
+           "M  V30 8 1 8 9 " + cfg_b + "\n"
+           "M  V30 9 1 8 10\n"
+           "M  V30 10 1 10 11\n"
+           "M  V30 END BOND\n"
+           "M  V30 BEGIN COLLECTION\n" +
+           collections +
+           "M  V30 END COLLECTION\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
+/* Components are InChI's, after metal disconnection, not the CTab's. An AND
+   group over the two ligands of a drawn Mg complex spans two components once
+   Mg is disconnected; it used to pass the reader and be split silently, so
+   the two drawings below (different substances) shared /t2*4-;/s3. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_disconnected_metal_is_not_used)
+{
+    for (const char *cfg_b : {"CFG=1", "CFG=3"})
+    {
+        const std::string molblock = MagnesiumBisButanolateMolblock(
+            "CFG=1", cfg_b, "M  V30 MDLV30/STERAC1 ATOMS=(2 2 8)\n");
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput),
+                  inchi_Ret_WARNING);
+        const std::string enh = poutput->szInChI;
+        ASSERT_NE(poutput->szMessage, nullptr);
+        EXPECT_NE(strstr(poutput->szMessage, "spans more than one component"), nullptr)
+            << "message was: " << poutput->szMessage;
+        FreeINCHI(poutput);
+
+        char options_std[] = "";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_std, poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        /* collections dropped: standard InChI apart from the prefix */
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/"))) << cfg_b;
+    }
+}
+
+/* With -MolecularInorganics a haptically bound alkene stays in the metal's
+   component, so an AND group over a centre on it and a centre on another
+   ligand does not span components. The reader's CTab-only check ignored
+   haptic bonds and rejected it. Without the option InChI splits the complex,
+   and the same group is rejected. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_haptic_group_follows_inchi_components)
+{
+    const char *molblock =
+        "pt_haptic\n"
+        "  test\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 15 14 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 Cl 7.48 -4.71 0 0\n"
+        "M  V30 2 Cl 8.86 -5.89 0 0\n"
+        "M  V30 3 O 7.53 -7.08 0 0\n"
+        "M  V30 4 Pt 7.52 -5.88 0 0 CHG=-1\n"
+        "M  V30 5 * 5.99 -5.91 0 0\n"
+        "M  V30 6 C 5.90 -5.32 0 0\n"
+        "M  V30 7 C 5.90 -6.50 0 0\n"
+        "M  V30 8 C 4.60 -7.25 0 0\n"
+        "M  V30 9 O 3.30 -6.50 0 0\n"
+        "M  V30 10 C 4.60 -8.75 0 0\n"
+        "M  V30 11 C 8.83 -7.83 0 0\n"
+        "M  V30 12 C 8.83 -9.33 0 0\n"
+        "M  V30 13 C 10.13 -7.08 0 0\n"
+        "M  V30 14 C 11.43 -7.83 0 0\n"
+        "M  V30 15 O 3.30 -9.50 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 4 1\n"
+        "M  V30 2 1 4 2\n"
+        "M  V30 3 1 4 3\n"
+        "M  V30 4 9 4 5 ENDPTS=(2 6 7) ATTACH=ALL\n"
+        "M  V30 5 2 7 6\n"
+        "M  V30 6 1 7 8\n"
+        "M  V30 7 1 8 9 CFG=1\n"
+        "M  V30 8 1 8 10\n"
+        "M  V30 9 1 3 11\n"
+        "M  V30 10 1 11 12 CFG=1\n"
+        "M  V30 11 1 11 13\n"
+        "M  V30 12 1 13 14\n"
+        "M  V30 13 1 10 15\n"
+        "M  V30 14 1 6 15\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n"
+        "M  V30 MDLV30/STERAC1 ATOMS=(2 8 11)\n"
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    inchi_Output output = {};
+    inchi_Output *poutput = &output;
+
+    /* one component: kept, a single AND group over both centres */
+    char options_mi[] = "-MolecularInorganics -EnhancedStereochemistry";
+    ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_mi, poutput), 2);
+    EXPECT_TRUE(poutput->szMessage == nullptr ||
+                strstr(poutput->szMessage, "spans") == nullptr)
+        << "message was: " << poutput->szMessage;
+    const std::string mi = poutput->szInChI;
+    EXPECT_EQ(mi.substr(mi.find("/t")), "/t5-,6-/s3") << mi;
+    FreeINCHI(poutput);
+
+    /* complex split into components: rejected, so standard InChI with 1B.
+       (szMessage carries the reader's star-atom warning here, not this one.) */
+    char options_enh[] = "-EnhancedStereochemistry";
+    ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 2);
+    const std::string enh = poutput->szInChI;
+    FreeINCHI(poutput);
+
+    char options_std[] = "";
+    ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_std, poutput), 2);
+    const std::string ref = poutput->szInChI;
+    FreeINCHI(poutput);
+
+    EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/")));
+}
+
+/* Centres of unknown configuration ('?' under -SUU) carry no class, so a
+   component holding only those does not block the uniform reduction: the
+   string equals -SUU's own /s1 or -SUU -SRac's /s3 apart from the prefix.
+   Used to emit /s;1 and /s;3. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_unknown_centres_do_not_block_reduction)
+{
+    struct UnknownCase
+    {
+        const char *collections;
+        const char *ref_options;
+    };
+    const UnknownCase cases[] = {
+        { "M  V30 MDLV30/STEABS ATOMS=(1 2)\n", "-SUU" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n", "-SUU -SRac" },
+    };
+
+    for (const UnknownCase &c : cases)
+    {
+        /* pentanol centre drawn without a wedge: unknown */
+        const std::string molblock = TwoAlcoholsMolblock("", c.collections);
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-SUU -EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+        const std::string enh = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        std::string options_ref = c.ref_options;
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), &options_ref[0], poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        EXPECT_NE(enh.find("/t5?;4-"), std::string::npos) << enh;
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")))
+            << "enhanced: " << enh << "\nreference: " << ref;
+    }
 }
 
 /* OR/AND groups stretch over both fragments: unsupported, so the collections

@@ -2463,10 +2463,10 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
 
         size_t len = strlen(tmpbuf.pStr);
 
-        // Uniform: each component is a bare digit, all the same, or has no sp3 stereo
-        int has_sp3 = pINChI && pINChI->Stereo && pINChI->Stereo->nNumberOfStereoCenters > 0;
+        // Uniform: each component is a bare digit, all the same, or has no
+        // defined centre outside the collections ('?' centres carry no class)
         if (len == 0) {
-            uniform = uniform && !has_sp3;
+            uniform = uniform && n_ungrouped == 0;
         } else if (len == 1 && (uniform_digit == '\0' || uniform_digit == tmpbuf.pStr[0])) {
             uniform_digit = tmpbuf.pStr[0];
         } else {

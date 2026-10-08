@@ -642,96 +642,6 @@ err_fin:
 }
 
 /****************************************************************************
- Union-find root of atom a, halving the path on the way.
-****************************************************************************/
-static int ComponentRoot(int *parent, int a)
-{
-    while (parent[a] != a)
-    {
-        parent[a] = parent[parent[a]];
-        a = parent[a];
-    }
-
-    return a;
-}
-
-/****************************************************************************
- Check that no OR/AND group has centres in more than one connected component.
- Such a group couples the components (e.g. (R,R) and (S,S) of a salt pair),
- which the per-component /s layer cannot express: it would come out the same
- as independent groups. ABS couples nothing, so it may span components.
-
- Components are taken from the CTab bonds; haptic bonds are ignored.
- ponytail: misses components InChI creates later (metal disconnection); move
- the check after component split if that case shows up.
-
- colls holds the STEABS, STEREL and STERAC lists, atoms already validated.
- Returns 1 and names the violation in pStrErr if a group spans components.
-****************************************************************************/
-static int StereoGroupSpansComponents(MOL_FMT_CTAB *ctab, NUM_LISTS **colls,
-                                      int n_atoms, char *pStrErr)
-{
-    int i, j, k, bad = 0;
-    int *parent;
-    char msg[128];
-
-    parent = (int *)inchi_calloc((long long)n_atoms + 1, sizeof(int));
-    if (!parent)
-    {
-        return 0; /* out of memory: leave the data alone, not our error to report */
-    }
-
-    /* Connected components: union over the bonds */
-    for (i = 0; i <= n_atoms; i++)
-    {
-        parent[i] = i;
-    }
-    for (i = 0; i < ctab->v3000->n_non_haptic_bonds; i++)
-    {
-        int a1 = ctab->bonds[i].atnum1;
-        int a2 = ctab->bonds[i].atnum2;
-
-        if (a1 < 1 || a1 > n_atoms || a2 < 1 || a2 > n_atoms)
-        {
-            continue;
-        }
-        parent[ComponentRoot(parent, a1)] = ComponentRoot(parent, a2);
-    }
-
-    /* Every centre of an OR (1) or AND (2) group in its first atom's component */
-    for (i = 1; i <= 2 && !bad; i++)
-    {
-        for (j = 0; j < colls[i]->used && !bad; j++)
-        {
-            int nnum = colls[i]->lists[j][1];
-            int root;
-
-            if (nnum < 2)
-            {
-                continue;
-            }
-            root = ComponentRoot(parent, colls[i]->lists[j][2]);
-
-            for (k = 3; k < nnum + 2; k++)
-            {
-                if (ComponentRoot(parent, colls[i]->lists[j][k]) != root)
-                {
-                    sprintf(msg, "V3000 collections: %s%d spans more than one component",
-                            i == 1 ? "STEREL" : "STERAC", colls[i]->lists[j][0]);
-                    AddErrorMessage(pStrErr, msg);
-                    bad = 1;
-                    break;
-                }
-            }
-        }
-    }
-
-    inchi_free(parent);
-
-    return bad;
-}
-
-/****************************************************************************
  Check the stereo collections against the enhanced stereochemical representation
  rules: a stereogenic centre belongs to exactly one stereochemical group, and a
  structure carries at most one ABS collection.
@@ -824,11 +734,6 @@ static int StereoCollectionsAreMalformed(MOL_FMT_CTAB *ctab, char *pStrErr)
     }
 
     inchi_free(seen);
-
-    if (!bad)
-    {
-        bad = StereoGroupSpansComponents(ctab, colls, n_atoms, pStrErr);
-    }
 
     return bad;
 }
