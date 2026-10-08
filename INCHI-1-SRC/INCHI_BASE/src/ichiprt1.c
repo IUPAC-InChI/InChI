@@ -1621,7 +1621,8 @@ int OutputINChI1( CANON_GLOBALS *pCG,
 
                 if (ip->bEnhancedStereo)
                 {
-                    set_EnhancedStereo_t_m_layers(orig_inp_data, pINChI, pINChI_Aux);
+                    /* not pINChI_Aux: with -AuxNone it is never assigned in this loop */
+                    set_EnhancedStereo_t_m_layers(orig_inp_data, pINChI, is->pINChI_Aux[jj]);
                 }
             }
         }

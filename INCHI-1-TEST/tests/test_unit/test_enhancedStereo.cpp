@@ -497,6 +497,120 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_s_layer_is_positional)
     }
 }
 
+/* The identifier must not depend on whether AuxInfo is requested. With -AuxNone
+   the /t-/m normalisation used to receive another component's aux data, so a
+   stereo-free spectator (salt, water) changed the alcohols' /m:
+   /m10.. for both alcohols racemic plus Na+ OH-. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
+{
+    const char *alcohols_with_naoh_head =
+        "two_alcohols\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 13 9 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
+        "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
+        "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
+        "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
+        "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
+        "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
+        "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
+        "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
+        "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
+        "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
+        "M  V30 11 C -2.874760 4.174794 0.000000 0\n"
+        "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+        "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=3\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 2 4\n"
+        "M  V30 4 1 4 5\n"
+        "M  V30 5 1 7 6 CFG=1\n"
+        "M  V30 6 1 7 8\n"
+        "M  V30 7 1 7 9\n"
+        "M  V30 8 1 9 10\n"
+        "M  V30 9 1 10 11\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    /* pentanol drawn first, butanol second */
+    const char *pentanol_first_head =
+        "two_alcohols\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 11 9 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 2.268912 0.956315 0.000000 0\n"
+        "M  V30 2 C 1.089319 0.029730 0.000000 0\n"
+        "M  V30 3 O 1.301969 -1.455121 0.000000 0\n"
+        "M  V30 4 C -0.302924 0.587994 0.000000 0\n"
+        "M  V30 5 C -1.482517 -0.338591 0.000000 0\n"
+        "M  V30 6 C -2.874760 0.219673 0.000000 0\n"
+        "M  V30 7 C -1.818653 1.956315 0.000000 0\n"
+        "M  V30 8 C -0.519615 2.706315 0.000000 0\n"
+        "M  V30 9 O -0.519615 4.206315 0.000000 0\n"
+        "M  V30 10 C 0.779423 1.956315 0.000000 0\n"
+        "M  V30 11 C 2.078461 2.706315 0.000000 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=1\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 2 4\n"
+        "M  V30 4 1 4 5\n"
+        "M  V30 5 1 5 6\n"
+        "M  V30 6 1 8 7 CFG=3\n"
+        "M  V30 7 1 8 9\n"
+        "M  V30 8 1 8 10\n"
+        "M  V30 9 1 10 11\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    const char *molblock_tail =
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    struct AuxNoneCase
+    {
+        const char *head;
+        const char *collection;
+        const char *expected;
+    };
+    const AuxNoneCase cases[] = {
+        /* both alcohols AND, Na+ OH-: no ABS anywhere, so no /m */
+        { alcohols_with_naoh_head,
+          "M  V30 MDLV30/STERAC1 ATOMS=(2 2 7)\n",
+          "InChI=1B/C5H12O.C4H10O.Na.H2O/c1-3-4-5(2)6;1-3-4(2)5;;/h5-6H,3-4H2,1-2H3;"
+          "4-5H,3H2,1-2H3;;1H2/q;;+1;/p-1/t5-;4-;;/s2*3;;" },
+        /* pentanol AND, butanol ungrouped: '.' on the racemic pentanol */
+        { pentanol_first_head,
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          "InChI=1B/C5H12O.C4H10O/c1-3-4-5(2)6;1-3-4(2)5/h5-6H,3-4H2,1-2H3;"
+          "4-5H,3H2,1-2H3/t5-;4-/m.0/s3;" },
+    };
+
+    for (const AuxNoneCase &c : cases)
+    {
+        const std::string molblock = std::string(c.head) + c.collection + molblock_tail;
+
+        for (const char *opts : {"-EnhancedStereochemistry", "-EnhancedStereochemistry -AuxNone"})
+        {
+            inchi_Output output;
+            inchi_Output *poutput = &output;
+
+            std::string options = opts;
+            ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), &options[0], poutput), 2);
+            EXPECT_STREQ(poutput->szInChI, c.expected) << "options: " << opts;
+            FreeINCHI(poutput);
+        }
+    }
+}
+
 /* Across the Mobile-H/Fixed-H split: an OR-only component with a mobile-H
    group must drop /m from the main layer and keep the /f sublayer intact, staying
    byte-identical to -SRel -FixedH apart from the version prefix. */
