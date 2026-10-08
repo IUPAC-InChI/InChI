@@ -1248,6 +1248,8 @@ TEST(test_atropisomers, predicate_acyclic_3plus3_single_bond_is_candidate) {
     EXPECT_EQ(at[0].bAtropisomeric, 1);
     EXPECT_EQ(at[1].bAtropisomeric, 1);
     EXPECT_EQ(at[2].bAtropisomeric, 0); // terminal, valence 1
+
+    inchi_free(orig.atrop_axes);
 }
 
 TEST(test_atropisomers, predicate_single_bond_in_small_ring_is_not_candidate) {
@@ -1283,6 +1285,8 @@ TEST(test_atropisomers, predicate_is_order_independent) {
     EXPECT_EQ(ret, 1);
     EXPECT_EQ(at[4].bAtropisomeric, 1);
     EXPECT_EQ(at[5].bAtropisomeric, 1);
+
+    inchi_free(orig.atrop_axes);
 }
 
 TEST(test_atropisomers, parity_flat_no_wedge_is_undefined) {
