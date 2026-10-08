@@ -49,6 +49,7 @@ extern "C" {
                           int at_2, int i_next_at_2, S_CHAR *z_dir2 );
     int half_stereo_bond_parity( inp_ATOM *at, int cur_at, inp_ATOM *at_removed_H, int num_removed_H,
                                  S_CHAR *z_dir, int bPointedEdgeStereo, int vABParityUnknown );
+    int find_stereo_bond_slot( const AT_NUMB *sb_neighbor, int j );
 
 #define PES_BIT_POINT_EDGE_STEREO    1
 #define PES_BIT_PHOSPHINE_STEREO     2

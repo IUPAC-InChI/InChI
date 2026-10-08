@@ -2504,6 +2504,28 @@ exit_function:
 }
 
 
+/****************************************************************************
+ Slot k of the stereo bond to atom j: sb_neighbor[k] == j+1, where
+ sb_neighbor is at[i].stereo_bond_neighbor or stereo_bond_neighbor2.
+ Returns 0 if absent; an atropisomer axis may share its end with a C=C
+ or another axis, so slot [0] is not always the bond looked for.
+****************************************************************************/
+int find_stereo_bond_slot( const AT_NUMB *sb_neighbor, int j )
+{
+    int k;
+
+    for (k = 0; k < MAX_NUM_STEREO_BONDS && sb_neighbor[k]; k++)
+    {
+        if ((int) sb_neighbor[k] == j + 1)
+        {
+            return k;
+        }
+    }
+
+    return 0;
+}
+
+
 /****************************************************************************/
 int save_a_stereo_bond( int z_prod,
                         int result_action,
