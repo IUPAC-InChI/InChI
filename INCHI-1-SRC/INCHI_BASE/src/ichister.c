@@ -3076,6 +3076,27 @@ static void allene_one_wedge_z( inp_ATOM *at,
  Only the ends flagged by find_atropisomeric_atoms_and_bonds() qualify;
  the predicate is re-checked here because a flag marks an atom, not a bond.
 ****************************************************************************/
+#define ATROP_MIN_HINDERED        3  /* ortho positions with a non-H substituent, acyclic axis */
+#define ATROP_MIN_HINDERED_CYCLIC 2  /* ... when the axis lies in a (large) ring */
+
+/* Ortho positions X of axis end at_1 (its neighbours except at_2) that carry
+   a non-H substituent, i.e. have a third heavy neighbour besides at_1. */
+static int count_hindered_ortho( inp_ATOM *at, int at_1, int at_2 )
+{
+    int k, x, num = 0;
+
+    for (k = 0; k < at[at_1].valence; k++)
+    {
+        x = (int) at[at_1].neighbor[k];
+        if (x != at_2 && at[x].valence >= 3)
+        {
+            num++;
+        }
+    }
+
+    return num;
+}
+
 static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
                                AT_RANK *nAtomLevel, S_CHAR *cSource )
 {
@@ -3091,6 +3112,15 @@ static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
          at[at_1].el_number != EL_NUMBER_C || at[at_2].el_number != EL_NUMBER_C ||
          at[at_1].valence != 3 || at[at_2].valence != 3 ||
          at[at_1].num_H || at[at_2].num_H)
+    {
+        return 0;
+    }
+
+    /* [ATROP] stability heuristic: the four ortho positions X must carry a
+       non-H substituent at >= 3 of them (>= 2 when the axis sits in a ring).
+       An unsubstituted X has only its ring neighbour besides the axis end. */
+    if (count_hindered_ortho( at, at_1, at_2 ) + count_hindered_ortho( at, at_2, at_1 ) <
+         ( at[at_1].nRingSystem == at[at_2].nRingSystem ? ATROP_MIN_HINDERED_CYCLIC : ATROP_MIN_HINDERED ))
     {
         return 0;
     }
