@@ -208,7 +208,8 @@ const char *EquString( int EquVal );
                           INCHI_IOS_STRING *buf,
                           int nCtMode,
                           int *bOverflow );
-    int MakeEnhStereoString( INChI_Aux        *pAux,
+    int MakeEnhStereoString( const INChI      *pINChI,
+                             INChI_Aux        *pAux,
                              INCHI_IOS_STRING *strbuf,
                              const char*      conf_stereo_string,
                              int              **enh_stereo,

@@ -2201,6 +2201,7 @@ int compare_third_value(const void *a, const void *b) {
 /**
  * @brief Creates the enhanced stereochemistry string for the s - layer.
  *
+ * @param pINChI Pointer to the component's INChI; only its stereocentres are listed.
  * @param pAux Pointer to the INCHI_AUX structure.
  * @param conf_stereo_string Pointer to the configuration stereochemistry string (abs, rel, rac).
  * @param enh_stereo Pointer to list of enhanced stereochemistry groups.
@@ -2210,7 +2211,8 @@ int compare_third_value(const void *a, const void *b) {
  * @param bOverflow Pointer to overflow flag.
  * @return Returns the length of the created string.
  */
-int MakeEnhStereoString( INChI_Aux        *pAux,
+int MakeEnhStereoString( const INChI      *pINChI,
+                         INChI_Aux        *pAux,
                          INCHI_IOS_STRING *strbuf,
                          const char*      conf_stereo_string,
                          int              **enh_stereo,
@@ -2261,7 +2263,7 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         for (int j = 0; j < nof_atoms; j++)  {
 
             int orig_atom_num = atom_numbers[j];
-            int canon_atom_num = lookup_canonical_atom_number(orig_to_canon, map_size, pAux, orig_atom_num);
+            int canon_atom_num = lookup_stereo_centre(pINChI, orig_to_canon, map_size, pAux, orig_atom_num);
             if (canon_atom_num != -1) {
                 count_found_atoms++;
             } else {
@@ -2393,7 +2395,8 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
 
         // s1
         int num_groups_abs = 0;
-        int len_abs = MakeEnhStereoString( pAux,
+        int len_abs = MakeEnhStereoString( pINChI,
+                                           pAux,
                                            &tmpbuf,
                                            x_abs,
                                            orig_inp_data->v3000->lists_steabs,
@@ -2404,7 +2407,8 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
 
         // s2
         int num_groups_rel = 0;
-        int len_rel = MakeEnhStereoString( pAux,
+        int len_rel = MakeEnhStereoString( pINChI,
+                                           pAux,
                                            &tmpbuf,
                                            x_rel,
                                            orig_inp_data->v3000->lists_sterel,
@@ -2415,7 +2419,8 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
 
         // s3
         int num_groups_rac = 0;
-        int len_rac = MakeEnhStereoString( pAux,
+        int len_rac = MakeEnhStereoString( pINChI,
+                                           pAux,
                                            &tmpbuf,
                                            x_rac,
                                            orig_inp_data->v3000->lists_sterac,

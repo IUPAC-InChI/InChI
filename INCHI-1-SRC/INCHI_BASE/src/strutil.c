@@ -5144,6 +5144,37 @@ int get_parity_idx_from_canonical_atom_number( int canon_atom_num,
 }
 
 /**
+ * @brief Canonical number of an original atom if it is an sp3 stereocentre
+ *        of this component, else -1
+ *
+ * Collections may name atoms that are not stereocentres (a CH3, a spectator);
+ * those must not reach /s or the /m membership test.
+ */
+int lookup_stereo_centre( const INChI *inchi,
+                          const int *map,
+                          int map_size,
+                          const INChI_Aux *aux,
+                          int orig_atom_num )
+{
+    if (inchi == NULL || inchi->Stereo == NULL) {
+        return -1;
+    }
+
+    int canon_atom_num = lookup_canonical_atom_number( map, map_size, aux, orig_atom_num );
+    if (canon_atom_num == -1) {
+        return -1;
+    }
+
+    if (get_parity_idx_from_canonical_atom_number( canon_atom_num,
+                                                   inchi->Stereo->nNumber,
+                                                   inchi->Stereo->nNumberOfStereoCenters ) == -1) {
+        return -1;
+    }
+
+    return canon_atom_num;
+}
+
+/**
  * @brief Invert the parities for enhanced stereochemistry t- and m-layers
  *
  * @param inchi Pointer to INChI structure
@@ -5252,7 +5283,8 @@ int invert_parities(const INChI *inchi,
  * @param nof_lists Number of lists
  * @return Returns 1 if at least one listed atom belongs to this component, else 0
  */
-static int component_has_collection_atom( const INChI_Aux *aux,
+static int component_has_collection_atom( const INChI *inchi,
+                                          const INChI_Aux *aux,
                                           int            **list_atoms,
                                           int              nof_lists )
 {
@@ -5270,8 +5302,8 @@ static int component_has_collection_atom( const INChI_Aux *aux,
         int nof_atoms = list_atoms[i][1];
 
         for (int j = 0; j < nof_atoms; j++) {
-            if (lookup_canonical_atom_number( orig_to_canon, map_size, aux,
-                                              list_atoms[i][2 + j] ) != -1) {
+            if (lookup_stereo_centre( inchi, orig_to_canon, map_size, aux,
+                                      list_atoms[i][2 + j] ) != -1) {
                 found = 1;
                 break;
             }
@@ -5338,11 +5370,11 @@ void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
        Tested per component, not from the structure-wide collection counts: in a
        multi-component structure an ABS collection on one component must not keep
        /m alive on an OR/AND-only sibling. */
-    if (!component_has_collection_atom( aux, orig_inp_data->v3000->lists_steabs,
+    if (!component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_steabs,
                                         orig_inp_data->v3000->n_steabs ) &&
-        (component_has_collection_atom( aux, orig_inp_data->v3000->lists_sterel,
+        (component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_sterel,
                                         orig_inp_data->v3000->n_sterel ) ||
-         component_has_collection_atom( aux, orig_inp_data->v3000->lists_sterac,
+         component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_sterac,
                                         orig_inp_data->v3000->n_sterac ))) {
         inchi->Stereo->nCompInv2Abs = 0;
     }

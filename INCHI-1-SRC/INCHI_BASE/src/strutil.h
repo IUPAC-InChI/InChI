@@ -170,6 +170,23 @@ extern "C"
                                                    int nof_atoms);
 
     /**
+     * @brief Canonical number of an original atom if it is an sp3 stereocentre
+     *        of this component
+     *
+     * @param inchi Pointer to INChI structure of the component
+     * @param map orig->canon map from make_orig_to_canon_map(), may be NULL
+     * @param map_size Size of map
+     * @param aux Pointer to INChI auxiliary data of the component
+     * @param orig_atom_num Original atom number
+     * @return Returns the canonical number, -1 if absent or not a stereocentre
+     */
+    int lookup_stereo_centre( const INChI *inchi,
+                              const int *map,
+                              int map_size,
+                              const INChI_Aux *aux,
+                              int orig_atom_num );
+
+    /**
      * @brief Invert the parities for enhanced stereochemistry t- and m-layers
      *
      * @param inchi Pointer to INChI structure

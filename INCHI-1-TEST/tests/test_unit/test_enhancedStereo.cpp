@@ -711,6 +711,85 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_
     }
 }
 
+/* Only stereocentres take part in /s and in the /m membership test. A
+   collection atom that is not a stereocentre (CH3, CH2, a spectator) used to
+   reach /s as an orphan group, e.g. 3(1,3) for 3(3), a bare 1 for a component
+   whose only centre is ungrouped, or a 1 on OH-; and an ABS label on a CH2 kept
+   /m alive on an AND-only component (/m10 for /m1.). */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ignored)
+{
+    struct OrphanCase
+    {
+        const char *collections;
+        Spectators spectators;
+        const char *expected_t_m_s;
+    };
+    const OrphanCase cases[] = {
+        /* ABS on a pentanol CH2; the pentanol centre itself is ungrouped */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STEABS ATOMS=(1 9)\n",
+          Spectators::NONE, "/t5-;4-/m1./s;3" },
+        /* ABS on a CH2 of the AND-only butanol */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STEABS ATOMS=(1 4)\n",
+          Spectators::NONE, "/t5-;4-/m1./s;3" },
+        /* ABS on OH- */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STEABS ATOMS=(1 13)\n",
+          Spectators::NAOH, "/t5-;4-;;/m1.../s;3;;" },
+    };
+
+    for (const OrphanCase &c : cases)
+    {
+        const std::string molblock = TwoAlcoholsMolblock("CFG=1", c.collections, c.spectators);
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 2);
+
+        const std::string inchi = poutput->szInChI;
+        EXPECT_EQ(inchi.substr(inchi.find("/t")), c.expected_t_m_s) << c.collections;
+        FreeINCHI(poutput);
+    }
+
+    /* 3-chlorobutan-2-ol: ABS on C3, AND on C2 plus the CH3 next to it */
+    const char *chlorobutanol =
+        "3-chlorobutan-2-ol\n"
+        "  test\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 6 5 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 0.0 0.0 0 0\n"
+        "M  V30 2 C 0.866 0.5 0 0\n"
+        "M  V30 3 C 1.732 0.0 0 0\n"
+        "M  V30 4 C 2.598 0.5 0 0\n"
+        "M  V30 5 O 0.866 1.5 0 0\n"
+        "M  V30 6 Cl 1.732 -1.0 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 3 4\n"
+        "M  V30 4 1 2 5 CFG=1\n"
+        "M  V30 5 1 3 6 CFG=1\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n"
+        "M  V30 MDLV30/STEABS ATOMS=(1 2)\n"
+        "M  V30 MDLV30/STERAC1 ATOMS=(2 3 4)\n"
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    char options[] = "-EnhancedStereochemistry";
+    ASSERT_EQ(MakeINCHIFromMolfileText(chlorobutanol, options, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, "InChI=1B/C4H9ClO/c1-3(5)4(2)6/h3-4,6H,1-2H3/t3-,4-/m1/s1(4)3(3)");
+    FreeINCHI(poutput);
+}
+
 /* A wedged centre in no collection keeps its /m digit: its configuration is
    drawn, so the two enantiomers of the ungrouped component must differ. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_ungrouped_wedge_keeps_m)
@@ -1361,7 +1440,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_3_mols)
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7.C8H18/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6(2)8(5)7(3)4/h2*3-10H,1-2H3;6-8H,1-5H3/t2*3-,4-,5+,6-,7-,8-,9+,10-;/m00./s2*1(3,5)2(4)(6,8)3(7,9)(10);1(6)3(7,8)";
+    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7.C8H18/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6(2)8(5)7(3)4/h2*3-10H,1-2H3;6-8H,1-5H3/t2*3-,4-,5+,6-,7-,8-,9+,10-;/m00./s2*1(3,5)2(4)(6,8)3(7,9)(10);";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -1514,7 +1593,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_4_mols)
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C12H26.2C10H14BrCl7.C9H20/c1-8(2)11(7)12(9(3)4)10(5)6;2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6-8(4)9(5)7(2)3/h8-12H,1-7H3;2*3-10H,1-2H3;7-9H,6H2,1-5H3/t11-;2*3-,4-,5+,6-,7-,8-,9+,10-;8-,9+/m1001/s1;2*1(3,5)2(4)(6,8)3(7,9)(10);1(7)3(8,9)";
+    const char expected_inchi[] = "InChI=1B/C12H26.2C10H14BrCl7.C9H20/c1-8(2)11(7)12(9(3)4)10(5)6;2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6-8(4)9(5)7(2)3/h8-12H,1-7H3;2*3-10H,1-2H3;7-9H,6H2,1-5H3/t11-;2*3-,4-,5+,6-,7-,8-,9+,10-;8-,9+/m100./s1;2*1(3,5)2(4)(6,8)3(7,9)(10);3";
     // First component contributes ABS atoms only, so its /s reduces to a bare
     // "1"; the other components keep their groups.
 

@@ -10,6 +10,28 @@ extern "C"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichi_io.h"
 }
 
+/* Only stereocentres reach /s, so fixtures must declare them. Makes canonical
+   atoms 1..n stereocentres of `inchi` for the lifetime of this object. */
+struct StereoCentres
+{
+    INChI_Stereo stereo = {0};
+    std::vector<AT_NUMB> numbers;
+
+    StereoCentres(INChI *inchi, int n) : numbers(n)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            numbers[i] = (AT_NUMB)(i + 1);
+        }
+        stereo.nNumber = numbers.data();
+        stereo.nNumberOfStereoCenters = n;
+        inchi->Stereo = &stereo;
+    }
+};
+
+/* Enough for every canonical number the fixtures below use */
+static const int ALL_FIXTURE_ATOMS = 300;
+
 TEST(test_ichiprt2, MakeStereoString_outputs_expected_sp3_string)
 {
     AT_NUMB at1[8] = {3,4,5,6,7,8,9,10};
@@ -251,7 +273,10 @@ TEST(test_ichiprt2, MakeEnhStereoString_basic)
     int bOverflow = 0;
     int nCtMode = 0;
 
-    int len = MakeEnhStereoString(&aux, &strbuf, "1", enh_stereo, 1, nCtMode, &bOverflow, NULL);
+    INChI inchi = {0};
+    StereoCentres centres(&inchi, 3);
+
+    int len = MakeEnhStereoString(&inchi, &aux, &strbuf, "1", enh_stereo, 1, nCtMode, &bOverflow, NULL);
 
     EXPECT_EQ(bOverflow, 0);
     EXPECT_EQ(std::string(strbuf.pStr), "1(1,2,3)");
@@ -284,7 +309,10 @@ TEST(test_ichiprt2, MakeEnhStereoString_counts_groups_used)
     int nCtMode = 0;
     int num_groups_used = -1;
 
-    int len = MakeEnhStereoString(&aux, &strbuf, "2", enh_stereo, 2, nCtMode, &bOverflow, &num_groups_used);
+    INChI inchi = {0};
+    StereoCentres centres(&inchi, 2);
+
+    int len = MakeEnhStereoString(&inchi, &aux, &strbuf, "2", enh_stereo, 2, nCtMode, &bOverflow, &num_groups_used);
 
     EXPECT_EQ(bOverflow, 0);
     EXPECT_EQ(num_groups_used, 1);
@@ -310,7 +338,10 @@ TEST(test_ichiprt2, MakeEnhStereoString_multiple_groups)
     int bOverflow = 0;
     int nCtMode = 0;
 
-    int len = MakeEnhStereoString(&aux, &strbuf, "2", enh_stereo, 2, nCtMode, &bOverflow, NULL);
+    INChI inchi = {0};
+    StereoCentres centres(&inchi, 4);
+
+    int len = MakeEnhStereoString(&inchi, &aux, &strbuf, "2", enh_stereo, 2, nCtMode, &bOverflow, NULL);
 
     EXPECT_EQ(bOverflow, 0);
     EXPECT_EQ(std::string(strbuf.pStr), "2(1,2)(3,4)");
@@ -335,11 +366,45 @@ TEST(test_ichiprt2, MakeEnhStereoString_empty_group)
     int bOverflow = 0;
     int nCtMode = 0;
 
-    int len = MakeEnhStereoString(&aux, &strbuf, "3", enh_stereo, 1, nCtMode, &bOverflow, NULL);
+    INChI inchi = {0};
+    StereoCentres centres(&inchi, 3);
+
+    int len = MakeEnhStereoString(&inchi, &aux, &strbuf, "3", enh_stereo, 1, nCtMode, &bOverflow, NULL);
 
     EXPECT_EQ(bOverflow, 0);
     EXPECT_EQ(std::string(strbuf.pStr), "");
     EXPECT_EQ(len, 0);
+
+    inchi_strbuf_close(&strbuf);
+}
+
+/* A collection atom that is not a stereocentre is left out. */
+TEST(test_ichiprt2, MakeEnhStereoString_skips_non_stereocentres)
+{
+    INChI_Aux aux = {0};
+    AT_NUMB orig_atoms[] = {1, 2, 3};
+    aux.nNumberOfAtoms = 3;
+    aux.nOrigAtNosInCanonOrd = orig_atoms;
+
+    // canonical 1 and 3 are stereocentres, 2 is not
+    AT_NUMB centres[] = {1, 3};
+    INChI_Stereo stereo = {0};
+    stereo.nNumber = centres;
+    stereo.nNumberOfStereoCenters = 2;
+    INChI inchi = {0};
+    inchi.Stereo = &stereo;
+
+    int group1[] = {0, 3, 1, 2, 3};
+    int* enh_stereo[1] = {group1};
+
+    INCHI_IOS_STRING strbuf = {0};
+    inchi_strbuf_init(&strbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
+    int bOverflow = 0;
+
+    MakeEnhStereoString(&inchi, &aux, &strbuf, "3", enh_stereo, 1, 0, &bOverflow, NULL);
+
+    EXPECT_EQ(bOverflow, 0);
+    EXPECT_EQ(std::string(strbuf.pStr), "3(1,3)");
 
     inchi_strbuf_close(&strbuf);
 }
@@ -381,6 +446,11 @@ TEST(test_ichiprt2, MakeSlayerString_basic)
     inp_ATOM *atoms = CreateInpAtom(num_at);
     INChI *inchi = Alloc_INChI(atoms, num_at, &found_num_bonds, &found_num_isotopic, 0);
     inchi->nNumberOfAtoms = num_at;
+    for (int i = 0; i < 3; i++)
+    {
+        inchi->Stereo->nNumber[i] = (AT_NUMB)(i + 1);
+    }
+    inchi->Stereo->nNumberOfStereoCenters = 3;
 
     INChI_Aux *pAux = Alloc_INChI_Aux(num_at, num_iso_at, alloc_mode, bOrigatomflag);
     pAux->nNumberOfAtoms = 3;
@@ -432,6 +502,7 @@ TEST(test_ichiprt2, MakeSlayerString_abs_only_reduces_to_bare_s1)
 
     INChI dummy_inchi = {0};
     dummy_inchi.nNumberOfAtoms = 1;
+    StereoCentres centres(&dummy_inchi, ALL_FIXTURE_ATOMS);
 
     INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
     pAux->nNumberOfAtoms = 3;
@@ -477,6 +548,7 @@ TEST(test_ichiprt2, MakeSlayerString_abs_plus_rac_not_reduced)
 
     INChI dummy_inchi = {0};
     dummy_inchi.nNumberOfAtoms = 1;
+    StereoCentres centres(&dummy_inchi, ALL_FIXTURE_ATOMS);
 
     INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
     pAux->nNumberOfAtoms = 3;
@@ -521,6 +593,7 @@ TEST(test_ichiprt2, MakeSlayerString_single_or_reduces_to_bare_s2)
 
     INChI dummy_inchi = {0};
     dummy_inchi.nNumberOfAtoms = 1;
+    StereoCentres centres(&dummy_inchi, ALL_FIXTURE_ATOMS);
 
     INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
     pAux->nNumberOfAtoms = 3;
@@ -563,6 +636,7 @@ TEST(test_ichiprt2, MakeSlayerString_single_and_reduces_to_bare_s3)
 
     INChI dummy_inchi = {0};
     dummy_inchi.nNumberOfAtoms = 1;
+    StereoCentres centres(&dummy_inchi, ALL_FIXTURE_ATOMS);
 
     INChI_Aux *pAux = Alloc_INChI_Aux(3, 0, 0, 0);
     pAux->nNumberOfAtoms = 3;
@@ -609,6 +683,7 @@ TEST(test_ichiprt2, MakeSlayerString_multiple_or_groups_not_reduced)
 
     INChI dummy_inchi = {0};
     dummy_inchi.nNumberOfAtoms = 1;
+    StereoCentres centres(&dummy_inchi, ALL_FIXTURE_ATOMS);
 
     INChI_Aux *pAux = Alloc_INChI_Aux(2, 0, 0, 0);
     pAux->nNumberOfAtoms = 2;
@@ -662,6 +737,7 @@ static void RunSlayerDistinctComponents(int n_components,
     // Only used by GET_II() to pick the TAUT_NON slot; never dereferenced further.
     INChI dummy_inchi = {0};
     dummy_inchi.nNumberOfAtoms = 1;
+    StereoCentres centres(&dummy_inchi, ALL_FIXTURE_ATOMS);
 
     INCHI_SORT *sorts = (INCHI_SORT *)inchi_calloc(n_components, sizeof(INCHI_SORT));
     std::vector<INChI_Aux *> auxes(n_components, nullptr);
@@ -744,6 +820,7 @@ TEST(test_ichiprt2, MakeSlayerString_deduplicates_identical_components)
 
     INChI dummy_inchi = {0};
     dummy_inchi.nNumberOfAtoms = 1;
+    StereoCentres centres(&dummy_inchi, ALL_FIXTURE_ATOMS);
 
     const int n_components = 3;
     INCHI_SORT *sorts = (INCHI_SORT *)inchi_calloc(n_components, sizeof(INCHI_SORT));
