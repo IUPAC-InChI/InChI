@@ -466,11 +466,11 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_s_layer_is_positional)
           "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
           "M  V30 MDLV30/STERAC1 ATOMS=(1 7)\n",
           "/s3;;;" },
-        /* Na+ OH-, one AND group over both alcohols */
+        /* Na+ OH-, one AND group per alcohol */
         { "M  V30 COUNTS 13 9 0 0 0\n",
           "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
           "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
-          "M  V30 MDLV30/STERAC1 ATOMS=(2 2 7)\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
           "/s2*3;;" },
     };
 
@@ -584,7 +584,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
     const AuxNoneCase cases[] = {
         /* both alcohols AND, Na+ OH-: no ABS anywhere, so no /m */
         { alcohols_with_naoh_head,
-          "M  V30 MDLV30/STERAC1 ATOMS=(2 2 7)\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
           "InChI=1B/C5H12O.C4H10O.Na.H2O/c1-3-4-5(2)6;1-3-4(2)5;;/h5-6H,3-4H2,1-2H3;"
           "4-5H,3H2,1-2H3;;1H2/q;;+1;/p-1/t5-;4-;;/s2*3;;" },
         /* pentanol AND, butanol ungrouped: '.' on the racemic pentanol */
@@ -609,6 +609,121 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
             FreeINCHI(poutput);
         }
     }
+}
+
+/* Pentan-2-ol (atoms 1-5, centre 2) and butan-2-ol (atoms 6-11, centre 7) as
+   two components; the butanol wedge and the collection block vary. */
+static std::string TwoAlcoholsMolblock(const char *butanol_cfg, const char *collections)
+{
+    return std::string(
+               "two_alcohols\n"
+               "     RDKit          2D\n"
+               "\n"
+               "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+               "M  V30 BEGIN CTAB\n"
+               "M  V30 COUNTS 11 9 0 0 0\n"
+               "M  V30 BEGIN ATOM\n"
+               "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
+               "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
+               "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
+               "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
+               "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
+               "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
+               "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
+               "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
+               "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
+               "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
+               "M  V30 11 C -2.874760 4.174794 0.000000 0\n"
+               "M  V30 END ATOM\n"
+               "M  V30 BEGIN BOND\n"
+               "M  V30 1 1 2 1 CFG=3\n"
+               "M  V30 2 1 2 3\n"
+               "M  V30 3 1 2 4\n"
+               "M  V30 4 1 4 5\n"
+               "M  V30 5 1 7 6 ") + butanol_cfg + "\n"
+           "M  V30 6 1 7 8\n"
+           "M  V30 7 1 7 9\n"
+           "M  V30 8 1 9 10\n"
+           "M  V30 9 1 10 11\n"
+           "M  V30 END BOND\n"
+           "M  V30 BEGIN COLLECTION\n" +
+           collections +
+           "M  V30 END COLLECTION\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
+/* A wedged centre in no collection keeps its /m digit: its configuration is
+   drawn, so the two enantiomers of the ungrouped component must differ. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_ungrouped_wedge_keeps_m)
+{
+    struct UngroupedCase
+    {
+        const char *butanol_cfg;
+        const char *expected_t_m_s;
+    };
+    const UngroupedCase cases[] = {
+        { "CFG=1", "/t5-;4-/m1./s;3" },
+        { "CFG=3", "/t5-;4-/m0./s;3" },
+    };
+
+    for (const UngroupedCase &c : cases)
+    {
+        /* AND on pentanol, butanol ungrouped */
+        const std::string molblock =
+            TwoAlcoholsMolblock(c.butanol_cfg, "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n");
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+
+        const std::string inchi = poutput->szInChI;
+        EXPECT_EQ(inchi.substr(inchi.find("/t")), c.expected_t_m_s) << inchi;
+        FreeINCHI(poutput);
+    }
+}
+
+/* An OR/AND group whose centres lie in different components couples them,
+   which the per-component /s cannot express: one STERAC1 over both alcohols
+   gave the same InChI as two independent groups. Diagnosed and dropped like
+   the other malformed collections, so the output is standard InChI with 1B.
+   An ABS collection across components couples nothing and is kept. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_components_is_not_used)
+{
+    const char *standard_1b =
+        "InChI=1B/C5H12O.C4H10O/c1-3-4-5(2)6;1-3-4(2)5/h5-6H,3-4H2,1-2H3;"
+        "4-5H,3H2,1-2H3/t5-;4-/m10/s1";
+
+    for (const char *collection : {"M  V30 MDLV30/STERAC1 ATOMS=(2 2 7)\n",
+                                   "M  V30 MDLV30/STEREL1 ATOMS=(2 2 7)\n"})
+    {
+        const std::string molblock = TwoAlcoholsMolblock("CFG=1", collection);
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput),
+                  inchi_Ret_WARNING) << collection;
+        EXPECT_STREQ(poutput->szInChI, standard_1b) << collection;
+        ASSERT_NE(poutput->szMessage, nullptr) << collection;
+        EXPECT_NE(strstr(poutput->szMessage, "spans more than one component"), nullptr)
+            << "message was: " << poutput->szMessage;
+        FreeINCHI(poutput);
+    }
+
+    /* over-rejection guard */
+    const std::string molblock =
+        TwoAlcoholsMolblock("CFG=1", "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n");
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    char options[] = "-EnhancedStereochemistry";
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+    FreeINCHI(poutput);
 }
 
 /* Across the Mobile-H/Fixed-H split: an OR-only component with a mobile-H
@@ -1354,6 +1469,8 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_4_mols)
     FreeINCHI(poutput);
 }
 
+/* OR/AND groups stretch over both fragments: unsupported, so the collections
+   are dropped with a warning and the output is standard InChI with 1B. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_grps_1)
 {
     const char *molblock =
@@ -1450,17 +1567,16 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_gr
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h2*3-10H,1-2H3/t2*3-,4-,5+,6-,7-,8-,9+,10-/m00/s2*1(3,5)2(4)(6,8)3(7,9)(10)";
+    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h2*3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-;3-,4-,5+,6-,7-,8-,9+,10-/m00/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
 
     FreeINCHI(poutput);
 }
 
+/* OR/AND groups stretch over both fragments: unsupported, so the collections
+   are dropped with a warning and the output is standard InChI with 1B. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_grps_2)
 {
     const char *molblock =
@@ -1519,17 +1635,16 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_gr
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C10H22.C8H18/c1-5-6-7-8-10(4)9(2)3;1-5-7(3)8(4)6-2/h9-10H,5-8H2,1-4H3;7-8H,5-6H2,1-4H3/t10-;7-,8-/m00/s1(10)3(9);1(7)3(8)";
+    const char expected_inchi[] = "InChI=1B/C10H22.C8H18/c1-5-6-7-8-10(4)9(2)3;1-5-7(3)8(4)6-2/h9-10H,5-8H2,1-4H3;7-8H,5-6H2,1-4H3/t10-;7-,8-/m00/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
 
     FreeINCHI(poutput);
 }
 
+/* OR/AND groups stretch over both fragments: unsupported, so the collections
+   are dropped with a warning and the output is standard InChI with 1B. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_different_mols_inter_enhstereo_grps)
 {
     const char *molblock =
@@ -1628,13 +1743,10 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_different_mols_inter_en
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C11H16BrCl7.C10H14BrCl7/c1-3-5(13)7(15)9(17)11(19)10(18)8(16)6(14)4(2)12;1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h4-11H,3H2,1-2H3;3-10H,1-2H3/t4-,5-,6+,7-,8-,9-,10+,11-;3-,4-,5+,6-,7-,8-,9+,10-/m00/s1(4,6)2(5)(7,9)3(8,10)(11);1(3,5)2(4)(6,8)3(7,9)(10)";
+    const char expected_inchi[] = "InChI=1B/C11H16BrCl7.C10H14BrCl7/c1-3-5(13)7(15)9(17)11(19)10(18)8(16)6(14)4(2)12;1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h4-11H,3H2,1-2H3;3-10H,1-2H3/t4-,5-,6+,7-,8-,9-,10+,11-;3-,4-,5+,6+,7-,8+,9+,10-/m00/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
 
     FreeINCHI(poutput);
 }
