@@ -1,41 +1,6 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
  */
 
 #include <stdlib.h>
@@ -617,20 +582,6 @@ int fix_non_uniform_drawn_amidiniums(int num_atoms,
 
     return 0;
 }
-
-/****************************************************************************
-Not used --
-int FixAromaticOxygenAndSulfur( inp_ATOM *atom )
-{
-if ( !atom->elname[1] && (atom->elname[0]=='O' || atom->elname[0]=='S') &&
-atom->valence==2 && !atom->charge && !atom->radical &&
-atom->bond_type[0] + atom->bond_type[1] == 3 ) {
-atom->charge = 1;
-return 1; // fixed
-}
-return 0;
-}
-****************************************************************************/
 
 /****************************************************************************/
 int fix_odd_things(int num_atoms,
@@ -3756,7 +3707,7 @@ static int is_only_HDT_neighbors(const inp_ATOM* at, int num_atoms, int metal_id
 /****************************************************************************
 Return value: new number of atoms > 0 or -1=out of RAM
 ****************************************************************************/
-int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg)
+int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg, const unsigned char* keep_explicit_HDT)
 {
     AT_NUMB *new_ord;
     inp_ATOM *new_at;
@@ -3806,7 +3757,11 @@ int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg)
      * Note: This must be consistent with MOL_FMT_to_atom()
      * treatment of isotopic Hn aliases.
      */
-    if (2 == num_H && 2 == num_atoms && !NUMH(at, 0) && !NUMH(at, 1))
+    if (2 == num_H && 2 == num_atoms &&
+        !NUMH(at, 0) && !NUMH(at, 1) &&
+        (!keep_explicit_HDT ||
+         (!keep_explicit_HDT[0] &&
+             !keep_explicit_HDT[1])))
     {
 
         if (at[0].iso_atw_diff >= at[1].iso_atw_diff)
@@ -3837,10 +3792,11 @@ int remove_terminal_HDT(int num_atoms, inp_ATOM *at, int bFixTermHChrg)
                                                                                    : kMax;
             n = (int)at[i].neighbor[0];
             if (k < kMax && at[i].valence == 1 && at[i].chem_bonds_valence == 1 &&
+                (!keep_explicit_HDT || !keep_explicit_HDT[i]) &&
                 /*  the order of comparison is important */
                 ((n > i) /* at[n] has not been encountered yet*/ ||
-                 (int)new_ord[n] < num_atoms - num_hydrogens) /* at[n] might have been encountered; it has not been moved */ &&
-                 (!is_el_a_metal(at[n].el_number) || is_only_HDT_neighbors(at, num_atoms, n))/*@nnuk*/ )
+                    (int)new_ord[n] < num_atoms - num_hydrogens) /* at[n] might have been encountered; it has not been moved */ &&
+                (!is_el_a_metal(at[n].el_number) || is_only_HDT_neighbors(at, num_atoms, n))/*@nnuk*/)
             {
                 /*  found an explicit terminal hydrogen */
                 num_hydrogens++;
@@ -6675,7 +6631,7 @@ void add_bond_if_unseen(subgraf_pathfinder *spf,
             break;
         }
     }
-    if (!seen)
+    if (!seen && bonds)
     {
         bonds[*nbonds][0] = at1;
         bonds[*nbonds][1] = at2;

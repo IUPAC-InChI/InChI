@@ -2,34 +2,49 @@ name: Release
 
 on:
   workflow_dispatch:
-  push:
-    # Trigger this workflow by pushing a release tag.
-    # Make sure that `HEAD` is pointing to the commit you want to release.
-    # Then run `git tag -a v<version_tag> -m "Release version <version_tag> (<yyyy>-<mm>-<dd>)" && git push && git push --tags`.
-    # For example `git tag -a v1.06 -m "Release version 1.06 (2020-12-20)" && git push && git push --tags`.
-    tags:
-      - v1.*
+    inputs:
+      dry_run:
+        description: 'Dry run (skip creating the GitHub release)'
+        type: boolean
+        default: true
 
 jobs:
   define_matrix:
     runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.define_matrix.outputs.matrix }}
+      release_tag: ${{ steps.define_version.outputs.release_tag }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Define release tag
+        id: define_version
+        run: |
+          version_header=INCHI-1-SRC/INCHI_BASE/src/inchi_version.h
+          version=$(sed -n 's/^#define INCHI_SOFTWARE_VERSION "\(.*\)"$/\1/p' "$version_header")
+          soversion=$(sed -n 's/^#define INCHI_SOVERSION[[:space:]]\+\([0-9]*\)[[:space:]]*$/\1/p' "$version_header")
+          echo "release_tag=v${version}" >> "$GITHUB_OUTPUT"
+          echo "soversion=$soversion" >> "$GITHUB_OUTPUT"
 
       - name: Verify build matrix
         # The build matrix is used to interpolate commands and inputs throughout the remainder of the workflow.
         # Since those interpolations are potentially security-sensitive, we verify the hash of the build matrix.
-        if: ${{ hashFiles('.github/workflows/build_matrix.json') != 'ae87ded543b131908cf5aed1502d0e39b2cb9374693598ef7f09c5c5a8be4e52' }}
+        if: ${{ hashFiles('.github/workflows/build_matrix.json') != '219d2cf84f8fef191ef5a97c82f6fcf2699c51597ac1058b4a021ddfa685d31b' }}
         run: |
           echo "CI run aborted due to unexpected changes to the build matrix."
           exit 1
 
       - name: Define build matrix
         id: define_matrix
+        env:
+          SOVERSION: ${{ steps.define_version.outputs.soversion }}
         run: |
-          echo "matrix=$(cat .github/workflows/build_matrix.json| jq -c .)" >> $GITHUB_OUTPUT
+          matrix=$(jq -c --arg soversion "$SOVERSION" '
+            map(
+              .lib_path |= gsub("@INCHI_SOVERSION@"; $soversion)
+            )
+          ' .github/workflows/build_matrix.json)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   build_and_test:
     needs: define_matrix
@@ -39,8 +54,6 @@ jobs:
           ${{ fromJson(needs.define_matrix.outputs.matrix) }}
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    env:
-      RELEASE_DIR: inchi-${{ matrix.slug }}-${{ github.sha }}
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -48,6 +61,17 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.12'
+
+      - name: Define release directory
+        id: release_dir
+        shell: bash
+        env:
+          SLUG: ${{ matrix.slug }}
+          SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ needs.define_matrix.outputs.release_tag }}
+        run: |
+          tag_part="-${RELEASE_TAG//[^A-Za-z0-9._-]/_}"
+          echo "value=inchi-${SLUG}${tag_part}-${SHA:0:7}" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: ${{ matrix.pre_build }}
@@ -88,20 +112,20 @@ jobs:
 
       - name: Collect artifacts
         run: |
-          mkdir -p ${{ env.RELEASE_DIR }}
-          cp ${{ matrix.exe_path }} ${{ env.RELEASE_DIR }}
-          cp ${{ matrix.lib_path }} ${{ env.RELEASE_DIR }}
-          cp ${{ matrix.main_path }} ${{ env.RELEASE_DIR }}
+          mkdir -p ${{ steps.release_dir.outputs.value }}
+          cp ${{ matrix.exe_path }} ${{ steps.release_dir.outputs.value }}
+          cp ${{ matrix.lib_path }} ${{ steps.release_dir.outputs.value }}
+          cp ${{ matrix.main_path }} ${{ steps.release_dir.outputs.value }}
 
       - id: upload-unsigned-artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{ env.RELEASE_DIR }}
-          path: ${{ env.RELEASE_DIR }}
+          name: ${{ steps.release_dir.outputs.value }}
+          path: ${{ steps.release_dir.outputs.value }}
 
       - name: Sign artifacts
         if: runner.os == 'Windows'
-        uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e
+        uses: signpath/github-action-submit-signing-request@c92b958760219087e01f8d67a1669ed57afe2627 # v2.3
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: 656f8204-f8c5-4028-bd48-f832f5f89b31
@@ -109,17 +133,16 @@ jobs:
           signing-policy-slug: release-signing
           github-artifact-id: ${{ steps.upload-unsigned-artifacts.outputs.artifact-id }}
           wait-for-completion: true
-          output-artifact-directory: ${{ env.RELEASE_DIR }}-signed
+          output-artifact-directory: ${{ steps.release_dir.outputs.value }}-signed
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: runner.os == 'Windows'
         with:
-          name: ${{ env.RELEASE_DIR }}-signed
-          path: ${{ env.RELEASE_DIR }}-signed
+          name: ${{ steps.release_dir.outputs.value }}-signed
+          path: ${{ steps.release_dir.outputs.value }}-signed
 
   release:
-    needs: build_and_test
-    if: github.ref_type == 'tag'
+    needs: [define_matrix, build_and_test]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -127,8 +150,7 @@ jobs:
     steps:
 
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        # git repository needs to be checked out (including tags, hence `fetch-depth: 0`),
-        # otherwise the `--verify-tag` flag to `gh release create` fails.
+        # The complete history is retained so the release is created from the checked-out commit.
         with:
           fetch-depth: 0
 
@@ -151,13 +173,20 @@ jobs:
         run: zip -r cmake_configurations.zip cmake_configurations
 
       - name: Create release
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # See https://cli.github.com/manual/gh_release_create.
+          TAG: ${{ needs.define_matrix.outputs.release_tag }}
         run: |
-          gh release create ${{ github.ref_name }} \
-          --verify-tag \
-          --title "${{ github.ref_name }}" \
+          if existing_commit=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${TAG}" --jq '.sha' 2>/dev/null); then
+            echo "Release tag $TAG already exists at $existing_commit. Aborting."
+            exit 1
+          fi
+
+          # See https://cli.github.com/manual/gh_release_create.
+          gh release create "$TAG" \
+          --target "$GITHUB_SHA" \
+          --title "$TAG" \
           --notes "For details about this release have a look at the [CHANGELOG](INCHI-1-DOC/CHANGELOG.md)." \
           release_artifacts.zip cmake_configurations.zip

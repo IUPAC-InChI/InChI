@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
-project(TestIXA_API VERSION 1.7)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../cmake/InChIVersion.cmake)
+
+project(TestIXA_API VERSION ${INCHI_VERSION_FULL})
 
 add_library(testixa_compiler_flags INTERFACE)
 target_compile_features(testixa_compiler_flags INTERFACE c_std_11)

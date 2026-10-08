@@ -32,6 +32,7 @@
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichimap2.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichimap4.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichinorm.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\aromaticity.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichiparm.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichiprt1.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\ichiprt2.c" />
@@ -86,6 +87,7 @@
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichimain.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichimake.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichinorm.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\aromaticity.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichiring.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichirvrs.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\ichisize.h" />

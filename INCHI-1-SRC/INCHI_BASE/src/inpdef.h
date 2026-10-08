@@ -1,41 +1,6 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
  */
 
 #ifndef _INPDEF_H_
@@ -568,6 +533,7 @@ typedef struct tagInfoAtomData
  *
  * @param at                   Array of input atoms
  * @param at_fixed_bonds       Array of input atoms with fixed bonds (tautomeric case, added or removed H)
+ * @param keep_explicit_HDT    Component-local polymer crossing-bond endpoint mask used to prevent explicit H/D/T removal
  * @param num_at               Number of atoms
  * @param num_removed_H        Number of removed hydrogens
  * @param num_bonds            Number of bonds
@@ -588,6 +554,7 @@ typedef struct tagInputAtomData
 {
     inp_ATOM *at;
     inp_ATOM *at_fixed_bonds; /* tautomeric case, added or removed H  */
+    unsigned char *keep_explicit_HDT;
     int num_at;
     int num_removed_H;
     int num_bonds;

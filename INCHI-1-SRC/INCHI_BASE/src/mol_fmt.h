@@ -1,41 +1,6 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
  */
 
 #ifndef _MOL_FMT_H_
@@ -669,7 +634,7 @@ typedef struct A_MOL_FMT_DATA
  * @param bNoWarnings Flag to show warnings
  * @return MOL_FMT_DATA* returns mol file data structure, includes e.g. header block, connection table, ...
  */
-static MOL_FMT_DATA* MolfileReadDataLines(INCHI_IOSTREAM* inp_file,
+MOL_FMT_DATA* MolfileReadDataLines(INCHI_IOSTREAM* inp_file,
     MOL_FMT_HEADER_BLOCK* OnlyHeaderBlock,
     MOL_FMT_CTAB* OnlyCTab,
     int bGetOrigCoord,
@@ -684,7 +649,7 @@ static MOL_FMT_DATA* MolfileReadDataLines(INCHI_IOSTREAM* inp_file,
  * @param pStrErr Error string
  * @return * int Error code, retuns 0 - no error, 1 - error: can't read header block name, 3 - error: can't read header block 2 line, 7 - error: cant' read header block comment line
  */
-static int MolfileReadHeaderLines(MOL_FMT_HEADER_BLOCK* hdr, INCHI_IOSTREAM* inp_file, char* pStrErr);
+int MolfileReadHeaderLines(MOL_FMT_HEADER_BLOCK* hdr, INCHI_IOSTREAM* inp_file, char* pStrErr);
 
 /**
  * @brief Reads counts line from input MOL file, includes information about the number of atoms, bonds, and atom lists, the chiral flag setting, and the Ctab version.
@@ -694,7 +659,7 @@ static int MolfileReadHeaderLines(MOL_FMT_HEADER_BLOCK* hdr, INCHI_IOSTREAM* inp
  * @param pStrErr Error string
  * @return int Error code, returns 0 - no error, 3 - error: can't read counts line, -1 - error: out of RAM
  */
-static int MolfileReadCountsLine(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file, char* pStrErr);
+int MolfileReadCountsLine(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file, char* pStrErr);
 
 /**
  * @brief Reads an atom block from input MOL file (V2000).
@@ -704,7 +669,7 @@ static int MolfileReadCountsLine(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file, c
  * @param pStrErr Error string
  * @return int Error code, returns 0 - no error, 4 - error: can't interpret atom block, 5 - error: can't interpret second half of atom block?
  */
-static int MolfileReadAtomsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
+int MolfileReadAtomsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
     int err, char* pStrErr);
 
 /**
@@ -716,7 +681,7 @@ static int MolfileReadAtomsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
  * @param pStrErr Error string
  * @return int Error code
  */
-static int MolfileReadBondsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
+int MolfileReadBondsBlock(MOL_FMT_CTAB* ctab, INCHI_IOSTREAM* inp_file,
     int err, char* pStrErr);
 
 /**

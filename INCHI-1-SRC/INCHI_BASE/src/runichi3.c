@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 
 /*
@@ -1681,7 +1646,7 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
 
     /* Assign polymer type and subunits type and check polymer data for consistency */
     /* djb-rwth: addressing coverity ID #499497 -- TREAT_ERR properly used in all cases */
-    
+
     orig_at_data->valid_polymer = 0;
     if ( treat_polymers && pd )
     {
@@ -1704,6 +1669,10 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
         subtype = pd->units[0]->subtype;
         if ( subtype == POLYMER_SST_RAN || subtype == POLYMER_SST_ALT || subtype == POLYMER_SST_BLK )
         {
+            /** @nnuk:
+             * 9002 remains assigned to this validation; its former use for
+             *unsupported polymer H end groups was removed with GHI #252.
+            */
             TREAT_ERR(err, 9002, "Single polymer unit may not be RAN/ALT/BLO");
             goto exit_function;
         }
@@ -1714,7 +1683,7 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
     {
         /* Check if unit data makes sense */
         u = pd->units[i];
-        if ( u->nb != 0 && u->nb != 2 )
+        if ( u->nb != 0 && u->nb != 2)
         {
             TREAT_ERR(err, 9003, "Number of crossing bonds in polymer unit is not 0 or 2");
             goto exit_function;
@@ -1978,20 +1947,11 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
             {
                 /* Check that there are no H end groups */
                 a1 = u->blist[2 * k]; a2 = u->blist[2 * k + 1];
-                if ( !strcmp(orig_at_data->at[a1 - 1].elname, "H") ||
-                    !strcmp(orig_at_data->at[a1 - 1].elname, "D") ||
-                    !strcmp(orig_at_data->at[a1 - 1].elname, "T") )
-                {
-                    TREAT_ERR(err, 9030, "H as polymer end group is not supported");
-                    goto exit_function;
-                }
-                if ( !strcmp(orig_at_data->at[a2 - 1].elname, "H") ||
-                    !strcmp(orig_at_data->at[a2 - 1].elname, "D") ||
-                    !strcmp(orig_at_data->at[a2 - 1].elname, "T") )
-                {
-                    TREAT_ERR(err, 9031, "H as polymer end group is not supported");
-                    goto exit_function;
-                }
+
+                /**
+                *@nnuk: GHI#252 addressed and redundant logic removed
+                */
+
                 /* Ensure that caps of polymer unit lie outside it */
                 a1_is_not_in_alist = a1_is_star_atom = 0;
                 a2_is_not_in_alist = a2_is_star_atom = 0;
@@ -4576,7 +4536,7 @@ void OAD_ValidateAndSortOutPseudoElementAtoms(ORIG_ATOM_DATA* orig_at_data,
                 TREAT_ERR(*err, (70 + 5), "Invalid element(s):");
             TREAT_ERR(*err, (70 + 5), orig_at_data->at[k].elname);
             continue;
-#endif 
+#endif
         }
         is_star = !strcmp(orig_at_data->at[k].elname, "*");
         if ( !is_star )

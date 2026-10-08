@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 
 /*
@@ -327,18 +292,6 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
             goto exit_function;
         }
 
-        /*// Debugging: Print atom structure after disconnections
-        for (int i = 0; i < orig_inp_data->num_inp_atoms; i++)
-        {
-            printf("Atom %d: Element %s, Valence: %d, Charge: %d, Num of Implicit H: %d, Neighbors: ",
-                i + 1, orig_inp_data->at[i].elname, orig_inp_data->at[i].valence, orig_inp_data->at[i].charge, orig_inp_data->at[i].num_H);
-            for (int j = 0; j < orig_inp_data->at[i].valence; j++)
-            {
-                printf("%d ", orig_inp_data->at[i].neighbor[j] + 1);
-            }
-            printf("\n");
-        }*/
-
         /* Preserve SDF output in Molecular Inorganics mode if requested */
         ret1 = OrigAtData_SaveMolfile(orig_inp_data, sd, ip, num_inp, out_file);
         if (ret1)
@@ -346,7 +299,6 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
             goto exit_function;
         }
 
-        /*printf("Molecular inorganics preprocessing completed successfully.\n");*/
         nRet1 = CreateOneStructureINChI(pCG, ic, sd, ip, szTitle,
             pINChI, pINChI_Aux, INCHI_BAS,
             inp_file, log_file, out_file, prb_file,
@@ -361,7 +313,6 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
             (sd->bTautFlagsDone[INCHI_BAS] & TG_FLAG_DISCONNECT_COORD_DONE) &&
             (ip->bTautFlags & TG_FLAG_RECONNECT_COORD) )
         {
-            /*printf("Generating reconnected InChI due to retained bonds.\n");*/
 
             nRet1 = CreateOneStructureINChI(pCG, ic, sd, ip, szTitle,
                 pINChI, pINChI_Aux, INCHI_REC,
@@ -391,10 +342,9 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
         /*
          * InChI is already generated via the Molecular Inorganics-specific path.
          * Skip the standard structure-generation path to prevent duplicate
-         * CreateOneStructureINChI() calls, which previously caused redundant
-         * allocations and AddressSanitizer-reported memory leaks.
+         * CreateOneStructureINChI() calls and redundant allocations.
          *
-         * pOrigStruct was populated above from the native input, so the shared
+         * pOrigStruct and OrigStruct were populated above from the native input, so the shared
          * cleanup path (SortAndPrintINChI + OrigStruct_Free) emits the AuxInfo
          * reversibility layers (/rA, /rB, /rC), including atom coordinates, and
          * releases it.
@@ -1978,6 +1928,7 @@ int CreateOneComponentINChI(CANON_GLOBALS* pCG,
         cur_INChI, cur_INChI_Aux,
         orig_inp_data/* not used */,
         inp_cur_data->at, inp_norm_data, inp_cur_data->num_at,
+        inp_cur_data->keep_explicit_HDT,
         ip->nMode,
         &bTautFlags, &bTautFlagsDone,
         pulTEnd, NULL, sd->pStrErrStruct);

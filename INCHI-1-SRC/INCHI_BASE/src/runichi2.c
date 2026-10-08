@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 
 /*
@@ -166,7 +131,7 @@ int GetOneStructure( INCHI_CLOCK    *ic,
         if (!struct_fptrs->fptr || struct_fptrs->len_fptr <= struct_fptrs->cur_fptr + 1)
         {
 
-            INCHI_FPTR *new_fptr = (INCHI_FPTR *) 
+            INCHI_FPTR *new_fptr = (INCHI_FPTR *)
                                         inchi_calloc( (long long)struct_fptrs->len_fptr + ADD_LEN_STRUCT_FPTRS, sizeof( new_fptr[0] ) ); /* djb-rwth: cast operator added */
 
             if (new_fptr)
@@ -338,6 +303,123 @@ exit_function:
     return nRet;
 }
 
+/** @nnuk
+****************************************************************************
+ Build a component-local mask of polymer crossing-bond endpoints.
+
+ The polymer crossing-bond list (OAD_PolymerUnit.blist) uses whole-structure,
+ 1-based atom numbering, whereas inp_cur_data contains only atoms from the
+ selected connected component. ExtractConnectedComponent() preserves the original
+ atom order within the component, allowing the corresponding local atom index to
+ be reconstructed.
+
+ The mask is later consulted by remove_terminal_HDT() to preserve explicit
+ H/D/T atoms that participate in polymer crossing bonds.
+
+ @param inp_cur_data chemical structure information for the current component
+ @param orig_inp_data chemical structure information for the whole structure
+ @param ip input parameters
+ @param component_number number of component in the chemical structure
+
+ @return Return 0 on success or when no mask is required; return -1 on allocation
+ failure.
+****************************************************************************/
+static int BuildPolymerCrossingBondEndpointMask(INP_ATOM_DATA *inp_cur_data,
+                                                const ORIG_ATOM_DATA *orig_inp_data,
+                                                const INPUT_PARMS *ip,
+                                                int component_number)
+{
+    int orig_idx;
+    int local_idx = 0;
+    int unit_idx;
+    int endpoint_idx;
+
+    if (inp_cur_data->num_at <= 0 || ip->bPolymers == POLYMERS_NO ||
+        !orig_inp_data->valid_polymer || !orig_inp_data->polymer ||
+        orig_inp_data->polymer->n <= 0)
+    {
+        return 0;
+    }
+
+    /* No mask is needed if this component contains no explicit H/D/T atoms. */
+    for (local_idx = 0; local_idx < inp_cur_data->num_at; local_idx++)
+    {
+        const char *elname = inp_cur_data->at[local_idx].elname;
+
+        if (elname[1] == '\0' && (elname[0] == 'H' || elname[0] == 'D' || elname[0] == 'T'))
+        {
+            break;
+        }
+    }
+
+    if (local_idx == inp_cur_data->num_at)
+    {
+        return 0;
+    }
+
+    local_idx = 0;
+
+    inp_cur_data->keep_explicit_HDT = (unsigned char *)inchi_calloc((long long)inp_cur_data->num_at, sizeof(inp_cur_data->keep_explicit_HDT[0]));
+
+    if (!inp_cur_data->keep_explicit_HDT)
+    {
+        return -1;
+    }
+
+    for (orig_idx = 0; orig_idx < orig_inp_data->num_inp_atoms; orig_idx++)
+    {
+        if (orig_inp_data->at[orig_idx].component != component_number)
+        {
+            continue;
+        }
+
+        /*
+         * The mask is consulted only for explicit H/D/T atoms by
+         * remove_terminal_HDT(), so heavy-atom and pseudoatom endpoints
+         * do not need to be marked.
+        */
+        if (!(orig_inp_data->at[orig_idx].elname[1] == '\0' &&
+              (orig_inp_data->at[orig_idx].elname[0] == 'H' ||
+               orig_inp_data->at[orig_idx].elname[0] == 'D' ||
+               orig_inp_data->at[orig_idx].elname[0] == 'T')))
+        {
+            local_idx++;
+            continue;
+        }
+
+        for (unit_idx = 0; unit_idx < orig_inp_data->polymer->n; unit_idx++)
+        {
+            const OAD_PolymerUnit *u = orig_inp_data->polymer->units[unit_idx];
+
+            if (!u || !u->blist)
+            {
+                continue;
+            }
+
+            /*
+             * Each crossing bond contributes two atom numbers to blist.
+             * blist uses whole-structure, 1-based atom numbering.
+             */
+            for (endpoint_idx = 0; endpoint_idx < 2 * u->nb; endpoint_idx++)
+            {
+                if (u->blist[endpoint_idx] == orig_idx + 1)
+                {
+                    inp_cur_data->keep_explicit_HDT[local_idx] = 1;
+                    break;
+                }
+            }
+
+            if (inp_cur_data->keep_explicit_HDT[local_idx])
+            {
+                break;
+            }
+        }
+
+        local_idx++;
+    }
+
+    return 0;
+}
 
 /****************************************************************************
  Extract one connected component from the input structure
@@ -359,6 +441,18 @@ int GetOneComponent( INCHI_CLOCK        *ic,
     CreateInpAtomData( inp_cur_data, orig_inp_data->nCurAtLen[i], 0 );
 
     inp_cur_data->num_at = ExtractConnectedComponent( orig_inp_data->at, orig_inp_data->num_inp_atoms, i + 1, inp_cur_data->at );
+
+    if (BuildPolymerCrossingBondEndpointMask(inp_cur_data, orig_inp_data, ip, i + 1) < 0)
+    {
+        AddErrorMessage(sd->pStrErrStruct, "Out of memory while processing polymer data");
+
+        sd->nErrorCode = CT_OUT_OF_RAM;
+        sd->nErrorType = _IS_FATAL;
+
+        sd->ulStructTime += InchiTimeElapsed(ic, &ulTStart);
+
+        return sd->nErrorType;
+    }
 
     sd->ulStructTime += InchiTimeElapsed( ic, &ulTStart );
 
@@ -1563,7 +1657,7 @@ int  POSEContext_Init(POSEContext *context,
         ret = _IS_ERROR;
         goto exit_function;
     }
-    context->pINChI_Aux2[0] = context->pINChI_Aux2[1] = NULL; 
+    context->pINChI_Aux2[0] = context->pINChI_Aux2[1] = NULL;
     if (pINChI_Aux2 && (pINChI_Aux2[0] || pINChI_Aux2[1])) /* djb-rwth: condition corrected */
     {
         ret = _IS_ERROR;
@@ -1806,8 +1900,8 @@ void OAD_StructureEdits_Clear(OAD_StructureEdits *ed)
 /****************************************************************************/
 void OAD_StructureEdits_DebugPrint(OAD_StructureEdits *ed)
 {
-    ITRACE_("\n*****************************\nOAD_StructureEdits @ %-p\n*****************************", ed); 
-    ITRACE_("\nDel_side_chains :\t%-d\n", ed->del_side_chains); 
+    ITRACE_("\n*****************************\nOAD_StructureEdits @ %-p\n*****************************", ed);
+    ITRACE_("\nDel_side_chains :\t%-d\n", ed->del_side_chains);
     ITRACE_("Del_atom:\t%-s", ed->del_atom->used ? "" : "(empty)\n");
     IntArray_DebugPrint(ed->del_atom);
     ITRACE_("Del_bond:\t%-s", ed->del_bond->used ? "" : "(empty)\n");
@@ -1818,7 +1912,7 @@ void OAD_StructureEdits_DebugPrint(OAD_StructureEdits *ed)
     IntArray_DebugPrint(ed->mod_bond);
     ITRACE_("Mod_coord:\t%-s", ed->mod_coord->used ? "" : "(empty)\n");
     IntArray_DebugPrint(ed->mod_coord);
-    
+
 }
 
 
@@ -1836,7 +1930,7 @@ xc_opp[MAX_ATOMS];      /* Extended (stereo-aware) atom classes.
                             (k + neclasses)   for '-' parity
                             (k + 2*neclasses) for '+' parity                            */
 int  OAD_Polymer_PrepareFoldCRUEdits( ORIG_ATOM_DATA *orig_at_data,
-                                      char *sinchi_noedits, 
+                                      char *sinchi_noedits,
                                       char *saux_noedits,
                                       char *sinchi,
                                       char *saux,
@@ -1850,7 +1944,7 @@ int  OAD_Polymer_PrepareFoldCRUEdits( ORIG_ATOM_DATA *orig_at_data,
     int nat = orig_at_data->num_inp_atoms;
     int neclasses = 0;		/* No of constitutional equivalence classses for the atoms		*/
     int nxclasses = 0;      /* No of extended (stereo-aware) atom classses == 3*neclasses   */
-    
+
     int *all_bkb_orig = NULL, n_all_bkb_orig = 0;
     OAD_Polymer *p = orig_at_data->polymer;
     int nu = orig_at_data->polymer->n;
@@ -2017,7 +2111,7 @@ DiylFrag* DiylFrag_New(int na, int end1, int end2, char *s)
         goto exit_function;
     }
 
-    pfrag->na = na; 
+    pfrag->na = na;
     pfrag->end1 = end1;
     pfrag->end2 = end2;
     pfrag->alist = NULL;
@@ -2066,18 +2160,18 @@ void DiylFrag_Free(DiylFrag *pfrag)
     return;
 }
 /***************************************************************************/
-void DiylFrag_MakeSignature(DiylFrag *pfrag, 
+void DiylFrag_MakeSignature(DiylFrag *pfrag,
                             int nxc,            /* n xclasses (molecule-wide)       */
                             int *xc,            /* xclasses (molecule-wide)         */
                             int *cnt )          /* temp storage: counts of xclasses */
 {
     int i, k, nxc_frag; /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
-    
+
     inchi_strbuf_printf(&pfrag->sig, "%-d,%-d,%-d{", pfrag->na, xc[pfrag->end1], xc[pfrag->end2]);
     for (i = 0; i < pfrag->na; i++)
     {
         pfrag->xclist[i] = xc[pfrag->alist[i]];
-    }  
+    }
     nxc_frag = count_colors_in_sequence(pfrag->xclist, pfrag->na, nxc+1, cnt); /* djb-rwth: ignoring LLVM warning: variable used to store function return value */
     for (k = 0; k < nxc; k++)
     {
@@ -2124,7 +2218,7 @@ void DiylFrag_DebugTrace(DiylFrag *pfrag)
     {
         return;
     }
-    
+
     ITRACE_("DiylFrag @ %-p ", pfrag);
     na = pfrag->na;
     ITRACE_("\n\t%-d atoms. List of atoms and their xclasses : { ", na);
@@ -2135,7 +2229,7 @@ void DiylFrag_DebugTrace(DiylFrag *pfrag)
     ITRACE_(" %-d(%-d) }\n", pfrag->alist[na - 1], pfrag->xclist[na - 1]);
 
     ITRACE_("\tend1 = %-d, end2 = %-d, nb = %-d\n", pfrag->end1, pfrag->end2, pfrag->nb);
-    
+
     ITRACE_("\tSignature = '%-s'\n", pfrag->sig.pStr);
 
     return;
@@ -2147,20 +2241,20 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
                         int iunit,
                         int n_all_bkb,
                         int *all_bkb,
-                        int nxclasses, 
+                        int nxclasses,
                         int *xc,
                         OAD_StructureEdits *ed)
 {
     int ret = _IS_OKAY;
     int err, i, j, k, m, fail, a1, a2;
-    int n_cuts = 0, n_frags = 0; 
+    int n_cuts = 0, n_frags = 0;
     int n_frags_in_repeating_subunit = 0;
     int n_fold, n_frag_classes = 0;
     int subunit_last_atom, next_subunit_first_atom = 0;
-    int *cut = NULL;        /* [ bkbond1at1, bkbond1at2,  bkbond2at1,bkbond2at2, ... ] 
+    int *cut = NULL;        /* [ bkbond1at1, bkbond1at2,  bkbond2at1,bkbond2at2, ... ]
                                these are (atoms of) backbone bonds which are non-cyclic and non-multiple ('breakable')      */
     DiylFrag **frag=NULL;   /* frag is divalent fragment surrounded by 'cut' bonds, so it may be a repeating CRU sub-unit   */
-    int *frag_class=NULL;   /* fragments are classified, by their signatures, to produce unique labelling; 
+    int *frag_class=NULL;   /* fragments are classified, by their signatures, to produce unique labelling;
                             if the two fragments have the same class, they have the same signature and whence are equivalent */
     int *frag_xc_counts = NULL; /* counts of xclass atoms in CRU, order of class numbers    */
     char pStrErr[STR_ERR_LEN];
@@ -2205,8 +2299,8 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
     }
 
     /* Make 'cut' list from the bonds which are both in all_bkb and u->bkb
-       (all_bkb eliminates bonds with order >1 and cyclic ones, 
-       but may contain artificial cyclizing bond) 
+       (all_bkb eliminates bonds with order >1 and cyclic ones,
+       but may contain artificial cyclizing bond)
     */
     for (i = 0; i <u->nbkbonds; i++)
     {
@@ -2248,10 +2342,10 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
     {
         /* Create fragment */
         int forbidden[4], novel=1;
-        DiylFrag *pfrag = NULL; 
+        DiylFrag *pfrag = NULL;
 
         /* Calculate and store signature of the fragment */
-        /* 
+        /*
             end_atom1...cut[i-1])---frag[i]---cut[i]---...end_atom2
         */
         if (i == 0)
@@ -2292,7 +2386,7 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
             goto exit_function;
         }
 
-        DiylFrag_MakeSignature(pfrag, nxclasses, xc, frag_xc_counts); 
+        DiylFrag_MakeSignature(pfrag, nxclasses, xc, frag_xc_counts);
 
         novel = 1;
         for (j = 0; j < i; j++)
@@ -2318,7 +2412,7 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
         /* All classes are distinct ==> no repeats, folding is impossible, skip the CRU */
         goto exit_function;
     }
-        
+
     n_frags_in_repeating_subunit = len_repeating_subsequence(frag_class, NULL, n_frags);
     if (0 == n_frags_in_repeating_subunit)
     {
@@ -2326,7 +2420,7 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
         goto exit_function;
     }
     n_fold = n_frags / n_frags_in_repeating_subunit;
-    if (1==n_fold || (0!=n_frags%n_frags_in_repeating_subunit) )    
+    if (1==n_fold || (0!=n_frags%n_frags_in_repeating_subunit) )
     {
         /* valid repeating pattern not found */
         goto exit_function;
@@ -2337,7 +2431,7 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
 
     ITRACE_("\n* Found %-d times foldable unit of %-d fragments\n* First repeating sub-unit formed by %-d-fragment backbone : ",
             n_fold, n_frags, n_frags_in_repeating_subunit);
-    
+
     for (k = 0; k < n_frags_in_repeating_subunit && n_frags_in_repeating_subunit < n_frags && frag[k]; k++) /* djb-rwth: fixing a NULL pointer dereference and buffer overflow */
     {
         if (frag[k]->end1 == frag[k]->end2)
@@ -2364,18 +2458,18 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
         }
     }
     ITRACE_("\n");
-    
-    /* Folding is possible, prepare the edits 
-        Keep the least in-CRU repeating subunit 
+
+    /* Folding is possible, prepare the edits
+        Keep the least in-CRU repeating subunit
             { frag[0] ... frag[n_frags_in_repeating_subunit-1] }
-        and remove 
-            { frag[n_frags_in_repeating_subunit]...frag[n_frags-1] } and all side chain attached to that  
-    
-        NB: which bond is modified and which is broke is important for applying these edits further!			
+        and remove
+            { frag[n_frags_in_repeating_subunit]...frag[n_frags-1] } and all side chain attached to that
+
+        NB: which bond is modified and which is broke is important for applying these edits further!
     */
 
-    /* Break bond from the subunit to the next fragment and replace an original 
-       bond to "right" cap with bond from the subunit "right" atom  
+    /* Break bond from the subunit to the next fragment and replace an original
+       bond to "right" cap with bond from the subunit "right" atom
     */
 
     /*djb-rwth: the whole block had to be rewritten to fix NULL pointer dereference */
@@ -2399,7 +2493,7 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
             goto exit_function;
         }
     }
-            
+
     /*	Now collect all backbone atoms to be deleted (we will then delete the
     associated side chains also, but no need to reveal them at the moment)	*/
 
@@ -2418,8 +2512,8 @@ int analyze_CRU_folding(ORIG_ATOM_DATA *orig_at_data,
             }
         }
     }
-    /* Care on atom coordinates: as bond to cap2 changes, 
-       we use coordinates of next_subunit_first_atom for cap2 
+    /* Care on atom coordinates: as bond to cap2 changes,
+       we use coordinates of next_subunit_first_atom for cap2
     */
     fail = 0;
     fail += IntArray_Append(ed->mod_coord, next_subunit_first_atom);
@@ -2457,14 +2551,14 @@ exit_function:
 }
 
 /***************************************************************************
- Return number of colors ncol<=maxcol in the sequence of n colored entries 
+ Return number of colors ncol<=maxcol in the sequence of n colored entries
  and counts of individiual colors
 ***************************************************************************/
 int count_colors_in_sequence( int *color, int n, int maxcol, int *counts)
 {
     int i, ncol=0;
     memset(counts, 0, maxcol * sizeof(int)); /* djb-rwth: memset_s C11/Annex K variant? */
-    for (i = 0; i<n; i++) 
+    for (i = 0; i<n; i++)
     {
         int colori = color[i];
         if (colori < 0) /* removed orig atom (H D etc.) */
@@ -2499,9 +2593,9 @@ int len_repeating_subsequence(int *color, int *color2, int n)
     {
         for (k = m + 1; k < n; k++)
         {
-            if (color[k] != color[k - m - 1]) 
-            { 
-                goto nextm; 
+            if (color[k] != color[k - m - 1])
+            {
+                goto nextm;
             }
             if (color2 && color2[k] != color2[k - m - 1])
             {
@@ -2529,11 +2623,11 @@ int  OAD_Polymer_PrepareFrameShiftEdits( ORIG_ATOM_DATA *orig_at_data,
     int *orig = NULL, *frame_shift_info = NULL;
     int n_frame_shifts, j;
     ModSCenterInfo *scinfo = NULL;		/* 4 elements; [0]th for old_end1, [1] old_end2, [2] end1, [3] end2	*/
-    
+
     OAD_Polymer *p = orig_at_data->polymer;
     int nu = orig_at_data->polymer->n;
     int nat = orig_at_data->num_inp_atoms;
-    
+
     /* Extract cano_nums-->orig_nums mapping for InChI AuxInfo Main Layer */
     orig = (int *)inchi_calloc((long long)nat + 1, sizeof(int)); /* djb-rwth: cast operator added */
     if (!orig)
@@ -2554,7 +2648,7 @@ int  OAD_Polymer_PrepareFrameShiftEdits( ORIG_ATOM_DATA *orig_at_data,
         ret = _IS_ERROR;
         goto exit_function;
     }
-    
+
 
     /* Parse InChI and extract, for each 'bistar' CRU, the senior bkbond (to frame-shift brackets to its ends) */
     frame_shift_info = (int *)inchi_calloc(3 * ((long long)nu + 1), sizeof(int)); /* djb-rwth: cast operator added */
@@ -2580,12 +2674,12 @@ int  OAD_Polymer_PrepareFrameShiftEdits( ORIG_ATOM_DATA *orig_at_data,
 
         end1 = frame_shift_info[3 * j + 1];
         end2 = frame_shift_info[3 * j + 2];
-        
+
         /* Find the unit to edit (== that unit whose alist contains the new end atoms) */
         for (k = 0; k < p->n; k++)
         {
             int ak, present=0;
-            
+
             if (NULL == p->units[k]->blist || p->units[k]->nb < 2 )
             {
                 /* No crossing bonds in the unit */
@@ -2653,7 +2747,7 @@ int  OAD_Polymer_PrepareFrameShiftEdits( ORIG_ATOM_DATA *orig_at_data,
             }
 
             /*	If applicable, collect bonds to modify */
-            
+
             /* Check if atoms involved in modifications are stereocenters (needs additional care) */
             ModSCenter_Init(&scinfo[0], orig_at_data->at, old_end1 - 1);
             ModSCenter_Init(&scinfo[1], orig_at_data->at, old_end2 - 1);

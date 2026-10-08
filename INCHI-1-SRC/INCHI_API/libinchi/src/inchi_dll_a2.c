@@ -1,42 +1,7 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*
-* The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
-*/
+ */
 
 
 #include <stdio.h>
@@ -167,6 +132,7 @@ int  Normalization_step( CANON_GLOBALS *pCG,
                          inp_ATOM *inp_at,
                          INP_ATOM_DATA *out_norm_data[2],
                          int num_inp_at,
+                         const unsigned char *keep_explicit_HDT,
                          struct tagInchiTime *ulMaxTime,
                          INCHI_MODE *pbTautFlags,
                          INCHI_MODE *pbTautFlagsDone,
@@ -340,19 +306,19 @@ int NormOneStructureINChI( CANON_GLOBALS *pCG,
     /* assign values to sd->num_components[]                                                  */
 
     /* djb-rwth: MYREALLOC2( PINChI2, PINChI_Aux2, pINChI2[iINChI], pINChI_Aux2[iINChI], sd->num_components[iINChI], cur_prep_inp_data->num_components, k ) has been replaced and the whole block rewritten to address memory leaks and reading from freed memory locations */
-    do 
-    { 
-        if( (sd->num_components[iINChI]) <= (cur_prep_inp_data->num_components) ) 
+    do
+    {
+        if( (sd->num_components[iINChI]) <= (cur_prep_inp_data->num_components) )
         {
             PINChI2* newPTR1 = (PINChI2 *)inchi_calloc( (long long)cur_prep_inp_data->num_components + 1, sizeof(PINChI2) );
             PINChI_Aux2* newPTR2 = (PINChI_Aux2*)inchi_calloc( (long long)cur_prep_inp_data->num_components + 1, sizeof(PINChI_Aux2) );
             if ( newPTR1 && newPTR2 )
-            { 
+            {
                 if (pINChI2[iINChI] && sd->num_components[iINChI] > 0)
                     memcpy( newPTR1, pINChI2[iINChI], (sd->num_components[iINChI]) * sizeof(PINChI2) );
                 if (pINChI_Aux2[iINChI] && sd->num_components[iINChI] > 0)
                     memcpy( newPTR2, pINChI_Aux2[iINChI], (sd->num_components[iINChI]) * sizeof(PINChI_Aux2) );
-                if (pINChI2[iINChI]) 
+                if (pINChI2[iINChI])
                     inchi_free(pINChI2[iINChI]);
                 if (pINChI_Aux2[iINChI])
                     inchi_free(pINChI_Aux2[iINChI]);
@@ -360,17 +326,17 @@ int NormOneStructureINChI( CANON_GLOBALS *pCG,
                 pINChI_Aux2[iINChI] = newPTR2;
                 sd->num_components[iINChI] = cur_prep_inp_data->num_components;
                 k  = 0;
-            } 
-            else 
-            {        
-                inchi_free(newPTR1); 
-                inchi_free(newPTR2); 
+            }
+            else
+            {
+                inchi_free(newPTR1);
+                inchi_free(newPTR2);
                 k = 1;
-            }             
-        } 
-        else 
-        { 
-            k = 0; 
+            }
+        }
+        else
+        {
+            k = 0;
         }
     } while (0);
 
@@ -790,7 +756,7 @@ int NormOneComponentINChI( CANON_GLOBALS *pCG,
     {
         num_at = Normalization_step(pCG, ic,
             cur_INChI, cur_INChI_Aux,
-            inp_cur_data->at, inp_norm_data, inp_cur_data->num_at,
+            inp_cur_data->at, inp_norm_data, inp_cur_data->num_at, inp_cur_data->keep_explicit_HDT,
             pulTEnd, &bTautFlags, &bTautFlagsDone, cti);
 
         SetConnectedComponentNumber(inp_cur_data->at, inp_cur_data->num_at, i + 1); /*  normalization alters structure component number */
@@ -1142,6 +1108,7 @@ int  Normalization_step( CANON_GLOBALS *pCG,
                          inp_ATOM *inp_at,
                          INP_ATOM_DATA *out_norm_data[2],
                          int num_inp_at,
+                         const unsigned char *keep_explicit_HDT,
                          struct tagInchiTime *ulMaxTime,
                          INCHI_MODE *pbTautFlags,
                          INCHI_MODE *pbTautFlagsDone,
@@ -1182,7 +1149,7 @@ int  Normalization_step( CANON_GLOBALS *pCG,
 
     memset( z->s, 0, sizeof( z->s ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
-    if (pBCN) 
+    if (pBCN)
         memset( pBCN, 0, sizeof( pBCN[0] ) ); /* djb-rwth: memset_s C11/Annex K variant? */
 
     memset( t_group_info, 0, sizeof( *t_group_info ) ); /* djb-rwth: memset_s C11/Annex K variant? */
@@ -1251,7 +1218,7 @@ int  Normalization_step( CANON_GLOBALS *pCG,
     }
     else
     {
-        z->num_at_tg = z->num_atoms = remove_terminal_HDT( num_inp_at, z->out_at, z->fix_termhchrg );
+        z->num_at_tg = z->num_atoms = remove_terminal_HDT( num_inp_at, z->out_at, z->fix_termhchrg, keep_explicit_HDT);
 
         z->num_deleted_H = num_inp_at - z->num_atoms;
         t_group_info->tni.nNumRemovedExplicitH = z->num_deleted_H;

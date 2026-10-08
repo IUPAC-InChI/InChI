@@ -1,41 +1,6 @@
 /*
- * International Chemical Identifier (InChI)
- * Version 1
- * Software version 1.07
- * April 30, 2024
- *
- * MIT License
- *
+ * SPDX-License-Identifier: MIT
  * Copyright (c) 2024 IUPAC and InChI Trust
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- *
- * The InChI library and programs are free software developed under the
- * auspices of the International Union of Pure and Applied Chemistry (IUPAC).
- * Originally developed at NIST.
- * Modifications and additions by IUPAC and the InChI Trust.
- * Some portions of code were developed/changed by external contributors
- * (either contractor or volunteer) which are listed in the file
- * 'External-contributors' included in this distribution.
- *
- * info@inchi-trust.org
- *
  */
 
 #include <stdlib.h>
@@ -1183,6 +1148,14 @@ void FreeInpAtomData(INP_ATOM_DATA *inp_at_data)
     {
         FreeInpAtom(&inp_at_data->at);
         FreeInpAtom(&inp_at_data->at_fixed_bonds);
+
+        /*@nnuk*/
+        if (inp_at_data->keep_explicit_HDT)
+        {
+            inchi_free(inp_at_data->keep_explicit_HDT);
+            inp_at_data->keep_explicit_HDT = NULL;
+        }
+
         memset(inp_at_data, 0, sizeof(*inp_at_data)); /* djb-rwth: memset_s C11/Annex K variant? */
     }
 
@@ -1557,12 +1530,10 @@ int SetExtOrigAtDataByMolfileExtInput(MOL_FMT_DATA *mfdata,
                     ia2 = mfdata->ctab.bonds[ib - 1].atnum2;
                     unitk->blist[2 * m] = ia1;
                     unitk->blist[2 * m + 1] = ia2;
-                    if (!strcmp(mfdata->ctab.atoms[ia1 - 1].symbol, "H") ||
-                        !strcmp(mfdata->ctab.atoms[ia2 - 1].symbol, "H"))
-                    {
-                        TREAT_ERR(err, 9002, "Hydrogen as polymer end group is not supported");
-                        goto exit_function;
-                    }
+
+                    /**
+                     *@nnuk: GHI#252 addressed and redundant logic removed
+                     */
                 }
             }
             else

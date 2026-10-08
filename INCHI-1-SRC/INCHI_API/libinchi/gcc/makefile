@@ -204,6 +204,7 @@ ichimap1.o	\
 ichimap2.o	\
 ichimap4.o	\
 ichinorm.o	\
+aromaticity.o	\
 ichiparm.o	\
 ichiprt1.o	\
 ichiprt2.o	\
