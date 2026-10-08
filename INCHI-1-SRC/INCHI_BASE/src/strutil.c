@@ -5336,7 +5336,8 @@ int has_rel_rac_centre( const OAD_V3000 *v3000,
 }
 
 /**
- * @brief Set the enhanced stereochemistry information for t- and m-layers
+ * @brief Normalise one stereo layer (non-isotopic, or an isotopic view) for
+ *        enhanced stereochemistry: group sign flips and /m
  *
  * @param orig_inp_data Pointer to original input atom data
  * @param inchi Pointer to INChI structure
@@ -5348,17 +5349,10 @@ int has_rel_rac_centre( const OAD_V3000 *v3000,
  * allocation they make degrades to a linear scan when it cannot be served.
  * There is therefore no status worth returning, and no caller ever read one.
  */
-void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+static void normalise_stereo_layer( const ORIG_ATOM_DATA *orig_inp_data,
                                     const INChI *inchi,
                                     const INChI_Aux *aux)
 {
-    /* NULL in the AuxInfo-only pass for the reconnected (-RecMet) structure;
-       the INChI pass before it already normalised the same components */
-    if (orig_inp_data == NULL || !orig_inp_data->v3000)
-    {
-        return;
-    }
-
     if (inchi == NULL || aux == NULL)
     {
         return;
@@ -5407,6 +5401,64 @@ void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
          component_has_collection_atom( inchi, aux, orig_inp_data->v3000->lists_sterac,
                                         orig_inp_data->v3000->n_sterac ))) {
         inchi->Stereo->nCompInv2Abs = 0;
+    }
+}
+
+/**
+ * @brief Isotopic view of a component: the same INChI/INChI_Aux with Stereo
+ *        and the canonical order taken from the isotopic layer
+ *
+ * Shallow copies: the parities and /m flag still live in the real
+ * StereoIsotopic, so the enhanced-stereo code edits the isotopic layer
+ * through it unchanged.
+ *
+ * @return Returns 1 if the component has isotopic sp3 stereo, else 0
+ */
+int isotopic_stereo_view( const INChI *inchi,
+                          const INChI_Aux *aux,
+                          INChI *iso_inchi,
+                          INChI_Aux *iso_aux )
+{
+    if (inchi == NULL || aux == NULL || inchi->StereoIsotopic == NULL ||
+        inchi->StereoIsotopic->nNumberOfStereoCenters <= 0) {
+        return 0;
+    }
+
+    *iso_inchi = *inchi;
+    iso_inchi->Stereo = inchi->StereoIsotopic;
+
+    *iso_aux = *aux;
+    if (aux->nIsotopicOrigAtNosInCanonOrd != NULL) {
+        iso_aux->nOrigAtNosInCanonOrd = aux->nIsotopicOrigAtNosInCanonOrd;
+    }
+
+    return 1;
+}
+
+/**
+ * @brief Set the enhanced stereochemistry information for t- and m-layers,
+ *        non-isotopic and isotopic
+ */
+void set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
+                                    const INChI *inchi,
+                                    const INChI_Aux *aux)
+{
+    INChI iso_inchi;
+    INChI_Aux iso_aux;
+
+    /* NULL in the AuxInfo-only pass for the reconnected (-RecMet) structure;
+       the INChI pass before it already normalised the same components */
+    if (orig_inp_data == NULL || !orig_inp_data->v3000)
+    {
+        return;
+    }
+
+    normalise_stereo_layer( orig_inp_data, inchi, aux );
+
+    /* Centres stereogenic only through isotopes exist only here, e.g. /i1+1/t3- */
+    if (isotopic_stereo_view( inchi, aux, &iso_inchi, &iso_aux ))
+    {
+        normalise_stereo_layer( orig_inp_data, &iso_inchi, &iso_aux );
     }
 }
 

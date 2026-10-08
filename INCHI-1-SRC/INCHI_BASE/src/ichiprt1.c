@@ -141,6 +141,7 @@ static int OutputINCHI_IsotopicLayer( CANON_GLOBALS *pCG,
                                       INCHI_IOS_STRING *strbuf,
                                       int *INCHI_basic_or_INCHI_reconnected,
                                       INCHI_OUT_CTL *io,
+                                      ORIG_ATOM_DATA *enh_data,
                                       char *pLF,
                                       char *pTAB );
 static int OutputINCHI_FixedHLayerWithSublayers( CANON_GLOBALS *pCG,
@@ -1776,9 +1777,11 @@ repeat_INChI_output:
     io.nCurINChISegment++;
 
     /* InChI output: isotopic */
+    /* input data only for enhanced stereo, which reshapes the isotopic /m and /s */
     intermediate_result = OutputINCHI_IsotopicLayer(pCG, out_file, strbuf,
                                                     &INCHI_basic_or_INCHI_reconnected,
-                                                    &io, pLF, pTAB);
+                                                    &io, ip->bEnhancedStereo ? orig_inp_data : NULL,
+                                                    pLF, pTAB);
 
     if (intermediate_result != 0)
     {
@@ -3494,11 +3497,19 @@ int OutputINCHI_StereoLayer( CANON_GLOBALS    *pCG,
  * @param pINChISort Array of per-component INCHI_SORT entries.
  * @param bOutType Output type selecting the Mobile-H/Fixed-H variant.
  * @param num_components Number of connected components.
+ * @param layer Non-isotopic or isotopic stereo.
  * @return Returns 1 if at least one component has a non-zero nCompInv2Abs, else 0.
  */
-static int bHasAbsStereoComponent( INCHI_SORT *pINChISort,
-                                   int         bOutType,
-                                   int         num_components )
+typedef enum
+{
+    STEREO_LAYER_MAIN,
+    STEREO_LAYER_ISOTOPIC
+} STEREO_LAYER;
+
+static int bHasAbsStereoComponent( INCHI_SORT   *pINChISort,
+                                   int           bOutType,
+                                   int           num_components,
+                                   STEREO_LAYER  layer )
 {
     int i, ii;
 
@@ -3506,8 +3517,14 @@ static int bHasAbsStereoComponent( INCHI_SORT *pINChISort,
     {
         INCHI_SORT *is = pINChISort + i;
         INChI *pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
+        INChI_Stereo *stereo;
 
-        if (pINChI && pINChI->Stereo && pINChI->Stereo->nCompInv2Abs)
+        if (!pINChI)
+        {
+            continue;
+        }
+        stereo = (layer == STEREO_LAYER_ISOTOPIC) ? pINChI->StereoIsotopic : pINChI->Stereo;
+        if (stereo && stereo->nCompInv2Abs)
         {
             return 1;
         }
@@ -3646,7 +3663,7 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
 
         /* m-layer; omitted when no component has an ABS reference */
         if ((io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_m_SP3INV] )) && /* djb-rwth: addressing LLVM warning */
-            bHasAbsStereoComponent( io->pINChISort, io->bOutType, io->num_components ))
+            bHasAbsStereoComponent( io->pINChISort, io->bOutType, io->num_components, STEREO_LAYER_MAIN ))
         {
             szGetTag( IdentLbl, io->nTag, io->bTag2 = io->bTag1 | IL_INVS, io->szTag2, &io->bAlways, 1 );
             inchi_strbuf_reset( strbuf );
@@ -3739,11 +3756,89 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
 /****************************************************************************
 Output InChI: isotopic layer and sublayers
 ****************************************************************************/
+/**
+ * @brief Enhanced /s for the isotopic layer: MakeSlayerString() over
+ *        isotopic views of the components (see isotopic_stereo_view()).
+ */
+static int MakeIsoSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
+                                INCHI_SORT       *pINChISort,
+                                INCHI_IOS_STRING *strbuf,
+                                int               bOutType,
+                                int               num_components,
+                                int               nCtMode,
+                                int              *bOverflow )
+{
+    int i, ii, len = 0;
+    INCHI_SORT *iso_sort = (INCHI_SORT *)inchi_calloc( num_components, sizeof(INCHI_SORT) );
+    INChI *iso_inchi = (INChI *)inchi_calloc( num_components, sizeof(INChI) );
+    INChI_Aux *iso_aux = (INChI_Aux *)inchi_calloc( num_components, sizeof(INChI_Aux) );
+
+    if (iso_sort && iso_inchi && iso_aux)
+    {
+        /* Same sort entries, each component's INChI/Aux swapped for its isotopic view */
+        for (i = 0; i < num_components; i++)
+        {
+            iso_sort[i] = pINChISort[i];
+            if (0 > (ii = GET_II( bOutType, (pINChISort + i) )))
+            {
+                continue;
+            }
+            if (isotopic_stereo_view( pINChISort[i].pINChI[ii], pINChISort[i].pINChI_Aux[ii],
+                                      iso_inchi + i, iso_aux + i ))
+            {
+                iso_sort[i].pINChI[ii] = iso_inchi + i;
+                iso_sort[i].pINChI_Aux[ii] = iso_aux + i;
+            }
+        }
+        len = MakeSlayerString( orig_inp_data, iso_sort, strbuf, bOutType,
+                                num_components, nCtMode, bOverflow );
+    }
+    else
+    {
+        *bOverflow = 1;
+    }
+
+    inchi_free( iso_sort );
+    inchi_free( iso_inchi );
+    inchi_free( iso_aux );
+
+    return len;
+}
+
+/**
+ * @brief Does the enhanced isotopic /s differ from the main layer's /s?
+ *
+ * Standard InChI omits the isotopic /s when it equals the main one, decided
+ * on the standard digits. Enhanced classes can differ where the digits do
+ * not, e.g. a centre that exists only in the isotopic layer.
+ */
+static int bIsoSlayerDiffers( ORIG_ATOM_DATA *orig_inp_data, INCHI_OUT_CTL *io )
+{
+    INCHI_IOS_STRING main_s = {0}, iso_s = {0};
+    int overflow = 0, differs;
+
+    inchi_strbuf_init( &main_s, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT );
+    inchi_strbuf_init( &iso_s, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT );
+
+    MakeSlayerString( orig_inp_data, io->pINChISort, &main_s, io->bOutType,
+                      io->num_components, io->TAUT_MODE, &overflow );
+    MakeIsoSlayerString( orig_inp_data, io->pINChISort, &iso_s, io->bOutType,
+                         io->num_components, io->TAUT_MODE, &overflow );
+
+    differs = iso_s.nUsedLength > 0 && strcmp( iso_s.pStr, main_s.pStr ? main_s.pStr : "" ) != 0;
+
+    inchi_strbuf_close( &main_s );
+    inchi_strbuf_close( &iso_s );
+
+    return differs;
+}
+
 int OutputINCHI_IsotopicLayer( CANON_GLOBALS    *pCG,
                                INCHI_IOSTREAM   *out_file,
                                INCHI_IOS_STRING *strbuf,
                                int              *INCHI_basic_or_INCHI_reconnected,
                                INCHI_OUT_CTL    *io,
+                               ORIG_ATOM_DATA   *enh_data,
                                char             *pLF,
                                char             *pTAB )
 {
@@ -3874,8 +3969,10 @@ int OutputINCHI_IsotopicLayer( CANON_GLOBALS    *pCG,
                 }
             }
 
-            /* isotopic #4: abs inverted */
-            if ((io->nSegmAction = INChI_SegmentAction(io->sDifSegs[io->nCurINChISegment][DIFS_m_SP3INV]))) /* djb-rwth: addressing LLVM warning */
+            /* isotopic #4: abs inverted; enhanced: omitted when no component has an ABS reference */
+            if ((io->nSegmAction = INChI_SegmentAction(io->sDifSegs[io->nCurINChISegment][DIFS_m_SP3INV])) && /* djb-rwth: addressing LLVM warning */
+                (enh_data == NULL ||
+                 bHasAbsStereoComponent(io->pINChISort, io->bOutType, io->num_components, STEREO_LAYER_ISOTOPIC)))
             {
                 szGetTag(IdentLbl, io->nTag, io->bTag3 = io->bTag2 | IL_INVS, io->szTag3, &io->bAlways, 1);
                 inchi_strbuf_reset(strbuf);
@@ -3901,7 +3998,16 @@ int OutputINCHI_IsotopicLayer( CANON_GLOBALS    *pCG,
             }
 
             /* isotopic #5: stereo type. Do not output if it has already been output in non-iso */
-            if ((io->nSegmAction = INChI_SegmentAction(io->sDifSegs[io->nCurINChISegment][DIFS_s_STYPE]))) /* djb-rwth: addressing LLVM warning */
+            io->nSegmAction = INChI_SegmentAction(io->sDifSegs[io->nCurINChISegment][DIFS_s_STYPE]);
+
+            /* enhanced: the same rule on the enhanced classes, wherever the isotopic layer restates /t */
+            if (enh_data && enh_data->v3000 && io->nCurINChISegment == DIFL_MI &&
+                INCHI_SEGM_FILL == INChI_SegmentAction(io->sDifSegs[io->nCurINChISegment][DIFS_t_SATOMS]) &&
+                (enh_data->v3000->n_steabs > 0 || enh_data->v3000->n_sterel > 0 || enh_data->v3000->n_sterac > 0))
+            {
+                io->nSegmAction = bIsoSlayerDiffers(enh_data, io) ? INCHI_SEGM_FILL : 0;
+            }
+            if (io->nSegmAction)
             {
                 const char *p_stereo = io->bIsotopicRelativeStereo[io->iCurTautMode] ? x_rel : io->bIsotopicRacemicStereo[io->iCurTautMode] ? x_rac
                                                                                                                                             : x_abs;
@@ -3910,7 +4016,18 @@ int OutputINCHI_IsotopicLayer( CANON_GLOBALS    *pCG,
                 io->tot_len = 0;
                 if (INCHI_SEGM_FILL == io->nSegmAction)
                 {
-                    io->tot_len += MakeDelim(p_stereo, strbuf, &io->bOverflow);
+                    if (enh_data && enh_data->v3000 &&
+                        (enh_data->v3000->n_steabs > 0 ||
+                         enh_data->v3000->n_sterel > 0 ||
+                         enh_data->v3000->n_sterac > 0))
+                    {
+                        io->tot_len += MakeIsoSlayerString(enh_data, io->pINChISort, strbuf, io->bOutType,
+                                                           io->num_components, io->TAUT_MODE, &io->bOverflow);
+                    }
+                    else
+                    {
+                        io->tot_len += MakeDelim(p_stereo, strbuf, &io->bOverflow);
+                    }
                     io->bNonTautIsoIdentifierNotEmpty += io->bSecondNonTautPass;
                 }
                 if (str_LineEnd(io->szTag3, &io->bOverflow, strbuf, -io->nSegmAction, io->bPlainTextTags))

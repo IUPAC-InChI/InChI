@@ -180,6 +180,11 @@ extern "C"
      * @param orig_atom_num Original atom number
      * @return Returns the canonical number, -1 if absent or not a stereocentre
      */
+    int isotopic_stereo_view( const INChI *inchi,
+                              const INChI_Aux *aux,
+                              INChI *iso_inchi,
+                              INChI_Aux *iso_aux );
+
     int has_rel_rac_centre( const OAD_V3000 *v3000,
                             const INChI *inchi,
                             const INChI_Aux *aux );

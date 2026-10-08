@@ -1848,6 +1848,130 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_meso_component_keeps_s)
     EXPECT_EQ(make(diol("CFG=3", "M  V30 MDLV30/STEABS ATOMS=(2 2 3)\n")), "/t3-,4+");
 }
 
+/* Propan-2-ol-1-13C: C2 is a stereocentre only through the 13C, so it lives in
+   the isotopic layer (/i1+1/t3-...). The enhanced pipeline used to ignore that
+   layer and reproduce standard InChI: an OR group gave /m0/s1 or /m1/s1 by
+   wedge, two InChIs for one substance. Now the isotopic layer follows the same
+   rules: OR == -SRel, AND == -SRac, ABS == standard, apart from the prefix. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_isotopic_only_centre)
+{
+    auto propanol = [](const char *cfg, const char *collections) {
+        return std::string("propan-2-ol-1-13C\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 4 3 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 C 0.0 0.0 0 0\n"
+                           "M  V30 2 C 0.866 0.5 0 0\n"
+                           "M  V30 3 C 1.732 0.0 0 0 MASS=13\n"
+                           "M  V30 4 O 0.866 1.5 0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 1 2\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 2 4 ") + cfg + "\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n" +
+               collections +
+               "M  V30 END COLLECTION\n"
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+    auto make = [](const std::string &molblock, const char *opts) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        std::string options = opts;
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), &options[0], poutput), 0) << opts;
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+
+        /* drop the prefix: 1B, 1S or 1 */
+        return inchi.substr(inchi.find('/', strlen("InChI=")));
+    };
+
+    struct IsoCase
+    {
+        const char *collection;
+        const char *ref_options;
+    };
+    const IsoCase cases[] = {
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\n", "-SRel" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n", "-SRac" },
+        { "M  V30 MDLV30/STEABS ATOMS=(1 2)\n", "" },
+    };
+
+    for (const IsoCase &c : cases)
+    {
+        for (const char *cfg : {"CFG=1", "CFG=3"})
+        {
+            const std::string molblock = propanol(cfg, c.collection);
+            EXPECT_EQ(make(molblock, "-EnhancedStereochemistry"), make(molblock, c.ref_options))
+                << c.collection << cfg;
+        }
+    }
+}
+
+/* 3-chloro-2-methylbutane with 13C on one methyl of C2: C3 is a centre in
+   the main layer, C2 only in the isotopic one (/i1+1/t4-,5-). The isotopic
+   layer restates /t, so it must also state its own classes when they differ
+   from the main layer's: OR on C2 + AND on C3 must not collide with AND on
+   both. Standard InChI drops the isotopic /s when it equals the main /s, and
+   both were /s1 there, so the enhanced isotopic /s was lost. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_isotopic_layer_states_its_classes)
+{
+    auto butane = [](const char *cfg_c2, const char *collections) {
+        return std::string("3-chloro-2-methylbutane-13C\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 6 5 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 C 0.0 0.0 0 0\n"
+                           "M  V30 2 C 0.866 0.5 0 0\n"
+                           "M  V30 3 C 1.732 0.0 0 0\n"
+                           "M  V30 4 C 2.598 0.5 0 0\n"
+                           "M  V30 5 C 0.866 1.5 0 0 MASS=13\n"
+                           "M  V30 6 Cl 1.732 -1.0 0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 1 2\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 3 4\n"
+                           "M  V30 4 1 2 5 ") + cfg_c2 + "\n"
+               "M  V30 5 1 3 6 CFG=1\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n" +
+               collections +
+               "M  V30 END COLLECTION\n"
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+    auto make = [](const std::string &molblock) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi;
+    };
+
+    const char *or_c2 = "M  V30 MDLV30/STERAC1 ATOMS=(1 3)\nM  V30 MDLV30/STEREL1 ATOMS=(1 2)\n";
+    const char *and_c2 = "M  V30 MDLV30/STERAC1 ATOMS=(1 3)\nM  V30 MDLV30/STERAC2 ATOMS=(1 2)\n";
+
+    /* each set's two C2 drawings are one substance */
+    EXPECT_EQ(make(butane("CFG=1", or_c2)), make(butane("CFG=3", or_c2)));
+    EXPECT_EQ(make(butane("CFG=1", and_c2)), make(butane("CFG=3", and_c2)));
+
+    /* OR and AND on C2 are different substances */
+    EXPECT_NE(make(butane("CFG=1", or_c2)), make(butane("CFG=1", and_c2)));
+}
+
 /* -RecMet also emits the reconnected structure (/r) and its AuxInfo. The
    AuxInfo-only pass has no input data, and the /t-/m normalisation read
    through that NULL (a crash under valgrind; garbage natively, e.g. /r
