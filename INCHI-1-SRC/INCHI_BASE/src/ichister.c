@@ -3098,7 +3098,9 @@ static void allene_one_wedge_z( inp_ATOM *at,
  Only the ends flagged by find_atropisomeric_atoms_and_bonds() qualify;
  the predicate is re-checked here because a flag marks an atom, not a bond.
 ****************************************************************************/
-#define ATROP_MIN_HINDERED        3  /* ortho positions with a non-H substituent */
+#define ATROP_MIN_HINDERED         3  /* ortho positions with a non-H substituent */
+#define ATROP_BRIDGED_RING         8  /* biaryl bridged into an 8-ring: stable */
+#define ATROP_MIN_HINDERED_BRIDGED 2  /* ... needs only the two bridge positions */
 
 /* Ortho positions X of axis end at_1 (its neighbours except at_2) that carry
    a non-H substituent, i.e. have a third heavy neighbour besides at_1. */
@@ -3137,19 +3139,33 @@ static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
         return 0;
     }
 
-    /* [ATROP] stability heuristic: the four ortho positions X must carry a
-       non-H substituent at >= 3 of them, also in a ring: a ring neighbour
-       always counts, so a lower ring threshold passes bare bridged biaryls.
-       An unsubstituted X has only its ring neighbour besides the axis end. */
-    if (count_hindered_ortho( at, at_1, at_2 ) + count_hindered_ortho( at, at_2, at_1 ) < ATROP_MIN_HINDERED)
+    /* Smallest ring through the axis, 0 if none of size <= 8 */
+    int ring = 0;
+    if (q && at[at_1].nRingSystem == at[at_2].nRingSystem)
+    {
+        ring = is_bond_in_Nmax_memb_ring( at, at_1, ord_1, q, nAtomLevel, cSource,
+                                          (AT_RANK) ( ATROP_BRIDGED_RING + 1 ) );
+    }
+
+    /* A small ring locks the rotation */
+    if (0 < ring && ring <= ATROP_MIN_ROTATABLE_RING)
     {
         return 0;
     }
 
-    /* A small ring locks the rotation */
-    if (q && at[at_1].nRingSystem == at[at_2].nRingSystem &&
-         0 < is_bond_in_Nmax_memb_ring( at, at_1, ord_1, q, nAtomLevel, cSource,
-                                        (AT_RANK) ( ATROP_MIN_ROTATABLE_RING + 1 ) ))
+    /* [ATROP] stability heuristic: the four ortho positions X must carry a
+       non-H substituent at >= 3 of them. An unsubstituted X has only its
+       ring neighbour besides the axis end; a bridge atom always counts.
+       Exception: a biaryl bridged into an 8-ring (dibenzocyclooctadiene
+       lignans) is stable with the two bridge positions alone, while 7-rings
+       ring-invert fast and larger rings rotate like open chains:
+
+            X---Ar===Ar---X        8-ring:  2 bridge X suffice
+            |            |         7-ring, >= 9-ring, acyclic: 3 X
+            CH2--CH---CH--CH2                                            */
+    int min_hindered = ring == ATROP_BRIDGED_RING ? ATROP_MIN_HINDERED_BRIDGED
+                                                  : ATROP_MIN_HINDERED;
+    if (count_hindered_ortho( at, at_1, at_2 ) + count_hindered_ortho( at, at_2, at_1 ) < min_hindered)
     {
         return 0;
     }
