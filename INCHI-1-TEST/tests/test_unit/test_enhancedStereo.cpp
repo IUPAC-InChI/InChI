@@ -823,6 +823,52 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ign
     }
 }
 
+/* Collections naming only atoms that are not stereocentres carry no
+   information: every wedged centre is ungrouped, hence absolute, and the
+   InChI equals standard InChI apart from the prefix. Used to drop /s
+   entirely (/t3-,4-/m1 for /t3-,4-/m1/s1). */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_only_orphan_collections_keep_s1)
+{
+    const char *collections[] = {
+        "M  V30 MDLV30/STEABS ATOMS=(1 1)\n",
+        "M  V30 MDLV30/STEREL1 ATOMS=(1 1)\n",
+        "M  V30 MDLV30/STERAC1 ATOMS=(1 1)\n",
+        "M  V30 MDLV30/STERAC1 ATOMS=(2 1 4)\n",
+    };
+
+    /* 3-chlorobutan-2-ol, both centres wedged; atoms 1 and 4 are CH3 */
+    for (const char *coll : collections)
+    {
+        const std::string molblock = ChlorobutanolMolblock("CFG=1", "CFG=1", coll);
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+        const std::string enh = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        char options_std[] = "";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_std, poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/"))) << coll;
+    }
+
+    /* Two components, both centres wedged and ungrouped; the only collection
+       names a CH2 of the butanol */
+    const std::string two = TwoAlcoholsMolblock("CFG=1", "M  V30 MDLV30/STERAC1 ATOMS=(1 4)\n");
+    inchi_Output output = {};
+    inchi_Output *poutput = &output;
+
+    char options[] = "-EnhancedStereochemistry";
+    ASSERT_LT(MakeINCHIFromMolfileText(two.c_str(), options, poutput), 2);
+    const std::string inchi = poutput->szInChI;
+    EXPECT_EQ(inchi.substr(inchi.find("/t")), "/t5-;4-/m10/s1");
+    FreeINCHI(poutput);
+}
+
 /* The absolute centres of a component, STEABS members plus wedged centres in
    no collection, flip as one set and toggle /m. Each case lists the four wedge
    combinations of 3-chlorobutan-2-ol grouped into substances: an AND or OR
