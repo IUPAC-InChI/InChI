@@ -1,11 +1,21 @@
 #include <gtest/gtest.h>
 #include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/mode.h"
 }
+
+/* Absolute path to the fixture directory, supplied by CMake so the tests do not
+   depend on the working directory they happen to be launched from. The literal
+   below is only a fallback for builds that do not define it. */
+#ifndef FIXTURES_DIR
+#define FIXTURES_DIR "../../../../../INCHI-1-TEST/tests/test_unit/fixtures"
+#endif
 
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_molfile_v2)
 {
@@ -124,6 +134,1049 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_1)
     FreeINCHI(poutput);
 }
 
+/* An explicit STEABS-only collection must reduce to the bare standard /s1.
+   The whole string, /t and /m included, is byte-identical to the standard
+   InChI for this molfile apart from the 1B prefix. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_abs_only_reduces_to_s1)
+{
+    const char *molblock =
+        "enhanc_stereo_abs_only                            \n"
+        "  ACD/LABS08242216132D                            \n"
+        "                                                  \n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000           \n"
+        "M  V30 BEGIN CTAB                                 \n"
+        "M  V30 COUNTS 18 17 0 0 1                         \n"
+        "M  V30 BEGIN ATOM                                 \n"
+        "M  V30 1 C 3424.1946 -1936.7935 0 0               \n"
+        "M  V30 2 C 3352.3145 -1895.2935 0 0               \n"
+        "M  V30 3 C 3280.4346 -1936.7935 0 0               \n"
+        "M  V30 4 C 3208.5542 -1895.2935 0 0               \n"
+        "M  V30 5 C 3136.6743 -1936.7935 0 0               \n"
+        "M  V30 6 C 3064.7944 -1895.2935 0 0               \n"
+        "M  V30 7 Br 3136.6743 -2019.7935 0 0              \n"
+        "M  V30 8 Cl 3208.5542 -1812.2935 0 0              \n"
+        "M  V30 9 Cl 3280.4346 -2019.7935 0 0              \n"
+        "M  V30 10 Cl 3352.3145 -1812.2935 0 0             \n"
+        "M  V30 11 Cl 3424.1946 -2019.7935 0 0             \n"
+        "M  V30 12 C 3496.075 -1895.2935 0 0               \n"
+        "M  V30 13 C 3567.9548 -1936.7942 0 0              \n"
+        "M  V30 14 C 3639.835 -1895.2944 0 0               \n"
+        "M  V30 15 C 3711.7148 -1936.7942 0 0              \n"
+        "M  V30 16 Cl 3639.835 -1812.2944 0 0              \n"
+        "M  V30 17 Cl 3567.9548 -2019.7942 0 0             \n"
+        "M  V30 18 Cl 3496.075 -1812.2937 0 0              \n"
+        "M  V30 END ATOM                                   \n"
+        "M  V30 BEGIN BOND                                 \n"
+        "M  V30 1 1 1 2                                    \n"
+        "M  V30 2 1 1 11 CFG=3                             \n"
+        "M  V30 3 1 1 12                                   \n"
+        "M  V30 4 1 2 3                                    \n"
+        "M  V30 5 1 2 10 CFG=1                             \n"
+        "M  V30 6 1 3 4                                    \n"
+        "M  V30 7 1 3 9 CFG=1                              \n"
+        "M  V30 8 1 4 5                                    \n"
+        "M  V30 9 1 4 8 CFG=1                              \n"
+        "M  V30 10 1 5 6                                   \n"
+        "M  V30 11 1 5 7 CFG=1                             \n"
+        "M  V30 12 1 12 13                                 \n"
+        "M  V30 13 1 12 18 CFG=3                           \n"
+        "M  V30 14 1 13 14                                 \n"
+        "M  V30 15 1 13 17 CFG=1                           \n"
+        "M  V30 16 1 14 15                                 \n"
+        "M  V30 17 1 14 16 CFG=1                           \n"
+        "M  V30 END BOND                                   \n"
+        "M  V30 BEGIN COLLECTION                           \n"
+        "M  V30 MDLV30/STEABS ATOMS=(8 1 2 3 4 5 12 13 14) \n"
+        "M  V30 END COLLECTION                             \n"
+        "M  V30 END CTAB                                   \n"
+        "M  END                                            \n";
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    // Standard InChI for the same molfile, i.e. with the option switched off
+    char options_std[] = "";
+    const char expected_std[] = "InChI=1S/C10H14BrCl7/c1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-/m0/s1";
+
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options_std, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, expected_std);
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+
+    char options_enh[] = "-EnhancedStereochemistry";
+    const char expected_enh[] = "InChI=1B/C10H14BrCl7/c1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-/m0/s1";
+
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, expected_enh);
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+}
+
+/* A single OR (resp. AND) collection covering every stereocentre reduces to
+   the bare /s2 (resp. /s3) and carries no /m at all — such a component has no
+   absolute reference for /m to point at. Apart from the version prefix the
+   whole string is then byte-identical to the corresponding -SRel / -SRac
+   output. A spurious /m0 was emitted here before the /m fix. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_and_only_omit_m_layer)
+{
+    const std::string molblock_head =
+        "enhanc_stereo_or_and_only                         \n"
+        "  ACD/LABS08242216132D                            \n"
+        "                                                  \n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000           \n"
+        "M  V30 BEGIN CTAB                                 \n"
+        "M  V30 COUNTS 18 17 0 0 1                         \n"
+        "M  V30 BEGIN ATOM                                 \n"
+        "M  V30 1 C 3424.1946 -1936.7935 0 0               \n"
+        "M  V30 2 C 3352.3145 -1895.2935 0 0               \n"
+        "M  V30 3 C 3280.4346 -1936.7935 0 0               \n"
+        "M  V30 4 C 3208.5542 -1895.2935 0 0               \n"
+        "M  V30 5 C 3136.6743 -1936.7935 0 0               \n"
+        "M  V30 6 C 3064.7944 -1895.2935 0 0               \n"
+        "M  V30 7 Br 3136.6743 -2019.7935 0 0              \n"
+        "M  V30 8 Cl 3208.5542 -1812.2935 0 0              \n"
+        "M  V30 9 Cl 3280.4346 -2019.7935 0 0              \n"
+        "M  V30 10 Cl 3352.3145 -1812.2935 0 0             \n"
+        "M  V30 11 Cl 3424.1946 -2019.7935 0 0             \n"
+        "M  V30 12 C 3496.075 -1895.2935 0 0               \n"
+        "M  V30 13 C 3567.9548 -1936.7942 0 0              \n"
+        "M  V30 14 C 3639.835 -1895.2944 0 0               \n"
+        "M  V30 15 C 3711.7148 -1936.7942 0 0              \n"
+        "M  V30 16 Cl 3639.835 -1812.2944 0 0              \n"
+        "M  V30 17 Cl 3567.9548 -2019.7942 0 0             \n"
+        "M  V30 18 Cl 3496.075 -1812.2937 0 0              \n"
+        "M  V30 END ATOM                                   \n"
+        "M  V30 BEGIN BOND                                 \n"
+        "M  V30 1 1 1 2                                    \n"
+        "M  V30 2 1 1 11 CFG=3                             \n"
+        "M  V30 3 1 1 12                                   \n"
+        "M  V30 4 1 2 3                                    \n"
+        "M  V30 5 1 2 10 CFG=1                             \n"
+        "M  V30 6 1 3 4                                    \n"
+        "M  V30 7 1 3 9 CFG=1                              \n"
+        "M  V30 8 1 4 5                                    \n"
+        "M  V30 9 1 4 8 CFG=1                              \n"
+        "M  V30 10 1 5 6                                   \n"
+        "M  V30 11 1 5 7 CFG=1                             \n"
+        "M  V30 12 1 12 13                                 \n"
+        "M  V30 13 1 12 18 CFG=3                           \n"
+        "M  V30 14 1 13 14                                 \n"
+        "M  V30 15 1 13 17 CFG=1                           \n"
+        "M  V30 16 1 14 15                                 \n"
+        "M  V30 17 1 14 16 CFG=1                           \n"
+        "M  V30 END BOND                                   \n"
+        "M  V30 BEGIN COLLECTION                           \n";
+    const std::string molblock_tail =
+        "M  V30 END COLLECTION                             \n"
+        "M  V30 END CTAB                                   \n"
+        "M  END                                            \n";
+
+    const char *skeleton = "InChI=1B/C10H14BrCl7/c1-3(11)5(13)7(15)9(17)10(18)8(16)"
+                           "6(14)4(2)12/h3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-";
+
+    struct EnhStereoOnlyCase
+    {
+        const char *collection;
+        const char *ref_option;
+        const char *expected_s_layer;
+    };
+    const EnhStereoOnlyCase cases[] = {
+        { "M  V30 MDLV30/STEREL1 ATOMS=(8 1 2 3 4 5 12 13 14)\n", "-SRel", "/s2" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(8 1 2 3 4 5 12 13 14)\n", "-SRac", "/s3" },
+    };
+
+    for (const EnhStereoOnlyCase &c : cases)
+    {
+        const std::string molblock = molblock_head + c.collection + molblock_tail;
+        const std::string expected_enh = std::string(skeleton) + c.expected_s_layer;
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 0);
+        EXPECT_STREQ(poutput->szInChI, expected_enh.c_str());
+        /* no /m segment anywhere in the string */
+        EXPECT_EQ(strstr(poutput->szInChI, "/m"), nullptr);
+        const std::string enh = poutput->szInChI;
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        FreeINCHI(poutput);
+
+        char options_ref[16];
+        snprintf(options_ref, sizeof(options_ref), "%s", c.ref_option);
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_ref, poutput), 0);
+        const std::string ref = poutput->szInChI;
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        FreeINCHI(poutput);
+
+        /* identical apart from the version prefix: 1B vs the plain non-standard 1 */
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")));
+    }
+}
+
+/* /m is decided per component: the collection lists are structure-wide, so an ABS
+   collection on one component must not keep /m alive on an OR/AND-only sibling.
+   Two disconnected fragments, STEABS on one and STEREL1 on the other, must give
+   the '.' placeholder for the OR-only component and a digit for the ABS one.
+   Before the per-component fix this emitted /m11 for both. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_m_layer_is_per_component)
+{
+    const char *molblock_head =
+        "mixed_abs_plus_rel_components                \n"
+        "  Hand-built: comp A = STEABS/STERAC1, comp B = STEREL1\n"
+        "                                             \n"
+        "  0  0  0     0  0            999 V3000      \n"
+        "M  V30 BEGIN CTAB                            \n"
+        "M  V30 COUNTS 12 10 0 0 0                    \n"
+        "M  V30 BEGIN ATOM                            \n"
+        "M  V30 1 C 0.0000 0.0000 0 0                 \n"
+        "M  V30 2 C 0.8660 0.5000 0 0 CFG=1           \n"
+        "M  V30 3 C 1.7320 0.0000 0 0 CFG=1           \n"
+        "M  V30 4 C 2.5980 0.5000 0 0                 \n"
+        "M  V30 5 Cl 0.8660 1.5000 0 0                \n"
+        "M  V30 6 Cl 1.7320 -1.0000 0 0               \n"
+        "M  V30 7 C 0.0000 5.0000 0 0                 \n"
+        "M  V30 8 C 0.8660 5.5000 0 0 CFG=1           \n"
+        "M  V30 9 C 1.7320 5.0000 0 0 CFG=1           \n"
+        "M  V30 10 C 2.5980 5.5000 0 0                \n"
+        "M  V30 11 Br 0.8660 6.5000 0 0               \n"
+        "M  V30 12 Br 1.7320 4.0000 0 0               \n"
+        "M  V30 END ATOM                              \n"
+        "M  V30 BEGIN BOND                            \n"
+        "M  V30 1 1 1 2                               \n"
+        "M  V30 2 1 2 3                               \n"
+        "M  V30 3 1 3 4                               \n"
+        "M  V30 4 1 2 5 CFG=1                         \n"
+        "M  V30 5 1 3 6 CFG=1                         \n"
+        "M  V30 6 1 7 8                               \n"
+        "M  V30 7 1 8 9                               \n"
+        "M  V30 8 1 9 10                              \n"
+        "M  V30 9 1 8 11 CFG=1                        \n"
+        "M  V30 10 1 9 12 CFG=1                       \n"
+        "M  V30 END BOND                              \n"
+        "M  V30 BEGIN COLLECTION                      \n";
+    const char *molblock_tail =
+        "M  V30 MDLV30/STEREL1 ATOMS=(2 8 9)          \n"
+        "M  V30 END COLLECTION                        \n"
+        "M  V30 END CTAB                              \n"
+        "M  END                                       \n";
+
+    /* component order is C4H8Br2 (the STEREL1 one) then C4H8Cl2 (the other) */
+    struct PerComponentCase
+    {
+        const char *collection_of_second_component;
+        const char *expected_enh;
+    };
+    const PerComponentCase cases[] = {
+        /* ABS sibling: /m survives, but only as a digit for the ABS component */
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 3)           \n",
+          "InChI=1B/C4H8Br2.C4H8Cl2/c2*1-3(5)4(2)6/h2*3-4H,1-2H3/t2*3-,4-/m.1/s2;1" },
+        /* no ABS anywhere: the whole /m segment disappears */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(2 2 3)          \n",
+          "InChI=1B/C4H8Br2.C4H8Cl2/c2*1-3(5)4(2)6/h2*3-4H,1-2H3/t2*3-,4-/s2;3" },
+    };
+
+    for (const PerComponentCase &c : cases)
+    {
+        const std::string molblock =
+            std::string(molblock_head) + c.collection_of_second_component + molblock_tail;
+
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 0);
+        EXPECT_STREQ(poutput->szInChI, c.expected_enh);
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        FreeINCHI(poutput);
+    }
+}
+
+/* /s is positional like every other layer: one ';' slot per component, n* only
+   over consecutive equal components. Pentan-2-ol and butan-2-ol, each wedged,
+   plus stereo-free spectators. Merging non-adjacent equal substrings used to
+   emit /s2*;3 for the water case, i.e. the water read as racemic. Only /s is
+   asserted; /m is out of scope here. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_s_layer_is_positional)
+{
+    const char *molblock_head =
+        "two_alcohols_with_spectators\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n";
+    const char *alcohol_atoms =
+        "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
+        "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
+        "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
+        "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
+        "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
+        "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
+        "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
+        "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
+        "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
+        "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
+        "M  V30 11 C -2.874760 4.174794 0.000000 0\n";
+    const char *alcohol_bonds =
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=3\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 2 4\n"
+        "M  V30 4 1 4 5\n"
+        "M  V30 5 1 7 6 CFG=1\n"
+        "M  V30 6 1 7 8\n"
+        "M  V30 7 1 7 9\n"
+        "M  V30 8 1 9 10\n"
+        "M  V30 9 1 10 11\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    const char *molblock_tail =
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    /* component order: pentanol, butanol, then the spectators */
+    struct PositionalCase
+    {
+        const char *counts;
+        const char *spectator_atoms;
+        const char *collection;
+        const char *expected_s;
+    };
+    const PositionalCase cases[] = {
+        /* water, AND on butanol */
+        { "M  V30 COUNTS 12 9 0 0 0\n",
+          "M  V30 12 O 5.0 0.0 0.0 0\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          "/s;3;" },
+        /* Na+ OH-, AND on butanol */
+        { "M  V30 COUNTS 13 9 0 0 0\n",
+          "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+          "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          "/s;3;;" },
+        /* Na+ OH-, AND on pentanol */
+        { "M  V30 COUNTS 13 9 0 0 0\n",
+          "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+          "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 7)\n",
+          "/s3;;;" },
+        /* Na+ OH-, one AND group per alcohol: uniform, so standard's bare /s3 */
+        { "M  V30 COUNTS 13 9 0 0 0\n",
+          "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+          "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n",
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
+          "/s3" },
+    };
+
+    for (const PositionalCase &c : cases)
+    {
+        const std::string molblock = std::string(molblock_head) + c.counts +
+                                     "M  V30 BEGIN ATOM\n" + alcohol_atoms +
+                                     c.spectator_atoms + "M  V30 END ATOM\n" +
+                                     alcohol_bonds + c.collection + molblock_tail;
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+
+        // /s is the last layer here: no /i, no AuxInfo in szInChI
+        const std::string inchi = poutput->szInChI;
+        const size_t s_pos = inchi.find("/s");
+        ASSERT_NE(s_pos, std::string::npos) << inchi;
+        EXPECT_EQ(inchi.substr(s_pos), c.expected_s) << inchi;
+
+        FreeINCHI(poutput);
+    }
+}
+
+/* The identifier must not depend on whether AuxInfo is requested. With -AuxNone
+   the /t-/m normalisation used to receive another component's aux data, so a
+   stereo-free spectator (salt, water) changed the alcohols' /m:
+   /m10.. for both alcohols racemic plus Na+ OH-. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
+{
+    const char *alcohols_with_naoh_head =
+        "two_alcohols\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 13 9 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
+        "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
+        "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
+        "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
+        "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
+        "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
+        "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
+        "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
+        "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
+        "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
+        "M  V30 11 C -2.874760 4.174794 0.000000 0\n"
+        "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+        "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=3\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 2 4\n"
+        "M  V30 4 1 4 5\n"
+        "M  V30 5 1 7 6 CFG=1\n"
+        "M  V30 6 1 7 8\n"
+        "M  V30 7 1 7 9\n"
+        "M  V30 8 1 9 10\n"
+        "M  V30 9 1 10 11\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    /* pentanol drawn first, butanol second */
+    const char *pentanol_first_head =
+        "two_alcohols\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 11 9 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 2.268912 0.956315 0.000000 0\n"
+        "M  V30 2 C 1.089319 0.029730 0.000000 0\n"
+        "M  V30 3 O 1.301969 -1.455121 0.000000 0\n"
+        "M  V30 4 C -0.302924 0.587994 0.000000 0\n"
+        "M  V30 5 C -1.482517 -0.338591 0.000000 0\n"
+        "M  V30 6 C -2.874760 0.219673 0.000000 0\n"
+        "M  V30 7 C -1.818653 1.956315 0.000000 0\n"
+        "M  V30 8 C -0.519615 2.706315 0.000000 0\n"
+        "M  V30 9 O -0.519615 4.206315 0.000000 0\n"
+        "M  V30 10 C 0.779423 1.956315 0.000000 0\n"
+        "M  V30 11 C 2.078461 2.706315 0.000000 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=1\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 2 4\n"
+        "M  V30 4 1 4 5\n"
+        "M  V30 5 1 5 6\n"
+        "M  V30 6 1 8 7 CFG=3\n"
+        "M  V30 7 1 8 9\n"
+        "M  V30 8 1 8 10\n"
+        "M  V30 9 1 10 11\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    const char *molblock_tail =
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    struct AuxNoneCase
+    {
+        const char *head;
+        const char *collection;
+        const char *expected;
+    };
+    const AuxNoneCase cases[] = {
+        /* both alcohols AND, Na+ OH-: no ABS anywhere, so no /m */
+        { alcohols_with_naoh_head,
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
+          "InChI=1B/C5H12O.C4H10O.Na.H2O/c1-3-4-5(2)6;1-3-4(2)5;;/h5-6H,3-4H2,1-2H3;"
+          "4-5H,3H2,1-2H3;;1H2/q;;+1;/p-1/t5-;4-;;/s3" },
+        /* pentanol AND, butanol ungrouped: '.' on the racemic pentanol */
+        { pentanol_first_head,
+          "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          "InChI=1B/C5H12O.C4H10O/c1-3-4-5(2)6;1-3-4(2)5/h5-6H,3-4H2,1-2H3;"
+          "4-5H,3H2,1-2H3/t5-;4-/m.0/s3;" },
+    };
+
+    for (const AuxNoneCase &c : cases)
+    {
+        const std::string molblock = std::string(c.head) + c.collection + molblock_tail;
+
+        for (const char *opts : {"-EnhancedStereochemistry", "-EnhancedStereochemistry -AuxNone"})
+        {
+            inchi_Output output = {};
+            inchi_Output *poutput = &output;
+
+            std::string options = opts;
+            ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), &options[0], poutput), 2);
+            EXPECT_STREQ(poutput->szInChI, c.expected) << "options: " << opts;
+            FreeINCHI(poutput);
+        }
+    }
+}
+
+enum class Spectators
+{
+    NONE,
+    NAOH
+};
+
+/* Butan-2-ol (atoms 1-5, centre 2) and pentan-2-ol (atoms 6-11, centre 7) as
+   two components, optionally plus Na+ OH-; the pentanol wedge and the
+   collection block vary. */
+static std::string TwoAlcoholsMolblock(const char *pentanol_cfg, const char *collections,
+                                       Spectators spectators = Spectators::NONE)
+{
+    const bool naoh = spectators == Spectators::NAOH;
+
+    return std::string(
+               "two_alcohols\n"
+               "     RDKit          2D\n"
+               "\n"
+               "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+               "M  V30 BEGIN CTAB\n") +
+           (naoh ? "M  V30 COUNTS 13 9 0 0 0\n" : "M  V30 COUNTS 11 9 0 0 0\n") +
+           "M  V30 BEGIN ATOM\n"
+           "M  V30 1 C -1.818653 -0.750000 0.000000 0\n"
+           "M  V30 2 C -0.519615 0.000000 0.000000 0\n"
+           "M  V30 3 O -0.519615 1.500000 0.000000 0\n"
+           "M  V30 4 C 0.779423 -0.750000 0.000000 0\n"
+           "M  V30 5 C 2.078461 -0.000000 0.000000 0\n"
+           "M  V30 6 C 2.268912 4.911436 0.000000 0\n"
+           "M  V30 7 C 1.089319 3.984850 0.000000 0\n"
+           "M  V30 8 O 1.301969 2.500000 0.000000 0\n"
+           "M  V30 9 C -0.302924 4.543115 0.000000 0\n"
+           "M  V30 10 C -1.482517 3.616529 0.000000 0\n"
+           "M  V30 11 C -2.874760 4.174794 0.000000 0\n" +
+           (naoh ? "M  V30 12 Na 4.078461 0.000000 0.000000 0 CHG=1 VAL=-1\n"
+                   "M  V30 13 O 3.078461 0.000000 0.000000 0 CHG=-1 VAL=1\n"
+                 : "") +
+           "M  V30 END ATOM\n"
+           "M  V30 BEGIN BOND\n"
+           "M  V30 1 1 2 1 CFG=3\n"
+           "M  V30 2 1 2 3\n"
+           "M  V30 3 1 2 4\n"
+           "M  V30 4 1 4 5\n"
+           "M  V30 5 1 7 6 " + pentanol_cfg + "\n"
+           "M  V30 6 1 7 8\n"
+           "M  V30 7 1 7 9\n"
+           "M  V30 8 1 9 10\n"
+           "M  V30 9 1 10 11\n"
+           "M  V30 END BOND\n"
+           "M  V30 BEGIN COLLECTION\n" +
+           collections +
+           "M  V30 END COLLECTION\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
+/* When every component with stereocentres reduces to the same bare class digit
+   and the rest carry no stereo, /s is that one digit, as in standard InChI: the
+   whole string equals -SAbs (default) / -SRel / -SRac apart from the prefix.
+   Used to emit /s2*1, /s2*1;;, /s2*2, /s2*3;;. Groups cannot span components
+   (rejected by the reader), so per-component classes mean what standard says. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_standard)
+{
+    struct UniformCase
+    {
+        const char *collections;
+        Spectators spectators;
+        const char *ref_option;
+        const char *ref_prefix;
+    };
+    const UniformCase cases[] = {
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NONE, "", "InChI=1S/" },
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NAOH, "", "InChI=1S/" },
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\nM  V30 MDLV30/STEREL2 ATOMS=(1 7)\n",
+          Spectators::NONE, "-SRel", "InChI=1/" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
+          Spectators::NAOH, "-SRac", "InChI=1/" },
+    };
+
+    for (const UniformCase &c : cases)
+    {
+        const std::string molblock = TwoAlcoholsMolblock("CFG=1", c.collections, c.spectators);
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+        const std::string enh = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        std::string options_ref = c.ref_option;
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), &options_ref[0], poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen(c.ref_prefix)))
+            << "enhanced: " << enh << "\nreference: " << ref;
+    }
+}
+
+/* 3-chlorobutan-2-ol: C1 CH3, C2 (OH, centre), C3 (Cl, centre), C4 CH3.
+   Wedges on C2 and C3 and the collection block vary. */
+static std::string ChlorobutanolMolblock(const char *cfg_c2, const char *cfg_c3,
+                                         const char *collections)
+{
+    return std::string("3-chlorobutan-2-ol\n"
+                       "  test\n"
+                       "\n"
+                       "  0  0  0     0  0            999 V3000\n"
+                       "M  V30 BEGIN CTAB\n"
+                       "M  V30 COUNTS 6 5 0 0 0\n"
+                       "M  V30 BEGIN ATOM\n"
+                       "M  V30 1 C 0.0 0.0 0 0\n"
+                       "M  V30 2 C 0.866 0.5 0 0\n"
+                       "M  V30 3 C 1.732 0.0 0 0\n"
+                       "M  V30 4 C 2.598 0.5 0 0\n"
+                       "M  V30 5 O 0.866 1.5 0 0\n"
+                       "M  V30 6 Cl 1.732 -1.0 0 0\n"
+                       "M  V30 END ATOM\n"
+                       "M  V30 BEGIN BOND\n"
+                       "M  V30 1 1 1 2\n"
+                       "M  V30 2 1 2 3\n"
+                       "M  V30 3 1 3 4\n"
+                       "M  V30 4 1 2 5 ") + cfg_c2 + "\n"
+           "M  V30 5 1 3 6 " + cfg_c3 + "\n"
+           "M  V30 END BOND\n"
+           "M  V30 BEGIN COLLECTION\n" +
+           collections +
+           "M  V30 END COLLECTION\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
+/* Only stereocentres take part in /s and in the /m membership test. A
+   collection atom that is not a stereocentre (CH3, CH2, a spectator) used to
+   reach /s as an orphan group, e.g. 3(1,3) for 3(3), a bare 1 for a component
+   whose only centre is ungrouped, or a 1 on OH-; an ABS label on a CH2 kept
+   /m alive on an AND-only component (/m10 for /m1.); and a CH3 as a group's
+   lowest atom skipped the group's sign normalisation in /t. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_non_stereocentres_are_ignored)
+{
+    struct OrphanCase
+    {
+        const char *collections;
+        Spectators spectators;
+        const char *expected_t_m_s;
+    };
+    const OrphanCase cases[] = {
+        /* ABS on a pentanol CH2; the pentanol centre itself is ungrouped */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STEABS ATOMS=(1 9)\n",
+          Spectators::NONE, "/t5-;4-/m1./s;3" },
+        /* ABS on a CH2 of the AND-only butanol */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STEABS ATOMS=(1 4)\n",
+          Spectators::NONE, "/t5-;4-/m1./s;3" },
+        /* ABS on OH- */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STEABS ATOMS=(1 13)\n",
+          Spectators::NAOH, "/t5-;4-;;/m1.../s;3;;" },
+    };
+
+    for (const OrphanCase &c : cases)
+    {
+        const std::string molblock = TwoAlcoholsMolblock("CFG=1", c.collections, c.spectators);
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 2);
+
+        const std::string inchi = poutput->szInChI;
+        EXPECT_EQ(inchi.substr(inchi.find("/t")), c.expected_t_m_s) << c.collections;
+        FreeINCHI(poutput);
+    }
+
+    /* 3-chlorobutan-2-ol. A CH3 in the group must neither reach /s nor, as the
+       group's lowest canonical atom, stop its sign normalisation (/t4+ for 4-). */
+    struct ChlorobutanolCase
+    {
+        const char *cfg_c2;
+        const char *cfg_c3;
+        const char *collections;
+        const char *expected_t_m_s;
+    };
+    const ChlorobutanolCase chloro_cases[] = {
+        /* ABS on C2, AND on C3 plus the CH3 next to it */
+        { "CFG=1", "CFG=1", "M  V30 MDLV30/STEABS ATOMS=(1 2)\nM  V30 MDLV30/STERAC1 ATOMS=(2 3 4)\n",
+          "/t3-,4-/m1/s1(4)3(3)" },
+        /* ABS on C3, AND on C2 plus the CH3 next to it, both wedge combinations needing a flip */
+        { "CFG=1", "CFG=3", "M  V30 MDLV30/STEABS ATOMS=(1 3)\nM  V30 MDLV30/STERAC1 ATOMS=(2 1 2)\n",
+          "/t3-,4-/m0/s1(3)3(4)" },
+        { "CFG=3", "CFG=1", "M  V30 MDLV30/STEABS ATOMS=(1 3)\nM  V30 MDLV30/STERAC1 ATOMS=(2 1 2)\n",
+          "/t3-,4-/m1/s1(3)3(4)" },
+    };
+
+    for (const ChlorobutanolCase &c : chloro_cases)
+    {
+        const std::string chlorobutanol =
+            ChlorobutanolMolblock(c.cfg_c2, c.cfg_c3, c.collections);
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(chlorobutanol.c_str(), options, poutput), 0);
+
+        const std::string inchi = poutput->szInChI;
+        EXPECT_EQ(inchi.substr(inchi.find("/t")), c.expected_t_m_s)
+            << c.cfg_c2 << " " << c.cfg_c3 << " " << c.collections;
+        FreeINCHI(poutput);
+    }
+}
+
+/* Collections naming only atoms that are not stereocentres carry no
+   information: every wedged centre is ungrouped, hence absolute, and the
+   InChI equals standard InChI apart from the prefix. Used to drop /s
+   entirely (/t3-,4-/m1 for /t3-,4-/m1/s1). */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_only_orphan_collections_keep_s1)
+{
+    const char *collections[] = {
+        "M  V30 MDLV30/STEABS ATOMS=(1 1)\n",
+        "M  V30 MDLV30/STEREL1 ATOMS=(1 1)\n",
+        "M  V30 MDLV30/STERAC1 ATOMS=(1 1)\n",
+        "M  V30 MDLV30/STERAC1 ATOMS=(2 1 4)\n",
+    };
+
+    /* 3-chlorobutan-2-ol, both centres wedged; atoms 1 and 4 are CH3 */
+    for (const char *coll : collections)
+    {
+        const std::string molblock = ChlorobutanolMolblock("CFG=1", "CFG=1", coll);
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+        const std::string enh = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        char options_std[] = "";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_std, poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/"))) << coll;
+    }
+
+    /* Two components, both centres wedged and ungrouped; the only collection
+       names a CH2 of the butanol */
+    const std::string two = TwoAlcoholsMolblock("CFG=1", "M  V30 MDLV30/STERAC1 ATOMS=(1 4)\n");
+    inchi_Output output = {};
+    inchi_Output *poutput = &output;
+
+    char options[] = "-EnhancedStereochemistry";
+    ASSERT_LT(MakeINCHIFromMolfileText(two.c_str(), options, poutput), 2);
+    const std::string inchi = poutput->szInChI;
+    EXPECT_EQ(inchi.substr(inchi.find("/t")), "/t5-;4-/m10/s1");
+    FreeINCHI(poutput);
+}
+
+/* The absolute centres of a component, STEABS members plus wedged centres in
+   no collection, flip as one set and toggle /m. Each case lists the four wedge
+   combinations of 3-chlorobutan-2-ol grouped into substances: an AND or OR
+   group on one centre makes its two epimers one substance. One substance, one
+   InChI; different substances, different InChIs. Used to fail both ways: ABS
+   flips forced /m1 instead of toggling it, so mirror images collided; and an
+   OR group reduced to bare /s2 and dropped /m beside an ungrouped wedge. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_absolute_set_flips_as_one)
+{
+    struct WedgeSet
+    {
+        const char *cfg_c2;
+        const char *cfg_c3;
+    };
+    struct SubstanceCase
+    {
+        const char *collections;
+        WedgeSet substance_a[2];
+        WedgeSet substance_b[2];
+    };
+    const SubstanceCase cases[] = {
+        /* ABS on C2, AND on C3: C3 epimers are one substance */
+        { "M  V30 MDLV30/STEABS ATOMS=(1 2)\nM  V30 MDLV30/STERAC1 ATOMS=(1 3)\n",
+          { {"CFG=1", "CFG=1"}, {"CFG=1", "CFG=3"} },
+          { {"CFG=3", "CFG=3"}, {"CFG=3", "CFG=1"} } },
+        /* C3 ungrouped (absolute), AND on C2 */
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+          { {"CFG=1", "CFG=1"}, {"CFG=3", "CFG=1"} },
+          { {"CFG=3", "CFG=3"}, {"CFG=1", "CFG=3"} } },
+        /* C3 ungrouped (absolute), OR on C2 */
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\n",
+          { {"CFG=1", "CFG=1"}, {"CFG=3", "CFG=1"} },
+          { {"CFG=3", "CFG=3"}, {"CFG=1", "CFG=3"} } },
+    };
+
+    auto make = [](const char *collections, const WedgeSet &w) {
+        const std::string molblock = ChlorobutanolMolblock(w.cfg_c2, w.cfg_c3, collections);
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi;
+    };
+
+    for (const SubstanceCase &c : cases)
+    {
+        const std::string a0 = make(c.collections, c.substance_a[0]);
+        const std::string a1 = make(c.collections, c.substance_a[1]);
+        const std::string b0 = make(c.collections, c.substance_b[0]);
+        const std::string b1 = make(c.collections, c.substance_b[1]);
+
+        EXPECT_EQ(a0, a1) << c.collections;
+        EXPECT_EQ(b0, b1) << c.collections;
+        EXPECT_NE(a0, b0) << c.collections;
+
+        /* an absolute centre is present, so /m is too */
+        EXPECT_NE(a0.find("/m"), std::string::npos) << a0;
+    }
+}
+
+/* A wedged centre in no collection keeps its /m digit: its configuration is
+   drawn, so the two enantiomers of the ungrouped component must differ. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_ungrouped_wedge_keeps_m)
+{
+    struct UngroupedCase
+    {
+        const char *pentanol_cfg;
+        const char *expected_t_m_s;
+    };
+    const UngroupedCase cases[] = {
+        { "CFG=1", "/t5-;4-/m1./s;3" },
+        { "CFG=3", "/t5-;4-/m0./s;3" },
+    };
+
+    for (const UngroupedCase &c : cases)
+    {
+        /* AND on butanol, pentanol ungrouped */
+        const std::string molblock =
+            TwoAlcoholsMolblock(c.pentanol_cfg, "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n");
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        ASSERT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+
+        const std::string inchi = poutput->szInChI;
+        EXPECT_EQ(inchi.substr(inchi.find("/t")), c.expected_t_m_s) << inchi;
+        FreeINCHI(poutput);
+    }
+}
+
+/* An OR/AND group whose centres lie in different components couples them,
+   which the per-component /s cannot express: one STERAC1 over both alcohols
+   gave the same InChI as two independent groups. Diagnosed and dropped like
+   the other malformed collections, so the output is standard InChI with 1B.
+   An ABS collection across components couples nothing and is kept. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_components_is_not_used)
+{
+    const char *standard_1b =
+        "InChI=1B/C5H12O.C4H10O/c1-3-4-5(2)6;1-3-4(2)5/h5-6H,3-4H2,1-2H3;"
+        "4-5H,3H2,1-2H3/t5-;4-/m10/s1";
+
+    for (const char *collection : {"M  V30 MDLV30/STERAC1 ATOMS=(2 2 7)\n",
+                                   "M  V30 MDLV30/STEREL1 ATOMS=(2 2 7)\n"})
+    {
+        const std::string molblock = TwoAlcoholsMolblock("CFG=1", collection);
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput),
+                  inchi_Ret_WARNING) << collection;
+        EXPECT_STREQ(poutput->szInChI, standard_1b) << collection;
+        ASSERT_NE(poutput->szMessage, nullptr) << collection;
+        EXPECT_NE(strstr(poutput->szMessage, "spans more than one component"), nullptr)
+            << "message was: " << poutput->szMessage;
+        FreeINCHI(poutput);
+    }
+
+    /* over-rejection guard */
+    const std::string molblock =
+        TwoAlcoholsMolblock("CFG=1", "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n");
+
+    inchi_Output output = {};
+    inchi_Output *poutput = &output;
+
+    char options[] = "-EnhancedStereochemistry";
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+    FreeINCHI(poutput);
+}
+
+/* Across the Mobile-H/Fixed-H split: an OR-only component with a mobile-H
+   group must drop /m from the main layer and keep the /f sublayer intact, staying
+   byte-identical to -SRel -FixedH apart from the version prefix. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_only_omits_m_with_mobile_h)
+{
+    const char *molblock =
+        "mobileh_or_only                              \n"
+        "  Hand-built: 2-Cl-3-Br-butanoic acid        \n"
+        "                                             \n"
+        "  0  0  0     0  0            999 V3000      \n"
+        "M  V30 BEGIN CTAB                            \n"
+        "M  V30 COUNTS 8 7 0 0 0                      \n"
+        "M  V30 BEGIN ATOM                            \n"
+        "M  V30 1 C 0.0000 0.0000 0 0                 \n"
+        "M  V30 2 C 0.8660 0.5000 0 0 CFG=1           \n"
+        "M  V30 3 C 1.7320 0.0000 0 0 CFG=1           \n"
+        "M  V30 4 C 2.5980 0.5000 0 0                 \n"
+        "M  V30 5 O 3.4640 0.0000 0 0                 \n"
+        "M  V30 6 O 2.5980 1.5000 0 0                 \n"
+        "M  V30 7 Cl 0.8660 1.5000 0 0                \n"
+        "M  V30 8 Br 1.7320 -1.0000 0 0               \n"
+        "M  V30 END ATOM                              \n"
+        "M  V30 BEGIN BOND                            \n"
+        "M  V30 1 1 1 2                               \n"
+        "M  V30 2 1 2 3                               \n"
+        "M  V30 3 1 3 4                               \n"
+        "M  V30 4 2 4 5                               \n"
+        "M  V30 5 1 4 6                               \n"
+        "M  V30 6 1 2 7 CFG=1                         \n"
+        "M  V30 7 1 3 8 CFG=1                         \n"
+        "M  V30 END BOND                              \n"
+        "M  V30 BEGIN COLLECTION                      \n"
+        "M  V30 MDLV30/STEREL1 ATOMS=(2 2 3)          \n"
+        "M  V30 END COLLECTION                        \n"
+        "M  V30 END CTAB                              \n"
+        "M  END                                       \n";
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    const char expected_enh[] = "InChI=1B/C4H6BrClO2/c1-2(6)3(5)4(7)8/h2-3H,1H3,(H,7,8)/t2-,3+/s2/f/h7H";
+
+    char options_enh[] = "-EnhancedStereochemistry -FixedH";
+    ASSERT_EQ(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, expected_enh);
+    EXPECT_EQ(strstr(poutput->szInChI, "/m"), nullptr);
+    const std::string enh = poutput->szInChI;
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+
+    char options_ref[] = "-SRel -FixedH";
+    ASSERT_EQ(MakeINCHIFromMolfileText(molblock, options_ref, poutput), 0);
+    const std::string ref = poutput->szInChI;
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+
+    EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")));
+}
+
+/* The BIOVIA white-paper Appendix B / fig. 22 reference molfile, located in
+   the wild as MDL_white_paper_fig22.v3000.sdf and persisted as datasets/biovia_white_paper_fig22.mol.
+   29 atoms mixing all five collection types in one structure, so it cross-checks the whole
+   grouping pipeline against a third-party authority at once: ABS (15) from STEABS(17), two OR
+   groups (13,14) and (21,23), two AND groups (17) and (18), /m1 present because an ABS
+   collection exists (the negative control for omitting /m), neither the two OR nor the two AND
+   groups reduced (the over-reduction guard), and every group's lowest centre normalised to '-'.
+   Molblock inline so the gate does not depend on the fragile relative fixture path.
+   NB: the upstream file terminates with "M END"; it must be "M  END" or InChI returns error 64. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_biovia_appendix_b)
+{
+    const char *molblock =
+        "\n"
+        "\n"
+        "MDL-Draw12200218542D\n"
+        "  0  0  0  0  0  0              0 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 29 32 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C -0.0544 -0.428 0 0\n"
+        "M  V30 2 C -0.0544 -1.278 0 0 CFG=2\n"
+        "M  V30 3 C -0.7962 -1.6974 0 0\n"
+        "M  V30 4 C -0.7962 -2.544 0 0\n"
+        "M  V30 5 C -0.0703 -2.9817 0 0\n"
+        "M  V30 6 C 0.6716 -2.5622 0 0 CFG=1\n"
+        "M  V30 7 C 0.6716 -1.7051 0 0 CFG=2\n"
+        "M  V30 8 C 1.4208 -1.2852 0 0\n"
+        "M  V30 9 C 1.4093 -2.9942 0 0\n"
+        "M  V30 10 C -1.2907 1.3481 0 0\n"
+        "M  V30 11 C -2.0326 0.9232 0 0\n"
+        "M  V30 12 C -2.0326 0.0734 0 0\n"
+        "M  V30 13 C -1.293 -0.3579 0 0\n"
+        "M  V30 14 C -0.5534 0.9274 0 0\n"
+        "M  V30 15 C -0.5534 0.074 0 0\n"
+        "M  V30 16 N 0.77 -0.3022 0 0\n"
+        "M  V30 17 C 1.1707 0.466 0 0 CFG=1\n"
+        "M  V30 18 C 0.8061 1.2704 0 0\n"
+        "M  V30 19 N -0.0142 1.4289 0 0\n"
+        "M  V30 20 O 1.3356 1.938 0 0\n"
+        "M  V30 21 C -2.7699 1.3485 0 0 CFG=2\n"
+        "M  V30 22 C -2.7699 2.2058 0 0 CFG=2\n"
+        "M  V30 23 C -3.4976 2.6309 0 0 CFG=2\n"
+        "M  V30 24 C -4.2412 2.2104 0 0\n"
+        "M  V30 25 C -4.2412 1.355 0 0\n"
+        "M  V30 26 O -3.4976 3.4805 0 0\n"
+        "M  V30 27 O -2.0178 2.624 0 0\n"
+        "M  V30 28 C 2.0249 0.466 0 0\n"
+        "M  V30 29 C -3.4995 0.9299 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 2 1 CFG=1\n"
+        "M  V30 2 1 7 8 CFG=1\n"
+        "M  V30 3 1 6 9 CFG=1\n"
+        "M  V30 4 1 2 3\n"
+        "M  V30 5 1 2 7\n"
+        "M  V30 6 1 3 4\n"
+        "M  V30 7 1 4 5\n"
+        "M  V30 8 1 5 6\n"
+        "M  V30 9 1 6 7\n"
+        "M  V30 10 2 1 16\n"
+        "M  V30 11 1 16 17\n"
+        "M  V30 12 1 17 18\n"
+        "M  V30 13 1 19 14\n"
+        "M  V30 14 1 18 19\n"
+        "M  V30 15 2 18 20\n"
+        "M  V30 16 1 21 11 CFG=1\n"
+        "M  V30 17 1 21 22\n"
+        "M  V30 18 1 22 23\n"
+        "M  V30 19 1 23 24\n"
+        "M  V30 20 1 24 25\n"
+        "M  V30 21 1 23 26 CFG=3\n"
+        "M  V30 22 1 22 27 CFG=3\n"
+        "M  V30 23 1 17 28 CFG=1\n"
+        "M  V30 24 1 10 11\n"
+        "M  V30 25 2 10 14\n"
+        "M  V30 26 2 11 12\n"
+        "M  V30 27 1 12 13\n"
+        "M  V30 28 2 13 15\n"
+        "M  V30 29 1 14 15\n"
+        "M  V30 30 1 15 1\n"
+        "M  V30 31 1 25 29\n"
+        "M  V30 32 1 29 21\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n"
+        "M  V30 MDLV30/STEABS ATOMS=(1 17)\n"
+        "M  V30 MDLV30/STEREL2 ATOMS=(2 6 7)\n"
+        "M  V30 MDLV30/STEREL1 ATOMS=(2 22 23)\n"
+        "M  V30 MDLV30/STERAC2 ATOMS=(1 2)\n"
+        "M  V30 MDLV30/STERAC1 ATOMS=(1 21)\n"
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n"
+;
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    const char expected_enh[] =
+        "InChI=1B/C24H34N2O3/c1-13-6-4-7-17(14(13)2)22-19-11-10-16(18-8-5-9-21(27)23(18)28)"
+        "12-20(19)26-24(29)15(3)25-22/h10-15,17-18,21,23,27-28H,4-9H2,1-3H3,(H,26,29)/"
+        "t13-,14-,15-,17-,18-,21-,23+/m1/s1(15)2(13,14)(21,23)3(17)(18)";
+
+    char options_enh[] = "-EnhancedStereochemistry";
+    ASSERT_EQ(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 0);
+    EXPECT_STREQ(poutput->szInChI, expected_enh);
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    FreeINCHI(poutput);
+}
+
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_atropisomer)
 {
     const char *molblock =
@@ -230,13 +1283,18 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_3_empty_collection_info)
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0";
+    /* == the standard InChI of this structure, prefix apart: with the
+       collections gone, the enhanced path emits the plain stereo-type
+       digit. It used to drop /s1 altogether. */
+    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    /* The collections name no atom the CTab has, so they are dropped
+       -- as before -- but the caller is now told rather than left guessing. */
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
+    ASSERT_NE(poutput->szMessage, nullptr);
+    EXPECT_NE(strstr(poutput->szMessage, "unknown atom in a stereo collection"), nullptr)
+        << "message was: " << poutput->szMessage;
 
     FreeINCHI(poutput);
 }
@@ -281,13 +1339,18 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_3_wrong_atoms_in_collecti
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0";
+    /* == the standard InChI of this structure, prefix apart: with the
+       collections gone, the enhanced path emits the plain stereo-type
+       digit. It used to drop /s1 altogether. */
+    const char expected_inchi[] = "InChI=1B/C9H20/c1-6-8(4)9(5)7(2)3/h7-9H,6H2,1-5H3/t8-,9+/m0/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    /* Atoms -2, 13 and 43 do not exist in a 9-atom CTab. Dropped as
+       before, but the caller is now told rather than left guessing. */
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
+    ASSERT_NE(poutput->szMessage, nullptr);
+    EXPECT_NE(strstr(poutput->szMessage, "unknown atom in a stereo collection"), nullptr)
+        << "message was: " << poutput->szMessage;
 
     FreeINCHI(poutput);
 }
@@ -520,7 +1583,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_3_mols)
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7.C8H18/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6(2)8(5)7(3)4/h2*3-10H,1-2H3;6-8H,1-5H3/t2*3-,4-,5+,6-,7-,8-,9+,10-;/m00./s2*1(3,5)2(4)(6,8)3(7,9)(10);1(6)3(7,8)";
+    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7.C8H18/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6(2)8(5)7(3)4/h2*3-10H,1-2H3;6-8H,1-5H3/t2*3-,4-,5+,6-,7-,8-,9+,10-;/m00./s2*1(3,5)2(4)(6,8)3(7,9)(10);";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -673,7 +1736,9 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_4_mols)
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C12H26.2C10H14BrCl7.C9H20/c1-8(2)11(7)12(9(3)4)10(5)6;2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6-8(4)9(5)7(2)3/h8-12H,1-7H3;2*3-10H,1-2H3;7-9H,6H2,1-5H3/t11-;2*3-,4-,5+,6-,7-,8-,9+,10-;8-,9+/m1001/s1(8,9,10,11);2*1(3,5)2(4)(6,8)3(7,9)(10);1(7)3(8,9)";
+    const char expected_inchi[] = "InChI=1B/C12H26.2C10H14BrCl7.C9H20/c1-8(2)11(7)12(9(3)4)10(5)6;2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6-8(4)9(5)7(2)3/h8-12H,1-7H3;2*3-10H,1-2H3;7-9H,6H2,1-5H3/t11-;2*3-,4-,5+,6-,7-,8-,9+,10-;8-,9+/m100./s1;2*1(3,5)2(4)(6,8)3(7,9)(10);3";
+    // First component contributes ABS atoms only, so its /s reduces to a bare
+    // "1"; the other components keep their groups.
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -684,6 +1749,434 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_4_mols)
     FreeINCHI(poutput);
 }
 
+/* Magnesium bis(butan-2-olate): one CTab component, but InChI disconnects the
+   metal into Mg and two butan-2-olates. Wedges on the two centres vary. */
+static std::string MagnesiumBisButanolateMolblock(const char *cfg_a, const char *cfg_b,
+                                                  const char *collections)
+{
+    return std::string("mg_bis_butanolate\n"
+                       "  test\n"
+                       "\n"
+                       "  0  0  0     0  0            999 V3000\n"
+                       "M  V30 BEGIN CTAB\n"
+                       "M  V30 COUNTS 11 10 0 0 0\n"
+                       "M  V30 BEGIN ATOM\n"
+                       "M  V30 1 C -1.8 -0.75 0 0\n"
+                       "M  V30 2 C -0.5 0.0 0 0\n"
+                       "M  V30 3 O -0.5 1.5 0 0\n"
+                       "M  V30 4 C 0.78 -0.75 0 0\n"
+                       "M  V30 5 C 2.08 0.0 0 0\n"
+                       "M  V30 6 Mg 0.8 2.5 0 0\n"
+                       "M  V30 7 O 2.1 1.5 0 0\n"
+                       "M  V30 8 C 3.4 2.2 0 0\n"
+                       "M  V30 9 C 3.4 3.7 0 0\n"
+                       "M  V30 10 C 4.7 1.5 0 0\n"
+                       "M  V30 11 C 6.0 2.2 0 0\n"
+                       "M  V30 END ATOM\n"
+                       "M  V30 BEGIN BOND\n"
+                       "M  V30 1 1 2 1 ") + cfg_a + "\n"
+           "M  V30 2 1 2 3\n"
+           "M  V30 3 1 2 4\n"
+           "M  V30 4 1 4 5\n"
+           "M  V30 5 1 3 6\n"
+           "M  V30 6 1 6 7\n"
+           "M  V30 7 1 7 8\n"
+           "M  V30 8 1 8 9 " + cfg_b + "\n"
+           "M  V30 9 1 8 10\n"
+           "M  V30 10 1 10 11\n"
+           "M  V30 END BOND\n"
+           "M  V30 BEGIN COLLECTION\n" +
+           collections +
+           "M  V30 END COLLECTION\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
+/* Components are InChI's, after metal disconnection, not the CTab's. An AND
+   group over the two ligands of a drawn Mg complex spans two components once
+   Mg is disconnected; it used to pass the reader and be split silently, so
+   the two drawings below (different substances) shared /t2*4-;/s3. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_disconnected_metal_is_not_used)
+{
+    for (const char *cfg_b : {"CFG=1", "CFG=3"})
+    {
+        const std::string molblock = MagnesiumBisButanolateMolblock(
+            "CFG=1", cfg_b, "M  V30 MDLV30/STERAC1 ATOMS=(2 2 8)\n");
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput),
+                  inchi_Ret_WARNING);
+        const std::string enh = poutput->szInChI;
+        ASSERT_NE(poutput->szMessage, nullptr);
+        EXPECT_NE(strstr(poutput->szMessage, "spans more than one component"), nullptr)
+            << "message was: " << poutput->szMessage;
+        FreeINCHI(poutput);
+
+        char options_std[] = "";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_std, poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        /* collections dropped: standard InChI apart from the prefix */
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/"))) << cfg_b;
+    }
+}
+
+/* Butane-2,3-diol: C2 and C3 equivalent, so up/down is meso. Standard InChI
+   gives a meso component no /m and no /s. One OR (or AND) group per centre
+   makes every drawing the same substance, so one InChI with its /s. The
+   meso drawing used to lose /s entirely (/t3-,4-), because the /s segment
+   followed standard InChI's meso decision, taken before the groups were
+   normalised. All-ABS meso stays standard: no /s. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_meso_component_keeps_s)
+{
+    auto diol = [](const char *cfg_c3, const char *collections) {
+        return std::string("butane-2,3-diol\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 6 5 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 C 0.0 0.0 0 0\n"
+                           "M  V30 2 C 0.866 0.5 0 0\n"
+                           "M  V30 3 C 1.732 0.0 0 0\n"
+                           "M  V30 4 C 2.598 0.5 0 0\n"
+                           "M  V30 5 O 0.866 1.5 0 0\n"
+                           "M  V30 6 O 1.732 -1.0 0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 1 2\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 3 4\n"
+                           "M  V30 4 1 2 5 CFG=1\n"
+                           "M  V30 5 1 3 6 ") + cfg_c3 + "\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n" +
+               collections +
+               "M  V30 END COLLECTION\n"
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+    auto make = [](const std::string &molblock) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi.substr(inchi.find("/t"));
+    };
+
+    struct MesoCase
+    {
+        const char *collections;
+        const char *expected_t_m_s;
+    };
+    const MesoCase cases[] = {
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\nM  V30 MDLV30/STEREL2 ATOMS=(1 3)\n",
+          "/t3-,4-/s2(3)(4)" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 3)\n",
+          "/t3-,4-/s3(3)(4)" },
+    };
+
+    for (const MesoCase &c : cases)
+    {
+        EXPECT_EQ(make(diol("CFG=1", c.collections)), c.expected_t_m_s) << "chiral drawing";
+        EXPECT_EQ(make(diol("CFG=3", c.collections)), c.expected_t_m_s) << "meso drawing";
+    }
+
+    /* all ABS: as standard, meso has neither /m nor /s */
+    EXPECT_EQ(make(diol("CFG=3", "M  V30 MDLV30/STEABS ATOMS=(2 2 3)\n")), "/t3-,4+");
+}
+
+/* Propan-2-ol-1-13C: C2 is a stereocentre only through the 13C, so it lives in
+   the isotopic layer (/i1+1/t3-...). The enhanced pipeline used to ignore that
+   layer and reproduce standard InChI: an OR group gave /m0/s1 or /m1/s1 by
+   wedge, two InChIs for one substance. Now the isotopic layer follows the same
+   rules: OR == -SRel, AND == -SRac, ABS == standard, apart from the prefix. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_isotopic_only_centre)
+{
+    auto propanol = [](const char *cfg, const char *collections) {
+        return std::string("propan-2-ol-1-13C\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 4 3 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 C 0.0 0.0 0 0\n"
+                           "M  V30 2 C 0.866 0.5 0 0\n"
+                           "M  V30 3 C 1.732 0.0 0 0 MASS=13\n"
+                           "M  V30 4 O 0.866 1.5 0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 1 2\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 2 4 ") + cfg + "\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n" +
+               collections +
+               "M  V30 END COLLECTION\n"
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+    auto make = [](const std::string &molblock, const char *opts) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        std::string options = opts;
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), &options[0], poutput), 0) << opts;
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+
+        /* drop the prefix: 1B, 1S or 1 */
+        return inchi.substr(inchi.find('/', strlen("InChI=")));
+    };
+
+    struct IsoCase
+    {
+        const char *collection;
+        const char *ref_options;
+    };
+    const IsoCase cases[] = {
+        { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\n", "-SRel" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n", "-SRac" },
+        { "M  V30 MDLV30/STEABS ATOMS=(1 2)\n", "" },
+    };
+
+    for (const IsoCase &c : cases)
+    {
+        for (const char *cfg : {"CFG=1", "CFG=3"})
+        {
+            const std::string molblock = propanol(cfg, c.collection);
+            EXPECT_EQ(make(molblock, "-EnhancedStereochemistry"), make(molblock, c.ref_options))
+                << c.collection << cfg;
+        }
+    }
+}
+
+/* 3-chloro-2-methylbutane with 13C on one methyl of C2: C3 is a centre in
+   the main layer, C2 only in the isotopic one (/i1+1/t4-,5-). The isotopic
+   layer restates /t, so it must also state its own classes when they differ
+   from the main layer's: OR on C2 + AND on C3 must not collide with AND on
+   both. Standard InChI drops the isotopic /s when it equals the main /s, and
+   both were /s1 there, so the enhanced isotopic /s was lost. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_isotopic_layer_states_its_classes)
+{
+    auto butane = [](const char *cfg_c2, const char *collections) {
+        return std::string("3-chloro-2-methylbutane-13C\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 6 5 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 C 0.0 0.0 0 0\n"
+                           "M  V30 2 C 0.866 0.5 0 0\n"
+                           "M  V30 3 C 1.732 0.0 0 0\n"
+                           "M  V30 4 C 2.598 0.5 0 0\n"
+                           "M  V30 5 C 0.866 1.5 0 0 MASS=13\n"
+                           "M  V30 6 Cl 1.732 -1.0 0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 1 2\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 3 4\n"
+                           "M  V30 4 1 2 5 ") + cfg_c2 + "\n"
+               "M  V30 5 1 3 6 CFG=1\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n" +
+               collections +
+               "M  V30 END COLLECTION\n"
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+    auto make = [](const std::string &molblock) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 0);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi;
+    };
+
+    const char *or_c2 = "M  V30 MDLV30/STERAC1 ATOMS=(1 3)\nM  V30 MDLV30/STEREL1 ATOMS=(1 2)\n";
+    const char *and_c2 = "M  V30 MDLV30/STERAC1 ATOMS=(1 3)\nM  V30 MDLV30/STERAC2 ATOMS=(1 2)\n";
+
+    /* each set's two C2 drawings are one substance */
+    EXPECT_EQ(make(butane("CFG=1", or_c2)), make(butane("CFG=3", or_c2)));
+    EXPECT_EQ(make(butane("CFG=1", and_c2)), make(butane("CFG=3", and_c2)));
+
+    /* OR and AND on C2 are different substances */
+    EXPECT_NE(make(butane("CFG=1", or_c2)), make(butane("CFG=1", and_c2)));
+}
+
+/* -RecMet also emits the reconnected structure (/r) and its AuxInfo. The
+   AuxInfo-only pass has no input data, and the /t-/m normalisation read
+   through that NULL (a crash under valgrind; garbage natively, e.g. /r
+   without /s). One AND group per Mg ligand: every wedge set is the same
+   substance, so one InChI, and /r carries /s3. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_reconnected_metal_layer)
+{
+    std::string first;
+
+    for (const char *cfg_b : {"CFG=1", "CFG=3"})
+    {
+        const std::string molblock = MagnesiumBisButanolateMolblock(
+            "CFG=1", cfg_b,
+            "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n"
+            "M  V30 MDLV30/STERAC2 ATOMS=(1 8)\n");
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry -RecMet";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 2);
+        const std::string inchi = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        const size_t r_pos = inchi.find("/r");
+        ASSERT_NE(r_pos, std::string::npos) << inchi;
+        EXPECT_NE(inchi.find("/s3", r_pos), std::string::npos) << inchi;
+
+        if (first.empty())
+        {
+            first = inchi;
+        }
+        EXPECT_EQ(inchi, first) << cfg_b;
+    }
+}
+
+/* With -MolecularInorganics a haptically bound alkene stays in the metal's
+   component, so an AND group over a centre on it and a centre on another
+   ligand does not span components. The reader's CTab-only check ignored
+   haptic bonds and rejected it. Without the option InChI splits the complex,
+   and the same group is rejected. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_haptic_group_follows_inchi_components)
+{
+    const char *molblock =
+        "pt_haptic\n"
+        "  test\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 15 14 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 Cl 7.48 -4.71 0 0\n"
+        "M  V30 2 Cl 8.86 -5.89 0 0\n"
+        "M  V30 3 O 7.53 -7.08 0 0\n"
+        "M  V30 4 Pt 7.52 -5.88 0 0 CHG=-1\n"
+        "M  V30 5 * 5.99 -5.91 0 0\n"
+        "M  V30 6 C 5.90 -5.32 0 0\n"
+        "M  V30 7 C 5.90 -6.50 0 0\n"
+        "M  V30 8 C 4.60 -7.25 0 0\n"
+        "M  V30 9 O 3.30 -6.50 0 0\n"
+        "M  V30 10 C 4.60 -8.75 0 0\n"
+        "M  V30 11 C 8.83 -7.83 0 0\n"
+        "M  V30 12 C 8.83 -9.33 0 0\n"
+        "M  V30 13 C 10.13 -7.08 0 0\n"
+        "M  V30 14 C 11.43 -7.83 0 0\n"
+        "M  V30 15 O 3.30 -9.50 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 4 1\n"
+        "M  V30 2 1 4 2\n"
+        "M  V30 3 1 4 3\n"
+        "M  V30 4 9 4 5 ENDPTS=(2 6 7) ATTACH=ALL\n"
+        "M  V30 5 2 7 6\n"
+        "M  V30 6 1 7 8\n"
+        "M  V30 7 1 8 9 CFG=1\n"
+        "M  V30 8 1 8 10\n"
+        "M  V30 9 1 3 11\n"
+        "M  V30 10 1 11 12 CFG=1\n"
+        "M  V30 11 1 11 13\n"
+        "M  V30 12 1 13 14\n"
+        "M  V30 13 1 10 15\n"
+        "M  V30 14 1 6 15\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n"
+        "M  V30 MDLV30/STERAC1 ATOMS=(2 8 11)\n"
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    inchi_Output output = {};
+    inchi_Output *poutput = &output;
+
+    /* one component: kept, a single AND group over both centres */
+    char options_mi[] = "-MolecularInorganics -EnhancedStereochemistry";
+    ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_mi, poutput), 2);
+    EXPECT_TRUE(poutput->szMessage == nullptr ||
+                strstr(poutput->szMessage, "spans") == nullptr)
+        << "message was: " << poutput->szMessage;
+    const std::string mi = poutput->szInChI;
+    EXPECT_EQ(mi.substr(mi.find("/t")), "/t5-,6-/s3") << mi;
+    FreeINCHI(poutput);
+
+    /* complex split into components: rejected, so standard InChI with 1B.
+       (szMessage carries the reader's star-atom warning here, not this one.) */
+    char options_enh[] = "-EnhancedStereochemistry";
+    ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 2);
+    const std::string enh = poutput->szInChI;
+    FreeINCHI(poutput);
+
+    char options_std[] = "";
+    ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_std, poutput), 2);
+    const std::string ref = poutput->szInChI;
+    FreeINCHI(poutput);
+
+    EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/")));
+}
+
+/* Centres of unknown configuration ('?' under -SUU) carry no class, so a
+   component holding only those does not block the uniform reduction: the
+   string equals -SUU's own /s1 or -SUU -SRac's /s3 apart from the prefix.
+   Used to emit /s;1 and /s;3. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_unknown_centres_do_not_block_reduction)
+{
+    struct UnknownCase
+    {
+        const char *collections;
+        const char *ref_options;
+    };
+    const UnknownCase cases[] = {
+        { "M  V30 MDLV30/STEABS ATOMS=(1 2)\n", "-SUU" },
+        { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n", "-SUU -SRac" },
+    };
+
+    for (const UnknownCase &c : cases)
+    {
+        /* pentanol centre drawn without a wedge: unknown */
+        const std::string molblock = TwoAlcoholsMolblock("", c.collections);
+
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options_enh[] = "-SUU -EnhancedStereochemistry";
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options_enh, poutput), 2);
+        const std::string enh = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        std::string options_ref = c.ref_options;
+        ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), &options_ref[0], poutput), 2);
+        const std::string ref = poutput->szInChI;
+        FreeINCHI(poutput);
+
+        EXPECT_NE(enh.find("/t5?;4-"), std::string::npos) << enh;
+        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")))
+            << "enhanced: " << enh << "\nreference: " << ref;
+    }
+}
+
+/* OR/AND groups stretch over both fragments: unsupported, so the collections
+   are dropped with a warning and the output is standard InChI with 1B. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_grps_1)
 {
     const char *molblock =
@@ -780,17 +2273,16 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_gr
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h2*3-10H,1-2H3/t2*3-,4-,5+,6-,7-,8-,9+,10-/m00/s2*1(3,5)2(4)(6,8)3(7,9)(10)";
+    const char expected_inchi[] = "InChI=1B/2C10H14BrCl7/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h2*3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-;3-,4-,5+,6-,7-,8-,9+,10-/m00/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
 
     FreeINCHI(poutput);
 }
 
+/* OR/AND groups stretch over both fragments: unsupported, so the collections
+   are dropped with a warning and the output is standard InChI with 1B. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_grps_2)
 {
     const char *molblock =
@@ -849,17 +2341,16 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_mols_inter_enhstereo_gr
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C10H22.C8H18/c1-5-6-7-8-10(4)9(2)3;1-5-7(3)8(4)6-2/h9-10H,5-8H2,1-4H3;7-8H,5-6H2,1-4H3/t10-;7-,8-/m00/s1(10)3(9);1(7)3(8)";
+    const char expected_inchi[] = "InChI=1B/C10H22.C8H18/c1-5-6-7-8-10(4)9(2)3;1-5-7(3)8(4)6-2/h9-10H,5-8H2,1-4H3;7-8H,5-6H2,1-4H3/t10-;7-,8-/m00/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
 
     FreeINCHI(poutput);
 }
 
+/* OR/AND groups stretch over both fragments: unsupported, so the collections
+   are dropped with a warning and the output is standard InChI with 1B. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_different_mols_inter_enhstereo_grps)
 {
     const char *molblock =
@@ -958,13 +2449,10 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_2_different_mols_inter_en
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/C11H16BrCl7.C10H14BrCl7/c1-3-5(13)7(15)9(17)11(19)10(18)8(16)6(14)4(2)12;1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h4-11H,3H2,1-2H3;3-10H,1-2H3/t4-,5-,6+,7-,8-,9-,10+,11-;3-,4-,5+,6-,7-,8-,9+,10-/m00/s1(4,6)2(5)(7,9)3(8,10)(11);1(3,5)2(4)(6,8)3(7,9)(10)";
+    const char expected_inchi[] = "InChI=1B/C11H16BrCl7.C10H14BrCl7/c1-3-5(13)7(15)9(17)11(19)10(18)8(16)6(14)4(2)12;1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h4-11H,3H2,1-2H3;3-10H,1-2H3/t4-,5-,6+,7-,8-,9-,10+,11-;3-,4-,5+,6+,7-,8+,9+,10-/m00/s1";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), inchi_Ret_WARNING);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
-
-    poutput->szLog = nullptr;
-    poutput->szMessage = nullptr;
 
     FreeINCHI(poutput);
 }
@@ -1034,7 +2522,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_differing_AND_groups_of_s
         "M  END                                   \n";
 
     char options[] = "-EnhancedStereochemistry";
-    const char expected_inchi[] = "InChI=1B/C4H8BrClO/c1-3(5)4(6)2-7/h3-4,7H,2H2,1H3/t3-,4-/m0/s3(3)(4)";
+    const char expected_inchi[] = "InChI=1B/C4H8BrClO/c1-3(5)4(6)2-7/h3-4,7H,2H2,1H3/t3-,4-/s3(3)(4)";
 
     inchi_Output output1;
     inchi_Output *poutput1 = &output1;
@@ -1106,7 +2594,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_differing_AND_groups_of_s
     char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1B/2C4H8BrClO/c2*1-3(5)4(6)2-7/h2*3-4,7H,2H2,1H3/t2*3-,4-/m00/s2*3(3)(4)";
+    const char expected_inchi[] = "InChI=1B/2C4H8BrClO/c2*1-3(5)4(6)2-7/h2*3-4,7H,2H2,1H3/t2*3-,4-/s2*3(3)(4)";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -1120,8 +2608,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_differing_AND_groups_of_s
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
 {
 
-    const char* inchi_filename = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/enh_stereo_test_file_1.sdf";
-    // const char* inchi_filename = "/workspaces/InChI/INCHI-1-TEST/tests/test_unit/fixtures/enh_stereo_test_file_1.sdf";
+    const char* inchi_filename = FIXTURES_DIR "/enh_stereo_test_file_1.sdf";
 
     std::ifstream file_inchi(inchi_filename, std::ios::binary);
     ASSERT_TRUE(file_inchi.is_open());
@@ -1157,15 +2644,15 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
 
     std::vector<std::string> list_expected_inchis = {
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m1/s1",
-        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/m0/s2(4)",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s2(4,5)",
+        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/s2",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s2",
         "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/m1/s1",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s2(4)(5)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s2(4)(5)",
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s3(4,5)",
-        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/m0/s3(4)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s3",
+        "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3/t4-/s3",
         "InChI=1B/C4H10O/c1-3-4(2)5/h4-5H,3H2,1-2H3",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m0/s3(4)(5)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s3(4)(5)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5+,6-/m0/s1(4,5)2(6)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5+,6?/m0/s1",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6+/m0/s1(4)2(5,6)",
@@ -1176,18 +2663,18 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
         "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5-,6-,7-/m1/s1(6)2(5,7)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)2(5)(6)",
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m1/s1(4)3(5)",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m0/s3(4)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/s3",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)3(5,6)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6+/m0/s1(4)3(5,6)",
-        "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5?,6?/m0/s3(4)",
-        "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5?,6-,7?/m0/s3(6)",
+        "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5?,6?/s3",
+        "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5?,6-,7?/s3",
         "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5-,6-,7-/m1/s1(6)3(5,7)",
         "InChI=1B/C7H17NO/c1-4-5(2)7(8)6(3)9/h5-7,9H,4,8H2,1-3H3/t5-,6-,7+/m1/s1(6)3(5,7)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)3(5)(6)",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2/t4-,5-,6-/m0/s1(4)2(5)3(6)",
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m1/s1",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m0/s3(4)",
-        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/m0/s2(4)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/s3",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5?/s2",
         "InChI=1B/C6H12O3/c7-4-1-2-5(8)6(9)3-4/h4-9H,1-3H2",
     };
 
@@ -1225,5 +2712,400 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_1)
             inchi_free(poutput->szInChI);
             poutput->szInChI = nullptr;
         }
+    }
+}
+
+/* Regression: V2000 input has no V3000 collection block, so orig_inp_data->v3000
+   is NULL. With -EnhancedStereochemistry the /s layer must still be emitted from
+   the plain stereo type instead of dereferencing that NULL pointer. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_v2000_with_stereocentre)
+{
+    const char *molblock =
+        "L-alanine_v2000                                                      \n"
+        "  test              2D                                               \n"
+        "                                                                     \n"
+        "  6  5  0  0  1  0  0  0  0  0999 V2000                              \n"
+        "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.8660    0.5000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "   -0.8660    0.5000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.0000   -1.0000    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    1.7320    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    0.8660    1.5000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "  1  2  1  0  0  0  0                                                \n"
+        "  1  3  1  0  0  0  0                                                \n"
+        "  1  4  1  1  0  0  0                                                \n"
+        "  2  5  1  0  0  0  0                                                \n"
+        "  2  6  2  0  0  0  0                                                \n"
+        "M  END                                                               \n";
+
+    char options[] = "-EnhancedStereochemistry";
+    const char expected_inchi[] = "InChI=1B/C3H7NO2/c1-2(4)3(5)6/h2H,4H2,1H3,(H,5,6)/t2-/m0/s1";
+
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    poutput->szLog = nullptr;
+    poutput->szMessage = nullptr;
+    poutput->szInChI = nullptr;
+
+    EXPECT_LT(MakeINCHIFromMolfileText(molblock, options, poutput), 2);
+    EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    FreeINCHI(poutput);
+}
+
+/* Regression: V3000 atom indexes need not be 1..n. The collection atom numbers are
+   remapped to the final atom order, and every atom of a collection must be remapped
+   - not all but the last two - otherwise centres silently drop out of /s and /t. */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_collections_independent_of_atom_numbering)
+{
+    const char *molblock_1_to_n =
+        "enh_stereo_or_groups_atoms_1_to_n        \n"
+        "  ACD/LABS08242216132D                   \n"
+        "                                         \n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000  \n"
+        "M  V30 BEGIN CTAB                        \n"
+        "M  V30 COUNTS 18 17 0 0 1                \n"
+        "M  V30 BEGIN ATOM                        \n"
+        "M  V30 1 C 3424.1946 -1936.7935 0 0      \n"
+        "M  V30 2 C 3352.3145 -1895.2935 0 0      \n"
+        "M  V30 3 C 3280.4346 -1936.7935 0 0      \n"
+        "M  V30 4 C 3208.5542 -1895.2935 0 0      \n"
+        "M  V30 5 C 3136.6743 -1936.7935 0 0      \n"
+        "M  V30 6 C 3064.7944 -1895.2935 0 0      \n"
+        "M  V30 7 Br 3136.6743 -2019.7935 0 0     \n"
+        "M  V30 8 Cl 3208.5542 -1812.2935 0 0     \n"
+        "M  V30 9 Cl 3280.4346 -2019.7935 0 0     \n"
+        "M  V30 10 Cl 3352.3145 -1812.2935 0 0    \n"
+        "M  V30 11 Cl 3424.1946 -2019.7935 0 0    \n"
+        "M  V30 12 C 3496.075 -1895.2935 0 0      \n"
+        "M  V30 13 C 3567.9548 -1936.7942 0 0     \n"
+        "M  V30 14 C 3639.835 -1895.2944 0 0      \n"
+        "M  V30 15 C 3711.7148 -1936.7942 0 0     \n"
+        "M  V30 16 Cl 3639.835 -1812.2944 0 0     \n"
+        "M  V30 17 Cl 3567.9548 -2019.7942 0 0    \n"
+        "M  V30 18 Cl 3496.075 -1812.2937 0 0     \n"
+        "M  V30 END ATOM                          \n"
+        "M  V30 BEGIN BOND                        \n"
+        "M  V30 1 1 1 2                           \n"
+        "M  V30 2 1 1 11 CFG=3                    \n"
+        "M  V30 3 1 1 12                          \n"
+        "M  V30 4 1 2 3                           \n"
+        "M  V30 5 1 2 10 CFG=1                    \n"
+        "M  V30 6 1 3 4                           \n"
+        "M  V30 7 1 3 9 CFG=1                     \n"
+        "M  V30 8 1 4 5                           \n"
+        "M  V30 9 1 4 8 CFG=1                     \n"
+        "M  V30 10 1 5 6                          \n"
+        "M  V30 11 1 5 7 CFG=1                    \n"
+        "M  V30 12 1 12 13                        \n"
+        "M  V30 13 1 12 18 CFG=3                  \n"
+        "M  V30 14 1 13 14                        \n"
+        "M  V30 15 1 13 17 CFG=1                  \n"
+        "M  V30 16 1 14 15                        \n"
+        "M  V30 17 1 14 16 CFG=1                  \n"
+        "M  V30 END BOND                          \n"
+        "M  V30 BEGIN COLLECTION                  \n"
+        "M  V30 MDLV30/STEREL1 ATOMS=(5 1 2 3 4 5)\n"
+        "M  V30 MDLV30/STEREL2 ATOMS=(3 12 13 14) \n"
+        "M  V30 END COLLECTION                    \n"
+        "M  V30 END CTAB                          \n"
+        "M  END                                   \n";
+
+    const char *molblock_offset =
+        "enh_stereo_or_groups_atoms_offset_by_100           \n"
+        "  ACD/LABS08242216132D                             \n"
+        "                                                   \n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000            \n"
+        "M  V30 BEGIN CTAB                                  \n"
+        "M  V30 COUNTS 18 17 0 0 1                          \n"
+        "M  V30 BEGIN ATOM                                  \n"
+        "M  V30 101 C 3424.1946 -1936.7935 0 0              \n"
+        "M  V30 102 C 3352.3145 -1895.2935 0 0              \n"
+        "M  V30 103 C 3280.4346 -1936.7935 0 0              \n"
+        "M  V30 104 C 3208.5542 -1895.2935 0 0              \n"
+        "M  V30 105 C 3136.6743 -1936.7935 0 0              \n"
+        "M  V30 106 C 3064.7944 -1895.2935 0 0              \n"
+        "M  V30 107 Br 3136.6743 -2019.7935 0 0             \n"
+        "M  V30 108 Cl 3208.5542 -1812.2935 0 0             \n"
+        "M  V30 109 Cl 3280.4346 -2019.7935 0 0             \n"
+        "M  V30 110 Cl 3352.3145 -1812.2935 0 0             \n"
+        "M  V30 111 Cl 3424.1946 -2019.7935 0 0             \n"
+        "M  V30 112 C 3496.075 -1895.2935 0 0               \n"
+        "M  V30 113 C 3567.9548 -1936.7942 0 0              \n"
+        "M  V30 114 C 3639.835 -1895.2944 0 0               \n"
+        "M  V30 115 C 3711.7148 -1936.7942 0 0              \n"
+        "M  V30 116 Cl 3639.835 -1812.2944 0 0              \n"
+        "M  V30 117 Cl 3567.9548 -2019.7942 0 0             \n"
+        "M  V30 118 Cl 3496.075 -1812.2937 0 0              \n"
+        "M  V30 END ATOM                                    \n"
+        "M  V30 BEGIN BOND                                  \n"
+        "M  V30 1 1 101 102                                 \n"
+        "M  V30 2 1 101 111 CFG=3                           \n"
+        "M  V30 3 1 101 112                                 \n"
+        "M  V30 4 1 102 103                                 \n"
+        "M  V30 5 1 102 110 CFG=1                           \n"
+        "M  V30 6 1 103 104                                 \n"
+        "M  V30 7 1 103 109 CFG=1                           \n"
+        "M  V30 8 1 104 105                                 \n"
+        "M  V30 9 1 104 108 CFG=1                           \n"
+        "M  V30 10 1 105 106                                \n"
+        "M  V30 11 1 105 107 CFG=1                          \n"
+        "M  V30 12 1 112 113                                \n"
+        "M  V30 13 1 112 118 CFG=3                          \n"
+        "M  V30 14 1 113 114                                \n"
+        "M  V30 15 1 113 117 CFG=1                          \n"
+        "M  V30 16 1 114 115                                \n"
+        "M  V30 17 1 114 116 CFG=1                          \n"
+        "M  V30 END BOND                                    \n"
+        "M  V30 BEGIN COLLECTION                            \n"
+        "M  V30 MDLV30/STEREL1 ATOMS=(5 101 102 103 104 105)\n"
+        "M  V30 MDLV30/STEREL2 ATOMS=(3 112 113 114)        \n"
+        "M  V30 END COLLECTION                              \n"
+        "M  V30 END CTAB                                    \n"
+        "M  END                                             \n";
+
+    char options[] = "-EnhancedStereochemistry";
+    const char expected_inchi[] = "InChI=1B/C10H14BrCl7/c1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h3-10H,1-2H3/t3-,4-,5+,6+,7-,8+,9+,10-/s2(3,5,7,9,10)(4,6,8)";
+
+    const char *molblocks[2] = { molblock_1_to_n, molblock_offset };
+
+    for (int i = 0; i < 2; ++i)
+    {
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+        poutput->szInChI = nullptr;
+
+        EXPECT_LT(MakeINCHIFromMolfileText(molblocks[i], options, poutput), 2);
+        EXPECT_STREQ(poutput->szInChI, expected_inchi) << "molblock " << i;
+
+        FreeINCHI(poutput);
+    }
+}
+
+/****************************************************************************
+ End-to-end: a molfile whose stereo collections violate the enhanced
+ stereochemical representation rules must not be laundered into an InChI of a
+ different substance.
+
+ The collections are diagnosed and dropped by the reader, so the enhanced
+ output degrades to the standard string apart from the 1B prefix -- the same
+ thing a structure without any collection block gets.
+
+ Skeleton: RDKit test_data/two_centers_or.mol, three stereocentres (atoms
+ 1, 4, 5); only the COLLECTION block differs between the cases. Well-formed,
+ that file measures /t4-,5-,6+/m1/s1(5)2(4,6).
+****************************************************************************/
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_malformed_collections_are_not_used)
+{
+    const std::string head =
+        "\n"
+        "  Mrv1642508181718082D\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 8 7 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C -5.2222 4.7778 0 0 CFG=2\n"
+        "M  V30 2 Br -6.9685 5.5478 0 0\n"
+        "M  V30 3 C -5.0557 3.2468 0 0\n"
+        "M  V30 4 C -3.9796 5.6874 0 0 CFG=2\n"
+        "M  V30 5 C -2.5705 5.0661 0 0 CFG=1\n"
+        "M  V30 6 F -1.3279 5.9758 0 0\n"
+        "M  V30 7 C -4.1461 7.2184 0 0\n"
+        "M  V30 8 C -2.404 3.5352 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2\n"
+        "M  V30 2 1 1 4\n"
+        "M  V30 3 1 4 5\n"
+        "M  V30 4 1 5 6\n"
+        "M  V30 5 1 4 7 CFG=1\n"
+        "M  V30 6 1 5 8 CFG=1\n"
+        "M  V30 7 1 1 3 CFG=1\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN COLLECTION\n";
+    const std::string tail =
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    /* == the standard InChI of this file, prefix apart */
+    const char expected_inchi[] =
+        "InChI=1B/C6H12BrF/c1-4(5(2)7)6(3)8/h4-6H,1-3H3/t4-,5-,6+/m1/s1";
+
+    struct MalformedCase
+    {
+        const char *what;
+        const char *collection;
+        const char *diagnostic;      /* substring the caller must be told */
+        const char *measured_before; /* what the unvalidated reader produced */
+    };
+    const MalformedCase cases[] = {
+        /* atom 4 declared absolute and racemic at once */
+        {"atom in two collections",
+         "M  V30 MDLV30/STEABS ATOMS=(2 1 4)\n"
+         "M  V30 MDLV30/STERAC1 ATOMS=(2 4 5)\n",
+         "atom 4 is in more than one stereo collection",
+         ".../t4-,5-,6+/m1/s1(4,5)3(4,6)"},
+        /* two ABS collections merged, then reduced away to a bare /s1 --
+           the only case the string alone cannot show, since the laundered
+           output happens to equal the degraded one. Unit-tested in
+           test_mol_fmt; here only the diagnostic distinguishes them. */
+        {"second STEABS collection",
+         "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+         "M  V30 MDLV30/STEABS ATOMS=(2 4 5)\n",
+         "more than one STEABS collection",
+         ".../t4-,5-,6+/m1/s1 (indistinguishable)"},
+        /* emitted (4,4,6) -- not ascending, so not even grammar-conformant */
+        {"atom repeated within one collection",
+         "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+         "M  V30 MDLV30/STEREL1 ATOMS=(3 4 4 5)\n",
+         "atom 4 is listed twice in one stereo collection",
+         ".../t4-,5-,6+/m1/s1(5)2(4,4,6)"},
+        /* one group split over two lines read as two: /t changed, 6+ -> 6- */
+        {"group number 1 used twice",
+         "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+         "M  V30 MDLV30/STEREL1 ATOMS=(1 4)\n"
+         "M  V30 MDLV30/STEREL1 ATOMS=(1 5)\n",
+         "STEREL group number 1 used by more than one collection",
+         ".../t4-,5-,6-/m1/s1(5)2(4)(6)"},
+    };
+
+    for (const MalformedCase &c : cases)
+    {
+        const std::string molblock = head + c.collection + tail;
+
+        char options[] = "-EnhancedStereochemistry";
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+
+        EXPECT_EQ(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput),
+                  inchi_Ret_WARNING)
+            << "case: " << c.what;
+        EXPECT_STREQ(poutput->szInChI, expected_inchi)
+            << "case: " << c.what << " (was " << c.measured_before << ")";
+        EXPECT_NE(poutput->szMessage, nullptr) << "case: " << c.what;
+        if (poutput->szMessage)
+        {
+            EXPECT_NE(strstr(poutput->szMessage, c.diagnostic), nullptr)
+                << "case: " << c.what << "; message was: " << poutput->szMessage;
+        }
+
+        FreeINCHI(poutput);
+    }
+}
+
+/****************************************************************************
+ enh_stereo_test_file_2.sdf: 35 records, each carrying its own expectations as
+ data tags -- <InChI> for standard output and <InChI_new> for enhanced. The
+ expectations are read from the file rather than duplicated here, so the file
+ stays the single source of truth for what it asserts.
+
+ Both columns are checked, which makes each record a backward-compatibility
+ case as well: the same structure must still give its standard string with the
+ option off.
+****************************************************************************/
+namespace
+{
+struct SdfRecord
+{
+    std::string molblock;          /* CTab only, data tags stripped */
+    std::string expected_standard; /* <InChI>     -- option off */
+    std::string expected_enhanced; /* <InChI_new> -- option on  */
+};
+
+static std::string SdfTagValue(const std::string &record, const std::string &tag)
+{
+    const std::string marker = ">  <" + tag + ">\n";
+    const size_t at = record.find(marker);
+    if (at == std::string::npos)
+    {
+        return "";
+    }
+    const size_t start = at + marker.size();
+    const size_t end = record.find('\n', start);
+    return record.substr(start, end - start);
+}
+
+static std::vector<SdfRecord> ReadSdfWithExpectations(const char *path)
+{
+    std::ifstream in(path, std::ios::binary);
+    EXPECT_TRUE(in.is_open()) << path;
+    std::stringstream buf;
+    buf << in.rdbuf();
+    const std::string content = buf.str();
+
+    std::vector<SdfRecord> records;
+    size_t prev = 0, at;
+    while ((at = content.find("$$$$", prev)) != std::string::npos)
+    {
+        const std::string raw = content.substr(prev, at - prev);
+        prev = at + 4;
+        /* consume the newline that ends the separator line, and nothing more:
+           every record here opens with an EMPTY title line, so trimming
+           leading whitespace would shift the 4-line molfile header up by one
+           and the counts line would be misparsed */
+        if (prev < content.size() && content[prev] == '\n')
+        {
+            prev++;
+        }
+
+        const size_t ctab_end = raw.find("M  END");
+        if (ctab_end == std::string::npos)
+        {
+            continue;
+        }
+
+        SdfRecord r;
+        r.molblock = raw.substr(0, ctab_end + 6) + "\n";
+        r.expected_standard = SdfTagValue(raw, "InChI");
+        r.expected_enhanced = SdfTagValue(raw, "InChI_new");
+        records.push_back(r);
+    }
+
+    return records;
+}
+} // namespace
+
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_test_file_2)
+{
+    const std::vector<SdfRecord> records =
+        ReadSdfWithExpectations(FIXTURES_DIR "/enh_stereo_test_file_2.sdf");
+
+    ASSERT_EQ(records.size(), 35u);
+
+    char options_enhanced[] = "-EnhancedStereochemistry";
+    char options_standard[] = "";
+
+    auto check = [](const std::string &molblock, char *options,
+                    const std::string &expected, const std::string &label) {
+        inchi_Output output;
+        inchi_Output *poutput = &output;
+        poutput->szInChI = nullptr;
+        poutput->szLog = nullptr;
+        poutput->szMessage = nullptr;
+
+        /* < 2 accepts inchi_Ret_OKAY and inchi_Ret_WARNING */
+        EXPECT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 2)
+            << label;
+        EXPECT_STREQ(poutput->szInChI, expected.c_str()) << label;
+
+        FreeINCHI(poutput);
+    };
+
+    for (size_t i = 0; i < records.size(); ++i)
+    {
+        const SdfRecord &r = records[i];
+        const std::string at = " (record " + std::to_string(i + 1) + ")";
+
+        /* a missing tag would read as an empty expectation and let the record
+           pass without asserting anything -- demand both are present */
+        ASSERT_FALSE(r.expected_standard.empty()) << "no <InChI> tag" << at;
+        ASSERT_FALSE(r.expected_enhanced.empty()) << "no <InChI_new> tag" << at;
+
+        check(r.molblock, options_standard, r.expected_standard, "standard" + at);
+        check(r.molblock, options_enhanced, r.expected_enhanced, "enhanced" + at);
     }
 }

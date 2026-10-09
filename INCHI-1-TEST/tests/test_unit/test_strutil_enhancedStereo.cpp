@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <vector>
+
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/strutil.h"
@@ -143,9 +145,19 @@ TEST(test_strutil_enhancedStereo, test_set_EnhancedStereo_t_m_layers_1)
     pAux->nOrigAtNosInCanonOrd[6] = 13;
     pAux->nOrigAtNosInCanonOrd[7] = 14;
 
-    ret = set_EnhancedStereo_t_m_layers(orig_inp_data, inchi, pAux);
+    set_EnhancedStereo_t_m_layers(orig_inp_data, inchi, pAux);
 
-    EXPECT_EQ(ret, 0);
+    /* Each collection whose lowest canonical centre reads '+' (2) is flipped
+       as a whole, so that centre ends up '-' (1). Started from
+       {2,1,1,2,2,1,2,2,1}. */
+    const S_CHAR expected_parity[] = {2, 1, 1, 1, 1, 2, 1, 1, 1};
+    for (int i = 0; i < 9; i++)
+    {
+        EXPECT_EQ(inchi->Stereo->t_parity[i], expected_parity[i]) << "centre " << i;
+    }
+
+    /* the structure has a STEABS collection, so /m survives */
+    EXPECT_EQ(inchi->Stereo->nCompInv2Abs, -1);
 
     FreeOrigAtData(orig_inp_data);
     inchi_free(orig_inp_data);
@@ -177,6 +189,110 @@ TEST(test_strutil_enhancedStereo, test_get_canonical_atom_number_1)
     EXPECT_EQ(get_canonical_atom_number(&aux, 99), -1);
     EXPECT_EQ(get_canonical_atom_number(&aux, 0), -1);
 
+}
+
+/* The orig->canon reverse map replaces the linear scan in
+   the enhanced-stereo hot loops. It must answer exactly like the linear scan. */
+TEST(test_strutil_enhancedStereo, orig_to_canon_map_matches_linear_scan)
+{
+    INChI_Aux aux = {0};
+    AT_NUMB orig_atoms[] = {10, 20, 30, 40, 50};
+    aux.nNumberOfAtoms = 5;
+    aux.nOrigAtNosInCanonOrd = orig_atoms;
+
+    int map_size = 0;
+    int *map = make_orig_to_canon_map(&aux, &map_size);
+    ASSERT_NE(map, nullptr);
+    EXPECT_GT(map_size, 50);
+
+    for (int orig = 0; orig <= 60; orig++)
+    {
+        EXPECT_EQ(lookup_canonical_atom_number(map, map_size, &aux, orig),
+                  get_canonical_atom_number(&aux, orig))
+            << "orig atom " << orig;
+    }
+
+    inchi_free(map);
+}
+
+TEST(test_strutil_enhancedStereo, orig_to_canon_map_duplicates_keep_lowest_canon)
+{
+    INChI_Aux aux = {0};
+    AT_NUMB orig_atoms[] = {7, 3, 7, 3};
+    aux.nNumberOfAtoms = 4;
+    aux.nOrigAtNosInCanonOrd = orig_atoms;
+
+    int map_size = 0;
+    int *map = make_orig_to_canon_map(&aux, &map_size);
+    ASSERT_NE(map, nullptr);
+
+    EXPECT_EQ(lookup_canonical_atom_number(map, map_size, &aux, 7), 1);
+    EXPECT_EQ(lookup_canonical_atom_number(map, map_size, &aux, 3), 2);
+    EXPECT_EQ(get_canonical_atom_number(&aux, 7), 1);
+    EXPECT_EQ(get_canonical_atom_number(&aux, 3), 2);
+
+    inchi_free(map);
+}
+
+TEST(test_strutil_enhancedStereo, orig_to_canon_map_rejects_invalid_aux)
+{
+    int map_size = -1;
+
+    EXPECT_EQ(make_orig_to_canon_map(nullptr, &map_size), nullptr);
+    EXPECT_EQ(map_size, 0);
+
+    INChI_Aux aux = {0};
+    aux.nNumberOfAtoms = 3;
+    aux.nOrigAtNosInCanonOrd = nullptr;
+    EXPECT_EQ(make_orig_to_canon_map(&aux, &map_size), nullptr);
+    EXPECT_EQ(map_size, 0);
+
+    AT_NUMB orig_atoms[] = {1};
+    aux.nOrigAtNosInCanonOrd = orig_atoms;
+    aux.nNumberOfAtoms = 0;
+    EXPECT_EQ(make_orig_to_canon_map(&aux, &map_size), nullptr);
+    EXPECT_EQ(map_size, 0);
+}
+
+/* A NULL map (e.g. allocation failure) must still yield correct answers. */
+TEST(test_strutil_enhancedStereo, lookup_canonical_atom_number_falls_back_without_map)
+{
+    INChI_Aux aux = {0};
+    AT_NUMB orig_atoms[] = {10, 20, 30};
+    aux.nNumberOfAtoms = 3;
+    aux.nOrigAtNosInCanonOrd = orig_atoms;
+
+    EXPECT_EQ(lookup_canonical_atom_number(nullptr, 0, &aux, 20), 2);
+    EXPECT_EQ(lookup_canonical_atom_number(nullptr, 0, &aux, 99), -1);
+    EXPECT_EQ(lookup_canonical_atom_number(nullptr, 0, nullptr, 20), -1);
+}
+
+TEST(test_strutil_enhancedStereo, orig_to_canon_map_matches_linear_scan_large)
+{
+    const int n_atoms = 5000;
+    std::vector<AT_NUMB> orig_atoms(n_atoms);
+    for (int i = 0; i < n_atoms; i++)
+    {
+        orig_atoms[i] = (AT_NUMB)(n_atoms - i); // reversed: worst case for the scan
+    }
+
+    INChI_Aux aux = {0};
+    aux.nNumberOfAtoms = n_atoms;
+    aux.nOrigAtNosInCanonOrd = orig_atoms.data();
+
+    int map_size = 0;
+    int *map = make_orig_to_canon_map(&aux, &map_size);
+    ASSERT_NE(map, nullptr);
+
+    for (int orig = 1; orig <= n_atoms; orig++)
+    {
+        ASSERT_EQ(lookup_canonical_atom_number(map, map_size, &aux, orig),
+                  n_atoms - orig + 1)
+            << "orig atom " << orig;
+    }
+    EXPECT_EQ(lookup_canonical_atom_number(map, map_size, &aux, n_atoms + 1), -1);
+
+    inchi_free(map);
 }
 
 TEST(test_strutil_enhancedStereo, test_get_parity_idx_from_canonical_atom_number)

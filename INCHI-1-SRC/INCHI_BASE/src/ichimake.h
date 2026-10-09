@@ -173,13 +173,15 @@ const char *EquString( int EquVal );
                           INCHI_IOS_STRING *buf,
                           int nCtMode,
                           int *bOverflow );
-    int MakeEnhStereoString( INChI_Aux        *pAux,
+    int MakeEnhStereoString( const INChI      *pINChI,
+                             INChI_Aux        *pAux,
                              INCHI_IOS_STRING *strbuf,
                              const char*      conf_stereo_string,
                              int              **enh_stereo,
                              int              nof_stereo_groups,
                              int              nCtMode,
-                             int              *bOverflow );
+                             int              *bOverflow,
+                             int              *num_groups_used );
     int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
                           INCHI_SORT       *pINChISort,
                           INCHI_IOS_STRING *strbuf,
