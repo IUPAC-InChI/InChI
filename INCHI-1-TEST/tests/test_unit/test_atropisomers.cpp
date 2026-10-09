@@ -92,14 +92,14 @@ static const char *k_dummy12_molblock =
     "M  END                                                                    \n";
 
 // Runs a molblock through MakeINCHIFromMolfileText with -Atropisomers and
-// reports whether the InChI version token is the atropisomer flag "1B"
-// (vs. the plain "1S").
+// reports whether the InChI carries a /t layer (the axis on a stereo-free
+// skeleton).
 static bool inchi_has_atrop_flag(const char *molblock) {
     inchi_Output out;
     memset(&out, 0, sizeof(out));
     char opts[] = "-Atropisomers";
     MakeINCHIFromMolfileText(molblock, opts, &out);
-    bool flagged = out.szInChI && strncmp(out.szInChI, "InChI=1B/", 9) == 0;
+    bool flagged = out.szInChI && strstr(out.szInChI, "/t") != nullptr;
     FreeINCHI(&out);
     return flagged;
 }
@@ -223,9 +223,9 @@ TEST(test_atropisomers, test_dummy_2_atropisomer)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1";
+    const char expected_inchi[] = "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -903,9 +903,9 @@ TEST(test_atropisomers, test_dummy_12_atropisomer)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C15H14/c1-3-10-14-12(6-1)8-5-9-13-7-2-4-11-15(13)14/h1-4,6-7,10-11H,5,8-9H2/t14-/m0/s1";
+    const char expected_inchi[] = "InChI=1B/C15H14/c1-3-10-14-12(6-1)8-5-9-13-7-2-4-11-15(13)14/h1-4,6-7,10-11H,5,8-9H2";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -915,8 +915,9 @@ TEST(test_atropisomers, recall_biaryl_dummy1_is_flagged) {
     EXPECT_TRUE(inchi_has_atrop_flag(k_dummy1_molblock));
 }
 
-TEST(test_atropisomers, recall_bridged_ring_biaryl_dummy12_is_flagged) {
-    EXPECT_TRUE(inchi_has_atrop_flag(k_dummy12_molblock));
+// Bridged biaryl without ortho substituents: ring inversion is fast, no axis.
+TEST(test_atropisomers, bridged_bare_biaryl_dummy12_not_flagged) {
+    EXPECT_FALSE(inchi_has_atrop_flag(k_dummy12_molblock));
 }
 
 TEST(test_atropisomers, test_dummy_13_atropisomer_Caryophyllene)
@@ -1151,11 +1152,11 @@ TEST(test_atropisomers, test_dummy_15_test_file_1)
         "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
         "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
         "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
-        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m1/s1",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
+        "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3",
         "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
         "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
         "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3",
