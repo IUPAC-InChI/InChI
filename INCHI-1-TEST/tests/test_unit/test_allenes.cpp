@@ -170,6 +170,17 @@ TEST( test_allenes, A4_A5_enhanced_or_and )
                "InChI=1B/C4H3BrClF" + kAxis + "/s2" );
 }
 
+/* A group naming a terminal atom instead of the central one is ignored:
+   the axis stays absolute, /s1 included */
+TEST( test_allenes, group_on_terminal_atom_is_ignored )
+{
+    for (const char *coll : { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n",
+                              "M  V30 MDLV30/STEREL1 ATOMS=(1 3)\n" }) {
+        EXPECT_EQ( inchi( molblock( kAllene, allene_bonds( UP, UP ), coll ), kEnh ),
+                   "InChI=1B/C4H3BrClF" + kAxis + "/m1/s1" ) << coll;
+    }
+}
+
 /* A6: allene (central atom 1) + tetrahedral centre 6, DECK slide 22 */
 TEST( test_allenes, A6_allene_plus_tetrahedral )
 {

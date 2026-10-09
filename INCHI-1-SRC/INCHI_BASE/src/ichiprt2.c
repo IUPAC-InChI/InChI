@@ -2347,6 +2347,10 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     char uniform_digit = '\0';
     int  uniform = 1;
 
+    /* Any component with ungrouped (absolute) centres, any non-empty substring */
+    int any_ungrouped = 0;
+    int any_substring = 0;
+
     INCHI_IOS_STRING tmpbuf  = {0};
 
     for (int cur_c = 0; !*bOverflow && cur_c < num_components; cur_c++)
@@ -2427,6 +2431,8 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         }
 
         size_t len = strlen(tmpbuf.pStr);
+        any_ungrouped = any_ungrouped || n_ungrouped > 0;
+        any_substring = any_substring || len > 0;
 
         // Uniform: each component is a bare digit, all the same, or has no
         // defined centre outside the collections ('?' centres carry no class)
@@ -2452,6 +2458,16 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     // "1", "1", "", "" -> "1" (standard /s1), not "2*1;;"
     if (uniform && uniform_digit != '\0') {
         tot_len = inchi_strbuf_printf(strbuf, "%c", uniform_digit);
+        for (int i = 0; i < n_entries; i++) {
+            inchi_free(substrings[i]);
+        }
+        n_entries = 0;
+    }
+
+    // No collection reached a stereo element, but wedged centres exist: all are
+    // ungrouped, hence absolute, as in standard InChI: "", "" -> "1", not ";"
+    if (!any_substring && any_ungrouped) {
+        tot_len = inchi_strbuf_printf(strbuf, "%s", x_abs);
         for (int i = 0; i < n_entries; i++) {
             inchi_free(substrings[i]);
         }
