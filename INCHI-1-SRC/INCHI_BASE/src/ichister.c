@@ -4932,7 +4932,7 @@ int set_stereo_parity( CANON_GLOBALS *pCG,
         /* djb-rwth: removing redundant code */
     }
 
-    /* Atropisomer axes (-Atropisomers): flagged single bonds become stereo bonds */
+    /* Atropisomer axes (-EnhancedStereochemistry): flagged single bonds become stereo bonds */
     if (!RETURNED_ERROR( num_3D_stereo_atoms ))
     {
         is_stereo = set_atrop_axes_parity( at_output, at, num_at, at + num_at, num_removed_H,

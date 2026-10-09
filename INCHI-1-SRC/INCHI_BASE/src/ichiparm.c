@@ -89,8 +89,7 @@ int set_common_options_by_parg(const char* pArg,
     int* pbMergeHash,
     int* pbHideInChI,
     int* pbMolecularInorganics,     /* @nnuk */
-    int* pbEnhancedStereochemistry,
-    int* pbAtropisomers);
+    int* pbEnhancedStereochemistry);
 
 
 /****************************************************************************
@@ -135,8 +134,7 @@ int set_common_options_by_parg(const char* pArg,
     int* pbMergeHash,
     int* pbHideInChI,
     int* pbMolecularInorganics,     /*@nnuk*/
-    int* pbEnhancedStereochemistry,
-    int* pbAtropisomers
+    int* pbEnhancedStereochemistry
 )
 {
     int got = 0;
@@ -240,11 +238,6 @@ int set_common_options_by_parg(const char* pArg,
     else if (!inchi_stricmp(pArg, "EnhancedStereochemistry"))
     {
         *pbEnhancedStereochemistry = 1;
-        got = 1;
-    }
-    else if (!inchi_stricmp(pArg, "Atropisomers"))
-    {
-        *pbAtropisomers = 1;
         got = 1;
     }
 
@@ -636,7 +629,6 @@ int ReadCommandLineParms(int argc,
     int bUnchargedAcidTaut = (CHARGED_SALTS_ONLY == 0);
     int bMergeSaltTGroups = (DISCONNECT_SALTS == 1);
     int bEnhancedStereochemistry = 0;
-    int bAtropisomers = 0;
 #if ( MIN_SB_RING_SIZE > 0 )
     int nMinDbRinSize = MIN_SB_RING_SIZE, mdbr = 0;
 #endif
@@ -789,7 +781,7 @@ int ReadCommandLineParms(int argc,
                 &bLargeMolecules, &bPolymers,
                 &bFoldPolymerSRU, &bFrameShiftScheme,
                 &bStereoAtZz, &bNPZz,
-                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry, &bAtropisomers);
+                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry);
             if (got)
             {
                 ;
@@ -1237,7 +1229,7 @@ int ReadCommandLineParms(int argc,
                 &bLargeMolecules, &bPolymers,
                 &bFoldPolymerSRU, &bFrameShiftScheme,
                 &bStereoAtZz, &bNPZz,
-                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry, &bAtropisomers);
+                &bNoWarnings, &bMergeHash, &bHideInChI, &bMolecularInorganics, &bEnhancedStereochemistry);
 
             if ( got )
             {
@@ -2115,9 +2107,7 @@ int ReadCommandLineParms(int argc,
     ip->bINChIOutputOptions2 = bINChIOutputOptions2;
 
     ip->bEnhancedStereo = bEnhancedStereochemistry;
-    ip->bTautFlags |= ( bEnhancedStereochemistry || bAtropisomers ) ? TG_FLAG_ALLENE_ONE_WEDGE : 0;
-
-    ip->Atropisomers = bAtropisomers;
+    ip->bTautFlags |= bEnhancedStereochemistry ? TG_FLAG_ALLENE_ONE_WEDGE : 0;
 
     return 0;
 }

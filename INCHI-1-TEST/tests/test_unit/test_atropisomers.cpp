@@ -91,13 +91,13 @@ static const char *k_dummy12_molblock =
     " 12 11  1  1     0  0                                                     \n"
     "M  END                                                                    \n";
 
-// Runs a molblock through MakeINCHIFromMolfileText with -Atropisomers and
+// Runs a molblock through MakeINCHIFromMolfileText with -EnhancedStereochemistry and
 // reports whether the InChI carries a /t layer (the axis on a stereo-free
 // skeleton).
 static bool inchi_has_atrop_flag(const char *molblock) {
     inchi_Output out;
     memset(&out, 0, sizeof(out));
-    char opts[] = "-Atropisomers";
+    char opts[] = "-EnhancedStereochemistry";
     MakeINCHIFromMolfileText(molblock, opts, &out);
     bool flagged = out.szInChI && strstr(out.szInChI, "/t") != nullptr;
     FreeINCHI(&out);
@@ -144,7 +144,7 @@ TEST(test_atropisomers, test_dummy_1_atropisomer)
 {
     const char *molblock = k_dummy1_molblock;
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -219,7 +219,7 @@ TEST(test_atropisomers, test_dummy_2_atropisomer)
         "M  END                                                                   \n";
 
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -287,7 +287,7 @@ TEST(test_atropisomers, test_dummy_3_atropismer)
         "  7  8  1  1     0  0                                                    \n"
         "M  END                                                                   \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -369,7 +369,7 @@ TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
         "M  SMT   2 tBu                                                                   \n"
         "M  END                                                                           \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -460,7 +460,7 @@ TEST(test_atropisomers, test_dummy_5_no_atropisomer_no_wedge_bonds)
         "  4 33  1  0     0  0                                                       \n"
         "M  END                                                                      \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -564,7 +564,7 @@ TEST(test_atropisomers, test_dummy_6_two_atropisomer_bonds)
         "M  V30 END CTAB                               \n"
         "M  END                                        \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -614,7 +614,7 @@ TEST(test_atropisomers, test_dummy_7_no_atropisomer_1)
         "  2  7  1  1     0  0                                                    \n"
         "M  END                                                                   \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -676,7 +676,7 @@ TEST(test_atropisomers, test_dummy_8_no_atropisomer)
         "  8 11  1  6     0  0                                                       \n"
         "M  END                                                                      \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -720,7 +720,7 @@ TEST(test_atropisomers, test_dummy_9_no_atropisomer)
         "  9 11  1  0     0  0                                                     \n"
         "M  END                                                                    \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -769,7 +769,7 @@ TEST(test_atropisomers, test_dummy_10_no_atropisomer)
         " 12 11  1  1     0  0                                                   \n"
         "M  END                                                                  \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -883,7 +883,7 @@ TEST(test_atropisomers, test_dummy_11_no_atropisomer_3_fragments)
         " 39 38  1  1     0  0                                                    \n"
         "M  END                                                                   \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -899,7 +899,7 @@ TEST(test_atropisomers, test_dummy_12_atropisomer)
 {
     const char *molblock = k_dummy12_molblock;
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -1008,7 +1008,7 @@ TEST(test_atropisomers, test_dummy_13_atropisomer_Caryophyllene)
         " 15 39  1  0  0  0  0                                                      \n"
         "M  END                                                                     \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -1076,7 +1076,7 @@ TEST(test_atropisomers, test_dummy_14_atropisomer)
         " 20 22  1  0                                                             \n"
         "M  END                                                                   \n";
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
@@ -1187,7 +1187,7 @@ TEST(test_atropisomers, test_dummy_15_test_file_1)
     // EXPECT_EQ(nof_inchis, molblocks.size());
     // EXPECT_EQ(nof_inchis, list_expected_inchis.size());
 
-    char options[] = "-Atropisomers";
+    char options[] = "-EnhancedStereochemistry";
 
     for (int i = 0; i < nof_inchis; ++i) {
 
@@ -1571,14 +1571,14 @@ static const char *k_biaryl3d_m44 =
 
 // T7: the axis is cited once, on the lower-numbered axis atom, with /m and /s.
 TEST(test_atropisomers, gate_t7_axis_cited_on_lower_atom) {
-    std::string s = run_inchi(k_dummy1_molblock, "-Atropisomers");
+    std::string s = run_inchi(k_dummy1_molblock, "-EnhancedStereochemistry");
     EXPECT_EQ(s, std::string("InChI=1B") + k_dummy1_connectivity + "/t11-/m0/s1");
 }
 
 // T6: enantiomer pair shares skeleton and /t, differs only in /m.
 TEST(test_atropisomers, gate_t6_enantiomer_flips_m) {
-    std::string ra = run_inchi(k_dummy1_molblock, "-Atropisomers");
-    std::string sa = run_inchi(mirror_wedges(k_dummy1_molblock), "-Atropisomers");
+    std::string ra = run_inchi(k_dummy1_molblock, "-EnhancedStereochemistry");
+    std::string sa = run_inchi(mirror_wedges(k_dummy1_molblock), "-EnhancedStereochemistry");
     EXPECT_EQ(ra, std::string("InChI=1B") + k_dummy1_connectivity + "/t11-/m0/s1");
     EXPECT_EQ(sa, std::string("InChI=1B") + k_dummy1_connectivity + "/t11-/m1/s1");
 }
@@ -1586,10 +1586,10 @@ TEST(test_atropisomers, gate_t6_enantiomer_flips_m) {
 // T6: 3D rotamers (44, 90, 120 deg) of one enantiomer give one InChI; the
 // -44 deg twist is the other enantiomer.
 TEST(test_atropisomers, gate_t6_rotamers_one_inchi) {
-    std::string p44 = run_inchi(k_biaryl3d_p44, "-Atropisomers");
-    std::string p90 = run_inchi(k_biaryl3d_p90, "-Atropisomers");
-    std::string p120 = run_inchi(k_biaryl3d_p120, "-Atropisomers");
-    std::string m44 = run_inchi(k_biaryl3d_m44, "-Atropisomers");
+    std::string p44 = run_inchi(k_biaryl3d_p44, "-EnhancedStereochemistry");
+    std::string p90 = run_inchi(k_biaryl3d_p90, "-EnhancedStereochemistry");
+    std::string p120 = run_inchi(k_biaryl3d_p120, "-EnhancedStereochemistry");
+    std::string m44 = run_inchi(k_biaryl3d_m44, "-EnhancedStereochemistry");
     EXPECT_EQ(p44, p90);
     EXPECT_EQ(p44, p120);
     EXPECT_NE(p44, m44);
@@ -1603,14 +1603,14 @@ TEST(test_atropisomers, gate_t6_rotamers_one_inchi) {
 TEST(test_atropisomers, dissymmetry_symmetric_end_pruned) {
     std::string sym = edit_molblock(k_dummy1_molblock,
         "    7.5821   -7.4750    0.0000 Br ", "    7.5821   -7.4750    0.0000 Cl ");
-    std::string s = run_inchi(sym, "-Atropisomers");
+    std::string s = run_inchi(sym, "-EnhancedStereochemistry");
     EXPECT_EQ(s, "InChI=1B/C12H6BrCl3/c13-7-3-1-4-8(14)11(7)12-9(15)5-2-6-10(12)16/h1-6H");
 }
 
 // AT-R9: one wedge (IUPAC) defines the axis like two do.
 TEST(test_atropisomers, single_wedge_defines_axis) {
     std::string one = edit_molblock(k_dummy1_molblock, "  8  7  1  1", "  8  7  1  0");
-    EXPECT_EQ(run_inchi(one, "-Atropisomers"), run_inchi(k_dummy1_molblock, "-Atropisomers"));
+    EXPECT_EQ(run_inchi(one, "-EnhancedStereochemistry"), run_inchi(k_dummy1_molblock, "-EnhancedStereochemistry"));
 }
 
 // A flat drawing without wedges has undefined axial geometry: omitted (with
@@ -1619,16 +1619,14 @@ TEST(test_atropisomers, flat_axis_is_omitted) {
     std::string flat = edit_molblock(k_dummy1_molblock, "  2  3  1  1", "  2  3  1  0");
     flat = edit_molblock(flat.c_str(), "  8  7  1  1", "  8  7  1  0");
     int ret = 0;
-    std::string s = run_inchi(flat, "-Atropisomers", &ret);
+    std::string s = run_inchi(flat, "-EnhancedStereochemistry", &ret);
     EXPECT_EQ(s, std::string("InChI=1B") + k_dummy1_connectivity);
     EXPECT_EQ(ret, 1);
 }
 
-// Backward compatibility: without -Atropisomers nothing changes.
+// Backward compatibility: without -EnhancedStereochemistry nothing changes.
 TEST(test_atropisomers, standard_output_unchanged) {
     EXPECT_EQ(run_inchi(k_dummy1_molblock, ""), std::string("InChI=1S") + k_dummy1_connectivity);
-    EXPECT_EQ(run_inchi(k_dummy1_molblock, "-EnhancedStereochemistry"),
-              std::string("InChI=1B") + k_dummy1_connectivity);
     EXPECT_EQ(run_inchi(k_biaryl3d_p44, ""), std::string("InChI=1S") + k_dummy1_connectivity);
 }
 
@@ -1666,13 +1664,13 @@ TEST(test_atropisomers, unhindered_axis_not_emitted) {
         " 10 12  1  0\n"
         " 11 12  2  0\n"
         "M  END\n";
-    EXPECT_EQ(run_inchi(bipyridine, "-Atropisomers"),
+    EXPECT_EQ(run_inchi(bipyridine, "-EnhancedStereochemistry"),
               "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H");
 }
 
 // Candidate detection must stay polynomial: a 150-atom / 292-bond metal
 // cluster (InChI_TestSet_ext.sdf record 126) stalled for >20 s in ring
-// enumeration. Without -Atropisomers it is instant.
+// enumeration. Without -EnhancedStereochemistry it is instant.
 TEST(test_atropisomers, dense_cluster_completes_quickly) {
     const double max_seconds = 5.0;
     std::ifstream f(FIXTURES_DIR "/atrop_dense_cluster.sdf", std::ios::binary);
@@ -1684,7 +1682,7 @@ TEST(test_atropisomers, dense_cluster_completes_quickly) {
 
     int ret = -1;
     auto t0 = std::chrono::steady_clock::now();
-    std::string s = run_inchi(mol, "-Atropisomers", &ret);
+    std::string s = run_inchi(mol, "-EnhancedStereochemistry", &ret);
     double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
 
     EXPECT_LT(secs, max_seconds);
@@ -1789,8 +1787,8 @@ static const char *k_alkene_axes_molblock =
     "M  END\n";
 
 TEST(test_atropisomers, axis_end_with_second_stereo_bond) {
-    EXPECT_EQ(run_inchi(k_ketone_two_axes_molblock, "-Atropisomers"),
+    EXPECT_EQ(run_inchi(k_ketone_two_axes_molblock, "-EnhancedStereochemistry"),
               "InChI=1B/C15H12Cl2O/c1-9-5-3-7-11(16)13(9)15(18)14-10(2)6-4-8-12(14)17/h3-8H,1-2H3/t13-,14-/m0/s1");
-    EXPECT_EQ(run_inchi(k_alkene_axes_molblock, "-Atropisomers"),
+    EXPECT_EQ(run_inchi(k_alkene_axes_molblock, "-EnhancedStereochemistry"),
               "InChI=1B/C18H18Cl2/c1-11-7-5-9-15(19)17(11)13(3)14(4)18-12(2)8-6-10-16(18)20/h5-10H,1-4H3/b14-13+/t13-,14-/m1/s1");
 }
