@@ -2166,6 +2166,7 @@ int compare_third_value(const void *a, const void *b) {
 /**
  * @brief Creates the enhanced stereochemistry string for the s - layer.
  *
+ * @param pINChI Pointer to the component's INChI; only its stereocentres are listed.
  * @param pAux Pointer to the INCHI_AUX structure.
  * @param conf_stereo_string Pointer to the configuration stereochemistry string (abs, rel, rac).
  * @param enh_stereo Pointer to list of enhanced stereochemistry groups.
@@ -2175,16 +2176,22 @@ int compare_third_value(const void *a, const void *b) {
  * @param bOverflow Pointer to overflow flag.
  * @return Returns the length of the created string.
  */
-int MakeEnhStereoString( INChI_Aux        *pAux,
+int MakeEnhStereoString( const INChI      *pINChI,
+                         INChI_Aux        *pAux,
                          INCHI_IOS_STRING *strbuf,
                          const char*      conf_stereo_string,
                          int              **enh_stereo,
                          int              nof_stereo_groups,
                          int              nCtMode,
-                         int              *bOverflow )
+                         int              *bOverflow,
+                         int              *num_groups_used )
 {
     int tot_len = 0;
     int count_added = 0;
+
+    if (num_groups_used != NULL) {
+        *num_groups_used = 0;
+    }
 
     if (pAux == NULL) {
         return 0;
@@ -2202,6 +2209,9 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
 
     int **enh_stereo_canon = (int**)inchi_calloc(nof_stereo_groups, sizeof(int*));
 
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map(pAux, &map_size);
+
     // Converts the original atom numbers in the enhanced stereochemistry groups to canonical atom numbers
     // and sorts the atoms within each group based on their canonical atom numbers. This ensures that the order of
     // atoms in the string representation is consistent and does not depend on the order of atoms in the input data.
@@ -2218,7 +2228,7 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         for (int j = 0; j < nof_atoms; j++)  {
 
             int orig_atom_num = atom_numbers[j];
-            int canon_atom_num = get_canonical_atom_number(pAux, orig_atom_num);
+            int canon_atom_num = lookup_stereo_centre(pINChI, orig_to_canon, map_size, pAux, orig_atom_num);
             if (canon_atom_num != -1) {
                 count_found_atoms++;
             } else {
@@ -2234,6 +2244,10 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         }
     }
 
+    if (orig_to_canon != NULL) {
+        inchi_free(orig_to_canon);
+    }
+
     // Sorts the enhanced stereochemistry groups based on the canonical atom number of the first atom in the group.
     // This ensures that the groups are always in a consistent order in the string representation, regardless of the
     // order they were added to the input data (e.g. AND1, AND2, ... or OR1, OR2, ...).
@@ -2246,6 +2260,9 @@ int MakeEnhStereoString( INChI_Aux        *pAux,
         int nof_found_atoms = enh_stereo_canon[i][1];
 
         if (nof_found_atoms > 0) {
+            if (num_groups_used != NULL) {
+                (*num_groups_used)++;
+            }
             tot_len += MakeDelim( "(", strbuf, bOverflow );
             for (int j = 0; j < nof_found_atoms; j++)  {
                 tot_len += MakeNumber_EnhStereo( enh_stereo_canon[i][j + 2], "", strbuf, nCtMode, bOverflow );
@@ -2308,16 +2325,31 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     const INCHI_SORT   *is = NULL;
     const INCHI_SORT  *is0 = pINChISort;
 
-    // INChI        *pINChI = NULL;
+    INChI        *pINChI = NULL;
     INChI_Aux    *pAux = NULL;
 
-    char **dictionary = (char**)inchi_calloc(ENH_STEREO_DICT_SIZE, sizeof(char*));
-    int *counts = (int*)inchi_calloc(ENH_STEREO_DICT_SIZE, sizeof(int));
-
-    for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-        dictionary[i] = NULL;
-        counts[i] = 0;
+    if (num_components < 1) {
+        return 0;
     }
+
+    /* One /s substring per component, kept in component order: /s is positional
+       like every other layer. */
+    char **substrings = (char**)inchi_calloc(num_components, sizeof(char*));
+
+    if (substrings == NULL) {
+        *bOverflow = 1;
+        return 0;
+    }
+
+    int n_entries = 0;
+
+    /* The one class digit shared by every component with stereocentres, if any */
+    char uniform_digit = '\0';
+    int  uniform = 1;
+
+    /* Any component with ungrouped (absolute) centres, any non-empty substring */
+    int any_ungrouped = 0;
+    int any_substring = 0;
 
     INCHI_IOS_STRING tmpbuf  = {0};
 
@@ -2325,79 +2357,295 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
     {
 
         is = is0 + cur_c;
-        // pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
-        pAux = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI_Aux[ii] : NULL;
+        pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
+        pAux = ( 0 <= ii ) ? is->pINChI_Aux[ii] : NULL;
 
         inchi_strbuf_init(&tmpbuf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT);
 
         // s1
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_abs,
-                                        orig_inp_data->v3000->lists_steabs,
-                                        orig_inp_data->v3000->n_steabs,
-                                        nCtMode,
-                                        bOverflow);
+        int num_groups_abs = 0;
+        int len_abs = MakeEnhStereoString( pINChI,
+                                           pAux,
+                                           &tmpbuf,
+                                           x_abs,
+                                           orig_inp_data->v3000->lists_steabs,
+                                           orig_inp_data->v3000->n_steabs,
+                                           nCtMode,
+                                           bOverflow,
+                                           &num_groups_abs);
 
         // s2
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_rel,
-                                        orig_inp_data->v3000->lists_sterel,
-                                        orig_inp_data->v3000->n_sterel,
-                                        nCtMode,
-                                        bOverflow);
+        int num_groups_rel = 0;
+        int len_rel = MakeEnhStereoString( pINChI,
+                                           pAux,
+                                           &tmpbuf,
+                                           x_rel,
+                                           orig_inp_data->v3000->lists_sterel,
+                                           orig_inp_data->v3000->n_sterel,
+                                           nCtMode,
+                                           bOverflow,
+                                           &num_groups_rel);
 
         // s3
-        tot_len += MakeEnhStereoString( pAux,
-                                        &tmpbuf,
-                                        x_rac,
-                                        orig_inp_data->v3000->lists_sterac,
-                                        orig_inp_data->v3000->n_sterac,
-                                        nCtMode,
-                                        bOverflow);
+        int num_groups_rac = 0;
+        int len_rac = MakeEnhStereoString( pINChI,
+                                           pAux,
+                                           &tmpbuf,
+                                           x_rac,
+                                           orig_inp_data->v3000->lists_sterac,
+                                           orig_inp_data->v3000->n_sterac,
+                                           nCtMode,
+                                           bOverflow,
+                                           &num_groups_rac);
 
-        int found = 0;
-        for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-            if (dictionary[i] && strcmp(tmpbuf.pStr, dictionary[i]) == 0) {
-                counts[i]++;
-                found = 1;
-                break;
-            }
+        tot_len += len_abs + len_rel + len_rac;
+
+        // Wedged centres in no collection are absolute; beside them a single
+        // OR/AND group is not the whole component, so it stays grouped: "2(3)"
+        int n_ungrouped = 0;
+        absolute_centres( orig_inp_data->v3000, pINChI, pAux, NULL, &n_ungrouped );
+
+        // A component whose only enhanced-stereo collection is ABS says nothing
+        // beyond standard absolute stereo, so it reduces to the bare "1" (SAbs).
+        if (len_abs > 0 && len_rel == 0 && len_rac == 0) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_abs;
+            tot_len += MakeDelim( x_abs, &tmpbuf, bOverflow );
         }
-        if (!found) {
-            for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-                if (dictionary[i] == NULL) {
-                    dictionary[i] = strdup(tmpbuf.pStr);
-                    counts[i] = 1;
-                    break;
-                }
-            }
+        // A component whose only enhanced-stereo collection is a single
+        // OR group carries no grouping information beyond plain relative stereo,
+        // so it reduces to the bare "2" (SRel); analogously a single AND group
+        // reduces to the bare "3" (SRac). Multiple OR/AND groups on the same
+        // component are left grouped, since the grouping itself is meaningful.
+        else if (len_rel > 0 && len_abs == 0 && len_rac == 0 && num_groups_rel == 1 &&
+                 n_ungrouped == 0) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_rel;
+            tot_len += MakeDelim( x_rel, &tmpbuf, bOverflow );
+        }
+        else if (len_rac > 0 && len_abs == 0 && len_rel == 0 && num_groups_rac == 1 &&
+                 n_ungrouped == 0) {
+            inchi_strbuf_reset(&tmpbuf);
+            tot_len -= len_rac;
+            tot_len += MakeDelim( x_rac, &tmpbuf, bOverflow );
+        }
+
+        size_t len = strlen(tmpbuf.pStr);
+        any_ungrouped = any_ungrouped || n_ungrouped > 0;
+        any_substring = any_substring || len > 0;
+
+        // Uniform: each component is a bare digit, all the same, or has no
+        // defined centre outside the collections ('?' centres carry no class)
+        if (len == 0) {
+            uniform = uniform && n_ungrouped == 0;
+        } else if (len == 1 && (uniform_digit == '\0' || uniform_digit == tmpbuf.pStr[0])) {
+            uniform_digit = tmpbuf.pStr[0];
+        } else {
+            uniform = 0;
+        }
+
+        substrings[n_entries] = (char*)inchi_calloc(len + 1, sizeof(char));
+        if (substrings[n_entries] == NULL) {
+            *bOverflow = 1;
+        } else {
+            memcpy(substrings[n_entries], tmpbuf.pStr, len + 1);
+            n_entries++;
         }
         inchi_strbuf_close(&tmpbuf);
     }
 
-    // String deduplication based on dictionary and counts
-    int count = 0;
-    for (int i = 0; i < ENH_STEREO_DICT_SIZE; i++) {
-        if (dictionary[i]) {
-            if (count > 0) {
-                tot_len += MakeDelim( ";", strbuf, bOverflow );
+    // All components share one class: standard InChI's single digit, e.g.
+    // "1", "1", "", "" -> "1" (standard /s1), not "2*1;;"
+    if (uniform && uniform_digit != '\0') {
+        tot_len = inchi_strbuf_printf(strbuf, "%c", uniform_digit);
+        for (int i = 0; i < n_entries; i++) {
+            inchi_free(substrings[i]);
+        }
+        n_entries = 0;
+    }
+
+    // No collection reached a stereo element, but wedged centres exist: all are
+    // ungrouped, hence absolute, as in standard InChI: "", "" -> "1", not ";"
+    if (!any_substring && any_ungrouped) {
+        tot_len = inchi_strbuf_printf(strbuf, "%s", x_abs);
+        for (int i = 0; i < n_entries; i++) {
+            inchi_free(substrings[i]);
+        }
+        n_entries = 0;
+    }
+
+    // Fold only runs of consecutive equal substrings into count*substring, one ';'
+    // slot per run. Empty slots are never folded, as in /t:
+    // "3", "3", "", "" -> "2*3;;"
+    for (int i = 0; i < n_entries; ) {
+        int run = 1;
+        while (substrings[i][0] != '\0' && i + run < n_entries &&
+               strcmp(substrings[i], substrings[i + run]) == 0) {
+            run++;
+        }
+
+        if (i > 0) {
+            tot_len += MakeDelim( ";", strbuf, bOverflow );
+        }
+        if (run > 1) {
+            tot_len = inchi_strbuf_printf(strbuf, "%d*%s", run, substrings[i]);
+        } else {
+            tot_len = inchi_strbuf_printf(strbuf, "%s", substrings[i]);
+        }
+
+        for (int k = i; k < i + run; k++) {
+            inchi_free(substrings[k]);
+        }
+        i += run;
+    }
+
+    inchi_free(substrings);
+
+    return tot_len;
+}
+
+/**
+ * @brief Enhanced /b of one component: standard flat entries for absolute
+ *        and ungrouped bonds, then the OR groups, then the AND groups
+ *
+ * Example: "4-2+,2(5-3-),3(6-1-,8-7+)(9-2-)". Parities arrive normalised
+ * (normalise_bond_groups); the flip below only repeats it, so a caller that
+ * skipped normalisation still gets the canonical string.
+ */
+static void MakeBlayerComponent( const INChI      *pINChI,
+                                 const INChI_Aux  *pAux,
+                                 const OAD_V3000  *v3k,
+                                 INCHI_IOS_STRING *buf )
+{
+    static const char parity_char[] = "!-+u?";
+    const INChI_Stereo *st = pINChI ? pINChI->Stereo : NULL;
+    int n, j, m;
+
+    if (st == NULL || pAux == NULL || st->nNumberOfStereoBonds <= 0) {
+        return;
+    }
+    n = st->nNumberOfStereoBonds;
+
+    S_CHAR *cls = (S_CHAR *)inchi_calloc( n, sizeof(S_CHAR) );
+    S_CHAR *done = (S_CHAR *)inchi_calloc( n, sizeof(S_CHAR) );
+    int *group = (int *)inchi_calloc( n, sizeof(int) );
+    if (cls == NULL || done == NULL || group == NULL) {
+        inchi_free( cls );
+        inchi_free( done );
+        inchi_free( group );
+        return;
+    }
+
+    mark_bond_groups( pINChI, pAux, v3k->lists_stebrel, v3k->n_stebrel, B_CLASS_REL, cls, group );
+    mark_bond_groups( pINChI, pAux, v3k->lists_stebrac, v3k->n_stebrac, B_CLASS_RAC, cls, group );
+
+    /* Absolute and ungrouped bonds, as standard /b: "4-2+,5-3-" */
+    for (j = 0; j < n; j++) {
+        int p = st->b_parity[j];
+        if (cls[j] != B_CLASS_FLAT) {
+            continue;
+        }
+        inchi_strbuf_printf( buf, "%s%d-%d%c", buf->nUsedLength ? "," : "",
+                             st->nBondAtom1[j], st->nBondAtom2[j],
+                             (0 <= p && p <= 4) ? parity_char[p] : parity_char[0] );
+    }
+
+    /* OR then AND groups, ordered by their lowest bond: ",2(5-3-),3(4-2-)" */
+    for (int c = B_CLASS_REL; c <= B_CLASS_RAC; c++) {
+        int opened = 0;
+
+        for (j = 0; j < n; j++) {
+            if (cls[j] != c || done[j]) {
+                continue;
             }
-            if (counts[i] > 1) {
-                tot_len = inchi_strbuf_printf(strbuf, "%d*%s", counts[i], dictionary[i]);
-            } else {
-                tot_len = inchi_strbuf_printf(strbuf, "%s", dictionary[i]);
+            if (!opened) {
+                inchi_strbuf_printf( buf, "%s%d", buf->nUsedLength ? "," : "", c );
+                opened = 1;
             }
-            inchi_free(dictionary[i]);
-            count++;
+
+            /* Bond j is the group's lowest: flip the group if it reads '+' */
+            int flip = st->b_parity[j] == AB_PARITY_EVEN;
+            inchi_strbuf_printf( buf, "(" );
+            for (m = j; m < n; m++) {
+                if (cls[m] != c || group[m] != group[j]) {
+                    continue;
+                }
+                int p = flip ? AB_PARITY_ODD + AB_PARITY_EVEN - st->b_parity[m] : st->b_parity[m];
+                inchi_strbuf_printf( buf, "%s%d-%d%c", m == j ? "" : ",",
+                                     st->nBondAtom1[m], st->nBondAtom2[m], parity_char[p] );
+                done[m] = 1;
+            }
+            inchi_strbuf_printf( buf, ")" );
         }
     }
 
-    inchi_free(dictionary);
-    inchi_free(counts);
+    inchi_free( cls );
+    inchi_free( done );
+    inchi_free( group );
+}
 
-    return tot_len;
+/**
+ * @brief Create the /b layer when double bonds carry OR/AND collections
+ *
+ * One substring per component, joined like standard layers:
+ * runs of equal non-empty substrings fold into "count*substring".
+ *
+ * @return Length added to strbuf
+ */
+int MakeBlayerString( ORIG_ATOM_DATA   *orig_inp_data,
+                      INCHI_SORT       *pINChISort,
+                      INCHI_IOS_STRING *strbuf,
+                      int              bOutType,
+                      int              num_components,
+                      int              *bOverflow )
+{
+    int ii, start = strbuf->nUsedLength;
+    INCHI_IOS_STRING *parts;
+
+    if (num_components < 1) {
+        return 0;
+    }
+
+    parts = (INCHI_IOS_STRING *)inchi_calloc( num_components, sizeof(INCHI_IOS_STRING) );
+    if (parts == NULL) {
+        *bOverflow = 1;
+        return 0;
+    }
+
+    /* One /b substring per component */
+    for (int c = 0; c < num_components; c++) {
+        const INCHI_SORT *is = pINChISort + c;
+        INChI *pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
+        INChI_Aux *pAux = ( 0 <= ii ) ? is->pINChI_Aux[ii] : NULL;
+
+        inchi_strbuf_init( &parts[c], INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT );
+        MakeBlayerComponent( pINChI, pAux, orig_inp_data->v3000, &parts[c] );
+    }
+
+    /* Join: "4-3-", "4-3-", "" -> "2*4-3-;" */
+    for (int c = 0; c < num_components; ) {
+        int run = 1;
+        while (parts[c].nUsedLength > 0 && c + run < num_components &&
+               strcmp( parts[c].pStr, parts[c + run].pStr ) == 0) {
+            run++;
+        }
+
+        if (c > 0) {
+            MakeDelim( ";", strbuf, bOverflow );
+        }
+        if (run > 1) {
+            inchi_strbuf_printf( strbuf, "%d*", run );
+        }
+        inchi_strbuf_printf( strbuf, "%s", parts[c].nUsedLength ? parts[c].pStr : "" );
+        c += run;
+    }
+
+    for (int c = 0; c < num_components; c++) {
+        inchi_strbuf_close( &parts[c] );
+    }
+    inchi_free( parts );
+
+    return strbuf->nUsedLength - start;
 }
 
 #ifdef ALPHA_BASE

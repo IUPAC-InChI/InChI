@@ -535,6 +535,7 @@ typedef struct A_MOL_FMT_v3000
     int n_star_atoms;
     int *atom_index_orig; /* index as supplied for atoms                      */
     int *atom_index_fin;  /* = index or -1 for star atom                      */
+    int *bond_index_orig; /* V3000 index of each stored (non-haptic) bond    */
     int n_sgroups;        /* currently, we do not use this.                   */
     int n_3d_constraints; /* currently, we do not use this.                   */
     int n_collections;
@@ -556,6 +557,16 @@ typedef struct A_MOL_FMT_v3000
     NUM_LISTS *sterac; /* sterac[k][0] - n from "STERACn" tag              */
                        /* sterac[k][1] -  number of members in collection  */
                        /* sterac[k][2..] - member atom numbers          */
+    /* Enhanced stereo on double bonds (STEBABS/STEBRELn/STEBRACn): each
+       bond stored as its two atoms, so the lists move like atom lists */
+    int n_stebabs;
+    NUM_LISTS *stebabs; /* stebabs[k][0] - not used                         */
+                        /* stebabs[k][1] - 2 * number of bonds              */
+                        /* stebabs[k][2..] - atom pairs a1,b1,a2,b2,...     */
+    int n_stebrel;
+    NUM_LISTS *stebrel; /* as stebabs; [k][0] - n from "STEBRELn" tag       */
+    int n_stebrac;
+    NUM_LISTS *stebrac; /* as stebabs; [k][0] - n from "STEBRACn" tag       */
 } MOL_FMT_v3000;
 
 /**

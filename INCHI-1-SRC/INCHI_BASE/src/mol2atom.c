@@ -1361,6 +1361,44 @@ void FreeOrigAtData(ORIG_ATOM_DATA *orig_at_data)
 /****************************************************************************
 Free v. 1.05 extensions stuff
 ****************************************************************************/
+/****************************************************************************
+ Deep copy of n collection lists laid out [n, count, members...];
+ NULL when out of memory
+****************************************************************************/
+int **CopyIntLists(int **src, int n)
+{
+    int m;
+    int **dst = (int **)inchi_calloc(n, sizeof(int *));
+
+    for (m = 0; dst && m < n; m++)
+    {
+        int nn = src[m][1] + 2;
+        dst[m] = (int *)inchi_calloc(nn, sizeof(int));
+        if (!dst[m])
+        {
+            FreeIntLists(dst, m);
+            return NULL;
+        }
+        memcpy(dst[m], src[m], nn * sizeof(int));
+    }
+
+    return dst;
+}
+
+/****************************************************************************
+ Free n collection lists made by CopyIntLists
+****************************************************************************/
+void FreeIntLists(int **lists, int n)
+{
+    int m;
+
+    for (m = 0; lists && m < n; m++)
+    {
+        inchi_free(lists[m]);
+    }
+    inchi_free(lists);
+}
+
 void FreeExtOrigAtData(OAD_Polymer *pd, OAD_V3000 *v3k)
 {
     int k;
@@ -1424,6 +1462,9 @@ void FreeExtOrigAtData(OAD_Polymer *pd, OAD_V3000 *v3k)
             inchi_free(v3k->lists_sterac);
             v3k->lists_sterac = NULL;
         }
+        FreeIntLists(v3k->lists_stebabs, v3k->n_stebabs);
+        FreeIntLists(v3k->lists_stebrel, v3k->n_stebrel);
+        FreeIntLists(v3k->lists_stebrac, v3k->n_stebrac);
         memset(v3k, 0, sizeof(*v3k)); /* djb-rwth: memset_s C11/Annex K variant? */
         inchi_free(v3k);
     }
@@ -1567,6 +1608,9 @@ int SetExtOrigAtDataByMolfileExtInput(MOL_FMT_DATA *mfdata,
         pv->n_steabs = mpv->n_steabs;
         pv->n_sterac = mpv->n_sterac;
         pv->n_sterel = mpv->n_sterel;
+        pv->n_stebabs = mpv->n_stebabs;
+        pv->n_stebrel = mpv->n_stebrel;
+        pv->n_stebrac = mpv->n_stebrac;
         pv->n_3d_constraints = mpv->n_3d_constraints;
 
         if (mpv->atom_index_orig)
@@ -1688,6 +1732,15 @@ int SetExtOrigAtDataByMolfileExtInput(MOL_FMT_DATA *mfdata,
                     lst[k] = mol_lst[k];
                 }
             }
+        }
+
+        /* Double-bond collections: atom-pair lists, copied the same way */
+        if ((mpv->n_stebabs && !(pv->lists_stebabs = CopyIntLists(mpv->stebabs->lists, mpv->n_stebabs))) ||
+            (mpv->n_stebrel && !(pv->lists_stebrel = CopyIntLists(mpv->stebrel->lists, mpv->n_stebrel))) ||
+            (mpv->n_stebrac && !(pv->lists_stebrac = CopyIntLists(mpv->stebrac->lists, mpv->n_stebrac))))
+        {
+            TREAT_ERR(err, 9001, "Out of RAM");
+            goto exit_function;
         }
     }
 

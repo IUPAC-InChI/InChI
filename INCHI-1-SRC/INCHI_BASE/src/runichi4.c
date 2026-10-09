@@ -25,6 +25,7 @@
 
 #include "ichimain.h"
 #include "ichi_io.h"
+#include "ichimake.h"
 #include "mol_fmt.h"
 #include "ichicant.h"
 #include "inchi_api.h"
@@ -62,6 +63,50 @@ int GetProcessingWarningsOneInChI( INChI *pINChI,
 
 
 /****************************************************************************
+ Enhanced-stereo sort key of one component: its own /s and /b substrings,
+ tautomeric and non-tautomeric, e.g. "2/2(2-1-)|/|". Built after the OR/AND
+ normalisation and from canonical numbers only, so two copies of one molecule
+ get one key whatever the input order. NULL if out of memory (sorts as empty).
+****************************************************************************/
+static char *MakeEnhSortKey( ORIG_ATOM_DATA *orig_inp_data,
+                             INChI          *pINChI[TAUT_NUM],
+                             INChI_Aux      *pINChI_Aux[TAUT_NUM] )
+{
+    INCHI_IOS_STRING buf;
+    int k, bOverflow = 0;
+    char *key;
+
+    if (0 > inchi_strbuf_init( &buf, INCHI_STRBUF_INITIAL_SIZE, INCHI_STRBUF_SIZE_INCREMENT ))
+    {
+        return NULL;
+    }
+
+    for (k = 0; k < TAUT_NUM; k++)
+    {
+        INCHI_SORT one;
+
+        memset( &one, 0, sizeof( one ) );
+        one.pINChI[k] = pINChI[k];
+        one.pINChI_Aux[k] = pINChI_Aux[k];
+
+        MakeSlayerString( orig_inp_data, &one, &buf, OUT_T1, 1, 0, &bOverflow );
+        inchi_strbuf_printf( &buf, "/" );
+        MakeBlayerString( orig_inp_data, &one, &buf, OUT_T1, 1, &bOverflow );
+        inchi_strbuf_printf( &buf, "|" );
+    }
+
+    key = (char *) inchi_calloc( (long long) buf.nUsedLength + 1, sizeof( char ) );
+    if (key)
+    {
+        memcpy( key, buf.pStr, buf.nUsedLength );
+    }
+    inchi_strbuf_close( &buf );
+
+    return key;
+}
+
+
+/****************************************************************************
  Main InChI serialization procedure
 ****************************************************************************/
 int SortAndPrintINChI( CANON_GLOBALS            *pCG,
@@ -86,6 +131,7 @@ int SortAndPrintINChI( CANON_GLOBALS            *pCG,
                        unsigned char            save_opt_bits )
 {
     INCHI_SORT *pINChISort[INCHI_NUM][TAUT_NUM];
+    char **enh_keys[INCHI_NUM] = { NULL };
     int j, i, k, k1, ret, ret2, iINChI, max_num_components; /* djb-rwth: ignoring LLVM warning: variable used */
     int INCHI_basic_or_INCHI_reconnected;
     /* djb-rwth: removing redundant variables */
@@ -179,6 +225,25 @@ int SortAndPrintINChI( CANON_GLOBALS            *pCG,
         /* for only normal or disconnected coord compounds */
         /* (j=0=INCHI_BAS => normal or disconnected, j=1=INCHI_REC => reconnected */
 
+        /* Enhanced stereo: normalise the OR/AND parities before sorting, and key
+           each component by its classes, so components equal in all standard
+           layers are not left in input order, e.g. /s2;3 vs /s3;2 */
+        if (ip->bEnhancedStereo && orig_inp_data && orig_inp_data->v3000)
+        {
+            enh_keys[j] = (char **) inchi_calloc( num_components[j], sizeof( char * ) );
+            for (i = 0; enh_keys[j] && i < num_components[j]; i++)
+            {
+                for (k = 0; k < TAUT_NUM; k++)
+                {
+                    if (pINChI[j][i][k])
+                    {
+                        set_EnhancedStereo_t_m_layers( orig_inp_data, pINChI[j][i][k], pINChI_Aux[j][i][k] );
+                    }
+                }
+                enh_keys[j][i] = MakeEnhSortKey( orig_inp_data, pINChI[j][i], pINChI_Aux[j][i] );
+            }
+        }
+
         for (k1 = 0; k1 < TAUT_NUM; k1++)
         {
             for (i = 0; i < num_components[j]; i++)
@@ -189,6 +254,7 @@ int SortAndPrintINChI( CANON_GLOBALS            *pCG,
                     pINChISort[j][k1][i].pINChI_Aux[k] = pINChI_Aux[j][i][k];
                 }
                 pINChISort[j][k1][i].ord_number = i;
+                pINChISort[j][k1][i].enh_key = enh_keys[j] ? enh_keys[j][i] : NULL;
             }
         }
 
@@ -371,6 +437,11 @@ exit_function:
                 inchi_free( pINChISort[j][k1] );
             }
         }
+        for (i = 0; enh_keys[j] && i < num_components[j]; i++)
+        {
+            inchi_free( enh_keys[j][i] );
+        }
+        inchi_free( enh_keys[j] );
     }
 
 

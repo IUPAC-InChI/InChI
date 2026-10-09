@@ -162,7 +162,9 @@ $(P_MAIN)/dispstru.c	\
 $(P_BASE)/mol2atom.c	\
 $(P_MAIN)/ichimain.c	\
 $(P_MAIN)/inchi_main_cli.c	\
-$(P_BASE)/bcf_s.c
+$(P_BASE)/bcf_s.c	\
+$(P_BASE)/atropisomers.c	\
+$(P_BASE)/ring_detection.c
 #
 INCHI_OBJS = ichi_bns.o	\
 ichi_io.o	\
@@ -216,7 +218,9 @@ dispstru.o	\
 permutation_util.o	\
 ichimain.o	\
 inchi_main_cli.o	\
-bcf_s.o	  
+bcf_s.o	\
+atropisomers.o	\
+ring_detection.o
 $(INCHI_EXECUTABLE_PATHNAME) : $(INCHI_OBJS)
 	$(LINKER) $(LINKER_OPTIONS) -o $(INCHI_EXECUTABLE_PATHNAME) $(INCHI_OBJS) -lm
 %.o: $(P_BASE)/%.c
