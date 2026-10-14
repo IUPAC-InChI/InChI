@@ -514,10 +514,6 @@ static int GetINCHI1( inchi_InputEx *extended_input,
         ip->bMolecularInorganics = 1;
 
         ip->bTautFlags &= ~(TG_FLAG_DISCONNECT_SALTS |
-            TG_FLAG_TEST_TAUT__SALTS |
-            TG_FLAG_TEST_TAUT2_SALTS |
-            TG_FLAG_ALLOW_NO_NEGTV_O |
-            TG_FLAG_MERGE_TAUT_SALTS |
             TG_FLAG_DISCONNECT_COORD |
             TG_FLAG_RECONNECT_COORD |
             TG_FLAG_CHECK_VALENCE_COORD);
@@ -851,31 +847,31 @@ int INCHI_DECL CheckINCHI( const char *szINCHI, const int strict )
         return INCHI_INVALID_VERSION;
     }
 
-    /* .. optionally has a 'standard' flag character */
+    /* Determine the InChI calculation class.
+     * Historical InChI=1/... remains accepted as non-standard input.
+    */
     pos_slash1 = LEN_INCHI_STRING_PREFIX + 1;
+
     if (szINCHI[pos_slash1] == 'S')
     {
-        /* Standard InChI ==> standard InChIKey */
         ret = INCHI_VALID_STANDARD;
         pos_slash1++;
-
-        /* Standard Molecular Inorganics: InChI=1SB/... */
-        if (szINCHI[pos_slash1] == 'B')
-        {
-            pos_slash1++;
-        }
     }
     else if (szINCHI[pos_slash1] == 'B')
     {
-        /* Beta version InChI ==> non-standard */
         ret = INCHI_VALID_BETA;
         pos_slash1++;
+    }
+    else if (szINCHI[pos_slash1] == 'N')
+    {
+        ret = INCHI_VALID_NON_STANDARD;
+        pos_slash1++;
+    }
 
-        /* Beta Molecular Inorganics: InChI=1BB/... */
-        if (szINCHI[pos_slash1] == 'B')
-        {
-            pos_slash1++;
-        }
+    /* Molecular Inorganics subversion marker */
+    if (szINCHI[pos_slash1] == 'B')
+    {
+        pos_slash1++;
     }
 
     /* .. has trailing slash in the right place */

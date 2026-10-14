@@ -167,6 +167,16 @@ static int ReadOptions( int argc,
         {
             IXA_INCHIBUILDER_SetOption( hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_FixedH, IXA_TRUE );
         }
+        else if (OptionCompare( argv[index], "LegacyMetalHandling" ))
+        {
+            IXA_INCHIBUILDER_SetOption( hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_LegacyMetalHandling, IXA_TRUE );
+
+            if (IXA_TRUE != IXA_INCHIBUILDER_CheckOption(hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_LegacyMetalHandling))
+            {
+                fprintf( stderr, "Failed to set LegacyMetalHandling option\n" );
+                return 0;
+            }
+        }
         else if (OptionCompare( argv[index], "RecMet" ))
         {
             IXA_INCHIBUILDER_SetOption( hStatus, hBuilder, IXA_INCHIBUILDER_OPTION_RecMet, IXA_TRUE );
@@ -509,9 +519,9 @@ int main( int argc, const char *argv[] ) /* djb-rwth: main function needs to be 
         {
             nerr++;
             if ( IXA_TRUE==IXA_INCHIBUILDER_CheckOption(status, inchi_builder, IXA_INCHIBUILDER_OPTION_OutErrInChI) )
-            { 
+            {
                 /* output 'empty InChI' and InChIKey, AuxInfo if applicable */
-                fprintf(outfile, "%s", "InChI=1//\t");
+                fprintf(outfile, "%s", "InChI=1N//\t");
                 if (IXA_FALSE == IXA_INCHIBUILDER_CheckOption(status, inchi_builder, IXA_INCHIBUILDER_OPTION_AuxNone))
                 {
                     fprintf(outfile, "\t"); /* empty AuxInfo */
@@ -519,7 +529,7 @@ int main( int argc, const char *argv[] ) /* djb-rwth: main function needs to be 
                 if (key_builder)
                 {
                     fprintf(outfile, "InChIKey=%s\t", "MOSFIJXAXDLOML-UHFFFAOYNA-N"); /* 'empty' InChIKey */
-                }			
+                }
             }
             goto endloop;
         }
@@ -534,33 +544,33 @@ int main( int argc, const char *argv[] ) /* djb-rwth: main function needs to be 
 
         /* Retrieve the molecule's InChI and write it to the output file. */
         inchi = IXA_INCHIBUILDER_GetInChI( status, inchi_builder );
-        
+
         if (!CheckStatus( status, index + 1 ))
         {
             /* Error(s) occurred */
             nerr++;
-            if (inchi) /* here it should be only empty InChI "InChI=1//" (and only if OutErrINCHI switch was supplied to generator) */
+            if (inchi) /* here it should be only an empty InChI (and only if OutErrINCHI switch was supplied to generator) */
             {
                 /* output empty InChI and empty InChIKey, AuxInfo if applicable */
-                fprintf(outfile, "%s\t", inchi); 
-                if (!strcmp(inchi, "InChI=1//"))
+                fprintf(outfile, "%s\t", inchi);
+                if (!strcmp(inchi, "InChI=1N//"))
                 {
                     if (IXA_FALSE == IXA_INCHIBUILDER_CheckOption(status, inchi_builder, IXA_INCHIBUILDER_OPTION_AuxNone))
                     {
                         /* AuxInfo is requested, output empty AuxInfo == skip that field */
-                        fprintf(outfile, "\t"); 
+                        fprintf(outfile, "\t");
                     }
                 }
                 if (key_builder)
                 {
                     /* output 'empty InChI' Key */
-                    if (!strcmp(inchi, "InChI=1//"))
+                    if (!strcmp(inchi, "InChI=1N//"))
                     {
-                        fprintf(outfile, "InChIKey=%s\t", "MOSFIJXAXDLOML-UHFFFAOYNA-N"); 
+                        fprintf(outfile, "InChIKey=%s\t", "MOSFIJXAXDLOML-UHFFFAOYNA-N");
                     }
                     else if (!strcmp(inchi, "InChI=1S//"))
                     {
-                        fprintf(outfile, "InChIKey=%s\t", "MOSFIJXAXDLOML-UHFFFAOYSA-N"); 
+                        fprintf(outfile, "InChIKey=%s\t", "MOSFIJXAXDLOML-UHFFFAOYSA-N");
                     }
                 }
 
@@ -568,9 +578,9 @@ int main( int argc, const char *argv[] ) /* djb-rwth: main function needs to be 
             goto endloop;
         }
 
-        /* No errors, proceed */   
+        /* No errors, proceed */
         /* But account for that inchi may be NULL due to e.g. skip record for any reason */
-        if (!inchi) 
+        if (!inchi)
         {
             goto endloop;
         }
@@ -578,7 +588,7 @@ int main( int argc, const char *argv[] ) /* djb-rwth: main function needs to be 
         fprintf(outfile, "%s\t", inchi);
         if (generate_auxinfo)
         {
-            /* AuxInfo has been requested. Retrieve the molecule's AuxInfo and write 
+            /* AuxInfo has been requested. Retrieve the molecule's AuxInfo and write
                 it to the output file. */
             auxinfo = IXA_INCHIBUILDER_GetAuxInfo( status, inchi_builder );
             if (!CheckStatus( status, index + 1 ))
@@ -793,6 +803,7 @@ void print_help( void )
     fprintf( stderr, "  SUU         Always include omitted unknown/undefined stereo\n" );
     fprintf( stderr, "  SLUUD       Make labels for unknown and undefined stereo different\n" );
     fprintf( stderr, "  FixedH      Include Fixed H layer\n" );
+    fprintf( stderr, "  LegacyMetalHandling Use legacy metal and salt handling\n" );
     fprintf( stderr, "  RecMet      Include reconnected metals results\n" );
     fprintf( stderr, "  KET         Account for keto-enol tautomerism (experimental)\n" );
     fprintf( stderr, "  15T         Account for 1,5-tautomerism (experimental)\n" );

@@ -1959,30 +1959,26 @@ int ReadCommandLineParms(int argc,
     /* Find regular tautomerism */
     ip->bTautFlags |= TG_FLAG_TEST_TAUT__ATOMS;
 
+    /* If possible, find long-range H/(-) taut. on =C-OH, >C=O */
+    ip->bTautFlags |= bAcidTautomerism ? TG_FLAG_TEST_TAUT__SALTS : 0;
+
+    /* Multi-attachment long-range H/(-) taut. on =C-OH, >C=O */
+    ip->bTautFlags |= (bAcidTautomerism > 1) ? TG_FLAG_TEST_TAUT2_SALTS : 0;
+
+    /* (Debug) allow to find long-range H-only tautomerism on =C-OH, >C=O */
+    ip->bTautFlags |= (bUnchargedAcidTaut == 1) ? TG_FLAG_ALLOW_NO_NEGTV_O : 0;
+
+    /* Merge =C-OH and >C=O containing t-groups and other =C-OH groups */
+    ip->bTautFlags |= bMergeSaltTGroups ? TG_FLAG_MERGE_TAUT_SALTS : 0;
+
     /*
-     * (@nnuk)
-     * Legacy salt handling and metal-bond disconnection are not part of
-     * Molecular Inorganics processing. Enable them only when Molecular
-     * Inorganics handling is disabled.
+     * Legacy salt disconnection and metal-bond handling are disabled
+     * when Molecular Inorganics processing is enabled.
      */
     if (!bMolecularInorganics)
     {
-        /* Disconnect salts */
         ip->bTautFlags |= bDisconnectSalts ? TG_FLAG_DISCONNECT_SALTS : 0;
 
-        /* If possible, find long-range H/(-) taut. on =C-OH, >C=O */
-        ip->bTautFlags |= bAcidTautomerism ? TG_FLAG_TEST_TAUT__SALTS : 0;
-
-        /* Multi-attachement long-range H/(-) taut. on =C-OH, >C=O */
-        ip->bTautFlags |= (bAcidTautomerism > 1) ? TG_FLAG_TEST_TAUT2_SALTS : 0;
-
-        /* (Debug) allow to find long-range H-only tautomerism on =C-OH, >C=O */
-        ip->bTautFlags |= (bUnchargedAcidTaut == 1) ? TG_FLAG_ALLOW_NO_NEGTV_O : 0;
-
-        /* Merge =C-OH and >C=O containing t-groups and other =C-OH groups */
-        ip->bTautFlags |= bMergeSaltTGroups ? TG_FLAG_MERGE_TAUT_SALTS : 0;
-
-        /* Legacy metal-bond handling */
         ip->bTautFlags |= bDisconnectCoord ? TG_FLAG_DISCONNECT_COORD : 0;
         ip->bTautFlags |= (bDisconnectCoord && bReconnectCoord) ? TG_FLAG_RECONNECT_COORD : 0;
         ip->bTautFlags |= bDisconnectCoordChkVal ? TG_FLAG_CHECK_VALENCE_COORD : 0;
@@ -3047,8 +3043,8 @@ exit_function:
     return 0;
 }
 
-#define NUM_INCHI_VERSIONS 10
-#define NUM_VERSIONS 7
+#define NUM_INCHI_VERSIONS 12
+#define NUM_AUX_VERSIONS 7
 #define LEN_VERSIONS 64
 
 
@@ -3107,8 +3103,8 @@ int DetectInputINChIFileType(FILE** inp_file,
     char szLine[256], ret = 0;
     static char szPlnVersion[NUM_INCHI_VERSIONS][LEN_VERSIONS]; /* = "INChI:1.1Beta/";*/
     static int  lenPlnVersion[NUM_INCHI_VERSIONS];
-    static char szPlnAuxVer[NUM_VERSIONS][LEN_VERSIONS]; /* = "AuxInfo:1.1Beta/";*/
-    static int  lenPlnAuxVer[NUM_VERSIONS];
+    static char szPlnAuxVer[NUM_AUX_VERSIONS][LEN_VERSIONS]; /* = "AuxInfo:1.1Beta/";*/
+    static int  lenPlnAuxVer[NUM_AUX_VERSIONS];
     static int  bInitialized = 0;
     int  bINChI_plain = 0, len, i;
 
@@ -3127,9 +3123,11 @@ int DetectInputINChIFileType(FILE** inp_file,
         lenPlnVersion[4] = sprintf(szPlnVersion[4], "InChI=1/");
         lenPlnVersion[5] = sprintf(szPlnVersion[5], "MoChI=1a/");
         lenPlnVersion[6] = sprintf(szPlnVersion[6], "InChI=1S/");
-        lenPlnVersion[7] = sprintf(szPlnVersion[7], "InChI=1SB/");             /*@nnuk: entry for molecular inorganics as standard*/
-        lenPlnVersion[8] = sprintf(szPlnVersion[8], "InChI=1B/");              /*@nnuk: Beta */
-        lenPlnVersion[9] = sprintf(szPlnVersion[9], "InChI=1BB/");             /*@nnuk: Beta + MI */
+        lenPlnVersion[7] = sprintf(szPlnVersion[7], "InChI=1SB/");
+        lenPlnVersion[8] = sprintf(szPlnVersion[8], "InChI=1B/");
+        lenPlnVersion[9] = sprintf(szPlnVersion[9], "InChI=1BB/");
+        lenPlnVersion[10] = sprintf(szPlnVersion[10], "InChI=1N/");
+        lenPlnVersion[11] = sprintf(szPlnVersion[11], "InChI=1NB/");
         lenPlnAuxVer[0] = sprintf(szPlnAuxVer[0], "AuxInfo=%s/", INCHI_VERSION);
         lenPlnAuxVer[1] = sprintf(szPlnAuxVer[1], "AuxInfo=1.12Beta/");
         lenPlnAuxVer[2] = sprintf(szPlnAuxVer[2], "AuxInfo=1.0RC/");
@@ -3162,7 +3160,7 @@ int DetectInputINChIFileType(FILE** inp_file,
             break;
         }
         if ( bMatchOnePrefix(len, szLine, lenPlnVersion, szPlnVersion, NUM_INCHI_VERSIONS) ||
-            bMatchOnePrefix(len, szLine, lenPlnAuxVer, szPlnAuxVer, NUM_VERSIONS) )
+            bMatchOnePrefix(len, szLine, lenPlnAuxVer, szPlnAuxVer, NUM_AUX_VERSIONS) )
         {
             bINChI_plain++;
         }
@@ -3182,7 +3180,7 @@ int DetectInputINChIFileType(FILE** inp_file,
     return ret;
 }
 #undef NUM_INCHI_VERSIONS
-#undef NUM_VERSIONS
+#undef NUM_AUX_VERSIONS
 #undef LEN_VERSIONS
 
 #endif /* TARGET_API_LIB */

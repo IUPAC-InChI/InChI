@@ -14,7 +14,7 @@
 #include "ichimain.h"
 #include "ichimake.h"
 #include "ichi_io.h"
-
+#include "strutil.h"
 #include "bcf_s.h"
 
 #include "logging.h" /*(@nnuk : Nauman Ullah Khan) :: Needed for logging functionality*/
@@ -1136,19 +1136,32 @@ int OutputINChI1( CANON_GLOBALS *pCG,
 
     /*
      * @nnuk
-     * The Molecular Inorganics option is enabled by default, but the output
-     * prefix must identify the actual structure rather than the enabled mode.
-     * A structure is treated as Molecular Inorganics here when the MI mode is
-     * active and the current input contains at least one metal atom.
+     * The Molecular Inorganics subversion marker is structure-specific.
+     * For structure input it is determined from the Molecular Inorganics
+     * element classification. For InChI-to-InChI conversion the marker is
+     * preserved from the input InChI prefix.
     */
-    if (ip->bMolecularInorganics && orig_inp_data && orig_inp_data->at)
+    if (ip->bMolecularInorganics)
     {
-        for (i = 0; i < orig_inp_data->num_inp_atoms; i++)
+#if ( READ_INCHI_STRING == 1 )
+        if (ip->bReadInChIOptions & READ_INCHI_OUTPUT_INCHI)
         {
-            if (is_el_a_metal(orig_inp_data->at[i].el_number))
+            if (ip->bReadInChIOptions & READ_INCHI_INPUT_MI)
             {
                 is_molecular_inorganic = 1;
-                break;
+            }
+        }
+        else
+#endif
+        if (orig_inp_data && orig_inp_data->at)
+        {
+            for (i = 0; i < orig_inp_data->num_inp_atoms; i++)
+            {
+                if (getElTypeforMolecularInorganics(orig_inp_data->at[i].el_number) != 0)
+                {
+                    is_molecular_inorganic = 1;
+                    break;
+                }
             }
         }
     }
@@ -1674,6 +1687,24 @@ int OutputINChI1( CANON_GLOBALS *pCG,
     {
         int is_beta = 0;
         int nAtomsAllComp = inchi_max(nAtomsAllComp1, nAtomsAllComp2);
+
+#if ( READ_INCHI_STRING == 1 )
+        if (ip->bReadInChIOptions & READ_INCHI_OUTPUT_INCHI)
+        {
+            if (ip->bReadInChIOptions & READ_INCHI_INPUT_BETA)
+            {
+                is_beta = 1;
+            }
+        }
+        else
+#endif
+        if (is_molecular_inorganic)
+        {
+            /*
+             * Molecular Inorganics is a Beta feature in this release.
+             */
+            is_beta = 1;
+        }
 
         if (nAtomsAllComp > NORMALLY_ALLOWED_INP_MAX_ATOMS)
         {
@@ -3115,31 +3146,34 @@ int OutputINCHI_VersionAndKind(INCHI_IOSTREAM *out_file,
     inchi_strbuf_printf(strbuf, "%s", x_curr_ver);
 
     /*
-     * Experimental features use the Beta prefix.
-     * Molecular Inorganics adds the second 'B' when the structure
-     * is both beta and molecular inorganic.
-     */
-    if (is_beta)
+     * (@nnuk)
+     * The first version designator identifies the calculation class:
+     *   S = Standard
+     *   B = Beta
+     *   N = non-standard
+     *
+     * Molecular Inorganics adds the subversion marker 'B'.
+     *
+     * Non-standard takes precedence over Beta because use of a non-standard
+     * option makes the resulting InChI non-standard irrespective of any
+     * experimental feature that would otherwise require the Beta designator.
+    */
+    if (!(bINChIOutputOptions & INCHI_OUT_STDINCHI))
+    {
+        inchi_strbuf_printf(strbuf, "N");
+    }
+    else if (is_beta)
     {
         inchi_strbuf_printf(strbuf, "B");
-
-        if (is_molecular_inorganic)
-        {
-            inchi_strbuf_printf(strbuf, "B");
-        }
     }
-    /*
-     * Standard structures use 'S'. Molecular Inorganics Standard
-     * structures additionally use the 'B' marker.
-     */
-    else if (bINChIOutputOptions & INCHI_OUT_STDINCHI)
+    else
     {
         inchi_strbuf_printf(strbuf, "S");
+    }
 
-        if (is_molecular_inorganic)
-        {
-            inchi_strbuf_printf(strbuf, "B");
-        }
+    if (is_molecular_inorganic)
+    {
+        inchi_strbuf_printf(strbuf, "B");
     }
 
     inchi_ios_print_nodisplay(out_file, "%s%s", strbuf->pStr, pLF);
@@ -5218,7 +5252,7 @@ void EditINCHI_HidePolymerZz(INCHI_IOSTREAM *out, int n_pzz, int n_zy)
     {
         return;
     }
-    s0 = strstr(s, "InChI=1B/");
+    s0 = strstr(s, INCHI_NAME INCHI_NAM_VER_DELIM);
     if (!s0)
     {
         return;

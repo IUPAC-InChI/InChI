@@ -213,7 +213,7 @@ int INCHI_DECL MakeINCHIFromMolfileText( const char *moltext,
                     }
                     else
                     {
-                        strcpy(result->szInChI, "InChI=1//");
+                        strcpy(result->szInChI, "InChI=1N//");
                     }
                 }
             }

@@ -49,7 +49,7 @@ TEST(test_inchi_dll_b, test_MakeINCHIFromMolfileText)
     char options[] = "";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1SB/C10H10Fe/c1-2-4-5-3(1)11(1,2,4,5)6-7(11)9(11)10(11)8(6)11/h1-10H/q-2"; /*previous expectation : "InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;/q2*-1;"*/
+    const char expected_inchi[] = "InChI=1BB/C10H10Fe/c1-2-4-5-3(1)11(1,2,4,5)6-7(11)9(11)10(11)8(6)11/h1-10H/q-2";
 
     ASSERT_EQ(MakeINCHIFromMolfileText(ferrocene, options, poutput), 1);
     ASSERT_STREQ(poutput->szInChI, expected_inchi);
@@ -68,4 +68,62 @@ TEST(test_inchi_dll_b, test_GetStructFromINCHI_rejects_negative_isotope_mass)
     EXPECT_EQ(output.num_atoms, 0);
 
     FreeStructFromINCHI(&output);
+}
+
+TEST(test_inchi_dll_b, test_CheckINCHI_version_prefixes)
+{
+    EXPECT_EQ(CheckINCHI("InChI=1S/H2O/h1H2", 0), INCHI_VALID_STANDARD);
+    EXPECT_EQ(CheckINCHI("InChI=1SB/H2O/h1H2", 0), INCHI_VALID_STANDARD);
+
+    EXPECT_EQ(CheckINCHI("InChI=1B/H2O/h1H2", 0), INCHI_VALID_BETA);
+    EXPECT_EQ(CheckINCHI("InChI=1BB/H2O/h1H2", 0), INCHI_VALID_BETA);
+
+    EXPECT_EQ(CheckINCHI("InChI=1N/H2O/h1H2", 0), INCHI_VALID_NON_STANDARD);
+    EXPECT_EQ(CheckINCHI("InChI=1NB/H2O/h1H2", 0), INCHI_VALID_NON_STANDARD);
+
+    /* Historical non-standard prefix remains accepted as input. */
+    EXPECT_EQ(CheckINCHI("InChI=1/H2O/h1H2", 0), INCHI_VALID_NON_STANDARD);
+}
+
+TEST(test_inchi_dll_b, test_CheckINCHIKey_version_flags)
+{
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYSA-M"), INCHIKEY_VALID_STANDARD);
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYSB-M"), INCHIKEY_VALID_STANDARD);
+
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYBA-M"), INCHIKEY_VALID_NON_STANDARD);
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYBB-M"), INCHIKEY_VALID_NON_STANDARD);
+
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYNA-M"), INCHIKEY_VALID_NON_STANDARD);
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYNB-M"), INCHIKEY_VALID_NON_STANDARD);
+}
+
+TEST(test_inchi_dll_b, test_GetINCHIKeyFromINCHI_version_flags)
+{
+    struct TestCase
+    {
+        const char* inchi;
+        char expected_class;
+        char expected_subversion;
+    };
+
+    const TestCase cases[] =
+    {
+        { "InChI=1S/H2O/h1H2",  'S', 'A' },
+        { "InChI=1SB/H2O/h1H2", 'S', 'B' },
+        { "InChI=1B/H2O/h1H2",  'B', 'A' },
+        { "InChI=1BB/H2O/h1H2", 'B', 'B' },
+        { "InChI=1N/H2O/h1H2",  'N', 'A' },
+        { "InChI=1NB/H2O/h1H2", 'N', 'B' }
+    };
+
+    for (const auto& test_case : cases)
+    {
+        char key[28] = { 0 };
+
+        ASSERT_EQ(GetINCHIKeyFromINCHI(test_case.inchi, 0, 0, key, nullptr, nullptr), INCHIKEY_OK) << test_case.inchi;
+
+        EXPECT_EQ(key[23], test_case.expected_class) << test_case.inchi;
+
+        EXPECT_EQ(key[24], test_case.expected_subversion) << test_case.inchi;
+    }
 }
