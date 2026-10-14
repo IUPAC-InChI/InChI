@@ -85,6 +85,64 @@ TEST(test_inchi_dll_b, test_CheckINCHI_version_prefixes)
     EXPECT_EQ(CheckINCHI("InChI=1/H2O/h1H2", 0), INCHI_VALID_NON_STANDARD);
 }
 
+TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_version_prefixes)
+{
+    const char* cases[] =
+    {
+        "InChI=1S/H2O/h1H2",
+        "InChI=1SB/Fe",
+        "InChI=1B/H2O/h1H2",
+        "InChI=1BB/Fe",
+        "InChI=1N/H2O/h1H2",
+        "InChI=1NB/Fe"
+    };
+
+    for (const char* inchi : cases)
+    {
+        inchi_InputINCHI input;
+        inchi_Output output;
+
+        memset(&input, 0, sizeof(input));
+        memset(&output, 0, sizeof(output));
+
+        input.szInChI = const_cast<char*>(inchi);
+        input.szOptions = NULL;
+
+        const int ret = GetINCHIfromINCHI(&input, &output);
+
+        ASSERT_TRUE(ret == inchi_Ret_OKAY || ret == inchi_Ret_WARNING) << inchi;
+
+        ASSERT_NE(output.szInChI, nullptr) << inchi;
+
+        EXPECT_STREQ(output.szInChI, inchi) << inchi;
+
+        FreeINCHI(&output);
+    }
+}
+
+TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_historical_nonstandard_prefix)
+{
+    inchi_InputINCHI input;
+    inchi_Output output;
+
+    memset(&input, 0, sizeof(input));
+    memset(&output, 0, sizeof(output));
+
+    char historical_inchi[] = "InChI=1/H2O/h1H2";
+    input.szInChI = historical_inchi;
+    input.szOptions = NULL;
+
+    const int ret = GetINCHIfromINCHI(&input, &output);
+
+    ASSERT_TRUE(ret == inchi_Ret_OKAY || ret == inchi_Ret_WARNING);
+
+    ASSERT_NE(output.szInChI, nullptr);
+
+    EXPECT_STREQ(output.szInChI, "InChI=1N/H2O/h1H2");
+
+    FreeINCHI(&output);
+}
+
 TEST(test_inchi_dll_b, test_CheckINCHIKey_version_flags)
 {
     EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYSA-M"), INCHIKEY_VALID_STANDARD);
