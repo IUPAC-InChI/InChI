@@ -127,3 +127,60 @@ TEST(test_inchi_dll_b, test_GetINCHIKeyFromINCHI_version_flags)
         EXPECT_EQ(key[24], test_case.expected_subversion) << test_case.inchi;
     }
 }
+
+TEST(test_inchi_dll_b, test_MakeINCHIFromMolfileText_LegacyMetalHandling)
+{
+    const char *ferrocene =
+        "Ferrocene\n"
+        "  ACCLDraw12122514483D\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 13 12 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 19.44 -22.4142 -0.1542 0 \n"
+        "M  V30 2 C 19.8251 -23.417 0.6958 0 \n"
+        "M  V30 3 C 21.204 -23.4477 0.7167 0 \n"
+        "M  V30 4 C 21.6716 -22.4638 -0.0917 0 \n"
+        "M  V30 5 C 20.5725 -21.854 -0.7083 0 CHG=-1 CFG=3 \n"
+        "M  V30 6 * 20.4688 -22.625 0 0 \n"
+        "M  V30 7 Fe 20.4134 -20.7234 0 0 \n"
+        "M  V30 8 * 20.5 -19.1875 0 0 \n"
+        "M  V30 9 C 20.5767 -18.3331 -0.7083 0 CHG=-1 CFG=3 \n"
+        "M  V30 10 C 19.44 -18.8933 -0.1542 0 \n"
+        "M  V30 11 C 19.8251 -19.8962 0.6958 0 \n"
+        "M  V30 12 C 21.6716 -18.943 -0.0917 0 \n"
+        "M  V30 13 C 21.204 -19.9269 0.7167 0 \n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 2 1 2 \n"
+        "M  V30 2 1 2 3 \n"
+        "M  V30 3 2 3 4 \n"
+        "M  V30 4 1 4 5 \n"
+        "M  V30 5 1 5 1 \n"
+        "M  V30 6 9 7 6 ENDPTS=(5 5 1 2 4 3) ATTACH=ALL\n"
+        "M  V30 7 9 7 8 ENDPTS=(5 9 10 11 12 13) ATTACH=ALL\n"
+        "M  V30 8 1 9 10 \n"
+        "M  V30 9 2 10 11 \n"
+        "M  V30 10 1 12 9 \n"
+        "M  V30 11 1 11 13 \n"
+        "M  V30 12 2 13 12 \n"
+        "M  V30 END BOND\n"
+        "M  V30 END CTAB\n"
+        "M  END";
+
+    char options[] = "-LegacyMetalHandling";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+
+    const char expected_inchi[] = "InChI=1N/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;/q2*-1;";
+
+    memset(poutput, 0, sizeof(*poutput));
+
+    ASSERT_EQ(MakeINCHIFromMolfileText(ferrocene, options, poutput), 1);
+
+    ASSERT_NE(poutput->szInChI, nullptr);
+    EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    FreeINCHI(poutput);
+}
