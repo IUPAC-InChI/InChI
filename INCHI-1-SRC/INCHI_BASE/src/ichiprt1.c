@@ -1136,15 +1136,16 @@ int OutputINChI1( CANON_GLOBALS *pCG,
 
     /*
      * @nnuk
-     * The Molecular Inorganics subversion marker is structure-specific.
+     * The Molecular Inorganics subversion designator is structure-specific.
      * For structure input it is determined from the Molecular Inorganics
-     * element classification. For InChI-to-InChI conversion the marker is
-     * preserved from the input InChI prefix.
+     * element classification when Molecular Inorganics processing is enabled.
+     * For InChI-derived input, the subversion designator is preserved from
+     * the input version prefix.
     */
     if (ip->bMolecularInorganics)
     {
 #if ( READ_INCHI_STRING == 1 )
-        if (ip->bReadInChIOptions & READ_INCHI_OUTPUT_INCHI)
+        if (ip->bReadInChIOptions & (READ_INCHI_OUTPUT_INCHI | READ_INCHI_TO_STRUCTURE))
         {
             if (ip->bReadInChIOptions & READ_INCHI_INPUT_MI)
             {
@@ -1682,14 +1683,14 @@ int OutputINChI1( CANON_GLOBALS *pCG,
 
     io.nCurINChISegment = DIFL_M;
 
-    /* InChI output: version and kind */
+    /* InChI output: version prefix */
     if (INCHI_basic_or_INCHI_reconnected == INCHI_BAS || !(bINChIOutputOptions & INCHI_OUT_EMBED_REC))
     {
         int is_beta = 0;
         int nAtomsAllComp = inchi_max(nAtomsAllComp1, nAtomsAllComp2);
 
 #if ( READ_INCHI_STRING == 1 )
-        if (ip->bReadInChIOptions & READ_INCHI_OUTPUT_INCHI)
+        if (ip->bReadInChIOptions & (READ_INCHI_OUTPUT_INCHI | READ_INCHI_TO_STRUCTURE))
         {
             if (ip->bReadInChIOptions & READ_INCHI_INPUT_BETA)
             {
@@ -3130,7 +3131,7 @@ void set_line_separators(int bINChIOutputOptions, char **pLF, char **pTAB)
 }
 
 /****************************************************************************
-Output InChI: InChI version and kind
+Output InChI: InChI version prefix
 ****************************************************************************/
 int OutputINCHI_VersionAndKind(INCHI_IOSTREAM *out_file,
                                INCHI_IOS_STRING *strbuf,
@@ -3147,12 +3148,12 @@ int OutputINCHI_VersionAndKind(INCHI_IOSTREAM *out_file,
 
     /*
      * (@nnuk)
-     * The first version designator identifies the calculation class:
+     * The calculation class designator is:
      *   S = Standard
      *   B = Beta
      *   N = non-standard
      *
-     * Molecular Inorganics adds the subversion marker 'B'.
+     * Molecular Inorganics adds the subversion designator 'B'.
      *
      * Non-standard takes precedence over Beta because use of a non-standard
      * option makes the resulting InChI non-standard irrespective of any

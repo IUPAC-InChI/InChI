@@ -161,11 +161,11 @@ int INCHI_DECL STDINCHIGEN_Setup( INCHIGEN_HANDLE _HGen,
     /* Ensure standardness */
 
     /*
-     * (@nnuk) 
+     * (@nnuk)
      * Molecular Inorganics is part of Standard InChI.
      * Discard legacy salt and metal-bond handling when standard
      * output is explicitly enforced by STDINCHIGEN_Setup().
-     */
+    */
     ip->bMolecularInorganics = 1;
 
     ip->bTautFlags &= ~(TG_FLAG_DISCONNECT_SALTS |

@@ -847,7 +847,7 @@ int INCHI_DECL CheckINCHI( const char *szINCHI, const int strict )
         return INCHI_INVALID_VERSION;
     }
 
-    /* Determine the InChI calculation class.
+    /* Determine the InChI calculation class designator.
      * Historical InChI=1/... remains accepted as non-standard input.
     */
     pos_slash1 = LEN_INCHI_STRING_PREFIX + 1;
@@ -868,7 +868,7 @@ int INCHI_DECL CheckINCHI( const char *szINCHI, const int strict )
         pos_slash1++;
     }
 
-    /* Molecular Inorganics subversion marker */
+    /* Molecular Inorganics subversion designator */
     if (szINCHI[pos_slash1] == 'B')
     {
         pos_slash1++;
@@ -912,7 +912,7 @@ int INCHI_DECL CheckINCHI( const char *szINCHI, const int strict )
             }
             if (i > pos_slash1 + 1)
             {
-                /* Not in main formula layer... */ 
+                /* Not in main formula layer... */
                 if (!islower(pp))
                 {
                     /* only lowercase letters are allowed */
@@ -963,7 +963,22 @@ int INCHI_DECL CheckINCHI( const char *szINCHI, const int strict )
         }
         else
         {
-            if (strcmp( inchi_inp.szInChI, inchi_out.szInChI ))
+            const char *in_str = inchi_inp.szInChI;
+            const char *out_str = inchi_out.szInChI;
+
+            /*
+             * Historical non-standard InChI=1/ input is normalized
+             * to the explicit InChI=1N/ form during InChI-to-InChI
+             * conversion. Ignore only this prefix difference.
+             */
+            if (!strncmp(in_str, "InChI=1/", 8) &&
+                !strncmp(out_str, "InChI=1N/", 9))
+            {
+                in_str += 8;
+                out_str += 9;
+            }
+
+            if (strcmp(in_str, out_str))
             {
                 ret = INCHI_FAIL_I2I;
             }
@@ -3279,7 +3294,7 @@ int SetInChIExtInputByExtOrigAtData( OAD_Polymer     *orp,
             /* unitk = ( *iip )->units[k]; */
             if (!unitk[k])
             {
-                err = 9001; 
+                err = 9001;
                 goto preexitf;
             }
             iip_tmp->units[k] = unitk[k];
@@ -3299,7 +3314,7 @@ int SetInChIExtInputByExtOrigAtData( OAD_Polymer     *orp,
             uk_al_tmp[k] = (int*)inchi_calloc(unitk[k]->na, sizeof(int));
             if (!uk_al_tmp[k])
             {
-                err = 9001; 
+                err = 9001;
                 goto preexitf;
             }
             unitk[k]->alist = uk_al_tmp[k];

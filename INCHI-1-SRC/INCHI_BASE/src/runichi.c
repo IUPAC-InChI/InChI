@@ -2161,7 +2161,7 @@ int ProcessOneStructureEx(struct tagINCHI_CLOCK* ic,
             }
             else
             {
-                inchi_ios_eprint(out_file, "InChI=1//\n");
+                inchi_ios_eprint(out_file, "InChI=1N//\n");
             }
         }
     }

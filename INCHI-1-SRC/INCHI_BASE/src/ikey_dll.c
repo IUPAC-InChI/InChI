@@ -141,9 +141,9 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     if (szINCHISource[LEN_INCHI_STRING_PREFIX] != '1')
         return INCHIKEY_INVALID_INCHI_PREFIX;
 
-    /* Determine the InChI calculation class.
- * Historical InChI=1/... remains accepted as non-standard input.
- */
+    /* Determine the InChI calculation class designator.
+     * Historical InChI=1/... remains accepted as non-standard input.
+    */
     pos_slash1 = LEN_INCHI_STRING_PREFIX + 1;
 
     if (szINCHISource[pos_slash1] == 'S')
@@ -165,7 +165,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
         pos_slash1++;
     }
 
-    /* Molecular Inorganics subversion marker */
+    /* Molecular Inorganics subversion designator */
     if (szINCHISource[pos_slash1] == 'B')
     {
         is_molecular_inorganic = 1;

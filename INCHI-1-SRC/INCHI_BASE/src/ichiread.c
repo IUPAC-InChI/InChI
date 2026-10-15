@@ -857,16 +857,14 @@ int ReadWriteInChI(INCHI_CLOCK* ic,
             }
 
             /*
-             * Preserve the input calculation class and Molecular Inorganics
-             * subversion marker for InChI-to-InChI serialization.
+             * Preserve the input calculation-class designator and subversion
+             * designator when an InChI is converted or restored to a structure.
              */
-            if (bInChI2InChI)
+            if (bInChI2InChI || bInChI2Structure)
             {
-                ip->bReadInChIOptions &=
-                    ~(READ_INCHI_INPUT_BETA | READ_INCHI_INPUT_MI);
+                ip->bReadInChIOptions &= ~(READ_INCHI_INPUT_BETA | READ_INCHI_INPUT_MI);
 
-                if ((input_is_stdinchi & INCHI_INPUT_CLASS_MASK) ==
-                    INCHI_INPUT_CLASS_BETA)
+                if ((input_is_stdinchi & INCHI_INPUT_CLASS_MASK) == INCHI_INPUT_CLASS_BETA)
                 {
                     ip->bReadInChIOptions |= READ_INCHI_INPUT_BETA;
                 }
@@ -5091,8 +5089,8 @@ next_line:
 
 
     /*
-  * Preserve the calculation class and Molecular Inorganics subversion
-  * marker from the input prefix. Historical InChI=1/... remains
+  * Preserve the calculation class designator and Molecular Inorganics subversion
+  * designator from the input prefix. Historical InChI=1/... remains
   * accepted as non-standard input.
   */
     *bStdFormat = INCHI_INPUT_CLASS_NONSTANDARD;
@@ -11290,7 +11288,8 @@ int ConvertInChI2Struct(ICHICONST INPUT_PARMS* ip_inp,
     /* Preliminaries */
     InchiTimeGet(pulTStart);
 
-    if ((input_is_stdinchi & INCHI_INPUT_CLASS_MASK) == INCHI_INPUT_CLASS_STANDARD)
+    if ((input_is_stdinchi & INCHI_INPUT_CLASS_MASK) == INCHI_INPUT_CLASS_STANDARD ||
+        (input_is_stdinchi & INCHI_INPUT_CLASS_MASK) == INCHI_INPUT_CLASS_BETA)
     {
         if (ip_inp->bINChIOutputOptions & INCHI_OUT_STDINCHI)
         {
@@ -11784,7 +11783,7 @@ int DetectAndExposePolymerInternals(INCHI_IOSTREAM* is)
             ret = -1;
             goto endf;
         }
-#endif        
+#endif
         if (element[0] != 'H' || element[1])
         {
             nheavy += ntimes * elindex;
