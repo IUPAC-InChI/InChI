@@ -1032,6 +1032,18 @@ int ReadWriteInChI(INCHI_CLOCK* ic,
                 break;
             }
 
+            /*
+             * Legacy metal handling cannot be applied during InChI-to-InChI
+             * conversion because the structure is not reconstructed and the
+             * metal-bond processing is therefore not rerun.
+             */
+            if (bInChI2InChI && !ip->bMolecularInorganics && (input_is_stdinchi & INCHI_INPUT_MI_MARKER))
+            {
+                inchi_ios_eprint(pLog, "\nLegacyMetalHandling cannot be used with InChI2InChI for Molecular Inorganics input\n");
+                ret = RI_ERR_PROGR;
+                goto exit_error;
+            }
+
             /* InChI --> Structure */
             else if (bInChI2Structure)
             {

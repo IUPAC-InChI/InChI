@@ -1141,7 +1141,7 @@ int OutputINChI1( CANON_GLOBALS *pCG,
      * element classification when Molecular Inorganics processing is enabled.
      * For InChI-derived input, the subversion designator is preserved from
      * the input version prefix.
-    */
+     */
     if (ip->bMolecularInorganics)
     {
 #if ( READ_INCHI_STRING == 1 )

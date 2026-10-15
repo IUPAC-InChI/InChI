@@ -121,6 +121,35 @@ TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_version_prefixes)
     }
 }
 
+TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_rejects_LegacyMetalHandling_for_MI_input)
+{
+    const char* cases[] =
+    {
+        "InChI=1SB/Fe",
+        "InChI=1BB/Fe",
+        "InChI=1NB/Fe"
+    };
+
+    for (const char* inchi : cases)
+    {
+        inchi_InputINCHI input;
+        inchi_Output output;
+
+        memset(&input, 0, sizeof(input));
+        memset(&output, 0, sizeof(output));
+
+        input.szInChI = const_cast<char*>(inchi);
+        input.szOptions = const_cast<char*>("-LegacyMetalHandling");
+
+        const int ret = GetINCHIfromINCHI(&input, &output);
+
+        EXPECT_NE(ret, inchi_Ret_OKAY) << inchi;
+        EXPECT_NE(ret, inchi_Ret_WARNING) << inchi;
+
+        FreeINCHI(&output);
+    }
+}
+
 TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_historical_nonstandard_prefix)
 {
     inchi_InputINCHI input;

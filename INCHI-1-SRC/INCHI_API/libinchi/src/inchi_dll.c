@@ -507,9 +507,8 @@ static int GetINCHI1( inchi_InputEx *extended_input,
     {
         /*
          * (@nnuk)
-         * Molecular Inorganics is part of Standard InChI.
-         * Discard legacy salt and metal-bond handling when standard
-         * output is explicitly enforced by GetStdINCHI().
+         * Keep Molecular Inorganics processing enabled in GetStdINCHI().
+         * Discard legacy salt and metal-bond handling for this API path.
          */
         ip->bMolecularInorganics = 1;
 
@@ -847,9 +846,9 @@ int INCHI_DECL CheckINCHI( const char *szINCHI, const int strict )
         return INCHI_INVALID_VERSION;
     }
 
-    /* Determine the InChI calculation class designator.
+    /* Determine the InChI calculation-class designator.
      * Historical InChI=1/... remains accepted as non-standard input.
-    */
+     */
     pos_slash1 = LEN_INCHI_STRING_PREFIX + 1;
 
     if (szINCHI[pos_slash1] == 'S')
