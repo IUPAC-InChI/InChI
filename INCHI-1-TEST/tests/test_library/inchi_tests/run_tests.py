@@ -11,7 +11,7 @@ from inchi_tests.utils import get_current_time, get_progress, get_config_args
 from inchi_tests.consumers import regression_consumer, invariance_consumer
 
 
-def main(test, inchi_lib_path, data_config) -> None:
+def main(test, inchi_lib_path, data_config, timeout_seconds_per_molfile=60) -> None:
     dataset = data_config.name
 
     data_path = data_config.path
@@ -26,6 +26,9 @@ def main(test, inchi_lib_path, data_config) -> None:
 
     logging.basicConfig(filename=log_path, encoding="utf-8", level=logging.INFO)
     logging.info(f"{get_current_time()}: Using '{inchi_lib_path}'.")
+    logging.info(
+        f"{get_current_time()}: Timeout per molfile: {timeout_seconds_per_molfile}s."
+    )
     logging.info(
         f"{get_current_time()}: Starting to process {n_sdf} SDFs on {n_processes} cores."
     )
@@ -51,6 +54,7 @@ def main(test, inchi_lib_path, data_config) -> None:
                             get_molfile_id=get_molfile_id,
                             number_of_consumer_processes=n_processes,
                             expected_failures=expected_failures,
+                            timeout_seconds_per_molfile=timeout_seconds_per_molfile,
                         ),
                     )
 
@@ -63,11 +67,18 @@ def main(test, inchi_lib_path, data_config) -> None:
 
                         continue
 
+                    # Written under a temporary name and renamed once complete, so
+                    # an aborted run leaves no reference that the existence check
+                    # above would mistake for a finished one.
+                    partial_path = reference_path.with_name(
+                        reference_path.name + ".partial"
+                    )
+                    partial_path.unlink(missing_ok=True)
                     exit_code = max(
                         exit_code,
                         drivers.regression_reference(
                             sdf_path=sdf_path,
-                            reference_path=reference_path,
+                            reference_path=partial_path,
                             consumer_function=partial(
                                 regression_consumer,
                                 inchi_lib_path=inchi_lib_path,
@@ -75,8 +86,10 @@ def main(test, inchi_lib_path, data_config) -> None:
                             ),
                             get_molfile_id=get_molfile_id,
                             number_of_consumer_processes=n_processes,
+                            timeout_seconds_per_molfile=timeout_seconds_per_molfile,
                         ),
                     )
+                    partial_path.rename(reference_path)
 
                 case "invariance":
                     exit_code = max(
@@ -92,6 +105,7 @@ def main(test, inchi_lib_path, data_config) -> None:
                             get_molfile_id=get_molfile_id,
                             number_of_consumer_processes=n_processes,
                             expected_failures=expected_failures,
+                            timeout_seconds_per_molfile=timeout_seconds_per_molfile,
                         ),
                     )
 
@@ -115,9 +129,11 @@ if __name__ == "__main__":
     # See https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods.
     multiprocessing.set_start_method("spawn")
 
-    test, inchi_lib_path, dataset_config_path = get_config_args()
+    test, inchi_lib_path, dataset_config_path, timeout_seconds_per_molfile = (
+        get_config_args()
+    )
     # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
     sys.path.append(str(Path(dataset_config_path).parent))
     data_config = importlib.import_module(str(Path(dataset_config_path).stem))
 
-    main(test, inchi_lib_path, data_config.config)
+    main(test, inchi_lib_path, data_config.config, timeout_seconds_per_molfile)
