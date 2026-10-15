@@ -14,7 +14,7 @@
 #include "ichimain.h"
 #include "ichimake.h"
 #include "ichi_io.h"
-
+#include "strutil.h"
 #include "bcf_s.h"
 
 #include "logging.h" /*(@nnuk : Nauman Ullah Khan) :: Needed for logging functionality*/
@@ -56,6 +56,7 @@ static int OutputINCHI_VersionAndKind( INCHI_IOSTREAM *out_file,
                                        INCHI_IOS_STRING *strbuf,
                                        int bINChIOutputOptions,
                                        int is_beta,
+                                       int is_molecular_inorganic,
                                        char *pLF,
                                        char *pTAB );
 static int OutputINCHI_MainLayerFormula( CANON_GLOBALS *pCG,
@@ -1054,6 +1055,7 @@ int OutputINChI1( CANON_GLOBALS *pCG,
     int bTautomericAcid, bHardAddRemProton;
     int bRequestedRacemicStereo = 0, bRequestedRelativeStereo = 0;
     int npass = 0; /* djb-rwth: removing redundant variables */
+    int is_molecular_inorganic = 0;
 
     INCHI_SORT *is, *is2;
     INChI *pINChI /*, *pINChI2*/;
@@ -1132,6 +1134,38 @@ int OutputINChI1( CANON_GLOBALS *pCG,
         }
     }
 
+    /*
+     * @nnuk
+     * The Molecular Inorganics subversion designator is structure-specific.
+     * For structure input it is determined from the Molecular Inorganics
+     * element classification when Molecular Inorganics processing is enabled.
+     * For InChI-derived input, the subversion designator is preserved from
+     * the input version prefix.
+     */
+    if (ip->bMolecularInorganics)
+    {
+#if ( READ_INCHI_STRING == 1 )
+        if (ip->bReadInChIOptions & (READ_INCHI_OUTPUT_INCHI | READ_INCHI_TO_STRUCTURE))
+        {
+            if (ip->bReadInChIOptions & READ_INCHI_INPUT_MI)
+            {
+                is_molecular_inorganic = 1;
+            }
+        }
+        else
+#endif
+        if (orig_inp_data && orig_inp_data->at)
+        {
+            for (i = 0; i < orig_inp_data->num_inp_atoms; i++)
+            {
+                if (getElTypeforMolecularInorganics(orig_inp_data->at[i].el_number) != 0)
+                {
+                    is_molecular_inorganic = 1;
+                    break;
+                }
+            }
+        }
+    }
 
     io.bPolymers = ip->bPolymers;
 
@@ -1649,11 +1683,29 @@ int OutputINChI1( CANON_GLOBALS *pCG,
 
     io.nCurINChISegment = DIFL_M;
 
-    /* InChI output: version and kind */
+    /* InChI output: version prefix */
     if (INCHI_basic_or_INCHI_reconnected == INCHI_BAS || !(bINChIOutputOptions & INCHI_OUT_EMBED_REC))
     {
         int is_beta = 0;
         int nAtomsAllComp = inchi_max(nAtomsAllComp1, nAtomsAllComp2);
+
+#if ( READ_INCHI_STRING == 1 )
+        if (ip->bReadInChIOptions & (READ_INCHI_OUTPUT_INCHI | READ_INCHI_TO_STRUCTURE))
+        {
+            if (ip->bReadInChIOptions & READ_INCHI_INPUT_BETA)
+            {
+                is_beta = 1;
+            }
+        }
+        else
+#endif
+        if (is_molecular_inorganic)
+        {
+            /*
+             * Molecular Inorganics is a Beta feature in this release.
+             */
+            is_beta = 1;
+        }
 
         if (nAtomsAllComp > NORMALLY_ALLOWED_INP_MAX_ATOMS)
         {
@@ -1675,12 +1727,12 @@ int OutputINChI1( CANON_GLOBALS *pCG,
         {
             is_beta = 1;
         }
-        else if (ip->bMolecularInorganics || ip->bEnhancedStereo)
+        else if (ip->bEnhancedStereo)
         {
             is_beta = 1;
         }
 
-        OutputINCHI_VersionAndKind(out_file, strbuf, bINChIOutputOptions, is_beta, pLF, pTAB);
+        OutputINCHI_VersionAndKind(out_file, strbuf, bINChIOutputOptions, is_beta, is_molecular_inorganic, pLF, pTAB);
     }
 
     /* InChI output: atoms */
@@ -3079,12 +3131,13 @@ void set_line_separators(int bINChIOutputOptions, char **pLF, char **pTAB)
 }
 
 /****************************************************************************
-Output InChI: InChI version and kind
+Output InChI: InChI version prefix
 ****************************************************************************/
 int OutputINCHI_VersionAndKind(INCHI_IOSTREAM *out_file,
                                INCHI_IOS_STRING *strbuf,
                                int bINChIOutputOptions,
                                int is_beta,
+                               int is_molecular_inorganic,
                                char *pLF,
                                char *pTAB)
 {
@@ -3093,15 +3146,35 @@ int OutputINCHI_VersionAndKind(INCHI_IOSTREAM *out_file,
     inchi_strbuf_reset(strbuf);
     inchi_strbuf_printf(strbuf, "%s", x_curr_ver);
 
-    /* - add 'Beta' flag if applicable */
-    if (is_beta)
+    /*
+     * (@nnuk)
+     * The calculation class designator is:
+     *   S = Standard
+     *   B = Beta
+     *   N = non-standard
+     *
+     * Molecular Inorganics adds the subversion designator 'B'.
+     *
+     * Non-standard takes precedence over Beta because use of a non-standard
+     * option makes the resulting InChI non-standard irrespective of any
+     * experimental feature that would otherwise require the Beta designator.
+    */
+    if (!(bINChIOutputOptions & INCHI_OUT_STDINCHI))
+    {
+        inchi_strbuf_printf(strbuf, "N");
+    }
+    else if (is_beta)
     {
         inchi_strbuf_printf(strbuf, "B");
     }
-    /* - add 'Standard' flag if applicable */
-    else if (bINChIOutputOptions & INCHI_OUT_STDINCHI)
+    else
     {
         inchi_strbuf_printf(strbuf, "S");
+    }
+
+    if (is_molecular_inorganic)
+    {
+        inchi_strbuf_printf(strbuf, "B");
     }
 
     inchi_ios_print_nodisplay(out_file, "%s%s", strbuf->pStr, pLF);
@@ -5180,7 +5253,7 @@ void EditINCHI_HidePolymerZz(INCHI_IOSTREAM *out, int n_pzz, int n_zy)
     {
         return;
     }
-    s0 = strstr(s, "InChI=1B/");
+    s0 = strstr(s, INCHI_NAME INCHI_NAM_VER_DELIM);
     if (!s0)
     {
         return;

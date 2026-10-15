@@ -87,7 +87,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     char flagstd = 'S', /* standard key */
         flagnonstd = 'N', /* non-standard key */
         flagexptl = 'B', /* experimental ('beta') key */
-        flagver = 'A', /* InChI v. 1 */
+        flagsubver = 'A', /* base InChI subversion */
         flagproto = 'N'; /* no [de]protonization , by default */
     int  nprotons;
     /*
@@ -102,6 +102,8 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     int is_stdinchi = 0;    /* 0 -  non-standard,
                                1    standard
                               -1    experimental ('beta') */
+
+    int is_molecular_inorganic = 0;
 
 
 
@@ -139,18 +141,34 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     if (szINCHISource[LEN_INCHI_STRING_PREFIX] != '1')
         return INCHIKEY_INVALID_INCHI_PREFIX;
 
-    /* .. optionally has a 'standard' flag character */
+    /* Determine the InChI calculation-class designator.
+     * Historical InChI=1/... remains accepted as non-standard input.
+     */
     pos_slash1 = LEN_INCHI_STRING_PREFIX + 1;
+
     if (szINCHISource[pos_slash1] == 'S')
     {
-        /* Standard InChI ==> standard InChIKey */
+        /* Standard InChI */
         is_stdinchi = 1;
         pos_slash1++;
     }
     else if (szINCHISource[pos_slash1] == 'B')
     {
-        /* v. 1.05 Experimental ('beta') InChI ==> corresponding InChIKey */
+        /* Experimental ('beta') InChI */
         is_stdinchi = -1;
+        pos_slash1++;
+    }
+    else if (szINCHISource[pos_slash1] == 'N')
+    {
+        /* Explicitly marked non-standard InChI */
+        is_stdinchi = 0;
+        pos_slash1++;
+    }
+
+    /* Molecular Inorganics subversion designator */
+    if (szINCHISource[pos_slash1] == 'B')
+    {
+        is_molecular_inorganic = 1;
         pos_slash1++;
     }
 
@@ -266,7 +284,7 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
     }
 
 
-    /* Trim 'InChI=1[S]/' */
+    /* Hash only the InChI layers following the parsed version prefix. */
     memcpy(smajor, str + pos_slash1 + 1, ncp * sizeof(str[0]));
     smajor[ncp] = '\0';
 
@@ -384,8 +402,8 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
         base26_triplet_2(digest_minor),
         base26_dublet_for_bits_28_to_36(digest_minor));
     strcat(szINCHIKey, tmp);
-    /* Append a standard/non-standard flag */
-    slen = strlen( szINCHIKey );
+    /* Append calculation-class flag */
+    slen = strlen(szINCHIKey);
     if (is_stdinchi == 1)
     {
         szINCHIKey[slen] = flagstd;
@@ -399,8 +417,8 @@ int INCHI_DECL GetINCHIKeyFromINCHI( const char* szINCHISource,
         szINCHIKey[slen] = flagnonstd;
     }
 
-    /* Append InChI v.1 flag */
-    szINCHIKey[slen + 1] = flagver;
+    /* Append InChI subversion flag */
+    szINCHIKey[slen + 1] = is_molecular_inorganic ? 'B' : flagsubver;
 
     /* Append dash  */
     szINCHIKey[slen + 2] = '-';
@@ -532,18 +550,18 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL CheckINCHIKey( const char *szINCHIKey )
         }
     }
 
-    /* Check for version (only 1 allowed) */
-    if (szINCHIKey[24] != 'A')
+    /* Check InChI subversion flag */
+    if (szINCHIKey[24] != 'A' && szINCHIKey[24] != 'B')
     {
         return INCHIKEY_INVALID_VERSION;
     }
 
-    /* Check for standard-ness */
+    /* Check calculation-class flag */
     if (szINCHIKey[23] == 'S')
     {
         return INCHIKEY_VALID_STANDARD;
     }
-    else if (szINCHIKey[23] == 'N')
+    else if (szINCHIKey[23] == 'N' || szINCHIKey[23] == 'B')
     {
         return INCHIKEY_VALID_NON_STANDARD;
     }

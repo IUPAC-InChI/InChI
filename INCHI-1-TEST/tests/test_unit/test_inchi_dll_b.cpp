@@ -49,7 +49,7 @@ TEST(test_inchi_dll_b, test_MakeINCHIFromMolfileText)
     char options[] = "";
     inchi_Output output;
     inchi_Output *poutput = &output;
-    const char expected_inchi[] = "InChI=1S/2C5H5.Fe/c2*1-2-4-5-3-1;/h2*1-5H;/q2*-1;";
+    const char expected_inchi[] = "InChI=1BB/C10H10Fe/c1-2-4-5-3(1)11(1,2,4,5)6-7(11)9(11)10(11)8(6)11/h1-10H/q-2";
 
     ASSERT_EQ(MakeINCHIFromMolfileText(ferrocene, options, poutput), 1);
     ASSERT_STREQ(poutput->szInChI, expected_inchi);
@@ -68,4 +68,191 @@ TEST(test_inchi_dll_b, test_GetStructFromINCHI_rejects_negative_isotope_mass)
     EXPECT_EQ(output.num_atoms, 0);
 
     FreeStructFromINCHI(&output);
+}
+
+TEST(test_inchi_dll_b, test_CheckINCHI_version_prefixes)
+{
+    EXPECT_EQ(CheckINCHI("InChI=1S/H2O/h1H2", 0), INCHI_VALID_STANDARD);
+    EXPECT_EQ(CheckINCHI("InChI=1SB/H2O/h1H2", 0), INCHI_VALID_STANDARD);
+
+    EXPECT_EQ(CheckINCHI("InChI=1B/H2O/h1H2", 0), INCHI_VALID_BETA);
+    EXPECT_EQ(CheckINCHI("InChI=1BB/H2O/h1H2", 0), INCHI_VALID_BETA);
+
+    EXPECT_EQ(CheckINCHI("InChI=1N/H2O/h1H2", 0), INCHI_VALID_NON_STANDARD);
+    EXPECT_EQ(CheckINCHI("InChI=1NB/H2O/h1H2", 0), INCHI_VALID_NON_STANDARD);
+
+    /* Historical non-standard prefix remains accepted as input. */
+    EXPECT_EQ(CheckINCHI("InChI=1/H2O/h1H2", 0), INCHI_VALID_NON_STANDARD);
+    EXPECT_EQ(CheckINCHI("InChI=1/H2O/h1H2", 1), INCHI_VALID_NON_STANDARD);
+}
+
+TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_version_prefixes)
+{
+    const char* cases[] =
+    {
+        "InChI=1S/H2O/h1H2",
+        "InChI=1SB/Fe",
+        "InChI=1B/H2O/h1H2",
+        "InChI=1BB/Fe",
+        "InChI=1N/H2O/h1H2",
+        "InChI=1NB/Fe"
+    };
+
+    for (const char* inchi : cases)
+    {
+        inchi_InputINCHI input;
+        inchi_Output output;
+
+        memset(&input, 0, sizeof(input));
+        memset(&output, 0, sizeof(output));
+
+        input.szInChI = const_cast<char*>(inchi);
+        input.szOptions = NULL;
+
+        const int ret = GetINCHIfromINCHI(&input, &output);
+
+        ASSERT_TRUE(ret == inchi_Ret_OKAY || ret == inchi_Ret_WARNING) << inchi;
+
+        ASSERT_NE(output.szInChI, nullptr) << inchi;
+
+        EXPECT_STREQ(output.szInChI, inchi) << inchi;
+
+        FreeINCHI(&output);
+    }
+}
+
+TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_rejects_LegacyMetalHandling_for_MI_input)
+{
+    const char* cases[] =
+    {
+        "InChI=1SB/Fe",
+        "InChI=1BB/Fe",
+        "InChI=1NB/Fe"
+    };
+
+    for (const char* inchi : cases)
+    {
+        inchi_InputINCHI input;
+        inchi_Output output;
+
+        memset(&input, 0, sizeof(input));
+        memset(&output, 0, sizeof(output));
+
+        input.szInChI = const_cast<char*>(inchi);
+        input.szOptions = const_cast<char*>("-LegacyMetalHandling");
+
+        const int ret = GetINCHIfromINCHI(&input, &output);
+
+        EXPECT_NE(ret, inchi_Ret_OKAY) << inchi;
+        EXPECT_NE(ret, inchi_Ret_WARNING) << inchi;
+
+        FreeINCHI(&output);
+    }
+}
+
+TEST(test_inchi_dll_b, test_GetINCHIfromINCHI_historical_nonstandard_prefix)
+{
+    inchi_InputINCHI input;
+    inchi_Output output;
+
+    memset(&input, 0, sizeof(input));
+    memset(&output, 0, sizeof(output));
+
+    char historical_inchi[] = "InChI=1/H2O/h1H2";
+    input.szInChI = historical_inchi;
+    input.szOptions = NULL;
+
+    const int ret = GetINCHIfromINCHI(&input, &output);
+
+    ASSERT_TRUE(ret == inchi_Ret_OKAY || ret == inchi_Ret_WARNING);
+
+    ASSERT_NE(output.szInChI, nullptr);
+
+    EXPECT_STREQ(output.szInChI, "InChI=1N/H2O/h1H2");
+
+    FreeINCHI(&output);
+}
+
+TEST(test_inchi_dll_b, test_CheckINCHIKey_version_flags)
+{
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYSA-M"), INCHIKEY_VALID_STANDARD);
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYSB-M"), INCHIKEY_VALID_STANDARD);
+
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYBA-M"), INCHIKEY_VALID_NON_STANDARD);
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYBB-M"), INCHIKEY_VALID_NON_STANDARD);
+
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYNA-M"), INCHIKEY_VALID_NON_STANDARD);
+    EXPECT_EQ(CheckINCHIKey("FAPWRFPIFSIZLT-UHFFFAOYNB-M"), INCHIKEY_VALID_NON_STANDARD);
+}
+
+TEST(test_inchi_dll_b, test_GetINCHIKeyFromINCHI_version_flags)
+{
+    struct TestCase
+    {
+        const char* inchi;
+        char expected_class;
+        char expected_subversion;
+    };
+
+    const TestCase cases[] =
+    {
+        { "InChI=1S/H2O/h1H2",  'S', 'A' },
+        { "InChI=1SB/H2O/h1H2", 'S', 'B' },
+        { "InChI=1B/H2O/h1H2",  'B', 'A' },
+        { "InChI=1BB/H2O/h1H2", 'B', 'B' },
+        { "InChI=1N/H2O/h1H2",  'N', 'A' },
+        { "InChI=1NB/H2O/h1H2", 'N', 'B' }
+    };
+
+    for (const auto& test_case : cases)
+    {
+        char key[28] = { 0 };
+
+        ASSERT_EQ(GetINCHIKeyFromINCHI(test_case.inchi, 0, 0, key, nullptr, nullptr), INCHIKEY_OK) << test_case.inchi;
+
+        EXPECT_EQ(key[23], test_case.expected_class) << test_case.inchi;
+
+        EXPECT_EQ(key[24], test_case.expected_subversion) << test_case.inchi;
+    }
+}
+
+TEST(test_inchi_dll_b, test_MakeINCHIFromMolfileText_LegacyMetalHandling)
+{
+    const char *methyl_lithium =
+        "Methyl lithium\n"
+        "  InChI\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 2 1 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 0.0000 0.0000 0.0000 0\n"
+        "M  V30 2 Li 1.5000 0.0000 0.0000 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2\n"
+        "M  V30 END BOND\n"
+        "M  V30 END CTAB\n"
+        "M  END";
+
+    char options[] = "-LegacyMetalHandling";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    char key[28] = { 0 };
+
+    const char expected_inchi[] = "InChI=1N/CH3.Li/h1H3;";
+
+    memset(poutput, 0, sizeof(*poutput));
+
+    ASSERT_EQ(MakeINCHIFromMolfileText(methyl_lithium, options, poutput), 1);
+
+    ASSERT_NE(poutput->szInChI, nullptr);
+    EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    ASSERT_EQ(GetINCHIKeyFromINCHI(poutput->szInChI, 0, 0, key, nullptr, nullptr), INCHIKEY_OK);
+
+    EXPECT_EQ(key[23], 'N');
+    EXPECT_EQ(key[24], 'A');
+
+    FreeINCHI(poutput);
 }
