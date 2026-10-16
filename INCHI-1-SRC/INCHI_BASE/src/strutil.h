@@ -83,9 +83,8 @@ extern "C"
      * @param orig_inp_data
      * @param inchi
      * @param aux
-     * @return int
      */
-    int set_EnhancedStereo_t_m_layers(const ORIG_ATOM_DATA *orig_inp_data,
+    void set_EnhancedStereo_t_m_layers(const ORIG_ATOM_DATA *orig_inp_data,
                                       const INChI *inchi,
                                       const INChI_Aux *aux);
 
@@ -100,6 +99,30 @@ extern "C"
                                    int orig_atom_num);
 
     /**
+     * @brief Build a reverse (original -> canonical) atom number map
+     *
+     * @param aux Pointer to INChI_Aux data structure
+     * @param map_size Receives the number of entries in the returned map (0 on failure)
+     * @return Newly allocated map (free with inchi_free), or NULL if unavailable
+     */
+    int *make_orig_to_canon_map( const INChI_Aux *aux,
+                                 int *map_size );
+
+    /**
+     * @brief Get the canonical atom number via a reverse map, with scan fallback
+     *
+     * @param map Map from make_orig_to_canon_map(), or NULL to scan aux directly
+     * @param map_size Number of entries in map
+     * @param aux Pointer to INChI_Aux data structure
+     * @param orig_atom_num Original atom number
+     * @return Returns canonical atom number if found, -1 if not
+     */
+    int lookup_canonical_atom_number( const int *map,
+                                      int map_size,
+                                      const INChI_Aux *aux,
+                                      int orig_atom_num );
+
+    /**
      * @brief Get the parity index from canonical atom number
      *
      * @param canon_atom_num Canonical atom number
@@ -110,6 +133,38 @@ extern "C"
     int get_parity_idx_from_canonical_atom_number( int canon_atom_num,
                                                    const AT_NUMB *nNumber,
                                                    int nof_atoms);
+
+    /**
+     * @brief Canonical number of an original atom if it is an sp3 stereocentre
+     *        of this component
+     *
+     * @param inchi Pointer to INChI structure of the component
+     * @param map orig->canon map from make_orig_to_canon_map(), may be NULL
+     * @param map_size Size of map
+     * @param aux Pointer to INChI auxiliary data of the component
+     * @param orig_atom_num Original atom number
+     * @return Returns the canonical number, -1 if absent or not a stereocentre
+     */
+    int isotopic_stereo_view( const INChI *inchi,
+                              const INChI_Aux *aux,
+                              INChI *iso_inchi,
+                              INChI_Aux *iso_aux );
+
+    int has_rel_rac_centre( const OAD_V3000 *v3000,
+                            const INChI *inchi,
+                            const INChI_Aux *aux );
+
+    int absolute_centres( const OAD_V3000 *v3000,
+                          const INChI *inchi,
+                          const INChI_Aux *aux,
+                          int *abs_atoms,
+                          int *n_ungrouped );
+
+    int lookup_stereo_centre( const INChI *inchi,
+                              const int *map,
+                              int map_size,
+                              const INChI_Aux *aux,
+                              int orig_atom_num );
 
     /**
      * @brief Invert the parities for enhanced stereochemistry t- and m-layers
