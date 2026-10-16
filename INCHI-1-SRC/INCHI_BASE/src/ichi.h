@@ -274,6 +274,7 @@ typedef struct tagINChIforSort {
     short      n1; /* points to the original; used in structure reconstruction only */
     short      n2; /* points to the original; used in structure reconstruction only */
     short      n3; /* points to the original; used in structure reconstruction only */
+    const char *enh_key; /* enhanced-stereo classes of the component, last sort key; may be NULL */
 }INCHI_SORT;
 
 

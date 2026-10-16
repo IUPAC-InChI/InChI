@@ -9,6 +9,7 @@
 #include "mode.h"
 #include "ichimain.h"
 #include "ichi_io.h"
+#include "ichister.h"
 
 #include "bcf_s.h"
 #include "stb_sprintf.h"
@@ -424,6 +425,8 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
 {
     int cumulene_len,
         j,
+        j2,
+        k,
         next_j = 0 /* ordering number of the central allene atom */,
         next_neigh;
     AT_RANK
@@ -433,16 +436,18 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
     if (pCanonOrd && pCanonRank)
     {
         j = pCanonOrd[(int) LinearCTStereoDble->at_num1 - 1];
+        j2 = pCanonOrd[(int) LinearCTStereoDble->at_num2 - 1];
 
         /* if allene then find the central atom, at[next_j] */
 
         if (bIsotopic)
         {
-            cumulene_len = BOND_CHAIN_LEN( at[j].stereo_bond_parity2[0] );
+            k = find_stereo_bond_slot( at[j].stereo_bond_neighbor2, j2 );
+            cumulene_len = BOND_CHAIN_LEN( at[j].stereo_bond_parity2[k] );
 
             if (cumulene_len % 2 && ( 1 >= MAX_NUM_STEREO_BONDS || !at[j].stereo_bond_neighbor2[1] ))
             {
-                next_j = at[j].neighbor[(int) at[j].stereo_bond_ord2[0]];
+                next_j = at[j].neighbor[(int) at[j].stereo_bond_ord2[k]];
 
                 for (cumulene_len = ( cumulene_len - 1 ) / 2; cumulene_len && 2 == at[next_j].valence; cumulene_len--)
                 {
@@ -452,6 +457,11 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
                 }
                 /* next_j is the central atom */
             }
+            else if (IS_ATROP_AXIS( at, j, at[j].stereo_bond_parity2[k], at[j].stereo_bond_ord2[k] ))
+            {
+                next_j = j2; /* lower-numbered axis end */
+                cumulene_len = 0;
+            }
             else
             {
                 cumulene_len = -1; /* not an allene */
@@ -459,11 +469,12 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
         }
         else
         {
-            cumulene_len = BOND_CHAIN_LEN( at[j].stereo_bond_parity[0] );
+            k = find_stereo_bond_slot( at[j].stereo_bond_neighbor, j2 );
+            cumulene_len = BOND_CHAIN_LEN( at[j].stereo_bond_parity[k] );
 
             if (cumulene_len % 2 && ( 1 >= MAX_NUM_STEREO_BONDS || !at[j].stereo_bond_neighbor[1] ))
             {
-                next_j = at[j].neighbor[(int) at[j].stereo_bond_ord[0]];
+                next_j = at[j].neighbor[(int) at[j].stereo_bond_ord[k]];
 
                 for (cumulene_len = ( cumulene_len - 1 ) / 2; cumulene_len && 2 == at[next_j].valence; cumulene_len--)
                 {
@@ -471,6 +482,11 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
                     j = next_j;
                     next_j = at[next_j].neighbor[next_neigh];
                 }
+            }
+            else if (IS_ATROP_AXIS( at, j, at[j].stereo_bond_parity[k], at[j].stereo_bond_ord[k] ))
+            {
+                next_j = j2; /* lower-numbered axis end */
+                cumulene_len = 0;
             }
             else
             {
@@ -480,7 +496,7 @@ int Copy2StereoBondOrAllene( INChI_Stereo *Stereo,
 
         if (!cumulene_len)
         {
-            /* allene has been found; insert new stereocenter and parity */
+            /* allene or atropisomer axis has been found; insert new stereocenter and parity */
 
             AT_NUMB *nNumber;
             S_CHAR  *t_parity;
@@ -729,7 +745,9 @@ int MarkAmbiguousStereo( sp_ATOM *at,
                    message "Ambiguous stereo: bond(s)": Allene makes a stereocenter
                 */
 
-                int j1_parity = bIsotopic ? at[j1].stereo_bond_parity2[0] : at[j1].stereo_bond_parity[0];
+                int k = find_stereo_bond_slot( bIsotopic ? at[j1].stereo_bond_neighbor2
+                                                         : at[j1].stereo_bond_neighbor, j2 );
+                int j1_parity = bIsotopic ? at[j1].stereo_bond_parity2[k] : at[j1].stereo_bond_parity[k];
 
                 int cumulene_len = BOND_CHAIN_LEN( j1_parity ); /* 0 => double bond, 1 => allene, 2 => cumulene,..*/
 
@@ -742,7 +760,7 @@ int MarkAmbiguousStereo( sp_ATOM *at,
                     int next_j, next_neigh;
                     int j = j1;
 
-                    next_j = at[j].neighbor[bIsotopic ? at[j].stereo_bond_ord2[0] : at[j].stereo_bond_ord[0]];
+                    next_j = at[j].neighbor[bIsotopic ? at[j].stereo_bond_ord2[k] : at[j].stereo_bond_ord[k]];
 
                     for (cumulene_len = ( cumulene_len - 1 ) / 2;
                          cumulene_len && 2 == at[next_j].valence;

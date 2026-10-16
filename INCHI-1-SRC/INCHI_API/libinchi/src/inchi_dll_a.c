@@ -808,6 +808,9 @@ exit_function:
         pGenData->num_components[k] = sd->num_components[k];
     }
 
+    /* CanonGraph allocated the bit set into this stage's local CG */
+    SetBitFree( &CG );
+
     return nRet;
 } /* INCHIGEN_DoCanonicalization */
 

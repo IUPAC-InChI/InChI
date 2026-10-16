@@ -167,6 +167,25 @@ void OrigAtData_Permute(ORIG_ATOM_DATA* permuted, ORIG_ATOM_DATA* saved, int* nu
                 }
             }
         }
+        /* Double-bond collections hold atom pairs: renumber them like atoms */
+        {
+            int **bond_lists[3] = { permuted->v3000->lists_stebabs, permuted->v3000->lists_stebrel,
+                                    permuted->v3000->lists_stebrac };
+            int n_bond_lists[3] = { permuted->v3000->n_stebabs, permuted->v3000->n_stebrel,
+                                    permuted->v3000->n_stebrac };
+            int t;
+
+            for (t = 0; t < 3; t++)
+            {
+                for (j = 0; bond_lists[t] && j < n_bond_lists[t]; j++)
+                {
+                    for (k = 2; k < bond_lists[t][j][1] + 2; k++)
+                    {
+                        bond_lists[t][j][k] = numbers[bond_lists[t][j][k]];
+                    }
+                }
+            }
+        }
     }
 
     return;

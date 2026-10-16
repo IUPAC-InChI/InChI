@@ -1985,7 +1985,7 @@ int InvertStereo( sp_ATOM    *at,
                   CANON_STAT *pCS,
                   int        bInvertLinearCTStereo )
 {
-    int i, j, j1, j2, num_changes, parity, cumulene_len;
+    int i, j, j1, j2, k1, k2, bAxis, num_changes, parity, cumulene_len;
 
     num_changes = 0;
     for (i = 0; i < num_at_tg; i++)
@@ -2031,13 +2031,16 @@ int InvertStereo( sp_ATOM    *at,
         if (ATOM_PARITY_WELL_DEF( parity ))
         {
             j1 = nAtomNumberCanon[(int) pCS->LinearCTStereoDble[i].at_num1 - 1];
-            cumulene_len = BOND_CHAIN_LEN( at[j1].stereo_bond_parity[0] );
-            if (cumulene_len % 2)
+            j2 = nAtomNumberCanon[(int) pCS->LinearCTStereoDble[i].at_num2 - 1];
+            k1 = find_stereo_bond_slot( at[j1].stereo_bond_neighbor, j2 );
+            k2 = find_stereo_bond_slot( at[j2].stereo_bond_neighbor, j1 );
+            cumulene_len = BOND_CHAIN_LEN( at[j1].stereo_bond_parity[k1] );
+            bAxis = IS_ATROP_AXIS( at, j1, at[j1].stereo_bond_parity[k1], at[j1].stereo_bond_ord[k1] );
+            if (cumulene_len % 2 || bAxis)
             {
-                /* invert only in case of allene */
-                j2 = nAtomNumberCanon[(int) pCS->LinearCTStereoDble[i].at_num2 - 1];
-                /* checks for debug only */
-                if (1 < MAX_NUM_STEREO_BONDS)
+                /* invert only in case of allene or atropisomer axis */
+                /* checks for debug only; an axis end may carry another stereo bond */
+                if (1 < MAX_NUM_STEREO_BONDS && !bAxis)
                 {
                     if (at[j1].stereo_bond_neighbor[1] ||
                          at[j2].stereo_bond_neighbor[1])
@@ -2045,9 +2048,9 @@ int InvertStereo( sp_ATOM    *at,
                         goto exit_error; /* inconsitency: atom has more than one cumulene bond */
                     }
                 }
-                if (cumulene_len != BOND_CHAIN_LEN( at[j2].stereo_bond_parity[0] ) ||
-                     j1 + 1 != at[j2].stereo_bond_neighbor[0] ||
-                     j2 + 1 != at[j1].stereo_bond_neighbor[0])
+                if (cumulene_len != BOND_CHAIN_LEN( at[j2].stereo_bond_parity[k2] ) ||
+                     j1 + 1 != at[j2].stereo_bond_neighbor[k2] ||
+                     j2 + 1 != at[j1].stereo_bond_neighbor[k1])
                 {
                     goto exit_error; /* inconsitency: atoms should refer to each other */
                 }
@@ -2066,13 +2069,13 @@ int InvertStereo( sp_ATOM    *at,
                     pCS->LinearCTStereoDble[i].parity ^= AB_INV_PARITY_BITS;
                 }
                 num_changes++;
-                if (PARITY_WELL_DEF( at[j1].stereo_bond_parity[0] ))
+                if (PARITY_WELL_DEF( at[j1].stereo_bond_parity[k1] ))
                 {
-                    at[j1].stereo_bond_parity[0] ^= AB_INV_PARITY_BITS;
+                    at[j1].stereo_bond_parity[k1] ^= AB_INV_PARITY_BITS;
                 }
-                if (PARITY_WELL_DEF( at[j2].stereo_bond_parity[0] ))
+                if (PARITY_WELL_DEF( at[j2].stereo_bond_parity[k2] ))
                 {
-                    at[j2].stereo_bond_parity[0] ^= AB_INV_PARITY_BITS;
+                    at[j2].stereo_bond_parity[k2] ^= AB_INV_PARITY_BITS;
                 }
             }
         }
