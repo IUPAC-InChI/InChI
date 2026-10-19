@@ -72,6 +72,12 @@ typedef enum tagModeProtonIsoExchgH
     MODE_PIXH_KEEP_TOTALS         /* 4 */
 } MODE_PIXH;
 
+#define INCHI_INPUT_CLASS_MASK         0x03
+#define INCHI_INPUT_CLASS_NONSTANDARD  0x00
+#define INCHI_INPUT_CLASS_STANDARD     0x01
+#define INCHI_INPUT_CLASS_BETA         0x02
+#define INCHI_INPUT_MI_MARKER          0x04
+
 
 /* Local prototypes */
 int InChILine2Data(INCHI_IOSTREAM* pInp,
@@ -833,13 +839,13 @@ int ReadWriteInChI(INCHI_CLOCK* ic,
             }
             /* inchi_ios_print( pRealOut, ""); */
 
-            /* Does not allow conversion non-standard->standard */
-            /* (force target to be non-standard also)           */
+            /* Does not allow conversion of a non-standard input to Standard output. */
             if (ip_inp->bINChIOutputOptions & INCHI_OUT_STDINCHI)
             {
-                if (!input_is_stdinchi)
+                if ((input_is_stdinchi & INCHI_INPUT_CLASS_MASK) ==
+                    INCHI_INPUT_CLASS_NONSTANDARD)
                 {
-                    /* Input InChI is a non-standard one  */
+                    /* Input InChI is non-standard. */
                     ip->bINChIOutputOptions &= ~INCHI_OUT_STDINCHI;
                     /*
                     if (szCurHdr && szCurHdr[0])
@@ -850,6 +856,24 @@ int ReadWriteInChI(INCHI_CLOCK* ic,
                 }
             }
 
+            /*
+             * Preserve the input calculation-class designator and subversion
+             * designator when an InChI is converted or restored to a structure.
+             */
+            if (bInChI2InChI || bInChI2Structure)
+            {
+                ip->bReadInChIOptions &= ~(READ_INCHI_INPUT_BETA | READ_INCHI_INPUT_MI);
+
+                if ((input_is_stdinchi & INCHI_INPUT_CLASS_MASK) == INCHI_INPUT_CLASS_BETA)
+                {
+                    ip->bReadInChIOptions |= READ_INCHI_INPUT_BETA;
+                }
+
+                if (input_is_stdinchi & INCHI_INPUT_MI_MARKER)
+                {
+                    ip->bReadInChIOptions |= READ_INCHI_INPUT_MI;
+                }
+            }
 
             treat_save_opt = ip->bINChIOutputOptions & INCHI_OUT_SAVEOPT;
 
@@ -1009,7 +1033,7 @@ int ReadWriteInChI(INCHI_CLOCK* ic,
             }
 
             /* InChI --> Structure */
-            else if (bInChI2Structure)
+            if (bInChI2Structure)
             {
                 char* result_string;
 
@@ -5000,7 +5024,7 @@ int ReadInChILine(INCHI_IOSTREAM* pInp,
     int  state = -1, prev_state = -1;
     int  bAbc = -1;                    /* -1=> undefined, 0=> decimal, 1=> abc (compressed) */
 
-    const int len_std_prefix = 8;
+    const int len_version_prefix = (int)(sizeof("InChI=1") - 1);
     size_t k = 0;
     unsigned char let1 = 0, let2 = 0;
     const char a2p[] = "ABCDEFGHIJKLMNOP";
@@ -5064,14 +5088,38 @@ next_line:
         }
 
 
-    /* Check if got a standard InChI */
-    if (pLine->str && (pLine->len == len_std_prefix) && (pLine->str[len_std_prefix - 1] == 'S')) /* djb-rwth: fixing a NULL pointer dereference */
+    /*
+     * Preserve the calculation-class designator and Molecular Inorganics
+     * subversion designator from the input prefix. Historical InChI=1/...
+     * remains accepted as non-standard input.
+     */
+    *bStdFormat = INCHI_INPUT_CLASS_NONSTANDARD;
+
+    if (pLine->str &&
+        (pLine->len == len_version_prefix + 1 ||
+         (pLine->len == len_version_prefix + 2 &&
+          pLine->str[len_version_prefix + 1] == 'B')))
     {
-        *bStdFormat = 1;
-    }
-    else
-    {
-        *bStdFormat = 0;
+        switch (pLine->str[len_version_prefix])
+        {
+        case 'S':
+            *bStdFormat = INCHI_INPUT_CLASS_STANDARD;
+            break;
+
+        case 'B':
+            *bStdFormat = INCHI_INPUT_CLASS_BETA;
+            break;
+
+        case 'N':
+            *bStdFormat = INCHI_INPUT_CLASS_NONSTANDARD;
+            break;
+        }
+
+        if (pLine->len == len_version_prefix + 2 &&
+            strchr("SBN", pLine->str[len_version_prefix]))
+        {
+            *bStdFormat |= INCHI_INPUT_MI_MARKER;
+        }
     }
 
     state = IST_MOBILE_H_FORMULA;
@@ -10933,7 +10981,7 @@ void TreatErrorsInReadInChIString(int            nReadStatus,
                 }
                 else
                 {
-                    inchi_ios_eprint(pOut, "InChI=1//\n");
+                    inchi_ios_eprint(pOut, "InChI=1N//\n");
                 }
             }
         }
@@ -10996,10 +11044,23 @@ int ConvertInChI2InChI(INPUT_PARMS* ip,
     SetHillFormFromInChI(pOneInput);
 #endif
 
-    ret = OutputInChIAsRequested(pCG, pOut, pLog, ip, sd,
-        pOneInput, num_components,
-        nModeProtonIsoExchgH,
-        num_inp, save_opt_bits);
+    /*
+     * Legacy metal handling cannot be applied during InChI-to-InChI
+     * conversion because the structure is not reconstructed and the
+     * metal-bond processing is therefore not rerun.
+     */
+    if (!ip->bMolecularInorganics && (ip->bReadInChIOptions & READ_INCHI_INPUT_MI))
+    {
+        inchi_ios_eprint(pLog, "LegacyMetalHandling cannot be used with InChI2InChI for Molecular Inorganics input\n");
+        ret = RI_ERR_PROGR;
+    }
+    else
+    {
+        ret = OutputInChIAsRequested(pCG, pOut, pLog, ip, sd,
+            pOneInput, num_components,
+            nModeProtonIsoExchgH,
+            num_inp, save_opt_bits);
+    }
 
 #if ( !defined(TARGET_API_LIB) && defined(TARGET_EXE_STANDALONE) )
 
@@ -11131,7 +11192,7 @@ int ConvertInChI2InChI(INPUT_PARMS* ip,
             }
             else
             {
-                inchi_ios_eprint(pOut, "InChI=1//\n");
+                inchi_ios_eprint(pOut, "InChI=1N//\n");
             }
         }
 
@@ -11229,7 +11290,8 @@ int ConvertInChI2Struct(ICHICONST INPUT_PARMS* ip_inp,
     /* Preliminaries */
     InchiTimeGet(pulTStart);
 
-    if (input_is_stdinchi)
+    if ((input_is_stdinchi & INCHI_INPUT_CLASS_MASK) == INCHI_INPUT_CLASS_STANDARD ||
+        (input_is_stdinchi & INCHI_INPUT_CLASS_MASK) == INCHI_INPUT_CLASS_BETA)
     {
         if (ip_inp->bINChIOutputOptions & INCHI_OUT_STDINCHI)
         {
@@ -11723,7 +11785,7 @@ int DetectAndExposePolymerInternals(INCHI_IOSTREAM* is)
             ret = -1;
             goto endf;
         }
-#endif        
+#endif
         if (element[0] != 'H' || element[1])
         {
             nheavy += ntimes * elindex;

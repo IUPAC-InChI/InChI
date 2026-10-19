@@ -2155,13 +2155,13 @@ int ProcessOneStructureEx(struct tagINCHI_CLOCK* ic,
     {
         if ( ret == _IS_FATAL || ret == _IS_ERROR )
         {
-            if ( ip->bINChIOutputOptions & INCHI_OUT_STDINCHI )
+            if (ip->bINChIOutputOptions & INCHI_OUT_STDINCHI)
             {
                 inchi_ios_eprint(out_file, "InChI=1S//\n");
             }
             else
             {
-                inchi_ios_eprint(out_file, "InChI=1//\n");
+                inchi_ios_eprint(out_file, "InChI=1N//\n");
             }
         }
     }

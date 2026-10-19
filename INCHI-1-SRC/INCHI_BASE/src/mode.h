@@ -989,6 +989,8 @@ extern "C" {
 #define READ_INCHI_SPLIT_OUTPUT          0x00000002
 #define READ_INCHI_KEEP_BALANCE_P        0x00000004
 #define READ_INCHI_TO_STRUCTURE          0x00000008
+#define READ_INCHI_INPUT_BETA            0x00000010
+#define READ_INCHI_INPUT_MI              0x00000020
 #endif
 
 
