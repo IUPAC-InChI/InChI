@@ -5101,13 +5101,16 @@ next_line:
 
 
     /*
-  * Preserve the calculation class designator and Molecular Inorganics subversion
-  * designator from the input prefix. Historical InChI=1/... remains
-  * accepted as non-standard input.
-  */
+     * Preserve the calculation-class designator and Molecular Inorganics
+     * subversion designator from the input prefix. Historical InChI=1/...
+     * remains accepted as non-standard input.
+     */
     *bStdFormat = INCHI_INPUT_CLASS_NONSTANDARD;
 
-    if (pLine->str && pLine->len == len_version_prefix + 1)
+    if (pLine->str &&
+        (pLine->len == len_version_prefix + 1 ||
+         (pLine->len == len_version_prefix + 2 &&
+          pLine->str[len_version_prefix + 1] == 'B')))
     {
         switch (pLine->str[len_version_prefix])
         {
@@ -5123,25 +5126,10 @@ next_line:
             *bStdFormat = INCHI_INPUT_CLASS_NONSTANDARD;
             break;
         }
-    }
-    else if (pLine->str && pLine->len == len_version_prefix + 2 && pLine->str[len_version_prefix + 1] == 'B')
-    {
-        switch (pLine->str[len_version_prefix])
+
+        if (pLine->len == len_version_prefix + 2)
         {
-        case 'S':
-            *bStdFormat = INCHI_INPUT_CLASS_STANDARD |
-                INCHI_INPUT_MI_MARKER;
-            break;
-
-        case 'B':
-            *bStdFormat = INCHI_INPUT_CLASS_BETA |
-                INCHI_INPUT_MI_MARKER;
-            break;
-
-        case 'N':
-            *bStdFormat = INCHI_INPUT_CLASS_NONSTANDARD |
-                INCHI_INPUT_MI_MARKER;
-            break;
+            *bStdFormat |= INCHI_INPUT_MI_MARKER;
         }
     }
 

@@ -2778,7 +2778,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
 #endif
 
     inchi_ios_print_nodisplay(f, "Structure perception\n");
-    inchi_ios_print_nodisplay(f, "  MolecularInorganics      Use Molecular Inorganics bond handling (default)\n\n");              /*(@nnuk : Nauman Ullah Khan) :: Parameter for Molecular Inorganics (default)*/
+    inchi_ios_print_nodisplay(f, "  MolecularInorganics      Use Molecular Inorganics bond handling (default)\n");              /*(@nnuk : Nauman Ullah Khan) :: Parameter for Molecular Inorganics (default)*/
     inchi_ios_print_nodisplay(f, "  SNon        Exclude stereo (default: include absolute stereo)\n");
     inchi_ios_print_nodisplay(f, "  NEWPSOFF    Both ends of wedge point to stereocenters (default: a narrow end)\n");
     inchi_ios_print_nodisplay(f, "  LooseTSACheck   Relax criteria of ambiguous drawing for in-ring tetrahedral stereo\n");

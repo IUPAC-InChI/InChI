@@ -57,6 +57,99 @@ TEST(test_inchi_dll_b, test_MakeINCHIFromMolfileText)
     FreeINCHI(poutput);
 }
 
+TEST(test_inchi_dll_b, test_STDINCHIGEN_MolecularInorganics)
+{
+    inchi_Atom atoms[2] = {};
+    inchi_Input input = {};
+    INCHIGEN_DATA gen_data = {};
+    inchi_Output output = {};
+
+    /*
+     * @nnuk
+     * Methyl lithium, C-Li.
+     */
+    atoms[0].elname[0] = 'C';
+    atoms[0].num_iso_H[0] = -1;
+    atoms[0].num_bonds = 1;
+    atoms[0].neighbor[0] = 1;
+    atoms[0].bond_type[0] = INCHI_BOND_TYPE_SINGLE;
+    atoms[0].bond_stereo[0] = INCHI_BOND_STEREO_NONE;
+
+    atoms[1].elname[0] = 'L';
+    atoms[1].elname[1] = 'i';
+    atoms[1].num_iso_H[0] = -1;
+    atoms[1].num_bonds = 1;
+    atoms[1].neighbor[0] = 0;
+    atoms[1].bond_type[0] = INCHI_BOND_TYPE_SINGLE;
+    atoms[1].bond_stereo[0] = INCHI_BOND_STEREO_NONE;
+
+    input.atom = atoms;
+    input.num_atoms = 2;
+    input.stereo0D = nullptr;
+    input.num_stereo0D = 0;
+    input.szOptions = nullptr;
+
+    INCHIGEN_HANDLE handle = STDINCHIGEN_Create();
+    ASSERT_NE(handle, nullptr);
+
+    const auto is_success = [](int ret)
+    {
+        return ret == inchi_Ret_OKAY || ret == inchi_Ret_WARNING;
+    };
+
+    bool success = true;
+
+    int ret = STDINCHIGEN_Setup(handle, &gen_data, &input);
+    if (!is_success(ret))
+    {
+        ADD_FAILURE() << "STDINCHIGEN_Setup failed with return code " << ret;
+        success = false;
+    }
+
+    if (success)
+    {
+        ret = STDINCHIGEN_DoNormalization(handle, &gen_data);
+        if (!is_success(ret))
+        {
+            ADD_FAILURE() << "STDINCHIGEN_DoNormalization failed with return code " << ret;
+            success = false;
+        }
+    }
+
+    if (success)
+    {
+        ret = STDINCHIGEN_DoCanonicalization(handle, &gen_data);
+        if (!is_success(ret))
+        {
+            ADD_FAILURE() << "STDINCHIGEN_DoCanonicalization failed with return code " << ret;
+            success = false;
+        }
+    }
+
+    if (success)
+    {
+        ret = STDINCHIGEN_DoSerialization(handle, &gen_data, &output);
+        if (!is_success(ret))
+        {
+            ADD_FAILURE() << "STDINCHIGEN_DoSerialization failed with return code " << ret;
+            success = false;
+        }
+    }
+
+    if (success)
+    {
+        EXPECT_NE(output.szInChI, nullptr);
+
+        if (output.szInChI)
+        {
+            EXPECT_STREQ(output.szInChI, "InChI=1BB/CH3Li/c1-2/h1H3");
+        }
+    }
+
+    STDINCHIGEN_Reset(handle, &gen_data, &output);
+    STDINCHIGEN_Destroy(handle);
+}
+
 TEST(test_inchi_dll_b, test_GetStructFromINCHI_rejects_negative_isotope_mass)
 {
     char inchi[] = "InChI=1/T/q+1/i12-112T";
