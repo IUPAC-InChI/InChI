@@ -172,6 +172,18 @@ regression and invariance tests log the molfile as `timed out` and fail unless i
 ID is an expected failure in the data config. The reference run stores a row with
 `timeout_seconds` instead of a result.
 
+To find the molfile in an SDF that crashes the library or exceeds a time limit,
+run
+
+```Shell
+python INCHI-1-TEST/tests/test_library/inchi_tests/find_failing_molfile.py \
+    --sdf-path=.../Substance_141000001_141500000.sdf.gz \
+    --lib-path=.../libinchi.so
+```
+
+The example is a PubChem Substance SDF. See the script's docstring for its
+options.
+
 ### Inspect test results
 
 In addition to inspecting the raw logs, you can review the results by running
