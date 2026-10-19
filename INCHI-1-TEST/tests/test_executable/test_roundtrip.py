@@ -212,3 +212,9 @@ def test_inchi2inchi_legacy_metal_handling_rejects_mi_input_and_continues(
     ]
     assert "LegacyMetalHandling cannot be used with InChI2InChI" in result.log
     assert "Finished processing 3 structures: 1 error" in result.log
+
+
+def test_inchi2inchi_unknown_class_letter_gets_no_mi_marker(run_inchi_exe):
+    result = run_inchi_exe("InChI=1XB/H2O/h1H2\n", "-InChI2InChI")
+
+    assert "InChI=1N/H2O/h1H2" in result.output

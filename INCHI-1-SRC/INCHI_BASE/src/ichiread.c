@@ -5115,7 +5115,8 @@ next_line:
             break;
         }
 
-        if (pLine->len == len_version_prefix + 2)
+        if (pLine->len == len_version_prefix + 2 &&
+            strchr("SBN", pLine->str[len_version_prefix]))
         {
             *bStdFormat |= INCHI_INPUT_MI_MARKER;
         }
