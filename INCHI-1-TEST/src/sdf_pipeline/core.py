@@ -128,6 +128,15 @@ def run(
             if now - began >= timeout_seconds_per_molfile
         ]
 
+    def _queued_messages() -> list[tuple[int, Any]]:
+        """The messages already in the result queue, without waiting for more."""
+        messages = []
+        while True:
+            try:
+                messages.append(result_queue.get_nowait())
+            except Empty:
+                return messages
+
     def _seconds_to_next_limit() -> float:
         if not started:
             return timeout_seconds_per_molfile
@@ -145,11 +154,7 @@ def run(
             if _over_time():
                 # A result for one of these molfiles may already be queued behind
                 # others, so read everything that has arrived before deciding.
-                while True:
-                    try:
-                        message = result_queue.get_nowait()
-                    except Empty:
-                        break
+                for message in _queued_messages():
                     yield from _handle(message)
 
                 for process_id in _over_time():
