@@ -1032,20 +1032,8 @@ int ReadWriteInChI(INCHI_CLOCK* ic,
                 break;
             }
 
-            /*
-             * Legacy metal handling cannot be applied during InChI-to-InChI
-             * conversion because the structure is not reconstructed and the
-             * metal-bond processing is therefore not rerun.
-             */
-            if (bInChI2InChI && !ip->bMolecularInorganics && (input_is_stdinchi & INCHI_INPUT_MI_MARKER))
-            {
-                inchi_ios_eprint(pLog, "\nLegacyMetalHandling cannot be used with InChI2InChI for Molecular Inorganics input\n");
-                ret = RI_ERR_PROGR;
-                goto exit_error;
-            }
-
             /* InChI --> Structure */
-            else if (bInChI2Structure)
+            if (bInChI2Structure)
             {
                 char* result_string;
 
@@ -11055,10 +11043,23 @@ int ConvertInChI2InChI(INPUT_PARMS* ip,
     SetHillFormFromInChI(pOneInput);
 #endif
 
-    ret = OutputInChIAsRequested(pCG, pOut, pLog, ip, sd,
-        pOneInput, num_components,
-        nModeProtonIsoExchgH,
-        num_inp, save_opt_bits);
+    /*
+     * Legacy metal handling cannot be applied during InChI-to-InChI
+     * conversion because the structure is not reconstructed and the
+     * metal-bond processing is therefore not rerun.
+     */
+    if (!ip->bMolecularInorganics && (ip->bReadInChIOptions & READ_INCHI_INPUT_MI))
+    {
+        inchi_ios_eprint(pLog, "LegacyMetalHandling cannot be used with InChI2InChI for Molecular Inorganics input\n");
+        ret = RI_ERR_PROGR;
+    }
+    else
+    {
+        ret = OutputInChIAsRequested(pCG, pOut, pLog, ip, sd,
+            pOneInput, num_components,
+            nModeProtonIsoExchgH,
+            num_inp, save_opt_bits);
+    }
 
 #if ( !defined(TARGET_API_LIB) && defined(TARGET_EXE_STANDALONE) )
 
