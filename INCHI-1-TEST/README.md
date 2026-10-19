@@ -163,6 +163,15 @@ To convince yourself that the tests fail once a regression has been introduced,
 change `INCHI_NAME` in `INCHI-1-SRC/INCHI_BASE/src/mode.h` and re-run the tests.
 The tests should now fail and indicate that the difference between the reference results and the latest test run is the change you've made.
 
+### Molfiles that exceed the time limit
+
+`sdf_pipeline.core.run` stops a consumer that spends more than
+`timeout_seconds_per_molfile` seconds (default 60) on one molfile, reports the
+molfile as timed out, and starts a new consumer for the rest of the SDF. The
+regression and invariance tests log the molfile as `timed out` and fail unless its
+ID is an expected failure in the data config. The reference run stores a row with
+`timeout_seconds` instead of a result.
+
 ### Inspect test results
 
 In addition to inspecting the raw logs, you can review the results by running
