@@ -2222,13 +2222,14 @@ int MakeEnhStereoString( const INChI      *pINChI,
         const int *atom_numbers = &enh_stereo[i][2];
         int count_found_atoms = 0;
         int nof_atoms = enh_stereo[i][1];
+        int noop = enh_group_is_noop(pINChI, pAux, enh_stereo[i]);
 
         enh_stereo_canon[i] = (int*)inchi_calloc(nof_atoms + 2, sizeof(int));
         enh_stereo_canon[i][0] = nof_atoms;
         for (int j = 0; j < nof_atoms; j++)  {
 
             int orig_atom_num = atom_numbers[j];
-            int canon_atom_num = lookup_stereo_centre(pINChI, orig_to_canon, map_size, pAux, orig_atom_num);
+            int canon_atom_num = noop ? -1 : lookup_stereo_centre(pINChI, orig_to_canon, map_size, pAux, orig_atom_num);
             if (canon_atom_num != -1) {
                 count_found_atoms++;
             } else {
