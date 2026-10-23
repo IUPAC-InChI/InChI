@@ -308,6 +308,7 @@ There are several options (Table 2) which modify the interpretation of input ste
 | SRel          | Use  relative stereo                                         | Use absolute stereo                                          |
 | SRac          | Use  racemic stereo                                          | Use  absolute stereo                                         |
 | SUCF          | Use  Chiral Flag in MOL/SD file record: if On – use absolute stereo, Off – relative | Use  absolute stereo (or another option if requested by SRel /SRac/SNon switches) |
+| EnhancedStereochemistry | *(initial testing phase)* Use the V3000 stereo collections of the MOLfile: `STEABS` (absolute), `STEREL`*n* (relative, “or”), `STERAC`*n* (racemic, “and”), giving grouped `/s` layers such as `/s1(3)2(4,5)3(6)`; the InChI is marked beta, `InChI=1B/` | Ignore stereo collections; all drawn stereo is absolute |
 
 The creation options affects the InChI algorithm, not structure perception. They modify the defaults which are specified for standard InChI and significantly affect the final appearance (e.g., additional InChI layers may appear). Whence, using any of the creation options qualifies the resulting identifier as non-standard. 
 
@@ -400,6 +401,7 @@ The next table summarizes, v. 1.06,  availability of various options in the vari
 | Yes                                                          | Yes     | Yes    | SRel                 | Relative  stereo                                             |
 | Yes                                                          | Yes     | Yes    | SRac                 | Racemic  stereo                                              |
 | Yes                                                          | Yes     | Yes    | SUCF                 | Use  Chiral Flag: On means Absolute stereo, Off - Relative   |
+| Yes                                                          | Yes     | Yes    | EnhancedStereochemistry | *(initial testing phase)* Use V3000 stereo collections ABS/OR/AND; InChI=1B/ |
 | *Customizing InChI creation  (non-standard InChI, “InChI=1/…”)* |         |        |                      |                                                              |
 | Yes                                                          | Yes     | Yes    | SUU                  | Always  include omitted unknown/undefined stereo             |
 | Yes                                                          | Yes     | Yes    | SLUUD                | Make  labels for unknown and undefined stereo different      |
