@@ -3450,6 +3450,13 @@ int OutputINCHI_StereoLayer( CANON_GLOBALS    *pCG,
     return 0;
 }
 
+/** @brief Stereo layer a check applies to: the main one or the isotopic one. */
+typedef enum
+{
+    STEREO_LAYER_MAIN,
+    STEREO_LAYER_ISOTOPIC
+} STEREO_LAYER;
+
 /**
  * @brief Check whether any component still has an absolute sp3 reference (/m).
  *
@@ -3465,12 +3472,6 @@ int OutputINCHI_StereoLayer( CANON_GLOBALS    *pCG,
  * @param layer Non-isotopic or isotopic stereo.
  * @return Returns 1 if at least one component has a non-zero nCompInv2Abs, else 0.
  */
-typedef enum
-{
-    STEREO_LAYER_MAIN,
-    STEREO_LAYER_ISOTOPIC
-} STEREO_LAYER;
-
 static int bHasAbsStereoComponent( INCHI_SORT   *pINChISort,
                                    int           bOutType,
                                    int           num_components,
