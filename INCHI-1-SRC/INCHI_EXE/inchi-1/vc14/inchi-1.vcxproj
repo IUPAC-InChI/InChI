@@ -69,6 +69,7 @@
     <ClCompile Include="..\..\..\INCHI_BASE\src\runichi4.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\sha2.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\strutil.c" />
+    <ClCompile Include="..\..\..\INCHI_BASE\src\atropisomers.c" />
     <ClCompile Include="..\..\..\INCHI_BASE\src\util.c" />
     <ClCompile Include="..\src\dispstru.c" />
     <ClCompile Include="..\src\ichimain.c" />
@@ -111,6 +112,7 @@
     <ClInclude Include="..\..\..\INCHI_BASE\src\sha2.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\stb_sprintf.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\strutil.h" />
+    <ClInclude Include="..\..\..\INCHI_BASE\src\atropisomers.h" />
     <ClInclude Include="..\..\..\INCHI_BASE\src\util.h" />
     <ClInclude Include="..\src\dispstru.h" />
   </ItemGroup>

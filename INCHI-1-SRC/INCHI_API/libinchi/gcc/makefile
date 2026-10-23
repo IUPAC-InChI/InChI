@@ -252,7 +252,9 @@ eldata.o	\
 molecular_inorganics_data.o	\
 permutation_util.o	\
 util.o \
-bcf_s.o
+bcf_s.o	\
+atropisomers.o	\
+ring_detection.o
 # === InChI Library link rule =========
 ifeq ($(OS_ID),0)
 # djb-rwth: creating .dll on Windows
