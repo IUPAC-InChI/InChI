@@ -2761,6 +2761,7 @@ void HelpCommandLineParms(INCHI_IOSTREAM* f)
 
     inchi_ios_print_nodisplay(f, "Structure perception\n");
     inchi_ios_print_nodisplay(f, "  MolecularInorganics      Parameter deals with Molecular Inorganics (initial testing phase)\n");              /*(@nnuk : Nauman Ullah Khan) :: Parameter for Molecular Inorganics added*/
+    inchi_ios_print_nodisplay(f, "  EnhancedStereochemistry  Use V3000 stereo collections ABS/OR/AND (initial testing phase, InChI=1B/)\n");
     inchi_ios_print_nodisplay(f, "  SNon        Exclude stereo (default: include absolute stereo)\n");
     inchi_ios_print_nodisplay(f, "  NEWPSOFF    Both ends of wedge point to stereocenters (default: a narrow end)\n");
     inchi_ios_print_nodisplay(f, "  LooseTSACheck   Relax criteria of ambiguous drawing for in-ring tetrahedral stereo\n");
