@@ -209,6 +209,7 @@ Options supplied to GetINCHI in inchi_Input.szOptions should be preceded by ‘/
 | SUCF                                                         | Use  Chiral Flag in MOL/SD file record: if On – use Absolute stereo, Off – use Relative  stereo | Use  absolute stereo                                         |
 | ChiralFlagON                                                 | Set  chiral flag ON                                          | -                                                            |
 | ChiralFlagOFF                                                | Set  chiral flag OFF                                         | -                                                            |
+| EnhancedStereochemistry                                      | *(initial testing phase)* Use the V3000 stereo collections `STEABS`/`STEREL`/`STERAC` of a MOLfile (`MakeINCHIFromMolfileText`); the InChI is marked beta, `InChI=1B/` | Ignore stereo collections |
 |                                                              |                                                              |                                                              |
 | InChI creation options (lead to generation  of non-standard InChI) |                                                              |                                                              |
 | SUU                                                          | Always indicate unknown/undefined stereo                     | Does  not indicate unknown/undefined stereo unless at least one defined stereo is  present |
