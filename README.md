@@ -410,6 +410,18 @@ Without this option, those collections are ignored, so two structures that
 differ only in their absolute, relative or racemic stereo groups receive
 identical identifiers.
 
+On this branch the option also covers:
+
+- **allenes**: an allene axis is encoded as a `/t` entry on its central atom;
+  a wedge at one end suffices; stereo groups name the central atom
+- **double bonds**: V3000 bond collections `STEBABS`, `STEBREL`, `STEBRAC`
+  group E/Z bonds like stereocentres, in a grouped `/b` layer
+- **atropisomers**: hindered biaryl-type single bonds are detected and
+  encoded in `/t` and `/m`
+
+Specifications, explanations for chemists and old-vs-new examples:
+https://cm-beilstein.github.io/InChI-specs/
+
 ## Experimental features under development
 
 Some of the experimental/engineering/hidden options featured in `InChI 1.07` which are known to be not fully functional are:
