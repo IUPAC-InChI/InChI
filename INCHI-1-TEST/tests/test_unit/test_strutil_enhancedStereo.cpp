@@ -314,7 +314,7 @@ TEST(test_strutil_enhancedStereo, test_get_parity_idx_from_canonical_atom_number
 TEST(test_strutil_enhancedStereo, invert_parities_basic)
 {
     // Setup INChI_Stereo
-    INChI_Stereo stereo;
+    INChI_Stereo stereo = {0};
     AT_NUMB nNumber[] = {1, 2, 3};
     S_CHAR t_parity[] = {2, 1, 2}; // 2=+, 1=-
     stereo.nNumber = nNumber;

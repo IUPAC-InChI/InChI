@@ -649,6 +649,7 @@ int CopyLinearCTStereoToINChIStereo( INChI_Stereo *Stereo,
 
         Stereo->nCompInv2Abs =
             (diff > 0) ? 1 : (diff < 0) ? -1 : 0;
+        Stereo->bMeso = !diff;
 
         if (diff == -1 || diff == 1)
         {
