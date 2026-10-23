@@ -3102,8 +3102,18 @@ static void allene_one_wedge_z( inp_ATOM *at,
 #define ATROP_BRIDGED_RING         8  /* biaryl bridged into an 8-ring: stable */
 #define ATROP_MIN_HINDERED_BRIDGED 2  /* ... needs only the two bridge positions */
 
-/* Ortho positions X of axis end at_1 (its neighbours except at_2) that carry
-   a non-H substituent, i.e. have a third heavy neighbour besides at_1. */
+/**
+ * @brief Count the hindered ortho positions at one end of an axis
+ *
+ * Ortho positions X of axis end at_1 are its neighbours except at_2; one is
+ * hindered when it carries a non-H substituent, i.e. has a third heavy
+ * neighbour besides at_1.
+ *
+ * @param at Input atoms
+ * @param at_1 Axis end
+ * @param at_2 Other axis end
+ * @return Returns the number of hindered ortho positions
+ */
 static int count_hindered_ortho( inp_ATOM *at, int at_1, int at_2 )
 {
     int k, x, num = 0;
@@ -3120,6 +3130,21 @@ static int count_hindered_ortho( inp_ATOM *at, int at_1, int at_2 )
     return num;
 }
 
+/**
+ * @brief Is the bond at_1-neighbor[ord_1] a stable atropisomer axis?
+ *
+ * Both ends must be flagged by find_atropisomeric_atoms_and_bonds(); the
+ * check is repeated here because the flag marks atoms, not bonds. v1 scope:
+ * a C-C single bond with both ends three-connected and without H, not in a
+ * ring of size <= ATROP_MIN_ROTATABLE_RING, and hindered at >= 3 of the four
+ * ortho positions (2 for a biaryl bridged into an 8-ring).
+ *
+ * @param at Input atoms
+ * @param at_1 First axis atom
+ * @param ord_1 Index of the second axis atom among at_1's neighbours
+ * @param q, nAtomLevel, cSource Work buffers for the ring search; q may be NULL
+ * @return Returns 1 for a stable axis, else 0
+ */
 static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
                                AT_RANK *nAtomLevel, S_CHAR *cSource )
 {
@@ -3174,16 +3199,22 @@ static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
 }
 
 
-/****************************************************************************
- Store one axis in the non-isotopic or isotopic stereo bond slots,
- mirroring what set_stereo_bonds_parity() does for allenes.
-****************************************************************************/
+/** @brief Stereo layer an axis is stored in. */
 typedef enum tagAtropLayer
 {
     ATROP_LAYER_MAIN,       /* stereo_bond_*[], parity   */
     ATROP_LAYER_ISOTOPIC    /* stereo_bond_*2[], parity2 */
 } ATROP_LAYER;
 
+/**
+ * @brief Store one axis in the non-isotopic or isotopic stereo bond slots
+ *
+ * Mirrors what set_stereo_bonds_parity() does for allenes: registers the bond
+ * at both ends, sets the end parities and plane normals, and carries the
+ * ambiguous-stereo flags over.
+ *
+ * @return Returns 1 if the axis was stored, 0 if save_a_stereo_bond() refused it
+ */
 static int save_atrop_axis( sp_ATOM *out_at, inp_ATOM *at, ATROP_LAYER layer,
                             int at_1, int ord_1, int at_2, int ord_2,
                             int z_prod, int action, int parity_1, int parity_2,

@@ -5,6 +5,19 @@
 #include "atropisomers.h"
 
 
+/**
+ * @brief Is the bond a1-a2 a candidate atropisomer axis?
+ *
+ * A candidate is a single bond whose ends each have at least two further
+ * neighbours, and which does not lie in a ring of size <= ATROP_MIN_ROTATABLE_RING
+ * (such a ring locks the rotation). Acyclic axes qualify.
+ *
+ * @param at Input atoms
+ * @param a1 First axis atom
+ * @param a2 Second axis atom, a neighbour of a1
+ * @param q, nAtomLevel, cSource Work buffers for the bounded ring search
+ * @return Returns 1 for a candidate axis, else 0
+ */
 int is_candidate_atrop_axis(inp_ATOM *at,
                             int a1, int a2,
                             QUEUE *q,
@@ -34,6 +47,21 @@ int is_candidate_atrop_axis(inp_ATOM *at,
     return 1;
 }
 
+/**
+ * @brief Geometric parity of the candidate axis a1-a2
+ *
+ * Uses the allene primitives: the half-bond plane normal at each end
+ * (half_stereo_bond_parity, from coordinates and wedges) and the sign of the
+ * triple product with the axis (triple_prod_char).
+ *
+ * @param at Input atoms
+ * @param a1 First axis atom
+ * @param a2 Second axis atom
+ * @param z_dir1 Receives the plane normal at a1
+ * @param z_dir2 Receives the plane normal at a2
+ * @return Returns AB_PARITY_ODD, AB_PARITY_EVEN, or AB_PARITY_UNDF when the
+ *         geometry does not define the axis
+ */
 int atrop_axis_parity(inp_ATOM *at, int a1, int a2,
                       S_CHAR z_dir1[3], S_CHAR z_dir2[3])
 {
@@ -59,6 +87,18 @@ int atrop_axis_parity(inp_ATOM *at, int a1, int a2,
     return AB_PARITY_UNDF;
 }
 
+/**
+ * @brief Find all candidate atropisomer axes of a structure
+ *
+ * Fills orig_inp_data->atrop_axes (one ATROP_AXIS per candidate, with its
+ * parity) and flags both ends of each axis as bAtropisomeric. Out of memory
+ * is treated as "no atropisomer".
+ *
+ * @param out_at Input atoms
+ * @param num_atoms Number of atoms
+ * @param orig_inp_data Receives the axis records
+ * @return Returns 1 if at least one candidate axis was found, else 0
+ */
 int find_atropisomeric_atoms_and_bonds(inp_ATOM* out_at,
                                        int num_atoms,
                                        ORIG_ATOM_DATA *orig_inp_data) {
