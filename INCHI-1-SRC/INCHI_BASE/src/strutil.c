@@ -5172,6 +5172,10 @@ int invert_parities(const INChI *inchi,
     for (int i = 0; i < nof_lists; i++) {
         int nof_atoms = list_atoms[i][1];
 
+        if (!is_absolute && enh_group_is_noop( inchi, aux, list_atoms[i] )) {
+            continue;
+        }
+
         // Lowest stereocentre of the group; a non-centre (e.g. a CH3) must not win
         int min_c_atom_num = INT_MAX;
         for (int j = 0; j < nof_atoms; j++) {
@@ -5259,6 +5263,10 @@ static int component_has_collection_atom( const INChI *inchi,
     for (int i = 0; i < nof_lists && !found; i++) {
         int nof_atoms = list_atoms[i][1];
 
+        if (enh_group_is_noop( inchi, aux, list_atoms[i] )) {
+            continue;
+        }
+
         for (int j = 0; j < nof_atoms; j++) {
             if (lookup_stereo_centre( inchi, orig_to_canon, map_size, aux,
                                       list_atoms[i][2 + j] ) != -1) {
@@ -5275,6 +5283,65 @@ static int component_has_collection_atom( const INChI *inchi,
     return found;
 }
 
+
+/**
+ * @brief Is inverting this group a symmetry of the component?
+ *
+ * True when the component is meso and the group holds all its defined
+ * centres: inverting the group then inverts the whole component, which
+ * gives the same structure. Such a group says nothing and is ignored,
+ * e.g. cyclohexane-1,4-diol |&1:1,4| == cyclohexane-1,4-diol (GitHub #286).
+ * A group on a subset of centres is not detected, e.g. the ring centres of
+ * O[C@H]1CC[C@H](OCC[C@H](N)C)CC1; that needs an automorphism search.
+ *
+ * @param group Collection list, [unused, n, orig atoms...]
+ * @return Returns 1 if the group is a no-op, else 0
+ */
+int enh_group_is_noop( const INChI *inchi,
+                       const INChI_Aux *aux,
+                       const int *group )
+{
+    if (inchi == NULL || aux == NULL || group == NULL || inchi->Stereo == NULL ||
+        !inchi->Stereo->bMeso || inchi->Stereo->t_parity == NULL) {
+        return 0;
+    }
+
+    const INChI_Stereo *stereo = inchi->Stereo;
+
+    /* Defined centres of the component; group flips swap 1<->2, never change this */
+    int n_defined = 0;
+    for (int k = 0; k < stereo->nNumberOfStereoCenters; k++) {
+        if (stereo->t_parity[k] == AB_PARITY_ODD || stereo->t_parity[k] == AB_PARITY_EVEN) {
+            n_defined++;
+        }
+    }
+    if (n_defined == 0) {
+        return 0;
+    }
+
+    /* Defined centres of the group */
+    int map_size = 0;
+    int *orig_to_canon = make_orig_to_canon_map( aux, &map_size );
+    int n_in_group = 0;
+
+    for (int j = 0; j < group[1]; j++) {
+        int canon = lookup_stereo_centre( inchi, orig_to_canon, map_size, aux, group[2 + j] );
+        if (canon == -1) {
+            continue;
+        }
+        int idx = get_parity_idx_from_canonical_atom_number( canon, stereo->nNumber,
+                                                             stereo->nNumberOfStereoCenters );
+        if (stereo->t_parity[idx] == AB_PARITY_ODD || stereo->t_parity[idx] == AB_PARITY_EVEN) {
+            n_in_group++;
+        }
+    }
+
+    if (orig_to_canon != NULL) {
+        inchi_free( orig_to_canon );
+    }
+
+    return n_in_group == n_defined;
+}
 
 /**
  * @brief Does this component have a stereocentre in an OR or AND group?
@@ -5585,6 +5652,10 @@ int absolute_centres( const OAD_V3000 *v3000,
 
     for (int t = 0; t < 3; t++) {
         for (int i = 0; lists[t] != NULL && i < n_lists[t]; i++) {
+            /* a no-op group's centres stay unclassed: ungrouped, as if not drawn */
+            if (enh_group_is_noop( inchi, aux, lists[t][i] )) {
+                continue;
+            }
             for (int j = 0; j < lists[t][i][1]; j++) {
                 int canon = lookup_stereo_centre( inchi, orig_to_canon, map_size, aux,
                                                   lists[t][i][2 + j] );

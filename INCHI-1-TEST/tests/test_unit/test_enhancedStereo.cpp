@@ -1894,6 +1894,173 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_meso_component_keeps_s)
     EXPECT_EQ(make(diol("CFG=3", "M  V30 MDLV30/STEABS ATOMS=(2 2 3)\n")), "/t3-,4+");
 }
 
+/* GitHub #286 (johnmay): one OR/AND group holding all centres of a meso
+   unit. Inverting the group leaves the structure unchanged, so the group
+   says nothing and must be dropped. Unlike the per-centre groups above,
+   where inverting one centre turns meso into chiral.
+   e.g. trans-cyclohexane-1,4-diol |&1:1,4| == trans-cyclohexane-1,4-diol */
+TEST(test_enhancedStereo, test_EnhancedStereochemistry_meso_group_is_dropped)
+{
+    auto make = [](const std::string &molblock) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        MakeINCHIFromMolfileText(molblock.c_str(), options, poutput);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi.substr(inchi.find("/t"));
+    };
+
+    /* achiral: O[C@H]1CC[C@H](O)CC1, group on ring centres 2 and 5 */
+    auto diol = [](const char *collections) {
+        return std::string("cyclohexane-1,4-diol\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 8 8 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 O 5.96837 -5.78125 0.0 0\n"
+                           "M  V30 2 C 6.96837 -5.78125 0.0 0\n"
+                           "M  V30 3 C 7.46837 -4.91522 0.0 0\n"
+                           "M  V30 4 C 8.46837 -4.91522 0.0 0\n"
+                           "M  V30 5 C 8.96837 -5.78125 0.0 0\n"
+                           "M  V30 6 O 9.96837 -5.78125 0.0 0\n"
+                           "M  V30 7 C 8.46837 -6.64728 0.0 0\n"
+                           "M  V30 8 C 7.46837 -6.64728 0.0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 2 1 CFG=1\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 3 4\n"
+                           "M  V30 4 1 4 5\n"
+                           "M  V30 5 1 5 6 CFG=3\n"
+                           "M  V30 6 1 5 7\n"
+                           "M  V30 7 1 7 8\n"
+                           "M  V30 8 1 8 2\n"
+                           "M  V30 END BOND\n") +
+               collections +
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+
+    const char *diol_groups[] = {
+        "",
+        "M  V30 BEGIN COLLECTION\nM  V30 MDLV30/STERAC1 ATOMS=(2 2 5)\nM  V30 END COLLECTION\n",
+        "M  V30 BEGIN COLLECTION\nM  V30 MDLV30/STEREL1 ATOMS=(2 2 5)\nM  V30 END COLLECTION\n",
+    };
+    for (const char *groups : diol_groups)
+    {
+        EXPECT_EQ(make(diol(groups)), "/t5-,6-") << groups;
+    }
+
+    /* butane-2,3-diol, one group on both centres: meso drawing drops it,
+       chiral drawing keeps it (inverting it gives the enantiomer) */
+    auto butanediol = [](const char *cfg_c3) {
+        return std::string("butane-2,3-diol\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 6 5 0 0 0\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 C 0.0 0.0 0 0\n"
+                           "M  V30 2 C 0.866 0.5 0 0\n"
+                           "M  V30 3 C 1.732 0.0 0 0\n"
+                           "M  V30 4 C 2.598 0.5 0 0\n"
+                           "M  V30 5 O 0.866 1.5 0 0\n"
+                           "M  V30 6 O 1.732 -1.0 0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 1 2\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 3 4\n"
+                           "M  V30 4 1 2 5 CFG=1\n"
+                           "M  V30 5 1 3 6 ") + cfg_c3 + "\n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN COLLECTION\n"
+               "M  V30 MDLV30/STERAC1 ATOMS=(2 2 3)\n"
+               "M  V30 END COLLECTION\n"
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+    EXPECT_EQ(make(butanediol("CFG=3")), "/t3-,4+") << "meso drawing";
+    EXPECT_EQ(make(butanediol("CFG=1")), "/t3-,4-/s3") << "chiral drawing";
+}
+
+/* Known limitation (GitHub #286): a group on a subset of the centres whose
+   inversion is still a symmetry is not detected. Here inverting ring centres
+   9 and 10 only keeps the ring cis/trans, yet /s3(9,10) is emitted.
+   Detecting it needs an automorphism search; see enh_group_is_noop(). */
+TEST(test_enhancedStereo, DISABLED_test_EnhancedStereochemistry_meso_subset_group_is_dropped)
+{
+    auto make = [](const std::string &molblock) {
+        inchi_Output output = {};
+        inchi_Output *poutput = &output;
+
+        char options[] = "-EnhancedStereochemistry";
+        MakeINCHIFromMolfileText(molblock.c_str(), options, poutput);
+        const std::string inchi = poutput->szInChI ? poutput->szInChI : "";
+        FreeINCHI(poutput);
+        return inchi.substr(inchi.find("/t"));
+    };
+
+    /* chiral through side chain: O[C@H]1CC[C@H](OCC[C@H](N)C)CC1, group on
+       ring centres 2 and 5 only; side-chain centre 9 stays absolute */
+    auto ether = [](const char *collections) {
+        return std::string("cyclohexanol ether\n"
+                           "  test\n"
+                           "\n"
+                           "  0  0  0     0  0            999 V3000\n"
+                           "M  V30 BEGIN CTAB\n"
+                           "M  V30 COUNTS 13 13 0 0 1\n"
+                           "M  V30 BEGIN ATOM\n"
+                           "M  V30 1 O -5.127763 -0.937618 0.0 0\n"
+                           "M  V30 2 C -3.720900 -0.417294 0.0 0\n"
+                           "M  V30 3 C -2.566854 -1.375510 0.0 0\n"
+                           "M  V30 4 C -1.159992 -0.855185 0.0 0\n"
+                           "M  V30 5 C -0.907175 0.623356 0.0 0\n"
+                           "M  V30 6 O 0.499688 1.143680 0.0 0\n"
+                           "M  V30 7 C 1.653733 0.185464 0.0 0\n"
+                           "M  V30 8 C 3.060596 0.705789 0.0 0\n"
+                           "M  V30 9 C 4.214642 -0.252428 0.0 0\n"
+                           "M  V30 10 N 3.961825 -1.730969 0.0 0\n"
+                           "M  V30 11 C 5.621504 0.267897 0.0 0\n"
+                           "M  V30 12 C -2.061221 1.581572 0.0 0\n"
+                           "M  V30 13 C -3.468083 1.061247 0.0 0\n"
+                           "M  V30 END ATOM\n"
+                           "M  V30 BEGIN BOND\n"
+                           "M  V30 1 1 2 1 CFG=3\n"
+                           "M  V30 2 1 2 3\n"
+                           "M  V30 3 1 3 4\n"
+                           "M  V30 4 1 4 5\n"
+                           "M  V30 5 1 5 6 CFG=1\n"
+                           "M  V30 6 1 6 7\n"
+                           "M  V30 7 1 7 8\n"
+                           "M  V30 8 1 8 9\n"
+                           "M  V30 9 1 9 10\n"
+                           "M  V30 10 1 9 11 CFG=1\n"
+                           "M  V30 11 1 5 12\n"
+                           "M  V30 12 1 12 13\n"
+                           "M  V30 13 1 13 2\n"
+                           "M  V30 END BOND\n") +
+               collections +
+               "M  V30 END CTAB\n"
+               "M  END\n";
+    };
+
+    const char *ether_groups[] = {
+        "",
+        "M  V30 BEGIN COLLECTION\nM  V30 MDLV30/STERAC1 ATOMS=(2 2 5)\nM  V30 END COLLECTION\n",
+        "M  V30 BEGIN COLLECTION\nM  V30 MDLV30/STEREL1 ATOMS=(2 2 5)\nM  V30 END COLLECTION\n",
+    };
+    for (const char *groups : ether_groups)
+    {
+        EXPECT_EQ(make(ether(groups)), "/t8-,9-,10-/m1/s1") << groups;
+    }
+}
+
 /* Propan-2-ol-1-13C: C2 is a stereocentre only through the 13C, so it lives in
    the isotopic layer (/i1+1/t3-...). The enhanced pipeline used to ignore that
    layer and reproduce standard InChI: an OR group gave /m0/s1 or /m1/s1 by

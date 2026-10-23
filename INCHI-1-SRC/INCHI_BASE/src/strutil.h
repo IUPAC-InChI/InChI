@@ -167,6 +167,10 @@ extern "C"
                               INChI *iso_inchi,
                               INChI_Aux *iso_aux );
 
+    int enh_group_is_noop( const INChI *inchi,
+                           const INChI_Aux *aux,
+                           const int *group );
+
     int has_rel_rac_centre( const OAD_V3000 *v3000,
                             const INChI *inchi,
                             const INChI_Aux *aux );
