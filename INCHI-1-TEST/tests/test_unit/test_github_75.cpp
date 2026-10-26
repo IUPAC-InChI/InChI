@@ -110,6 +110,38 @@ TEST(test_github_75, more_than_999_atoms_writes_v3000)
     EXPECT_NE(sdf.find("M  V30 END CTAB\nM  END\n$$$$\n"), std::string::npos);
 }
 
+TEST(test_github_75, more_than_999_bonds_writes_v3000)
+{
+    // 999 atoms, 1000 bonds: chain closed to a ring plus one chord, as in
+    // the issue's peptide (989 atoms, 1014 bonds)
+    ORIG_ATOM_DATA data = MakeChain(V2000_MAX_COUNT);
+    inp_ATOM *at = data.at;
+    const int last = V2000_MAX_COUNT - 1;
+    const int pairs[2][2] = { { 0, last }, { 1, last - 1 } };
+
+    for (const auto &p : pairs)
+    {
+        inp_ATOM *a = at + p[0];
+        inp_ATOM *b = at + p[1];
+
+        a->neighbor[a->valence] = (AT_NUMB)p[1];
+        a->bond_type[a->valence++] = 1;
+        b->neighbor[b->valence] = (AT_NUMB)p[0];
+        b->bond_type[b->valence++] = 1;
+        a->chem_bonds_valence++;
+        b->chem_bonds_valence++;
+        a->num_H--;
+        b->num_H--;
+    }
+
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    EXPECT_EQ(Line(sdf, 3), "  0  0  0     0  0  0  0  0  0999 V3000");
+    EXPECT_EQ(Line(sdf, 5), "M  V30 COUNTS 999 1000 0 0 0");
+    EXPECT_NE(sdf.find("M  V30 END CTAB\nM  END\n$$$$\n"), std::string::npos);
+}
+
 TEST(test_github_75, deuterium_is_v3000_atom_not_alias)
 {
     // Terminal CH2D: V2000 would write alias "A  1000" + "CH2D"
