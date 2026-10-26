@@ -882,6 +882,7 @@ static int WriteV3000Sgroups(const OAD_Polymer *polymer,
  GH #75: 2D offset of the n-th explicit D/T of atom i: average bond
  length, opposite the neighbours' centroid (as strutil.c moves an H),
  n > 0 turned by +-30, +-60, ... degrees. 0D or no bonds: no offset.
+ Uses x/y only; 3D input may get wrong parity (deferred, rare).
 ****************************************************************************/
 static void IsoHOffset(const inp_ATOM *at, int i, int n, double *dx, double *dy)
 {
@@ -911,9 +912,19 @@ static void IsoHOffset(const inp_ATOM *at, int i, int n, double *dx, double *dy)
         return;
     }
 
-    /* Away from the centroid; e.g. -x if it coincides with atom i */
+    /* Away from the centroid; if it coincides with atom i (e.g. bonds at
+       0/180 or 60/180/300 deg), bisect the gap after neighbour 0 instead,
+       so D/T never lies on a bond */
     len = sqrt((at[i].x - cx) * (at[i].x - cx) + (at[i].y - cy) * (at[i].y - cy));
-    f = len < 0.1 * r ? acos(-1.0) : atan2(at[i].y - cy, at[i].x - cx);
+    if (len < 0.1 * r)
+    {
+        const inp_ATOM *nb0 = at + at[i].neighbor[0];
+        f = atan2(nb0->y - at[i].y, nb0->x - at[i].x) + acos(-1.0) / at[i].valence;
+    }
+    else
+    {
+        f = atan2(at[i].y - cy, at[i].x - cx);
+    }
     f += step * ((n + 1) / 2) * (n % 2 ? 1 : -1);
 
     *dx = r * cos(f);
