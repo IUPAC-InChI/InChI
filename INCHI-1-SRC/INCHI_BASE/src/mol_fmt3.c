@@ -770,6 +770,10 @@ int MolfileV3000ReadSGroup(MOL_FMT_CTAB *ctab,
             p = line = pin->pStr;
             remove_one_lf(line);
         }
+        if (!p)
+        {
+            break; /* GH #146: EOF or non-V30 line, no END SGROUP */
+        }
         if (p && !strcmp(p, "END SGROUP"))
         {
             inchi_ios_close(&tmpin); /* ricrogz: fixing memory leak */
