@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -303,4 +304,75 @@ TEST(test_github_75, implicit_d_stays_at_origin_in_0d)
     FreeChain(data);
 
     EXPECT_NE(sdf.find("M  V30 1001 H 0.0000 0.0000 0.0000 0 MASS=2\n"), std::string::npos);
+}
+
+TEST(test_github_75, implicit_d_avoids_bond_directions)
+{
+    // Atom 501 is CD(R)(R')(CH3); neighbours at 180 (500), 300 (502) and
+    // 60 deg (methyl 1000, wedged): their centroid is atom 501 itself
+    const int c = 500;
+    const int me = V2000_MAX_COUNT;
+    const int n = V2000_MAX_COUNT + 1;
+    const double pi = acos(-1.0);
+    ORIG_ATOM_DATA data = MakeChain(n);
+
+    // Detach atom 1000 from 999, bond it to 501
+    data.at[me - 1].valence = data.at[me - 1].chem_bonds_valence = 1;
+    data.at[me - 1].num_H = 3;
+    data.at[me].neighbor[0] = (AT_NUMB)c;
+    data.at[me].num_H = 3;
+    data.at[c].neighbor[2] = (AT_NUMB)me;
+    data.at[c].bond_type[2] = 1;
+    data.at[c].valence = data.at[c].chem_bonds_valence = 3;
+    data.at[c].num_H = 1;
+    data.at[c].bond_stereo[2] = STEREO_SNGL_UP;
+    data.at[me].bond_stereo[0] = -STEREO_SNGL_UP;
+
+    // 60/300 deg neighbours of 501, bond length 1.5
+    double xc = data.at[c].x;
+    data.at[me].x = xc + 0.75;
+    data.at[me].y = 1.5 * sin(pi / 3);
+    data.at[c + 1].x = xc + 0.75;
+    data.at[c + 1].y = -1.5 * sin(pi / 3);
+
+    // Reference: D as explicit atom 1001 at 240 deg, opposite the wedge
+    ORIG_ATOM_DATA ref = data;
+    ref.num_inp_atoms = n + 1;
+    ref.at = (inp_ATOM *)calloc(n + 1, sizeof(inp_ATOM));
+    memcpy(ref.at, data.at, n * sizeof(inp_ATOM));
+    inp_ATOM *d = ref.at + n;
+    strcpy(d->elname, "H");
+    d->el_number = 1;
+    d->iso_atw_diff = 2;
+    d->x = xc - 0.75;
+    d->y = -1.5 * sin(pi / 3);
+    d->neighbor[0] = (AT_NUMB)c;
+    d->bond_type[0] = 1;
+    d->valence = d->chem_bonds_valence = 1;
+    ref.at[c].neighbor[3] = (AT_NUMB)n;
+    ref.at[c].bond_type[3] = 1;
+    ref.at[c].valence = ref.at[c].chem_bonds_valence = 4;
+    ref.at[c].num_H = 0;
+    std::string expected = InChIOf(Write(ref));
+    FreeChain(ref);
+
+    // Implicit D written as explicit atom
+    data.at[c].num_H = 0;
+    data.at[c].num_iso_H[1] = 1;
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    ASSERT_NE(expected.find("/t"), std::string::npos);
+    EXPECT_EQ(InChIOf(sdf), expected);
+
+    // D direction differs from every bond direction of 501 (0 is unused)
+    size_t pos = sdf.find("M  V30 1001 H ");
+    ASSERT_NE(pos, std::string::npos);
+    double x, y;
+    ASSERT_EQ(sscanf(sdf.c_str() + pos, "M  V30 1001 H %lf %lf", &x, &y), 2);
+    double deg = atan2(y, x - xc) * 180 / pi;
+    for (double bond : {60.0, 180.0, -180.0, -60.0})
+    {
+        EXPECT_GT(fabs(deg - bond), 1.0) << "D at " << deg << " deg";
+    }
 }
