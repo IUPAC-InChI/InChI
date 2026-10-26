@@ -26,6 +26,8 @@
 */
 
 #define V2000_MAX_COUNT 999 /* GH #75: counts fields are 3 chars wide */
+#define V3000_MAX_LINE 80   /* GH #75: CTfile line length limit */
+#define V3000_PREFIX_LEN 7  /* "M  V30 " */
 
 #define ALIASED_AT(i) (0 < NUM_ISO_H(at, i))
 #define IS_DEUTERIUM(i) (!strcmp(at[i].elname, "D") || at[i].iso_atw_diff == 2 && !strcmp(at[i].elname, "H"))
@@ -747,8 +749,138 @@ int MolFmtSgroups_GetIndexBySgroupId(int id, MOL_FMT_SGROUPS *sgroups)
 }
 
 /****************************************************************************
+ GH #75: print one V3000 token, e.g. " ATOMS=(2"; it starts with a space.
+ Lines would exceed V3000_MAX_LINE: end with " -", continue on a new
+ "M  V30 " line (the reader joins them as is) without the leading space.
+****************************************************************************/
+static void V3000Put(INCHI_IOSTREAM *fcb, int *col, const char *token)
+{
+    int len = (int)strlen(token);
+
+    if (*col + len + 2 > V3000_MAX_LINE)
+    {
+        inchi_ios_print_nodisplay(fcb, " -\nM  V30 ");
+        *col = V3000_PREFIX_LEN;
+        token++;
+        len--;
+    }
+
+    inchi_ios_print_nodisplay(fcb, "%s", token);
+    *col += len;
+}
+
+/****************************************************************************
+ GH #75: print V3000 index list, e.g. " ATOMS=(3 1 2 4)"
+****************************************************************************/
+static void V3000PutList(INCHI_IOSTREAM *fcb, int *col, const char *key,
+                         int n, const int *items)
+{
+    char token[64];
+    int k;
+
+    sprintf(token, " %s=(%d%s", key, n, n ? "" : ")");
+    V3000Put(fcb, col, token);
+    for (k = 0; k < n; k++)
+    {
+        sprintf(token, " %d%s", items[k], k == n - 1 ? ")" : "");
+        V3000Put(fcb, col, token);
+    }
+}
+
+/****************************************************************************
+ GH #75: polymer unit types written, as V2000 M  STY
+****************************************************************************/
+static int IsV3000Sgroup(const OAD_PolymerUnit *u)
+{
+    return MOL_FMT_M_STY_SRU <= u->type && u->type <= MOL_FMT_M_STY_MER;
+}
+
+/****************************************************************************
+ GH #75: write polymer units as V3000 Sgroups, mirroring V2000
+ M  STY/SLB/SST/SCN/SAL/SBL/SDI, e.g.
+     M  V30 1 SRU 1 ATOMS=(2 2 3) XBONDS=(2 1 3) BRKXYZ=(9 ...) CONNECT=HT
+****************************************************************************/
+static int WriteV3000Sgroups(const OAD_Polymer *polymer,
+                             INCHI_IOSTREAM *fcb,
+                             const INT_ARRAY *written_bond_ends)
+{
+    static const char *sty[] = {"NON", "SRU", "MON", "COP", "MOD", "CRO", "MER"};
+    static const char *sst[] = {"NON", "ALT", "RAN", "BLO"};
+    static const char *con[] = {"NON", "HT", "HH", "EU"};
+    char token[128];
+    int j, k, wb, col, nb;
+    int *bonds;
+
+    inchi_ios_print_nodisplay(fcb, "M  V30 BEGIN SGROUP\n");
+    for (j = 0; j < polymer->n; j++)
+    {
+        const OAD_PolymerUnit *u = polymer->units[j];
+        double lo = -1.0 * (j + 1), hi = 1.0 * (j + 1); /* as V2000 SDI */
+
+        if (!IsV3000Sgroup(u))
+        {
+            continue;
+        }
+
+        /* Crossing bonds: atom pairs -> written bond numbers */
+        if (!(bonds = (int *)inchi_calloc(u->nb + 1, sizeof(int))))
+        {
+            return _IS_ERROR;
+        }
+        nb = 0;
+        for (k = 0; k < u->nb; k++)
+        {
+            int a1 = u->blist[2 * k], a2 = u->blist[2 * k + 1];
+            for (wb = 0; wb < written_bond_ends->used / 2; wb++)
+            {
+                int e1 = written_bond_ends->item[2 * wb], e2 = written_bond_ends->item[2 * wb + 1];
+                if ((a1 == e1 && a2 == e2) || (a2 == e1 && a1 == e2))
+                {
+                    bonds[nb++] = wb + 1;
+                    break;
+                }
+            }
+        }
+
+        inchi_ios_print_nodisplay(fcb, "M  V30");
+        col = V3000_PREFIX_LEN - 1;
+        sprintf(token, " %d %s %d", u->id, sty[u->type], u->label);
+        V3000Put(fcb, &col, token);
+        V3000PutList(fcb, &col, "ATOMS", u->na, u->alist);
+        V3000PutList(fcb, &col, "XBONDS", nb, bonds);
+        inchi_free(bonds);
+
+        sprintf(token, " BRKXYZ=(9 %.4f %.4f 0 %.4f %.4f 0 0 0 0)", lo, lo, lo, hi);
+        V3000Put(fcb, &col, token);
+        sprintf(token, " BRKXYZ=(9 %.4f %.4f 0 %.4f %.4f 0 0 0 0)", hi, hi, hi, lo);
+        V3000Put(fcb, &col, token);
+
+        if (MOL_FMT_M_CONN_HT <= u->conn && u->conn <= MOL_FMT_M_CONN_EU)
+        {
+            sprintf(token, " CONNECT=%s", con[u->conn]);
+            V3000Put(fcb, &col, token);
+        }
+        if (MOL_FMT_M_SST_ALT <= u->subtype && u->subtype <= MOL_FMT_M_SST_BLK)
+        {
+            sprintf(token, " SUBTYPE=%s", sst[u->subtype]);
+            V3000Put(fcb, &col, token);
+        }
+        if (u->smt[0])
+        {
+            sprintf(token, " LABEL=%.80s", u->smt);
+            V3000Put(fcb, &col, token);
+        }
+        inchi_ios_print_nodisplay(fcb, "\n");
+    }
+    inchi_ios_print_nodisplay(fcb, "M  V30 END SGROUP\n");
+
+    return 0;
+}
+
+/****************************************************************************
  GH #75: write CTAB as V3000; V2000 counts fields are 3 chars wide.
- Aliases (and polymer data) follow as V2000 properties, as on V3000 read.
+ Isotopic implicit H (V2000: alias) become explicit D/T atoms appended
+ after all atoms; polymer units become V3000 Sgroups.
 ****************************************************************************/
 static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
                               INCHI_IOSTREAM *fcb,
@@ -756,18 +888,27 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
                               const char *comment,
                               int bChiralFlag,
                               int bAtomsDT,
-                              const char *szLabel,
-                              const char *szValue,
                               int num_bonds)
 {
-    int i, j, k, ret = 0, nNumAliasLines = 0, nBond = 0;
+    int i, j, k, m, ret = 0, nBond = 0, nIsoH = 0, nSgroups = 0, nExtra;
     int num_atoms = inp_at_data->num_inp_atoms;
     const inp_ATOM *at = inp_at_data->at;
+    const OAD_Polymer *polymer = inp_at_data->valid_polymer ? inp_at_data->polymer : NULL;
     INT_ARRAY written_bond_ends;
 
     if (IntArray_Alloc(&written_bond_ends, num_bonds ? num_bonds : 255))
     {
         return _IS_ERROR;
+    }
+
+    /* Count explicit D/T atoms and Sgroups */
+    for (i = 0; i < num_atoms; i++)
+    {
+        nIsoH += at[i].num_iso_H[1] + at[i].num_iso_H[2];
+    }
+    for (j = 0; polymer && j < polymer->n; j++)
+    {
+        nSgroups += IsV3000Sgroup(polymer->units[j]);
     }
 
     /* Header and counts */
@@ -776,27 +917,23 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
     inchi_ios_print_nodisplay(fcb, "%.80s\n", comment ? comment : "");
     inchi_ios_print_nodisplay(fcb, "  0  0  0     0  0  0  0  0  0999 V3000\n");
     inchi_ios_print_nodisplay(fcb, "M  V30 BEGIN CTAB\n");
-    inchi_ios_print_nodisplay(fcb, "M  V30 COUNTS %d %d 0 0 %d\n",
-                              num_atoms, num_bonds, bChiralFlag ? 1 : 0);
+    inchi_ios_print_nodisplay(fcb, "M  V30 COUNTS %d %d %d 0 %d\n",
+                              num_atoms + nIsoH, num_bonds + nIsoH, nSgroups,
+                              bChiralFlag ? 1 : 0);
 
-    /* Atoms; e.g. "M  V30 1 C 1.5 0 0 0 CHG=-1 MASS=13" */
+    /* Atoms; e.g. "M  V30 1 C 1.5000 0.0000 0.0000 0 CHG=-1 MASS=13" */
     inchi_ios_print_nodisplay(fcb, "M  V30 BEGIN ATOM\n");
     for (i = 0; i < num_atoms; i++)
     {
         char elname[ATOM_EL_LEN];
         int nIsotopeH = IS_DEUTERIUM(i) ? 1 : IS_TRITIUM(i) ? 2 : 0;
-        int bAliased = ALIASED_AT(i);
         int valence = needed_unusual_el_valence(at[i].el_number, at[i].charge, at[i].radical,
                                                 at[i].chem_bonds_valence,
                                                 nBondsValenceInpAt(at + i, NULL, NULL),
                                                 NUMH(at, i), at[i].valence);
 
         /* Same symbol as V2000 atoms block */
-        if (bAliased)
-        {
-            strcpy(elname, "C");
-        }
-        else if (nIsotopeH)
+        if (nIsotopeH)
         {
             strcpy(elname, bAtomsDT ? (nIsotopeH == 1 ? "D" : "T") : "H");
         }
@@ -810,20 +947,19 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
             strcpy(elname, "*");
         }
 
-        inchi_ios_print_nodisplay(fcb, "M  V30 %d %s %.10g %.10g %.10g 0",
+        inchi_ios_print_nodisplay(fcb, "M  V30 %d %s %.4f %.4f %.4f 0",
                                   i + 1, elname, at[i].x, at[i].y, at[i].z);
 
-        /* Aliased atoms carry charge and radical in the alias */
-        if (!bAliased && at[i].charge)
+        if (at[i].charge)
         {
             inchi_ios_print_nodisplay(fcb, " CHG=%d", (int)at[i].charge);
         }
-        if (!bAliased && ANY_RAD(i))
+        if (ANY_RAD(i))
         {
             inchi_ios_print_nodisplay(fcb, " RAD=%d", (int)at[i].radical);
         }
 
-        /* MASS is absolute: written symbol's mass + shift */
+        /* MASS is absolute: element mass + shift */
         if (ANY_ISO(i, bAtomsDT))
         {
             int iso = nIsotopeH ? nIsotopeH :
@@ -837,8 +973,22 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
             inchi_ios_print_nodisplay(fcb, " VAL=%d", valence < 0 ? -1 : valence);
         }
         inchi_ios_print_nodisplay(fcb, "\n");
+    }
 
-        nNumAliasLines += 2 * bAliased;
+    /* Explicit D/T at their heavy atom's position */
+    nExtra = num_atoms;
+    for (i = 0; i < num_atoms; i++)
+    {
+        for (k = 1; k <= 2; k++)
+        {
+            for (m = 0; m < at[i].num_iso_H[k]; m++)
+            {
+                inchi_ios_print_nodisplay(fcb, "M  V30 %d %s %.4f %.4f %.4f 0%s\n", ++nExtra,
+                                          bAtomsDT ? (k == 1 ? "D" : "T") : "H",
+                                          at[i].x, at[i].y, at[i].z,
+                                          bAtomsDT ? "" : (k == 1 ? " MASS=2" : " MASS=3"));
+            }
+        }
     }
     inchi_ios_print_nodisplay(fcb, "M  V30 END ATOM\n");
 
@@ -880,20 +1030,30 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
             IntArray_Append(&written_bond_ends, a2);
         }
     }
-    inchi_ios_print_nodisplay(fcb, "M  V30 END BOND\n");
-    inchi_ios_print_nodisplay(fcb, "M  V30 END CTAB\n");
 
-    /* Aliases, polymers and "M  END" */
-    ret = OrigAtData_WriteToSDfileAdditionalLines(inp_at_data, fcb, name, comment,
-                                                  bAtomsDT, szLabel, szValue,
-                                                  nNumAliasLines, 0, 0, 0,
-                                                  &written_bond_ends);
+    /* Bonds to explicit D/T, in the order written above */
+    nExtra = num_atoms;
+    for (i = 0; i < num_atoms; i++)
+    {
+        for (m = 0; m < at[i].num_iso_H[1] + at[i].num_iso_H[2]; m++)
+        {
+            inchi_ios_print_nodisplay(fcb, "M  V30 %d 1 %d %d\n", ++nBond, i + 1, ++nExtra);
+        }
+    }
+    inchi_ios_print_nodisplay(fcb, "M  V30 END BOND\n");
+
+    if (nSgroups)
+    {
+        ret = WriteV3000Sgroups(polymer, fcb, &written_bond_ends);
+    }
+
+    inchi_ios_print_nodisplay(fcb, "M  V30 END CTAB\n");
+    inchi_ios_print_nodisplay(fcb, "M  END\n");
 
     IntArray_Free(&written_bond_ends);
 
     return ret;
 }
-
 /****************************************************************************/
 int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
                              INCHI_IOSTREAM *fcb,
@@ -920,7 +1080,7 @@ int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
     if (inp_at_data->num_inp_atoms > V2000_MAX_COUNT || num_bonds > V2000_MAX_COUNT)
     {
         ret = WriteToSDfileV3000(inp_at_data, fcb, name, comment, bChiralFlag,
-                                 bAtomsDT, szLabel, szValue, num_bonds);
+                                 bAtomsDT, num_bonds);
         goto write_data_items;
     }
 

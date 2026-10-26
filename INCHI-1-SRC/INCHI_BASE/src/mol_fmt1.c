@@ -1092,8 +1092,7 @@ int MolfileReadPropBlock( MOL_FMT_CTAB* ctab,
         if (charM[0] == 'A')
         {
             if (NULL != ctab->atoms &&
-                 /* GH #75: read past 3 chars; V3000 output has atoms > 999 */
-                 0 < ( nAtomNumber = (int) strtol( line + 3, NULL, 10 ) ) &&
+                 0 < ( nAtomNumber = (int) strtol( szType, NULL, 10 ) ) &&
                  nAtomNumber <= ctab->n_atoms)
             {
                 /* Atom Alias [ISIS/Desktop] two-line property */
