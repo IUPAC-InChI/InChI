@@ -25,6 +25,8 @@
 
 */
 
+#define V2000_MAX_COUNT 999 /* GH #75: counts fields are 3 chars wide */
+
 #define ALIASED_AT(i) (0 < NUM_ISO_H(at, i))
 #define IS_DEUTERIUM(i) (!strcmp(at[i].elname, "D") || at[i].iso_atw_diff == 2 && !strcmp(at[i].elname, "H"))
 #define IS_TRITIUM(i)   (!strcmp(at[i].elname, "T") || at[i].iso_atw_diff == 3 && !strcmp(at[i].elname, "H"))
@@ -744,6 +746,154 @@ int MolFmtSgroups_GetIndexBySgroupId(int id, MOL_FMT_SGROUPS *sgroups)
     return -1;
 }
 
+/****************************************************************************
+ GH #75: write CTAB as V3000; V2000 counts fields are 3 chars wide.
+ Aliases (and polymer data) follow as V2000 properties, as on V3000 read.
+****************************************************************************/
+static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
+                              INCHI_IOSTREAM *fcb,
+                              const char *name,
+                              const char *comment,
+                              int bChiralFlag,
+                              int bAtomsDT,
+                              const char *szLabel,
+                              const char *szValue,
+                              int num_bonds)
+{
+    int i, j, k, ret = 0, nNumAliasLines = 0, nBond = 0;
+    int num_atoms = inp_at_data->num_inp_atoms;
+    const inp_ATOM *at = inp_at_data->at;
+    INT_ARRAY written_bond_ends;
+
+    if (IntArray_Alloc(&written_bond_ends, num_bonds ? num_bonds : 255))
+    {
+        return _IS_ERROR;
+    }
+
+    /* Header and counts */
+    inchi_ios_print_nodisplay(fcb, "%.80s\n", name ? name : "");
+    inchi_ios_print_nodisplay(fcb, "  InChIV10                                     \n");
+    inchi_ios_print_nodisplay(fcb, "%.80s\n", comment ? comment : "");
+    inchi_ios_print_nodisplay(fcb, "  0  0  0     0  0  0  0  0  0999 V3000\n");
+    inchi_ios_print_nodisplay(fcb, "M  V30 BEGIN CTAB\n");
+    inchi_ios_print_nodisplay(fcb, "M  V30 COUNTS %d %d 0 0 %d\n",
+                              num_atoms, num_bonds, bChiralFlag ? 1 : 0);
+
+    /* Atoms; e.g. "M  V30 1 C 1.5 0 0 0 CHG=-1 MASS=13" */
+    inchi_ios_print_nodisplay(fcb, "M  V30 BEGIN ATOM\n");
+    for (i = 0; i < num_atoms; i++)
+    {
+        char elname[ATOM_EL_LEN];
+        int nIsotopeH = IS_DEUTERIUM(i) ? 1 : IS_TRITIUM(i) ? 2 : 0;
+        int bAliased = ALIASED_AT(i);
+        int valence = needed_unusual_el_valence(at[i].el_number, at[i].charge, at[i].radical,
+                                                at[i].chem_bonds_valence,
+                                                nBondsValenceInpAt(at + i, NULL, NULL),
+                                                NUMH(at, i), at[i].valence);
+
+        /* Same symbol as V2000 atoms block */
+        if (bAliased)
+        {
+            strcpy(elname, "C");
+        }
+        else if (nIsotopeH)
+        {
+            strcpy(elname, bAtomsDT ? (nIsotopeH == 1 ? "D" : "T") : "H");
+        }
+        else
+        {
+            strncpy(elname, at[i].elname, sizeof(elname) - 1);
+            elname[sizeof(elname) - 1] = 0;
+        }
+        if (!strcmp(elname, "Zz") || !strcmp(elname, "Zy"))
+        {
+            strcpy(elname, "*");
+        }
+
+        inchi_ios_print_nodisplay(fcb, "M  V30 %d %s %.10g %.10g %.10g 0",
+                                  i + 1, elname, at[i].x, at[i].y, at[i].z);
+
+        /* Aliased atoms carry charge and radical in the alias */
+        if (!bAliased && at[i].charge)
+        {
+            inchi_ios_print_nodisplay(fcb, " CHG=%d", (int)at[i].charge);
+        }
+        if (!bAliased && ANY_RAD(i))
+        {
+            inchi_ios_print_nodisplay(fcb, " RAD=%d", (int)at[i].radical);
+        }
+
+        /* MASS is absolute: written symbol's mass + shift */
+        if (ANY_ISO(i, bAtomsDT))
+        {
+            int iso = nIsotopeH ? nIsotopeH :
+                      at[i].iso_atw_diff > 0 ? at[i].iso_atw_diff - 1 : at[i].iso_atw_diff;
+            inchi_ios_print_nodisplay(fcb, " MASS=%d", get_atomic_mass(elname) + iso);
+        }
+
+        /* V3000 zero valence is -1 (V2000: 15) */
+        if (valence)
+        {
+            inchi_ios_print_nodisplay(fcb, " VAL=%d", valence < 0 ? -1 : valence);
+        }
+        inchi_ios_print_nodisplay(fcb, "\n");
+
+        nNumAliasLines += 2 * bAliased;
+    }
+    inchi_ios_print_nodisplay(fcb, "M  V30 END ATOM\n");
+
+    /* Bonds; e.g. "M  V30 1 1 1 2 CFG=1" */
+    inchi_ios_print_nodisplay(fcb, "M  V30 BEGIN BOND\n");
+    for (i = 0; i < num_atoms; i++)
+    {
+        for (j = 0; j < at[i].valence; j++)
+        {
+            unsigned a1 = (unsigned)(i + 1), a2 = (unsigned)(at[i].neighbor[j] + 1);
+            int cfg;
+
+            if (i >= at[i].neighbor[j])
+            {
+                continue;
+            }
+
+            /* Negative stereo means wedge starts at neighbor */
+            k = at[i].bond_stereo[j];
+            if (k < 0)
+            {
+                a1 = a2;
+                a2 = (unsigned)(i + 1);
+            }
+
+            /* V2000 stereo 1/4/6 (3: double either) -> V3000 CFG 1/2/3 */
+            k = abs(k);
+            cfg = k == 1 ? 1 : k == 6 ? 3 : (k == 3 || k == 4) ? 2 : 0;
+
+            inchi_ios_print_nodisplay(fcb, "M  V30 %d %u %u %u", ++nBond,
+                                      (unsigned)at[i].bond_type[j], a1, a2);
+            if (cfg)
+            {
+                inchi_ios_print_nodisplay(fcb, " CFG=%d", cfg);
+            }
+            inchi_ios_print_nodisplay(fcb, "\n");
+
+            IntArray_Append(&written_bond_ends, a1);
+            IntArray_Append(&written_bond_ends, a2);
+        }
+    }
+    inchi_ios_print_nodisplay(fcb, "M  V30 END BOND\n");
+    inchi_ios_print_nodisplay(fcb, "M  V30 END CTAB\n");
+
+    /* Aliases, polymers and "M  END" */
+    ret = OrigAtData_WriteToSDfileAdditionalLines(inp_at_data, fcb, name, comment,
+                                                  bAtomsDT, szLabel, szValue,
+                                                  nNumAliasLines, 0, 0, 0,
+                                                  &written_bond_ends);
+
+    IntArray_Free(&written_bond_ends);
+
+    return ret;
+}
+
 /****************************************************************************/
 int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
                              INCHI_IOSTREAM *fcb,
@@ -757,6 +907,22 @@ int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
     int num_bonds = 0, nNumAddLines = 0, nNumIsoLines = 0, nNumChargeLines = 0,
         nNumRadicalLines = 0, nNumAliasLines = 0, ret = 0;
     INT_ARRAY written_bond_ends;
+    int i;
+
+    memset(&written_bond_ends, 0, sizeof(written_bond_ends));
+
+    /* GH #75: V2000 counts fields hold at most 999 atoms or bonds */
+    for (i = 0; i < inp_at_data->num_inp_atoms; i++)
+    {
+        num_bonds += inp_at_data->at[i].valence;
+    }
+    num_bonds /= 2;
+    if (inp_at_data->num_inp_atoms > V2000_MAX_COUNT || num_bonds > V2000_MAX_COUNT)
+    {
+        ret = WriteToSDfileV3000(inp_at_data, fcb, name, comment, bChiralFlag,
+                                 bAtomsDT, szLabel, szValue, num_bonds);
+        goto write_data_items;
+    }
 
     OrigAtData_WriteToSDfileHeaderAndCountThings((ORIG_ATOM_DATA *)inp_at_data,
                                                  fcb, name, comment,
@@ -790,6 +956,7 @@ int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
                                                 &written_bond_ends);
     }
 
+write_data_items:
     /* Add field with label/ID if applicable and mark the end of record */
     if (szValue && szValue[0])
     {

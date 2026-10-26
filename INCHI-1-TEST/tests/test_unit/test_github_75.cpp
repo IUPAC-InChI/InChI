@@ -7,6 +7,7 @@ extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inpdef.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichi_io.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichimain.h"
 }
 
@@ -14,8 +15,9 @@ extern "C"
 // needs V3000.
 static const int V2000_MAX_COUNT = 999;
 
-// Write an n-carbon chain (n atoms, n - 1 bonds) as SDfile.
-static std::string WriteChain(int n)
+// Write an n-carbon chain (n atoms, n - 1 bonds) as SDfile; one implicit H
+// of atom iDeuterated (0-based) is D.
+static std::string WriteChain(int n, int iDeuterated = NO_ATOM)
 {
     ORIG_ATOM_DATA data{};
     data.num_inp_atoms = n;
@@ -44,6 +46,11 @@ static std::string WriteChain(int n)
 
         a->chem_bonds_valence = a->valence;
         a->num_H = (S_CHAR)(4 - a->valence);
+        if (i == iDeuterated)
+        {
+            a->num_H--;
+            a->num_iso_H[1] = 1;
+        }
     }
 
     INCHI_IOSTREAM out{};
@@ -87,4 +94,22 @@ TEST(test_github_75, more_than_999_atoms_writes_v3000)
     EXPECT_NE(sdf.find("M  V30 1000 C 1498.5 0 0 0\n"), std::string::npos);
     EXPECT_NE(sdf.find("M  V30 999 1 999 1000\n"), std::string::npos);
     EXPECT_NE(sdf.find("M  V30 END CTAB\nM  END\n$$$$\n"), std::string::npos);
+}
+
+TEST(test_github_75, alias_of_atom_above_999_reads_back)
+{
+    // Terminal CH2D written as alias "A  1000" + "CH2D"
+    std::string sdf = WriteChain(V2000_MAX_COUNT + 1, V2000_MAX_COUNT);
+    ASSERT_NE(sdf.find("A  1000\nCH2D\n"), std::string::npos);
+
+    char options[] = "-LargeMolecules";
+    inchi_Output output{};
+    MakeINCHIFromMolfileText(sdf.c_str(), options, &output);
+
+    // Terminal carbon has canonical number 1
+    ASSERT_NE(output.szInChI, nullptr);
+    std::string inchi = output.szInChI;
+    EXPECT_EQ(inchi.substr(inchi.rfind('/')), "/i1D");
+
+    FreeINCHI(&output);
 }
