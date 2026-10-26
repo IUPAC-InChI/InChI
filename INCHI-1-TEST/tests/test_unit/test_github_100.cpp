@@ -14,7 +14,9 @@ extern "C"
 // GH #100: InChI/AuxInfo must not depend on the caller's LC_NUMERIC.
 // Each test computes a result under "C" and under a comma-decimal locale.
 
-static const char COMMA_LOCALE[] = "de_DE.UTF-8";
+// Comma-decimal locale names: glibc/macOS spellings, then MSVC ones
+static const char *const COMMA_LOCALES[] = {"de_DE.UTF-8", "de_DE.utf8", "de_DE", "de-DE",
+                                            "German_Germany.1252"};
 
 // 2,3-epoxybutane from the GH #100 report, with one wedge
 static const char EPOXYBUTANE_V2000[] =
@@ -72,15 +74,30 @@ static std::string RunInLocale(const char *name, const std::function<std::string
     return result;
 }
 
-#define SKIP_WITHOUT_COMMA_LOCALE()                                   \
-    do                                                                \
-    {                                                                 \
-        std::string saved = setlocale(LC_ALL, nullptr);               \
-        if (!setlocale(LC_ALL, COMMA_LOCALE))                         \
-        {                                                             \
-            GTEST_SKIP() << COMMA_LOCALE << " locale not installed";  \
-        }                                                             \
-        setlocale(LC_ALL, saved.c_str());                             \
+// First name in COMMA_LOCALES this platform loads, or nullptr.
+// Restores the previous locale.
+static const char *CommaLocale()
+{
+    std::string saved = setlocale(LC_ALL, nullptr);
+    for (const char *name : COMMA_LOCALES)
+    {
+        if (!setlocale(LC_ALL, name))
+        {
+            continue;
+        }
+        setlocale(LC_ALL, saved.c_str());
+        return name;
+    }
+    return nullptr;
+}
+
+#define SKIP_WITHOUT_COMMA_LOCALE()                                  \
+    do                                                               \
+    {                                                                \
+        if (!CommaLocale())                                          \
+        {                                                            \
+            GTEST_SKIP() << "no comma-decimal locale installed";     \
+        }                                                            \
     } while (0)
 
 static std::string MolfileToInchiAux(const char *molfile)
@@ -103,7 +120,7 @@ TEST(test_github_100, molfile_v2000_aux_info_is_locale_independent)
     std::string expected = RunInLocale("C", run);
 
     EXPECT_NE(expected.find("/rC:-1.127,-.5635,0;"), std::string::npos) << expected;
-    EXPECT_EQ(RunInLocale(COMMA_LOCALE, run), expected);
+    EXPECT_EQ(RunInLocale(CommaLocale(), run), expected);
 }
 
 TEST(test_github_100, molfile_v3000_aux_info_is_locale_independent)
@@ -114,7 +131,7 @@ TEST(test_github_100, molfile_v3000_aux_info_is_locale_independent)
     std::string expected = RunInLocale("C", run);
 
     EXPECT_NE(expected.find("/rC:-1.127,-.5635,0;"), std::string::npos) << expected;
-    EXPECT_EQ(RunInLocale(COMMA_LOCALE, run), expected);
+    EXPECT_EQ(RunInLocale(CommaLocale(), run), expected);
 }
 
 TEST(test_github_100, api_atoms_aux_info_is_locale_independent)
@@ -154,7 +171,7 @@ TEST(test_github_100, api_atoms_aux_info_is_locale_independent)
     std::string expected = RunInLocale("C", run);
 
     EXPECT_NE(expected.find("/rC:-1.127,-.5635,0;.4125,.151,0;"), std::string::npos) << expected;
-    EXPECT_EQ(RunInLocale(COMMA_LOCALE, run), expected);
+    EXPECT_EQ(RunInLocale(CommaLocale(), run), expected);
 }
 
 TEST(test_github_100, aux_info_coordinates_parse_in_comma_locale)
@@ -182,7 +199,7 @@ TEST(test_github_100, aux_info_coordinates_parse_in_comma_locale)
     std::string expected = RunInLocale("C", run);
 
     EXPECT_EQ(expected, "-11270,-5635;4125,1510;15000,22500;");
-    EXPECT_EQ(RunInLocale(COMMA_LOCALE, run), expected);
+    EXPECT_EQ(RunInLocale(CommaLocale(), run), expected);
 }
 
 // Polyethyleneoxide from GH #146, with SRU bracket coordinates (SDI)
@@ -227,5 +244,5 @@ TEST(test_github_100, polymer_bracket_coordinates_are_locale_independent)
     std::string expected = RunInLocale("C", run);
 
     EXPECT_NE(expected.find("[5.042700,-8.014200,5.042700,-6.832800]"), std::string::npos) << expected;
-    EXPECT_EQ(RunInLocale(COMMA_LOCALE, run), expected);
+    EXPECT_EQ(RunInLocale(CommaLocale(), run), expected);
 }
