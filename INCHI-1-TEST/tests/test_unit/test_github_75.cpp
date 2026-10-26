@@ -189,3 +189,14 @@ TEST(test_github_75, v3000_writes_polymer_sgroup)
                        "M  V30 END CTAB\n"),
               std::string::npos);
 }
+
+TEST(test_github_75, v3000_mass_is_absolute)
+{
+    // 13C: iso_atw_diff 1 above the rounded mass 12 is stored as 2
+    ORIG_ATOM_DATA data = MakeChain(V2000_MAX_COUNT + 1);
+    data.at[4].iso_atw_diff = 2;
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    EXPECT_NE(sdf.find("M  V30 5 C 6.0000 0.0000 0.0000 0 MASS=13\n"), std::string::npos);
+}
