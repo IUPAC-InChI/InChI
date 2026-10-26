@@ -3340,6 +3340,7 @@ int SetInChIExtInputByExtOrigAtData( OAD_Polymer     *orp,
                 unitk[k]->blist = NULL;
             }
 
+            inchi_free(unitk[k]->blist); /* GH #209: was leaked */
             inchi_free(unitk[k]);
             inchi_free(uk_al_tmp[k]);
         }
