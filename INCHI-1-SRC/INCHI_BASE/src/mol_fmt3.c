@@ -521,14 +521,235 @@ err_fin:
 }
 
 /****************************************************************************
+ GH #146: return index of name in names[], -1 if absent
+****************************************************************************/
+static int V3000FindName(const char *name, const char **names, int n)
+{
+    int i;
+
+    for (i = 0; i < n; i++)
+    {
+        if (!strcmp(name, names[i]))
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/****************************************************************************
+ GH #146: skip one V3000 value: (...), "..." or a plain token
+****************************************************************************/
+static void V3000SkipValue(char **p)
+{
+    char field[MOL_FMT_V3000_MAXFIELDLEN];
+    char *end = NULL;
+
+    if (!*p)
+    {
+        return;
+    }
+
+    if (**p == '(')
+    {
+        end = strchr(*p, ')');
+    }
+    else if (**p == '"')
+    {
+        end = strchr(*p + 1, '"');
+    }
+    if (end)
+    {
+        *p = end + 1;
+        return;
+    }
+
+    read_upto_delim(p, field, sizeof(field), " \t\n\v\f\r");
+}
+
+/****************************************************************************
+ GH #146: append V3000 index list "(n i1 ... in)" to items
+****************************************************************************/
+static int V3000ReadIndexList(MOL_FMT_CTAB *ctab, char **p, INT_ARRAY *items)
+{
+    int k, ret = 0, *num_list = NULL;
+
+    if (0 > MolfileV3000ReadStereoCollection(ctab, p, &num_list, NULL) || !num_list)
+    {
+        return -1;
+    }
+
+    for (k = 2; k < num_list[1] + 2 && !ret; k++)
+    {
+        ret = IntArray_Append(items, num_list[k]);
+    }
+    inchi_free(num_list);
+
+    return ret;
+}
+
+/****************************************************************************
+ GH #146: read bracket "(9 x1 y1 z1 x2 y2 z2 0 0 0)" as V2000 SDI x1 y1 x2 y2
+****************************************************************************/
+static int V3000ReadBracket(char **p, double xbr[4])
+{
+    char field[MOL_FMT_V3000_MAXFIELDLEN];
+    double x[9];
+    int i, n = 0;
+
+    read_upto_delim(p, field, sizeof(field), "1234567890 \t\n\v\f\r");
+    if (strcmp(field, "(") || 0 >= MolfileV3000ReadField(&n, MOL_FMT_INT_DATA, p) || n != 9)
+    {
+        return -1;
+    }
+
+    for (i = 0; i < n; i++)
+    {
+        if (0 >= MolfileV3000ReadField(&x[i], MOL_FMT_DOUBLE_DATA, p))
+        {
+            return -1;
+        }
+    }
+
+    xbr[0] = x[0];
+    xbr[1] = x[1];
+    xbr[2] = x[3];
+    xbr[3] = x[4];
+
+    return 0;
+}
+
+/****************************************************************************
+ GH #146: read one V3000 polymer Sgroup line into ctab->sgroups, as the
+ V2000 M  STY/SLB/SST/SCN/SAL/SBL/SDI/SMT lines do, e.g.
+     1 SRU 1 ATOMS=(3 3 2 4) XBONDS=(2 1 4) CONNECT=HT LABEL=n
+ Non-polymer Sgroups are skipped. Returns 0 if OK, -1 on error.
+****************************************************************************/
+static int V3000ReadPolymerSGroup(MOL_FMT_CTAB *ctab, char *p)
+{
+    static const char *types[] = {"NON", "SRU", "MON", "COP", "MOD", "CRO", "MER"};
+    static const char *subtypes[] = {"NON", "ALT", "RAN", "BLO"};
+    static const char *conns[] = {"NON", "HT", "HH", "EU"};
+    char field[MOL_FMT_V3000_MAXFIELDLEN];
+    MOL_FMT_SGROUP *sg;
+    int id, ext_id, type, q, n_brackets = 0;
+    int n_orig_at = ctab->v3000->n_non_star_atoms + ctab->v3000->n_star_atoms;
+
+    /* Positional fields: index, type, external index (V2000 SLB label) */
+    if (0 >= MolfileV3000ReadField(&id, MOL_FMT_INT_DATA, &p) ||
+        0 >= MolfileV3000ReadField(field, MOL_FMT_STRING_DATA, &p) ||
+        0 >= MolfileV3000ReadField(&ext_id, MOL_FMT_INT_DATA, &p))
+    {
+        return -1;
+    }
+
+    type = V3000FindName(field, types, sizeof(types) / sizeof(types[0]));
+    if (type <= MOL_FMT_M_STY_NON)
+    {
+        return 0;
+    }
+
+    if (MolFmtSgroups_Append(&ctab->sgroups, id, type))
+    {
+        return -1;
+    }
+    sg = ctab->sgroups.group[ctab->sgroups.used - 1];
+    sg->label = ext_id;
+    for (q = 0; q < 4; q++)
+    {
+        sg->xbr1[q] = -777777.777;
+        sg->xbr2[q] = -777777.777;
+    }
+
+    /* Key=value pairs */
+    while (p && MolfileV3000ReadKeyword(field, &p) > 0)
+    {
+        if (!strcmp(field, "ATOMS"))
+        {
+            if (V3000ReadIndexList(ctab, &p, &sg->alist))
+            {
+                return -1;
+            }
+        }
+        else if (!strcmp(field, "XBONDS"))
+        {
+            if (V3000ReadIndexList(ctab, &p, &sg->blist))
+            {
+                return -1;
+            }
+        }
+        else if (!strcmp(field, "BRKXYZ"))
+        {
+            /* as V2000 SDI: 1st bracket to xbr1, later ones to xbr2 */
+            if (V3000ReadBracket(&p, n_brackets++ ? sg->xbr2 : sg->xbr1))
+            {
+                return -1;
+            }
+        }
+        else if (!strcmp(field, "CONNECT"))
+        {
+            MolfileV3000ReadField(field, MOL_FMT_STRING_DATA, &p);
+            sg->conn = V3000FindName(field, conns, sizeof(conns) / sizeof(conns[0]));
+            if (sg->conn <= MOL_FMT_M_CONN_NON)
+            {
+                return -1;
+            }
+        }
+        else if (!strcmp(field, "SUBTYPE"))
+        {
+            MolfileV3000ReadField(field, MOL_FMT_STRING_DATA, &p);
+            sg->subtype = V3000FindName(field, subtypes, sizeof(subtypes) / sizeof(subtypes[0]));
+            if (sg->subtype <= MOL_FMT_M_SST_NON)
+            {
+                return -1;
+            }
+        }
+        else if (!strcmp(field, "LABEL"))
+        {
+            if (0 > read_upto_delim(&p, sg->smt, sizeof(sg->smt), " \t\n\v\f\r"))
+            {
+                return -1;
+            }
+        }
+        else
+        {
+            V3000SkipValue(&p);
+        }
+    }
+
+    /* V3000 atom indices -> final atom numbers, as V2000 SAL has them */
+    for (q = 0; q < sg->alist.used; q++)
+    {
+        sg->alist.item[q] = get_actual_atom_number(sg->alist.item[q], n_orig_at,
+                                                   ctab->v3000->atom_index_orig,
+                                                   ctab->v3000->atom_index_fin);
+        if (sg->alist.item[q] < 1)
+        {
+            return -1;
+        }
+    }
+    for (q = 0; q < sg->blist.used; q++)
+    {
+        if (sg->blist.item[q] < 1 || sg->blist.item[q] > ctab->n_bonds)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/****************************************************************************
  Read V3000 SGroup
 ****************************************************************************/
 int MolfileV3000ReadSGroup(MOL_FMT_CTAB *ctab,
                            INCHI_IOSTREAM *inp_file,
+                           int treat_polymers,
                            int err,
                            char *pStrErr)
 {
-    int nc;
+    int nc, failed = 0;
     char *p = NULL, *line = NULL;
     INCHI_IOSTREAM tmpin;
     INCHI_IOS_STRING *pin = &tmpin.s;
@@ -552,7 +773,16 @@ int MolfileV3000ReadSGroup(MOL_FMT_CTAB *ctab,
         if (p && !strcmp(p, "END SGROUP"))
         {
             inchi_ios_close(&tmpin); /* ricrogz: fixing memory leak */
-            return 0;
+            return failed;
+        }
+
+        /* GH #146: polymer Sgroups, as V2000 M  STY etc. */
+        if (p && treat_polymers != POLYMERS_NO && V3000ReadPolymerSGroup(ctab, p))
+        {
+            failed = 1;
+            AddErrorMessage(pStrErr, "Could not interpret V3000 polymer Sgroup:");
+            dotify_non_printable_chars(line);
+            AddErrorMessage(pStrErr, line);
         }
     }
 
@@ -826,6 +1056,7 @@ err_fin:
 ****************************************************************************/
 int MolfileV3000ReadAtomsBlock(MOL_FMT_CTAB *ctab,
                                INCHI_IOSTREAM *inp_file,
+                               int treat_polymers,
                                int err,
                                char *pStrErr)
 {
@@ -1001,7 +1232,8 @@ int MolfileV3000ReadAtomsBlock(MOL_FMT_CTAB *ctab,
                 strcpy(ctab->coords[i], szcoords);
             }
 
-            if (!strcmp(symbol, "*"))
+            /* GH #146: polymers need star atoms as SRU end groups */
+            if (!strcmp(symbol, "*") && treat_polymers == POLYMERS_NO)
             {
                 /* ignore star atoms but save index info */
                 ctab->v3000->atom_index_orig[i] = index;
@@ -1566,6 +1798,7 @@ int get_actual_atom_number(int index, int n, int *orig, int *fin)
 ****************************************************************************/
 int MolfileV3000ReadTailOfCTAB(MOL_FMT_CTAB *ctab,
                                INCHI_IOSTREAM *inp_file,
+                               int treat_polymers,
                                int err,
                                char *pStrErr)
 {
@@ -1592,11 +1825,12 @@ int MolfileV3000ReadTailOfCTAB(MOL_FMT_CTAB *ctab,
 
     if (p && !strcmp(p, "BEGIN SGROUP"))
     {
-        retcode = MolfileV3000ReadSGroup(ctab, inp_file, retcode, pStrErr);
+        retcode = MolfileV3000ReadSGroup(ctab, inp_file, treat_polymers, retcode, pStrErr);
         if (retcode)
         {
-            retcode += 70;
-            TREAT_ERR_AND_FIN(retcode, 1, err_fin, pStrErr);
+            /* GH #146: return the error; message already in pStrErr */
+            err = retcode + 70;
+            goto err_fin;
         }
         /*p = inchi_fgetsLf_V3000( line, inp_file );*/
         inchi_strbuf_reset(pin);
