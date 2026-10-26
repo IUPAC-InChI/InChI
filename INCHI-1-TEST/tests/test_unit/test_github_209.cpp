@@ -60,3 +60,12 @@ TEST(test_github_209, empty_neigh_list_not_leaked)
     FreeNeighList(nl);
     ExpectNoLeaks();
 }
+
+/* oss-fuzz #488729177: a negative H isotope shift on a lone proton indexed
+   nNumRemovedProtonsIsotopic out of bounds in mark_alt_bonds_and_taut_groups.
+   Guarded since d20e337; only ASAN in the library detects a regression. */
+TEST(test_github_209, lone_proton_negative_isotope)
+{
+    GetStruct("InChI=1S/H/q+1/i1-1");
+    GetStruct("InChI=1S/H/q+1/i1-100");
+}
