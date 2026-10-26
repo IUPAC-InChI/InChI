@@ -323,7 +323,7 @@ int MolfileV3000ReadField(void *data,
     case MOL_FMT_FLOAT_DATA:
     {
         /* assume that field ends at first non-digit */
-        ddata = strtod(field, &p_end);
+        ddata = inchi_strtod(field, (const char **)&p_end); /* GH #100 */
 
         if (p_end == field)
         {
@@ -998,6 +998,7 @@ int MolfileV3000ReadAtomsBlock(MOL_FMT_CTAB *ctab,
 #endif
 #endif
                 sprintf(szcoords, "%10g%10g%10g", fx, fy, fz);
+                inchi_dot_decimal(szcoords); /* GH #100 */
                 strcpy(ctab->coords[i], szcoords);
             }
 

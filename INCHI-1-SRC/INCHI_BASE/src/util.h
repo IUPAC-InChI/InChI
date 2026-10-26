@@ -226,6 +226,13 @@ long inchi_strtol(const char *str, const char **p, int base);
 double inchi_strtod(const char *str, const char **p);
 
 /**
+ * @brief Replace the locale decimal point printed by sprintf with '.' (GH #100)
+ *
+ * @param str Pointer to the string to fix in place
+ */
+void inchi_dot_decimal(char *str);
+
+/**
  * @brief Checks if an atom is in the list/path
  *
  * @param pathAtom Pointer to the list/path of atoms

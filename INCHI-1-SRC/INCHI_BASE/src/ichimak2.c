@@ -976,6 +976,8 @@ void WriteCoord( char *str, double x )
             }
         }
     }
+
+    inchi_dot_decimal(str); /* GH #100 */
 }
 #endif
 
