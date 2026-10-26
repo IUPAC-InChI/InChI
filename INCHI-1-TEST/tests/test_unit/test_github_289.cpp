@@ -3,6 +3,7 @@
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/strutil.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
 
     int bIsAmmoniumSalt(inp_ATOM *at, int i, int *piO, int *pk, S_CHAR *num_explicit_H);
 }
@@ -47,4 +48,26 @@ TEST(test_github_289, out_of_range_iso_atw_diff_stays_in_bounds)
     }
 
     FreeInpAtom(&at);
+}
+
+TEST(test_github_289, fuzzer_molfile_does_not_overflow)
+{
+    /* Minimized fuzzer input from GH #289: N with an explicit H of mass difference 6 */
+    const char molfile[] =
+        "\n"
+        "\n"
+        "\n"
+        "  42\n"
+        " 3                            FF\n"
+        "                              SB\n"
+        "               \x0c              FH1 6\n"
+        "                              FN\x0b\x0b\x0b             5\n"
+        "1  4  1\n"
+        "3  4  1";
+    char options[] = "";
+    inchi_Output output = {};
+
+    MakeINCHIFromMolfileText(molfile, options, &output);
+
+    FreeINCHI(&output);
 }
