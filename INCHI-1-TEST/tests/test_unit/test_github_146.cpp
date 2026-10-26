@@ -1,5 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <future>
+#include <thread>
+
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
@@ -84,4 +90,66 @@ TEST(test_github_146, polyethyleneoxide_v3000)
         "M  END\n";
 
     ExpectInChI(molblock);
+}
+
+/* Truncated V3000 molfile: SGROUP block without END SGROUP */
+static const char TRUNCATED_V3000[] =
+    "\n"
+    "  ACCLDraw07292516342D\n"
+    "\n"
+    "  0  0  0     0  0            999 V3000\n"
+    "M  V30 BEGIN CTAB\n"
+    "M  V30 COUNTS 5 4 1 0 0\n"
+    "M  V30 BEGIN ATOM\n"
+    "M  V30 1 * 4.5313 -7.7188 0 0 \n"
+    "M  V30 2 C 5.5541 -7.1282 0 0 \n"
+    "M  V30 3 C 6.5773 -7.7189 0 0 \n"
+    "M  V30 4 O 7.6005 -7.1282 0 0 \n"
+    "M  V30 5 * 8.6236 -7.7189 0 0 \n"
+    "M  V30 END ATOM\n"
+    "M  V30 BEGIN BOND\n"
+    "M  V30 1 1 1 2 \n"
+    "M  V30 2 1 2 3 \n"
+    "M  V30 3 1 3 4 \n"
+    "M  V30 4 1 4 5 \n"
+    "M  V30 END BOND\n"
+    "M  V30 BEGIN SGROUP\n"
+    "M  V30 1 SRU 1 ATOMS=(3 3 2 4) XBONDS=(2 1 4) CONNECT=HT LABEL=n \n";
+
+static const auto HANG_TIMEOUT = std::chrono::seconds(10);
+
+/* Expect an error return; abort (not hang) if the reader loops forever */
+static void ExpectErrorNoHang(const char *options)
+{
+    std::promise<int> done;
+    std::future<int> result = done.get_future();
+
+    std::thread([&done, options]() {
+        char opts[32];
+        inchi_Output output = {};
+
+        snprintf(opts, sizeof(opts), "%s", options);
+        int ret = MakeINCHIFromMolfileText(TRUNCATED_V3000, opts, &output);
+        FreeINCHI(&output);
+        done.set_value(ret);
+    }).detach();
+
+    if (result.wait_for(HANG_TIMEOUT) != std::future_status::ready)
+    {
+        fprintf(stderr, "MakeINCHIFromMolfileText hangs on truncated V3000 (options \"%s\")\n", options);
+        std::_Exit(EXIT_FAILURE);
+    }
+
+    int ret = result.get();
+    EXPECT_TRUE(ret == inchi_Ret_ERROR || ret == inchi_Ret_FATAL || ret == inchi_Ret_EOF) << "ret=" << ret;
+}
+
+TEST(test_github_146, truncated_v3000_sgroup_polymers)
+{
+    ExpectErrorNoHang("-Polymers");
+}
+
+TEST(test_github_146, truncated_v3000_sgroup_no_polymers)
+{
+    ExpectErrorNoHang("");
 }
