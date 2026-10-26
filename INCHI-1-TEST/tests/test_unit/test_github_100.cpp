@@ -184,3 +184,48 @@ TEST(test_github_100, aux_info_coordinates_parse_in_comma_locale)
     EXPECT_EQ(expected, "-11270,-5635;4125,1510;15000,22500;");
     EXPECT_EQ(RunInLocale(COMMA_LOCALE, run), expected);
 }
+
+// Polyethyleneoxide from GH #146, with SRU bracket coordinates (SDI)
+static const char PEO_V2000[] =
+    "\n"
+    "  ACCLDraw07292516342D\n"
+    "\n"
+    "  5  4  0  0  0  0  0  0  0  0999 V2000\n"
+    "    4.5313   -7.7188    0.0000 *   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.5541   -7.1282    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    6.5773   -7.7189    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    7.6005   -7.1282    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    8.6236   -7.7189    0.0000 *   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  2  1  0  0  0  0\n"
+    "  2  3  1  0  0  0  0\n"
+    "  3  4  1  0  0  0  0\n"
+    "  4  5  1  0  0  0  0\n"
+    "M  STY  1   1 SRU\n"
+    "M  SLB  1   1   1\n"
+    "M  SCN  1   1 HT \n"
+    "M  SAL   1  3   3   2   4\n"
+    "M  SBL   1  2   1   4\n"
+    "M  SDI   1  4    5.0427   -8.0142    5.0427   -6.8328\n"
+    "M  SDI   1  4    8.1120   -6.8329    8.1120   -8.0142\n"
+    "M  SMT   1 n\n"
+    "M  END\n";
+
+TEST(test_github_100, polymer_bracket_coordinates_are_locale_independent)
+{
+    SKIP_WITHOUT_COMMA_LOCALE();
+
+    auto run = []
+    {
+        inchi_Output output = {};
+        char options[] = "-Polymers";
+
+        MakeINCHIFromMolfileText(PEO_V2000, options, &output);
+        std::string result = output.szAuxInfo ? output.szAuxInfo : "";
+        FreeINCHI(&output);
+        return result;
+    };
+    std::string expected = RunInLocale("C", run);
+
+    EXPECT_NE(expected.find("[5.042700,-8.014200,5.042700,-6.832800]"), std::string::npos) << expected;
+    EXPECT_EQ(RunInLocale(COMMA_LOCALE, run), expected);
+}
