@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
+#include <locale.h>
 
 #include "mode.h"
 #include "ichimain.h"
@@ -2570,7 +2571,51 @@ long inchi_strtol(const char *str, const char **p, int base)
 /****************************************************************************/
 double inchi_strtod(const char *str, const char **p)
 {
-    return strtod( str, (char **) p );
+    /* GH #100: always read '.' as decimal point, whatever LC_NUMERIC says */
+    char buf[64];
+    char *end;
+    char dp = localeconv()->decimal_point[0];
+    size_t i;
+    double val;
+
+    if (dp == '.')
+    {
+        return strtod( str, (char **) p );
+    }
+
+    /* copy, cut at a locale decimal point (e.g. "1,5" means 1 then ','), swap '.' */
+    for (i = 0; i < sizeof(buf) - 1 && str[i] && str[i] != dp; i++)
+    {
+        buf[i] = (str[i] == '.') ? dp : str[i];
+    }
+    buf[i] = '\0';
+
+    val = strtod( buf, &end );
+    if (p)
+    {
+        *p = str + (end - buf);
+    }
+    return val;
+}
+
+
+/****************************************************************************/
+void inchi_dot_decimal(char *str)
+{
+    /* GH #100: turn printf's locale decimal point into '.' */
+    char dp = localeconv()->decimal_point[0];
+
+    if (dp == '.')
+    {
+        return;
+    }
+    for (; *str; str++)
+    {
+        if (*str == dp)
+        {
+            *str = '.';
+        }
+    }
 }
 
 
