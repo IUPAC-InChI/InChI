@@ -959,12 +959,13 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
             inchi_ios_print_nodisplay(fcb, " RAD=%d", (int)at[i].radical);
         }
 
-        /* MASS is absolute: element mass + shift */
+        /* MASS is absolute: element mass + shift, as V2000 M  ISO */
         if (ANY_ISO(i, bAtomsDT))
         {
             int iso = nIsotopeH ? nIsotopeH :
                       at[i].iso_atw_diff > 0 ? at[i].iso_atw_diff - 1 : at[i].iso_atw_diff;
-            inchi_ios_print_nodisplay(fcb, " MASS=%d", get_atomic_mass(elname) + iso);
+            iso += get_atomic_mass_from_elnum(nIsotopeH ? 1 : at[i].el_number);
+            inchi_ios_print_nodisplay(fcb, " MASS=%d", iso);
         }
 
         /* V3000 zero valence is -1 (V2000: 15) */
