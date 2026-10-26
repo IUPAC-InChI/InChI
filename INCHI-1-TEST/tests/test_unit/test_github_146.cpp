@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <future>
+#include <string>
 #include <thread>
 
 extern "C"
@@ -152,4 +153,62 @@ TEST(test_github_146, truncated_v3000_sgroup_polymers)
 TEST(test_github_146, truncated_v3000_sgroup_no_polymers)
 {
     ExpectErrorNoHang("");
+}
+
+/* V3000 polymer molfile with the given SGROUP line (after "M  V30 ") */
+static std::string PolymerV3000(const std::string &sgroup)
+{
+    return std::string(
+               "\n"
+               "  ACCLDraw07292516342D\n"
+               "\n"
+               "  0  0  0     0  0            999 V3000\n"
+               "M  V30 BEGIN CTAB\n"
+               "M  V30 COUNTS 5 4 1 0 0\n"
+               "M  V30 BEGIN ATOM\n"
+               "M  V30 1 * 4.5313 -7.7188 0 0 \n"
+               "M  V30 2 C 5.5541 -7.1282 0 0 \n"
+               "M  V30 3 C 6.5773 -7.7189 0 0 \n"
+               "M  V30 4 O 7.6005 -7.1282 0 0 \n"
+               "M  V30 5 * 8.6236 -7.7189 0 0 \n"
+               "M  V30 END ATOM\n"
+               "M  V30 BEGIN BOND\n"
+               "M  V30 1 1 1 2 \n"
+               "M  V30 2 1 2 3 \n"
+               "M  V30 3 1 3 4 \n"
+               "M  V30 4 1 4 5 \n"
+               "M  V30 END BOND\n"
+               "M  V30 BEGIN SGROUP\n"
+               "M  V30 ") +
+           sgroup +
+           "\n"
+           "M  V30 END SGROUP\n"
+           "M  V30 END CTAB\n"
+           "M  END\n";
+}
+
+/* Largest LABEL that fits MOL_FMT_SGROUP.smt[80] with its NUL */
+static const size_t MAX_LABEL_LEN = 79;
+
+TEST(test_github_146, v3000_max_length_label)
+{
+    std::string molblock = PolymerV3000(
+        "1 SRU 1 ATOMS=(3 3 2 4) XBONDS=(2 1 4) CONNECT=HT LABEL=" +
+        std::string(MAX_LABEL_LEN, 'n'));
+
+    ExpectInChI(molblock.c_str());
+}
+
+TEST(test_github_146, v3000_brkxyz_without_value)
+{
+    std::string molblock = PolymerV3000(
+        "1 SRU 1 ATOMS=(3 3 2 4) XBONDS=(2 1 4) CONNECT=HT BRKXYZ");
+    char options[] = "-Polymers";
+    inchi_Output output = {};
+
+    int ret = MakeINCHIFromMolfileText(molblock.c_str(), options, &output);
+
+    EXPECT_TRUE(ret == inchi_Ret_ERROR || ret == inchi_Ret_FATAL) << "ret=" << ret;
+
+    FreeINCHI(&output);
 }
