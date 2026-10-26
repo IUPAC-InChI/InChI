@@ -2250,7 +2250,7 @@ int CleanOrigCoord(MOL_COORD szCoord, int delim)
         memcpy(szVal, szCoord + k, LEN_COORD);
         szVal[LEN_COORD] = '\0';
         lrtrim(szVal, &len);
-        coord = strtod(szVal, &q);
+        coord = inchi_strtod(szVal, (const char **)&q); /* GH #100 */
         if (MIN_BOND_LENGTH > fabs(coord))
         {
             strcpy(szVal, "0");

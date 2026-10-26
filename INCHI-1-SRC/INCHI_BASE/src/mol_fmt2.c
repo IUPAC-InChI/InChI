@@ -218,7 +218,7 @@ int MolfileReadField(void *data,
                 ddata = 0.0;
                 ret = 0;
             }
-            else if ((ddata = strtod(str, &p_end), p_end != q))
+            else if ((ddata = inchi_strtod(str, (const char **)&p_end), p_end != q) /* GH #100 */)
             {
                 /* wrong data */
                 ret = -1;
@@ -227,7 +227,7 @@ int MolfileReadField(void *data,
         else if (FIELD_ENDS_AT_FIRST_NON_DIGIT)
         {
             /* free format */
-            ddata = strtod(p, &p_end);
+            ddata = inchi_strtod(p, (const char **)&p_end); /* GH #100 */
             *line_ptr += (len = p_end - p);
             if (len == 0)
             {
