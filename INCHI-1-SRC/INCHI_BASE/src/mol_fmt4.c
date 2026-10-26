@@ -28,6 +28,7 @@
 #define V2000_MAX_COUNT 999 /* GH #75: counts fields are 3 chars wide */
 #define V3000_MAX_LINE 80   /* GH #75: CTfile line length limit */
 #define V3000_PREFIX_LEN 7  /* "M  V30 " */
+#define V3000_MIN_BOND_LENGTH 1.0e-6 /* GH #75: shorter means 0D */
 
 #define ALIASED_AT(i) (0 < NUM_ISO_H(at, i))
 #define IS_DEUTERIUM(i) (!strcmp(at[i].elname, "D") || at[i].iso_atw_diff == 2 && !strcmp(at[i].elname, "H"))
@@ -878,6 +879,48 @@ static int WriteV3000Sgroups(const OAD_Polymer *polymer,
 }
 
 /****************************************************************************
+ GH #75: 2D offset of the n-th explicit D/T of atom i: average bond
+ length, opposite the neighbours' centroid (as strutil.c moves an H),
+ n > 0 turned by +-30, +-60, ... degrees. 0D or no bonds: no offset.
+****************************************************************************/
+static void IsoHOffset(const inp_ATOM *at, int i, int n, double *dx, double *dy)
+{
+    const double step = 30.0 * acos(-1.0) / 180.0;
+    double cx = 0.0, cy = 0.0, r = 0.0, len, f;
+    int j;
+
+    *dx = *dy = 0.0;
+    if (!at[i].valence)
+    {
+        return;
+    }
+
+    /* Neighbours' centroid and average bond length */
+    for (j = 0; j < at[i].valence; j++)
+    {
+        const inp_ATOM *nb = at + at[i].neighbor[j];
+        cx += nb->x;
+        cy += nb->y;
+        r += sqrt((nb->x - at[i].x) * (nb->x - at[i].x) + (nb->y - at[i].y) * (nb->y - at[i].y));
+    }
+    cx /= at[i].valence;
+    cy /= at[i].valence;
+    r /= at[i].valence;
+    if (r < V3000_MIN_BOND_LENGTH)
+    {
+        return;
+    }
+
+    /* Away from the centroid; e.g. -x if it coincides with atom i */
+    len = sqrt((at[i].x - cx) * (at[i].x - cx) + (at[i].y - cy) * (at[i].y - cy));
+    f = len < 0.1 * r ? acos(-1.0) : atan2(at[i].y - cy, at[i].x - cx);
+    f += step * ((n + 1) / 2) * (n % 2 ? 1 : -1);
+
+    *dx = r * cos(f);
+    *dy = r * sin(f);
+}
+
+/****************************************************************************
  GH #75: write CTAB as V3000; V2000 counts fields are 3 chars wide.
  Isotopic implicit H (V2000: alias) become explicit D/T atoms appended
  after all atoms; polymer units become V3000 Sgroups.
@@ -976,7 +1019,7 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
         inchi_ios_print_nodisplay(fcb, "\n");
     }
 
-    /* Explicit D/T at their heavy atom's position */
+    /* Explicit D/T next to their heavy atom (zero-length bonds break 2D stereo) */
     nExtra = num_atoms;
     for (i = 0; i < num_atoms; i++)
     {
@@ -984,9 +1027,12 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
         {
             for (m = 0; m < at[i].num_iso_H[k]; m++)
             {
+                double dx, dy;
+
+                IsoHOffset(at, i, m + (k == 2 ? at[i].num_iso_H[1] : 0), &dx, &dy);
                 inchi_ios_print_nodisplay(fcb, "M  V30 %d %s %.4f %.4f %.4f 0%s\n", ++nExtra,
                                           bAtomsDT ? (k == 1 ? "D" : "T") : "H",
-                                          at[i].x, at[i].y, at[i].z,
+                                          at[i].x + dx, at[i].y + dy, at[i].z,
                                           bAtomsDT ? "" : (k == 1 ? " MASS=2" : " MASS=3"));
             }
         }

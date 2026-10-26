@@ -122,7 +122,7 @@ TEST(test_github_75, deuterium_is_v3000_atom_not_alias)
     // No V2000 property lines; D is an explicit atom bonded to C 1000
     EXPECT_EQ(sdf.find("\nA  "), std::string::npos);
     EXPECT_EQ(Line(sdf, 5), "M  V30 COUNTS 1001 1000 0 0 0");
-    EXPECT_NE(sdf.find("M  V30 1001 H 1498.5000 0.0000 0.0000 0 MASS=2\n"), std::string::npos);
+    EXPECT_NE(sdf.find("M  V30 1001 H 1500.0000 0.0000 0.0000 0 MASS=2\n"), std::string::npos);
     EXPECT_NE(sdf.find("M  V30 1000 1 1000 1001\n"), std::string::npos);
     EXPECT_NE(sdf.find("M  V30 END CTAB\nM  END\n"), std::string::npos);
 
