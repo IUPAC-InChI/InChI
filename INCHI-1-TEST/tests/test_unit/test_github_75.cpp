@@ -200,3 +200,75 @@ TEST(test_github_75, v3000_mass_is_absolute)
 
     EXPECT_NE(sdf.find("M  V30 5 C 6.0000 0.0000 0.0000 0 MASS=13\n"), std::string::npos);
 }
+
+// Return InChI of SDfile text, "" on failure.
+static std::string InChIOf(const std::string &sdf)
+{
+    char options[] = "-LargeMolecules";
+    inchi_Output output{};
+    MakeINCHIFromMolfileText(sdf.c_str(), options, &output);
+    std::string inchi = output.szInChI ? output.szInChI : "";
+    FreeINCHI(&output);
+
+    return inchi;
+}
+
+TEST(test_github_75, implicit_d_keeps_2d_stereo)
+{
+    // Zigzag chain; atom 501 is CHD(R)(R') with a wedge to atom 502
+    const int c = 500;
+    const int n = V2000_MAX_COUNT + 1;
+    ORIG_ATOM_DATA data = MakeChain(n);
+    for (int i = 0; i < n; i++)
+    {
+        data.at[i].y = (i % 2) * 0.75;
+    }
+    data.at[c].num_H = 1;
+    data.at[c].bond_stereo[1] = STEREO_SNGL_UP;
+    data.at[c + 1].bond_stereo[0] = -STEREO_SNGL_UP;
+
+    // Reference: same structure, D as explicit atom 1001 below atom 501
+    ORIG_ATOM_DATA ref = data;
+    ref.num_inp_atoms = n + 1;
+    ref.at = (inp_ATOM *)calloc(n + 1, sizeof(inp_ATOM));
+    memcpy(ref.at, data.at, n * sizeof(inp_ATOM));
+    inp_ATOM *d = ref.at + n;
+    strcpy(d->elname, "H");
+    d->el_number = 1;
+    d->iso_atw_diff = 2;
+    d->x = ref.at[c].x;
+    d->y = -1.0;
+    d->neighbor[0] = (AT_NUMB)c;
+    d->bond_type[0] = 1;
+    d->valence = d->chem_bonds_valence = 1;
+    ref.at[c].neighbor[2] = (AT_NUMB)n;
+    ref.at[c].bond_type[2] = 1;
+    ref.at[c].valence = ref.at[c].chem_bonds_valence = 3;
+    std::string expected = InChIOf(Write(ref));
+    FreeChain(ref);
+
+    // Implicit D written as explicit atom
+    data.at[c].num_iso_H[1] = 1;
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    ASSERT_NE(expected.find("/t"), std::string::npos);
+    ASSERT_NE(expected.find("/i"), std::string::npos);
+    EXPECT_EQ(InChIOf(sdf), expected);
+    EXPECT_EQ(sdf.find("M  V30 1001 H 750.0000 0.0000 0.0000"), std::string::npos);
+}
+
+TEST(test_github_75, implicit_d_stays_at_origin_in_0d)
+{
+    ORIG_ATOM_DATA data = MakeChain(V2000_MAX_COUNT + 1);
+    for (int i = 0; i < data.num_inp_atoms; i++)
+    {
+        data.at[i].x = 0;
+    }
+    data.at[0].num_H--;
+    data.at[0].num_iso_H[1] = 1;
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    EXPECT_NE(sdf.find("M  V30 1001 H 0.0000 0.0000 0.0000 0 MASS=2\n"), std::string::npos);
+}
