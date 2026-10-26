@@ -598,8 +598,8 @@ static int V3000ReadBracket(char **p, double xbr[4])
     double x[9];
     int i, n = 0;
 
-    read_upto_delim(p, field, sizeof(field), "1234567890 \t\n\v\f\r");
-    if (strcmp(field, "(") || 0 >= MolfileV3000ReadField(&n, MOL_FMT_INT_DATA, p) || n != 9)
+    if (0 > read_upto_delim(p, field, sizeof(field), "1234567890 \t\n\v\f\r") ||
+        strcmp(field, "(") || 0 >= MolfileV3000ReadField(&n, MOL_FMT_INT_DATA, p) || n != 9)
     {
         return -1;
     }
