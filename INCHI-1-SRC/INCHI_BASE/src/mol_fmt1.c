@@ -1635,7 +1635,8 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     else if (!strcmp( szType, "SAL" ))
     {
         if (0 < MolfileReadField( &sg_num, 4, MOL_FMT_SHORT_INT_DATA, &p ) &&
-              0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ))
+              0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ) &&
+              1 <= num_entries && num_entries <= 15)
         {
             index = MolFmtSgroups_GetIndexBySgroupId( sg_num, &( ctab->sgroups ) );
             if (-1 == index)
@@ -1680,7 +1681,8 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     else if (!strcmp( szType, "SBL" ))
     {
         if (0 < MolfileReadField( &sg_num, 4, MOL_FMT_SHORT_INT_DATA, &p ) &&
-            0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ))
+            0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ) &&
+            1 <= num_entries && num_entries <= 15)
         {
             index = MolFmtSgroups_GetIndexBySgroupId( sg_num, &( ctab->sgroups ) );
             if (-1 == index)
