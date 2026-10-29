@@ -81,10 +81,11 @@ static std::string RunInLocale(const char *name, const std::function<std::string
     return result;
 }
 
-// First name in names this platform loads, or nullptr.
+// First name in names that loads and really uses dp as decimal point, or nullptr.
+// musl accepts any name but keeps '.', so the name alone proves nothing.
 // Restores the previous locale.
 template <size_t N>
-static const char *FirstLocale(const char *const (&names)[N])
+static const char *FirstLocale(const char *const (&names)[N], const char *dp)
 {
     std::string saved = setlocale(LC_ALL, nullptr);
     for (const char *name : names)
@@ -93,28 +94,40 @@ static const char *FirstLocale(const char *const (&names)[N])
         {
             continue;
         }
+        bool usable = !strcmp(localeconv()->decimal_point, dp);
         setlocale(LC_ALL, saved.c_str());
-        return name;
+        if (usable)
+        {
+            return name;
+        }
     }
     return nullptr;
 }
 
 static const char *CommaLocale()
 {
-    return FirstLocale(COMMA_LOCALES);
+    return FirstLocale(COMMA_LOCALES, ",");
 }
 
 static const char *MultibyteLocale()
 {
-    return FirstLocale(MULTIBYTE_LOCALES);
+    return FirstLocale(MULTIBYTE_LOCALES, "\xD9\xAB"); // U+066B in UTF-8
 }
 
-#define SKIP_WITHOUT_COMMA_LOCALE()                                  \
+// glibc can install any locale (see INCHI-1-TEST/install_build_dependencies.sh),
+// so a missing one is a setup error there. musl and others lack locale support.
+#ifdef __GLIBC__
+#define MISSING_LOCALE(msg) FAIL() << msg << ", run INCHI-1-TEST/install_build_dependencies.sh"
+#else
+#define MISSING_LOCALE(msg) GTEST_SKIP() << msg
+#endif
+
+#define REQUIRE_COMMA_LOCALE()                                       \
     do                                                               \
     {                                                                \
         if (!CommaLocale())                                          \
         {                                                            \
-            GTEST_SKIP() << "no comma-decimal locale installed";     \
+            MISSING_LOCALE("no comma-decimal locale installed");     \
         }                                                            \
     } while (0)
 
@@ -132,7 +145,7 @@ static std::string MolfileToInchiAux(const char *molfile)
 
 TEST(test_github_100, molfile_v2000_aux_info_is_locale_independent)
 {
-    SKIP_WITHOUT_COMMA_LOCALE();
+    REQUIRE_COMMA_LOCALE();
 
     auto run = [] { return MolfileToInchiAux(EPOXYBUTANE_V2000); };
     std::string expected = RunInLocale("C", run);
@@ -143,7 +156,7 @@ TEST(test_github_100, molfile_v2000_aux_info_is_locale_independent)
 
 TEST(test_github_100, molfile_v3000_aux_info_is_locale_independent)
 {
-    SKIP_WITHOUT_COMMA_LOCALE();
+    REQUIRE_COMMA_LOCALE();
 
     auto run = [] { return MolfileToInchiAux(EPOXYBUTANE_V3000); };
     std::string expected = RunInLocale("C", run);
@@ -154,7 +167,7 @@ TEST(test_github_100, molfile_v3000_aux_info_is_locale_independent)
 
 TEST(test_github_100, api_atoms_aux_info_is_locale_independent)
 {
-    SKIP_WITHOUT_COMMA_LOCALE();
+    REQUIRE_COMMA_LOCALE();
 
     // GetINCHI path: coordinates arrive as doubles (CDK / jna-inchi)
     auto run = []
@@ -194,7 +207,7 @@ TEST(test_github_100, api_atoms_aux_info_is_locale_independent)
 
 TEST(test_github_100, aux_info_coordinates_parse_in_comma_locale)
 {
-    SKIP_WITHOUT_COMMA_LOCALE();
+    REQUIRE_COMMA_LOCALE();
 
     // Get_inchi_Input_FromAuxInfo path: AuxInfo /rC: is read back into doubles
     auto run = []
@@ -247,7 +260,7 @@ static const char PEO_V2000[] =
 
 TEST(test_github_100, polymer_bracket_coordinates_are_locale_independent)
 {
-    SKIP_WITHOUT_COMMA_LOCALE();
+    REQUIRE_COMMA_LOCALE();
 
     auto run = []
     {
@@ -268,7 +281,7 @@ TEST(test_github_100, polymer_bracket_coordinates_are_locale_independent)
 // A numeric token longer than any fixed copy buffer must still parse completely.
 TEST(test_github_100, strtod_reads_long_token_in_comma_locale)
 {
-    SKIP_WITHOUT_COMMA_LOCALE();
+    REQUIRE_COMMA_LOCALE();
 
     std::string token = std::string(100, '0') + "1.5";
     std::string text = token + "x";
@@ -289,24 +302,21 @@ TEST(test_github_100, multibyte_decimal_point_is_handled)
 {
     if (!MultibyteLocale())
     {
-        GTEST_SKIP() << "no multi-byte decimal-point locale installed";
+        MISSING_LOCALE("no multi-byte decimal-point locale installed");
     }
 
     double val = 0;
     const char *text = "1.5x";
     const char *end = nullptr;
     char buf[32] = "";
-    bool multibyte = false;
     RunInLocale(MultibyteLocale(), [&]
     {
-        multibyte = strlen(localeconv()->decimal_point) > 1;
         val = inchi_strtod(text, &end);
         snprintf(buf, sizeof(buf), "%10.4f%10.4f", 1.5, -2.25);
         inchi_dot_decimal(buf);
         return "";
     });
 
-    ASSERT_TRUE(multibyte);
     EXPECT_EQ(val, 1.5);
     EXPECT_EQ(end - text, 3);
     EXPECT_STREQ(buf, "    1.5000   -2.2500");
@@ -337,7 +347,7 @@ static std::string MolfileToSdf(const char *molfile)
 
 TEST(test_github_100, sdf_writer_is_locale_independent)
 {
-    SKIP_WITHOUT_COMMA_LOCALE();
+    REQUIRE_COMMA_LOCALE();
 
     auto run = [] { return MolfileToSdf(EPOXYBUTANE_V2000); };
     std::string expected = RunInLocale("C", run);
