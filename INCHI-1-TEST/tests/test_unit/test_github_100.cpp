@@ -10,6 +10,9 @@ extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/util.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/inpdef.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/ichi_io.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/ichimain.h"
 }
 
 // GH #100: InChI/AuxInfo must not depend on the caller's LC_NUMERIC.
@@ -307,4 +310,38 @@ TEST(test_github_100, multibyte_decimal_point_is_handled)
     EXPECT_EQ(val, 1.5);
     EXPECT_EQ(end - text, 3);
     EXPECT_STREQ(buf, "    1.5000   -2.2500");
+}
+
+// The SDF writer must print coordinates with '.', so its output reads back anywhere.
+static std::string MolfileToSdf(const char *molfile)
+{
+    INCHI_IOSTREAM input{}, output{};
+    ORIG_ATOM_DATA atom_data{};
+    INCHI_MODE flags = 0;
+    int err = 0;
+
+    inchi_ios_init(&input, INCHI_IOS_TYPE_STRING, nullptr);
+    inchi_ios_print_nodisplay(&input, "%s", molfile);
+    CreateOrigInpDataFromMolfile(&input, &atom_data, 0, 0, 0, 0, 0, nullptr, nullptr, nullptr,
+                                 nullptr, &flags, &err, nullptr, 0);
+
+    inchi_ios_init(&output, INCHI_IOS_TYPE_STRING, nullptr);
+    OrigAtData_WriteToSDfile(&atom_data, &output, nullptr, nullptr, 0, 0, nullptr, nullptr);
+    std::string result = output.s.pStr ? output.s.pStr : "";
+
+    inchi_ios_free_str(&input);
+    inchi_ios_free_str(&output);
+    FreeOrigAtData(&atom_data);
+    return result;
+}
+
+TEST(test_github_100, sdf_writer_is_locale_independent)
+{
+    SKIP_WITHOUT_COMMA_LOCALE();
+
+    auto run = [] { return MolfileToSdf(EPOXYBUTANE_V2000); };
+    std::string expected = RunInLocale("C", run);
+
+    EXPECT_NE(expected.find("   -1.1270   -0.5635    0.0000 C"), std::string::npos) << expected;
+    EXPECT_EQ(RunInLocale(CommaLocale(), run), expected);
 }
