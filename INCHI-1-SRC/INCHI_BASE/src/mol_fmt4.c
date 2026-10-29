@@ -948,6 +948,16 @@ int OrigAtData_WriteToSDfileHeaderAndCountThings(const ORIG_ATOM_DATA *inp_at_da
     return ret;
 }
 
+/* GH #100: "%10.4f" with '.' decimal point, e.g. "    1.5000" */
+#define LEN_COORD_STR 32
+static const char *Coord10_4(double x, char *buf)
+{
+    sprintf(buf, "%10.4f", x);
+    inchi_dot_decimal(buf);
+    return buf;
+}
+
+
 /****************************************************************************
  OrigAtData : Write To SDfile : Atoms Block
 ****************************************************************************/
@@ -965,6 +975,7 @@ int OrigAtData_WriteToSDfileAtomsBlock(const ORIG_ATOM_DATA *inp_at_data,
     int num_atoms = inp_at_data->num_inp_atoms;
     const inp_ATOM *at = inp_at_data->at;
     double x, y, z;
+    char bx[LEN_COORD_STR], by[LEN_COORD_STR], bz[LEN_COORD_STR];
 
     for (i = 0; i < num_atoms; i++)
     {
@@ -1068,8 +1079,9 @@ int OrigAtData_WriteToSDfileAtomsBlock(const ORIG_ATOM_DATA *inp_at_data,
         /*inchi_ios_eprint(fcb,"%10.4f%10.4f%10.4f %-3.3s%2d%3d  0     0  0  0  0  0  0\n",*/
         /*    (float)at[i].x, (float)(-at[i].y), fzero, at[i].elname, iso, charge);*/
         /*              xxxxxxyyyyyyzzzzzz aaa____ddcccsssnnnbbbvvvrrriiimmmeee  */
-        inchi_ios_print_nodisplay(fcb, "%10.4f%10.4f%10.4f %-3.3s%2d%3d  0     0%3d  0  0  0  0\n",
-                                  x, y, z, elname, (int)iso, (int)charge, valence /* at[i].special*/);
+        inchi_ios_print_nodisplay(fcb, "%s%s%s %-3.3s%2d%3d  0     0%3d  0  0  0  0\n",
+                                  Coord10_4(x, bx), Coord10_4(y, by), Coord10_4(z, bz),
+                                  elname, (int)iso, (int)charge, valence /* at[i].special*/);
 
         /* Reflect image against x-axis;                                    */
         /* when transforming MOLfile back to STDATA in mol_to_stdata(...),  */
@@ -1560,13 +1572,18 @@ int OrigAtData_WriteToSDfilePolymerData( const ORIG_ATOM_DATA *inp_at_data,
     {
         /* better than nothing */
         float xmin, xmax, ymin, ymax;
+        char b1[LEN_COORD_STR], b2[LEN_COORD_STR], b3[LEN_COORD_STR], b4[LEN_COORD_STR];
         xmin = ymin = -1.0 * ((float)j + 1.0); /* djb-rwth: cast operator added, 1->1.0 */
         xmax = ymax = +1.0 * ((float)j + 1.0); /* djb-rwth: cast operator added, 1->1.0 */
         u = inp_at_data->polymer->units[j];
         /* u->xbr1[0], x1, y1, x2, y2 u->xbr1[1], u->xbr1[2], u->xbr1[3] */
-        inchi_ios_print_nodisplay(fcb, "M  SDI %3d%3d%10.4f%10.4f%10.4f%10.4f\n", u->id, 4, xmin, ymin, xmin, ymax);
+        inchi_ios_print_nodisplay(fcb, "M  SDI %3d%3d%s%s%s%s\n", u->id, 4,
+                                  Coord10_4(xmin, b1), Coord10_4(ymin, b2),
+                                  Coord10_4(xmin, b3), Coord10_4(ymax, b4));
         /* u->xbr2[0], u->xbr2[1], u->xbr2[2], u->xbr2[3] */
-        inchi_ios_print_nodisplay(fcb, "M  SDI %3d%3d%10.4f%10.4f%10.4f%10.4f\n", u->id, 4, xmax, ymax, xmax, ymin);
+        inchi_ios_print_nodisplay(fcb, "M  SDI %3d%3d%s%s%s%s\n", u->id, 4,
+                                  Coord10_4(xmax, b1), Coord10_4(ymax, b2),
+                                  Coord10_4(xmax, b3), Coord10_4(ymin, b4));
     }
 
     return ret;
