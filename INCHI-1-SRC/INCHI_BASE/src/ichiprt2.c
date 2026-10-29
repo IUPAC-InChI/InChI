@@ -2569,31 +2569,112 @@ long inchi_strtol(const char *str, const char **p, int base)
 
 
 /****************************************************************************/
+/* GH #100: length of the leading C-locale float in str, e.g. "-1.5e3"; 0 if none */
+static size_t FloatTokenLen(const char *str)
+{
+    const char *p = str;
+    const char *q;
+    int digits = 0;
+
+    while (isspace((unsigned char) *p))
+    {
+        p++;
+    }
+    if (*p == '+' || *p == '-')
+    {
+        p++;
+    }
+    for (; isdigit((unsigned char) *p); p++)
+    {
+        digits++;
+    }
+    if (*p == '.')
+    {
+        for (p++; isdigit((unsigned char) *p); p++)
+        {
+            digits++;
+        }
+    }
+    if (!digits)
+    {
+        return 0;
+    }
+
+    /* exponent counts only when at least one digit follows: "1e" -> "1" */
+    if (*p == 'e' || *p == 'E')
+    {
+        q = p + 1;
+        if (*q == '+' || *q == '-')
+        {
+            q++;
+        }
+        if (isdigit((unsigned char) *q))
+        {
+            for (p = q; isdigit((unsigned char) *p); p++)
+            {
+            }
+        }
+    }
+    return p - str;
+}
+
+
+/****************************************************************************/
 double inchi_strtod(const char *str, const char **p)
 {
     /* GH #100: always read '.' as decimal point, whatever LC_NUMERIC says */
-    char buf[64];
-    char *end;
-    char dp = localeconv()->decimal_point[0];
-    size_t i;
+    const char *dp = localeconv()->decimal_point;
+    size_t dplen = strlen(dp);
+    char stack_buf[64];
+    char *buf = stack_buf;
+    size_t len, i, j;
     double val;
 
-    if (dp == '.')
+    if (!strcmp(dp, "."))
     {
         return strtod( str, (char **) p );
     }
 
-    /* copy, cut at a locale decimal point (e.g. "1,5" means 1 then ','), swap '.' */
-    for (i = 0; i < sizeof(buf) - 1 && str[i] && str[i] != dp; i++)
-    {
-        buf[i] = (str[i] == '.') ? dp : str[i];
-    }
-    buf[i] = '\0';
-
-    val = strtod( buf, &end );
+    /* the token is scanned here, so its end never depends on the locale */
+    len = FloatTokenLen(str);
     if (p)
     {
-        *p = str + (end - buf);
+        *p = str + len;
+    }
+    if (!len)
+    {
+        return 0.0;
+    }
+
+    /* copy the token with '.' spelled as the locale decimal point (may be multi-byte) */
+    if (len + dplen > sizeof(stack_buf))
+    {
+        buf = (char *) inchi_malloc(len + dplen);
+        if (!buf)
+        {
+            if (p)
+            {
+                *p = str;
+            }
+            return 0.0;
+        }
+    }
+    for (i = j = 0; i < len; i++)
+    {
+        if (str[i] != '.')
+        {
+            buf[j++] = str[i];
+            continue;
+        }
+        memcpy(buf + j, dp, dplen);
+        j += dplen;
+    }
+    buf[j] = '\0';
+
+    val = strtod( buf, NULL );
+    if (buf != stack_buf)
+    {
+        inchi_free(buf);
     }
     return val;
 }
@@ -2603,18 +2684,21 @@ double inchi_strtod(const char *str, const char **p)
 void inchi_dot_decimal(char *str)
 {
     /* GH #100: turn printf's locale decimal point into '.' */
-    char dp = localeconv()->decimal_point[0];
+    const char *dp = localeconv()->decimal_point;
+    size_t dplen = strlen(dp);
+    char *q;
 
-    if (dp == '.')
+    if (!strcmp(dp, "."))
     {
         return;
     }
-    for (; *str; str++)
+
+    /* a multi-byte point (e.g. U+066B) counts as one character in printf's
+       field width, so dropping its extra bytes keeps the intended width */
+    for (q = strstr(str, dp); q; q = strstr(q + 1, dp))
     {
-        if (*str == dp)
-        {
-            *str = '.';
-        }
+        *q = '.';
+        memmove(q + 1, q + dplen, strlen(q + dplen) + 1);
     }
 }
 
