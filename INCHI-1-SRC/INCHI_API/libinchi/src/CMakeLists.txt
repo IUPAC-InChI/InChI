@@ -143,7 +143,6 @@ target_sources(libinchi PRIVATE
 	${P_BASE}/runichi4.c
 	${P_BASE}/sha2.c
 	${P_BASE}/sha2.h
-	${P_BASE}/stb_sprintf.h
 	${P_BASE}/strutil.c
 	${P_BASE}/molecular_inorganics_data.c
 	${P_BASE}/strutil.h
