@@ -9,6 +9,7 @@
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
+#include "../../../INCHI-1-SRC/INCHI_BASE/src/util.h"
 }
 
 // GH #100: InChI/AuxInfo must not depend on the caller's LC_NUMERIC.
@@ -17,6 +18,9 @@ extern "C"
 // Comma-decimal locale names: glibc/macOS spellings, then MSVC ones
 static const char *const COMMA_LOCALES[] = {"de_DE.UTF-8", "de_DE.utf8", "de_DE", "de-DE",
                                             "German_Germany.1252"};
+
+// Locales whose decimal point is the multi-byte U+066B (Arabic decimal separator)
+static const char *const MULTIBYTE_LOCALES[] = {"ps_AF.UTF-8", "ps_AF.utf8", "ps_AF"};
 
 // 2,3-epoxybutane from the GH #100 report, with one wedge
 static const char EPOXYBUTANE_V2000[] =
@@ -74,12 +78,13 @@ static std::string RunInLocale(const char *name, const std::function<std::string
     return result;
 }
 
-// First name in COMMA_LOCALES this platform loads, or nullptr.
+// First name in names this platform loads, or nullptr.
 // Restores the previous locale.
-static const char *CommaLocale()
+template <size_t N>
+static const char *FirstLocale(const char *const (&names)[N])
 {
     std::string saved = setlocale(LC_ALL, nullptr);
-    for (const char *name : COMMA_LOCALES)
+    for (const char *name : names)
     {
         if (!setlocale(LC_ALL, name))
         {
@@ -89,6 +94,16 @@ static const char *CommaLocale()
         return name;
     }
     return nullptr;
+}
+
+static const char *CommaLocale()
+{
+    return FirstLocale(COMMA_LOCALES);
+}
+
+static const char *MultibyteLocale()
+{
+    return FirstLocale(MULTIBYTE_LOCALES);
 }
 
 #define SKIP_WITHOUT_COMMA_LOCALE()                                  \
@@ -245,4 +260,51 @@ TEST(test_github_100, polymer_bracket_coordinates_are_locale_independent)
 
     EXPECT_NE(expected.find("[5.042700,-8.014200,5.042700,-6.832800]"), std::string::npos) << expected;
     EXPECT_EQ(RunInLocale(CommaLocale(), run), expected);
+}
+
+// A numeric token longer than any fixed copy buffer must still parse completely.
+TEST(test_github_100, strtod_reads_long_token_in_comma_locale)
+{
+    SKIP_WITHOUT_COMMA_LOCALE();
+
+    std::string token = std::string(100, '0') + "1.5";
+    std::string text = token + "x";
+    double val = 0;
+    const char *end = nullptr;
+    RunInLocale(CommaLocale(), [&]
+    {
+        val = inchi_strtod(text.c_str(), &end);
+        return "";
+    });
+
+    EXPECT_EQ(val, 1.5);
+    EXPECT_EQ(end - text.c_str(), (long) token.size());
+}
+
+// Multi-byte decimal point: parse stops at the right byte, formatting keeps the field width.
+TEST(test_github_100, multibyte_decimal_point_is_handled)
+{
+    if (!MultibyteLocale())
+    {
+        GTEST_SKIP() << "no multi-byte decimal-point locale installed";
+    }
+
+    double val = 0;
+    const char *text = "1.5x";
+    const char *end = nullptr;
+    char buf[32] = "";
+    bool multibyte = false;
+    RunInLocale(MultibyteLocale(), [&]
+    {
+        multibyte = strlen(localeconv()->decimal_point) > 1;
+        val = inchi_strtod(text, &end);
+        snprintf(buf, sizeof(buf), "%10.4f%10.4f", 1.5, -2.25);
+        inchi_dot_decimal(buf);
+        return "";
+    });
+
+    ASSERT_TRUE(multibyte);
+    EXPECT_EQ(val, 1.5);
+    EXPECT_EQ(end - text, 3);
+    EXPECT_STREQ(buf, "    1.5000   -2.2500");
 }
