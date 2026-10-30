@@ -335,26 +335,9 @@ TEST(test_github_75, implicit_d_avoids_bond_directions)
     data.at[c + 1].x = xc + 0.75;
     data.at[c + 1].y = -1.5 * sin(pi / 3);
 
-    // Reference: D as explicit atom 1001 at 240 deg, opposite the wedge
-    ORIG_ATOM_DATA ref = data;
-    ref.num_inp_atoms = n + 1;
-    ref.at = (inp_ATOM *)calloc(n + 1, sizeof(inp_ATOM));
-    memcpy(ref.at, data.at, n * sizeof(inp_ATOM));
-    inp_ATOM *d = ref.at + n;
-    strcpy(d->elname, "H");
-    d->el_number = 1;
-    d->iso_atw_diff = 2;
-    d->x = xc - 0.75;
-    d->y = -1.5 * sin(pi / 3);
-    d->neighbor[0] = (AT_NUMB)c;
-    d->bond_type[0] = 1;
-    d->valence = d->chem_bonds_valence = 1;
-    ref.at[c].neighbor[3] = (AT_NUMB)n;
-    ref.at[c].bond_type[3] = 1;
-    ref.at[c].valence = ref.at[c].chem_bonds_valence = 4;
-    ref.at[c].num_H = 0;
-    std::string expected = InChIOf(Write(ref));
-    FreeChain(ref);
+    // Reference: the parity InChI reads for an implicit (non-isotopic) H
+    // here; the written D must give the same /t and /m
+    std::string expected = InChIOf(Write(data));
 
     // Implicit D written as explicit atom
     data.at[c].num_H = 0;
@@ -363,7 +346,9 @@ TEST(test_github_75, implicit_d_avoids_bond_directions)
     FreeChain(data);
 
     ASSERT_NE(expected.find("/t"), std::string::npos);
-    EXPECT_EQ(InChIOf(sdf), expected);
+    std::string inchi = InChIOf(sdf);
+    EXPECT_EQ(inchi.substr(0, inchi.rfind("/i")), expected);
+    EXPECT_EQ(inchi.substr(inchi.rfind("/i") + 6), "D") << inchi;
 
     // D direction differs from every bond direction of 501 (0 is unused)
     size_t pos = sdf.find("M  V30 1001 H ");
@@ -375,4 +360,228 @@ TEST(test_github_75, implicit_d_avoids_bond_directions)
     {
         EXPECT_GT(fabs(deg - bond), 1.0) << "D at " << deg << " deg";
     }
+}
+
+// Make atom j of a MakeChain chain a terminal neighbour of atom i, at
+// angle deg from i, bond length 1.5. j's chain neighbours are cut off.
+static void Attach(ORIG_ATOM_DATA &data, int i, int j, double deg, int stereo = 0)
+{
+    const double pi = acos(-1.0);
+    inp_ATOM *a = data.at + i, *b = data.at + j;
+
+    for (int k = 0; k < b->valence; k++)
+    {
+        inp_ATOM *c = data.at + b->neighbor[k];
+        for (int m = 0; m < c->valence; m++)
+        {
+            if (c->neighbor[m] == j)
+            {
+                c->neighbor[m] = c->neighbor[--c->valence];
+                c->chem_bonds_valence = c->valence;
+                c->num_H++;
+            }
+        }
+    }
+    b->x = a->x + 1.5 * cos(deg * pi / 180);
+    b->y = a->y + 1.5 * sin(deg * pi / 180);
+    b->neighbor[0] = (AT_NUMB)i;
+    b->bond_type[0] = 1;
+    b->bond_stereo[0] = (S_CHAR)-stereo;
+    b->valence = b->chem_bonds_valence = 1;
+    b->num_H = 3;
+    a->neighbor[a->valence] = (AT_NUMB)j;
+    a->bond_type[a->valence] = 1;
+    a->bond_stereo[a->valence++] = (S_CHAR)stereo;
+    a->chem_bonds_valence = a->valence;
+    a->num_H = (S_CHAR)(4 - a->valence);
+}
+
+// Direction (deg) of explicit atom num from atom i in sdf.
+static double DirectionOf(const std::string &sdf, int num, const inp_ATOM &i)
+{
+    char key[32];
+    sprintf(key, "M  V30 %d H ", num);
+    size_t pos = sdf.find(key);
+    EXPECT_NE(pos, std::string::npos);
+    double x, y;
+    EXPECT_EQ(sscanf(sdf.c_str() + pos + strlen(key), "%lf %lf", &x, &y), 2);
+
+    return atan2(y - i.y, x - i.x) * 180 / acos(-1.0);
+}
+
+TEST(test_github_75, implicit_d_off_centroid_direction_keeps_parity)
+{
+    // Atom 1 is CHD(chain)(CH3)(OH): neighbours at 0 (chain), 90 (methyl
+    // 1000, wedged) and 225 deg (O 999). Opposite their centroid is 225
+    // deg, a bond direction.
+    const int n = V2000_MAX_COUNT + 1;
+    ORIG_ATOM_DATA data = MakeChain(n);
+    Attach(data, 0, n - 1, 90, STEREO_SNGL_UP);
+    Attach(data, 0, n - 2, 225);
+    strcpy(data.at[n - 2].elname, "O");
+    data.at[n - 2].el_number = 8;
+    data.at[n - 2].num_H = 1;
+    data.at[0].num_H = 1;
+
+    std::string expected = InChIOf(Write(data));
+    data.at[0].num_H = 0;
+    data.at[0].num_iso_H[1] = 1;
+    std::string sdf = Write(data);
+
+    ASSERT_NE(expected.find("/t"), std::string::npos);
+    std::string inchi = InChIOf(sdf);
+    EXPECT_EQ(inchi.substr(0, inchi.rfind("/i")), expected);
+    EXPECT_EQ(inchi.substr(inchi.rfind("/i") + 5), "D") << inchi;
+    double deg = DirectionOf(sdf, n + 1, data.at[0]);
+    for (double bond : {0.0, 90.0, 225.0, -135.0})
+    {
+        EXPECT_GT(fabs(deg - bond), 1.0) << "D at " << deg << " deg";
+    }
+    FreeChain(data);
+}
+
+TEST(test_github_75, implicit_d_avoids_bonds_at_symmetric_centre)
+{
+    // Atom 1 has neighbours at 0 (chain), 45, 180 and 225 deg: their
+    // centroid is atom 1 itself, and 45 deg after neighbour 0 is a bond
+    const int n = V2000_MAX_COUNT + 1;
+    ORIG_ATOM_DATA data = MakeChain(n);
+    Attach(data, 0, n - 1, 45);
+    Attach(data, 0, n - 2, 180);
+    Attach(data, 0, n - 3, 225);
+    data.at[0].num_H = 0;
+    data.at[0].num_iso_H[1] = 1;
+    std::string sdf = Write(data);
+
+    double deg = DirectionOf(sdf, n + 1, data.at[0]);
+    for (double bond : {0.0, 45.0, 180.0, -180.0, -135.0})
+    {
+        EXPECT_GT(fabs(deg - bond), 1.0) << "D at " << deg << " deg";
+    }
+    FreeChain(data);
+}
+
+TEST(test_github_75, two_implicit_d_get_distinct_directions)
+{
+    // Atom 501 is CD2 in a zigzag chain
+    const int c = 500;
+    const int n = V2000_MAX_COUNT + 1;
+    ORIG_ATOM_DATA data = MakeChain(n);
+    for (int i = 0; i < n; i++)
+    {
+        data.at[i].y = (i % 2) * 0.75;
+    }
+    data.at[c].num_H = 0;
+    data.at[c].num_iso_H[1] = 2;
+    std::string sdf = Write(data);
+
+    double d1 = DirectionOf(sdf, n + 1, data.at[c]);
+    double d2 = DirectionOf(sdf, n + 2, data.at[c]);
+    EXPECT_GT(fabs(d1 - d2), 30.0) << d1 << " " << d2;
+    for (double deg : {d1, d2})
+    {
+        for (double bond : {26.6, 153.4})
+        {
+            EXPECT_GT(fabs(deg - bond), 1.0) << "D at " << deg << " deg";
+        }
+    }
+    FreeChain(data);
+}
+
+TEST(test_github_75, no_bond_block_without_bonds)
+{
+    // 1000 separate CH4: the reader skips the bond block when COUNTS has
+    // no bonds, so none may be written
+    const int n = V2000_MAX_COUNT + 1;
+    ORIG_ATOM_DATA data = MakeChain(n);
+    for (int i = 0; i < n; i++)
+    {
+        data.at[i].valence = data.at[i].chem_bonds_valence = 0;
+        data.at[i].num_H = 4;
+    }
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    EXPECT_EQ(Line(sdf, 5), "M  V30 COUNTS 1000 0 0 0 0");
+    EXPECT_EQ(sdf.find("BOND"), std::string::npos);
+    EXPECT_NE(sdf.find("M  V30 END ATOM\nM  V30 END CTAB\nM  END\n"), std::string::npos);
+    EXPECT_EQ(InChIOf(sdf).substr(0, 23), "InChI=1S/1000CH4/h1000*");
+}
+
+TEST(test_github_75, polymer_sgroup_includes_explicit_d)
+{
+    // As v3000_writes_polymer_sgroup, with atom 2 CHD: its D (atom 1001)
+    // is part of the repeat unit
+    int alist[] = {2, 3};
+    int blist[] = {1, 2, 3, 4};
+    OAD_PolymerUnit unit{};
+    unit.id = 1;
+    unit.label = 1;
+    unit.type = MOL_FMT_M_STY_SRU;
+    unit.na = 2;
+    unit.nb = 2;
+    unit.alist = alist;
+    unit.blist = blist;
+    OAD_PolymerUnit *units[] = {&unit};
+    OAD_Polymer polymer{};
+    polymer.units = units;
+    polymer.n = 1;
+
+    ORIG_ATOM_DATA data = MakeChain(V2000_MAX_COUNT + 1);
+    data.at[1].num_H = 1;
+    data.at[1].num_iso_H[1] = 1;
+    data.polymer = &polymer;
+    data.valid_polymer = 1;
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    EXPECT_NE(sdf.find("M  V30 1000 1 2 1001\n"), std::string::npos);
+    EXPECT_NE(sdf.find("M  V30 1 SRU 1 ATOMS=(3 2 3 1001) XBONDS=(2 1 3) -\n"), std::string::npos);
+}
+
+TEST(test_github_75, long_sgroup_label_is_split_over_lines)
+{
+    int alist[] = {2, 3};
+    int blist[] = {1, 2, 3, 4};
+    OAD_PolymerUnit unit{};
+    unit.id = 1;
+    unit.label = 1;
+    unit.type = MOL_FMT_M_STY_SRU;
+    unit.na = 2;
+    unit.nb = 2;
+    unit.alist = alist;
+    unit.blist = blist;
+    std::string label(sizeof(unit.smt) - 1, 'x');
+    strcpy(unit.smt, label.c_str());
+    OAD_PolymerUnit *units[] = {&unit};
+    OAD_Polymer polymer{};
+    polymer.units = units;
+    polymer.n = 1;
+
+    ORIG_ATOM_DATA data = MakeChain(V2000_MAX_COUNT + 1);
+    data.polymer = &polymer;
+    data.valid_polymer = 1;
+    std::string sdf = Write(data);
+    FreeChain(data);
+
+    // No line over 80 chars; joining continuation lines as the reader does
+    // gives the label unchanged
+    std::string joined;
+    for (size_t pos = 0, end; pos < sdf.size(); pos = end + 1)
+    {
+        end = sdf.find('\n', pos);
+        std::string line = sdf.substr(pos, end - pos);
+        EXPECT_LE(line.size(), 80u) << line;
+        if (line.compare(0, 7, "M  V30 ") == 0)
+        {
+            line = line.substr(7);
+            if (!line.empty() && line.back() == '-')
+            {
+                joined += line.substr(0, line.size() - 1);
+                continue;
+            }
+            joined += line + "\n";
+        }
+    }
+    EXPECT_NE(joined.find(" LABEL=" + label + "\n"), std::string::npos);
 }
