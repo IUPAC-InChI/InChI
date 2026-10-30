@@ -1396,12 +1396,13 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
                                 int err,
                                 char *pStrErr )
 {
+    enum { SG_NUMS_SIZE = 8, SG_LIST_SIZE = 15 };
     S_SHORT  num_entries;
     S_SHORT  num_atoms = ctab->n_atoms;
     S_SHORT  num_bonds = ctab->n_bonds;
     int j, index = -1, ret;
     char  stmp[4], stmplong[81];
-    S_SHORT sg_nums[8], sg_num = -1, sg_atoms[15], sg_bonds[15], tmp;
+    S_SHORT sg_nums[SG_NUMS_SIZE], sg_num = -1, sg_atoms[SG_LIST_SIZE], sg_bonds[SG_LIST_SIZE], tmp;
     int q, fail = 0, len;
     /* djb-rwth: removing redundant variables */
 #if ( DEBUG_POLYMERS == 1 )
@@ -1424,7 +1425,7 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     */
     if ( !strcmp( szType, "STY" )
          && 0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p )
-         && 1 <= num_entries && num_entries <= 8 )
+         && 1 <= num_entries && num_entries <= SG_NUMS_SIZE )
     {
         for (j = 0; j < num_entries; j++)
         {
@@ -1505,7 +1506,7 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     */
     else if (!strcmp( szType, "SST" ) &&
               0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ) &&
-              1 <= num_entries && num_entries <= 8)
+              1 <= num_entries && num_entries <= SG_NUMS_SIZE)
     {
         for (j = 0; j < num_entries; j++)
         {
@@ -1555,7 +1556,7 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     /*    SLB - Sgroup Labels */
     else if (!strcmp( szType, "SLB" ) &&
               0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ) &&
-              1 <= num_entries && num_entries <= 8)
+              1 <= num_entries && num_entries <= SG_NUMS_SIZE)
     {
         for (j = 0; j < num_entries; j++)
         {
@@ -1588,7 +1589,7 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     */
     else if (!strcmp( szType, "SCN" ) &&
               0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ) &&
-              1 <= num_entries && num_entries <= 8)
+              1 <= num_entries && num_entries <= SG_NUMS_SIZE)
     {
         for (j = 0; j < num_entries; j++)
         {
@@ -1635,7 +1636,8 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     else if (!strcmp( szType, "SAL" ))
     {
         if (0 < MolfileReadField( &sg_num, 4, MOL_FMT_SHORT_INT_DATA, &p ) &&
-              0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ))
+              0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ) &&
+              1 <= num_entries && num_entries <= SG_LIST_SIZE)
         {
             index = MolFmtSgroups_GetIndexBySgroupId( sg_num, &( ctab->sgroups ) );
             if (-1 == index)
@@ -1680,7 +1682,8 @@ int MolfileReadSgroupOfPolymer( MOL_FMT_CTAB* ctab,
     else if (!strcmp( szType, "SBL" ))
     {
         if (0 < MolfileReadField( &sg_num, 4, MOL_FMT_SHORT_INT_DATA, &p ) &&
-            0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ))
+            0 < MolfileReadField( &num_entries, 3, MOL_FMT_SHORT_INT_DATA, &p ) &&
+            1 <= num_entries && num_entries <= SG_LIST_SIZE)
         {
             index = MolFmtSgroups_GetIndexBySgroupId( sg_num, &( ctab->sgroups ) );
             if (-1 == index)
