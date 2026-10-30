@@ -2303,6 +2303,12 @@ int bIsAmmoniumSalt(inp_ATOM *at,
             if (at[neigh].el_number == EL_NUMBER_H && at[neigh].valence == 1 &&
                 !at[neigh].charge && !at[neigh].radical)
             {
+                /* reject H isotopes beyond T: they would index past num_explicit_H (GH #289) */
+                if (at[neigh].iso_atw_diff < 0 || at[neigh].iso_atw_diff > NUM_H_ISOTOPES)
+                {
+                    bDisconnect = 0;
+                    break;
+                }
                 num_H++; /* at this point at[].num_H does not include explicit H count */
                 num_non_iso_H += (0 == at[neigh].iso_atw_diff);
                 num_explicit_H[at[neigh].iso_atw_diff]++; /* explicit H on N */
