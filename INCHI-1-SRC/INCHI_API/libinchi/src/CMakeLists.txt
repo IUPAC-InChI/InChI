@@ -21,8 +21,8 @@ target_compile_options(libinchi_compiler_flags INTERFACE
 	# "$<$<CONFIG:Debug>:<${gcc_like_cxx}:$<BUILD_INTERFACE:-g;-O0;-fsanitize=address;-c;-fno-strict-aliasing;-Wno-all>>"
 	# "$<$<CONFIG:Debug>:<${msvc_cxx}:$<BUILD_INTERFACE:-W3;-MT;-g;-O0;-fsanitize=address>>"
 
-    "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANG_AND_ID:C,ARMClang,AppleClang,Clang,GNU,LCC>>:-g;-O1;-c;-fno-strict-aliasing;-Wno-all>"
-    "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANG_AND_ID:C,MSVC>>:-W3;-MT;-O2>"
+    "$<$<AND:$<NOT:$<CONFIG:Debug>>,$<COMPILE_LANG_AND_ID:C,ARMClang,AppleClang,Clang,GNU,LCC>>:-g;-O2;-c;-fno-strict-aliasing;-Wno-all>"
+    "$<$<AND:$<NOT:$<CONFIG:Debug>>,$<COMPILE_LANG_AND_ID:C,MSVC>>:-W3;-MT;-O2>"
     "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:C,ARMClang,AppleClang,Clang,GNU,LCC>>:-g;-O0;-fsanitize=address;-c;-fno-strict-aliasing;-Wno-all>"
     "$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANG_AND_ID:C,MSVC>>:-W3;-MT;-g;-O0>"
 )
