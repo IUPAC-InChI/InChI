@@ -260,3 +260,136 @@ TEST(test_aromaticity, replace_arom_bonds_resolves_when_reference_indexing_diffe
     FreeInpAtom(&at);
     FreeInpAtom(&at2);
 }
+
+// ---- huckel_pi_contribution ------------------------------------------------
+
+TEST(test_aromaticity, huckel_pi_contribution_cation_donates_zero)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';
+    a.charge = 1;               // tropylium / cyclopropenyl carbon
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 0);
+}
+
+TEST(test_aromaticity, huckel_pi_contribution_anion_donates_two)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';
+    a.charge = -1;              // cyclopentadienyl carbanion
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 2);
+}
+
+TEST(test_aromaticity, huckel_pi_contribution_radical_donates_one)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';
+    a.charge = 0;
+    a.radical = RADICAL_DOUBLET; // cyclopentadienyl radical center (SOMO)
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 1);
+}
+
+TEST(test_aromaticity, huckel_pi_contribution_ordinary_carbon_donates_one)
+{
+    inp_ATOM a{};
+    a.elname[0] = 'C';           // neutral non-radical: one ring double bond
+    EXPECT_EQ(huckel_pi_contribution(&a, 0), 1);
+}
+
+// ---- is_aromatic_electron_source -------------------------------------------
+
+// Cyclopentadienyl-anion carbon: 2 ring neighbors, -1, spare valence, no H.
+TEST(test_aromaticity, electron_source_true_for_anion_ring_carbon)
+{
+    inp_ATOM a[2]{};
+    a[0].el_number = EL_NUMBER_C;
+    a[0].valence = 2;                 // two ring neighbors
+    a[0].neighbor[0] = 1; a[0].neighbor[1] = 1;
+    a[0].chem_bonds_valence = 3;      // > valence: spare from the aromatic system
+    a[0].num_H = 0;
+    a[0].charge = -1;
+    a[1].el_number = EL_NUMBER_C;     // a neighbor (non-metal)
+    EXPECT_EQ(is_aromatic_electron_source(a, 0), 1);
+}
+
+// Ordinary aromatic CH (pyridine-like ring carbon): neutral, has H -> not a source.
+TEST(test_aromaticity, electron_source_false_for_neutral_CH)
+{
+    inp_ATOM a[2]{};
+    a[0].el_number = EL_NUMBER_C;
+    a[0].valence = 2;
+    a[0].neighbor[0] = 1; a[0].neighbor[1] = 1;
+    a[0].chem_bonds_valence = 3;
+    a[0].num_H = 1;                   // implicit H present
+    a[0].charge = 0;
+    a[1].el_number = EL_NUMBER_C;
+    EXPECT_EQ(is_aromatic_electron_source(a, 0), 0);
+}
+
+// Metal-bonded Cp-anion carbon (connected ferrocene): 3 neighbors incl. Fe.
+// Ring coordination = 3 - 1 metal = 2 -> still a source.
+TEST(test_aromaticity, electron_source_true_for_metal_bonded_anion_carbon)
+{
+    const U_CHAR EL_NUMBER_FE = 26; /* iron atomic number; no EL_NUMBER_FE in util.h */
+    inp_ATOM a[4]{};
+    a[0].el_number = EL_NUMBER_C;
+    a[0].valence = 3;                 // 2 ring + 1 metal
+    a[0].neighbor[0] = 1;             // ring C
+    a[0].neighbor[1] = 2;             // ring C
+    a[0].neighbor[2] = 3;             // Fe metal neighbor
+    a[0].charge = -1;
+    a[0].num_H = 0;
+    a[0].chem_bonds_valence = 4;      // > valence
+    a[1].el_number = EL_NUMBER_C;
+    a[2].el_number = EL_NUMBER_C;
+    a[3].el_number = EL_NUMBER_FE;    // Fe (atomic number 26) -- metal neighbor
+    EXPECT_EQ(is_aromatic_electron_source(a, 0), 1);
+}
+
+// Doublet radical carbon (Cp radical center): neutral radical, spare valence.
+TEST(test_aromaticity, electron_source_true_for_radical_carbon)
+{
+    inp_ATOM a[2]{};
+    a[0].el_number = EL_NUMBER_C;
+    a[0].valence = 2;
+    a[0].neighbor[0] = 1; a[0].neighbor[1] = 1;
+    a[0].chem_bonds_valence = 3;
+    a[0].num_H = 0;
+    a[0].charge = 0;
+    a[0].radical = RADICAL_DOUBLET;
+    a[1].el_number = EL_NUMBER_C;
+    EXPECT_EQ(is_aromatic_electron_source(a, 0), 1);
+}
+
+// ---- relax_aromatic_electron_sources ---------------------------------------
+
+TEST(test_aromaticity, relax_moves_valence_unit_to_H_on_source)
+{
+    inp_ATOM a[2]{};
+    a[0].el_number = EL_NUMBER_C;
+    a[0].valence = 2;
+    a[0].neighbor[0] = 1; a[0].neighbor[1] = 1;
+    a[0].chem_bonds_valence = 3;
+    a[0].num_H = 0;
+    a[0].charge = -1;
+    a[1].el_number = EL_NUMBER_C;
+
+    EXPECT_EQ(relax_aromatic_electron_sources(a, 2), 1);
+    EXPECT_EQ(a[0].chem_bonds_valence, 2); // decremented
+    EXPECT_EQ(a[0].num_H, 1);              // incremented
+    EXPECT_EQ(a[0].charge, -1);            // charge untouched
+}
+
+TEST(test_aromaticity, relax_leaves_non_sources_untouched)
+{
+    inp_ATOM a[2]{};
+    a[0].el_number = EL_NUMBER_C;          // ordinary CH: has H -> not a source
+    a[0].valence = 2;
+    a[0].neighbor[0] = 1; a[0].neighbor[1] = 1;
+    a[0].chem_bonds_valence = 3;
+    a[0].num_H = 1;
+    a[1].el_number = EL_NUMBER_C;
+
+    EXPECT_EQ(relax_aromatic_electron_sources(a, 2), 0);
+    EXPECT_EQ(a[0].chem_bonds_valence, 3); // unchanged
+    EXPECT_EQ(a[0].num_H, 1);
+}
