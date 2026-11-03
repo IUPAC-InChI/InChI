@@ -4510,9 +4510,9 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     ConvertCoordinativeBondsToSingle(at, num_at);
 
     /*
-     * Re-perceive ring systems after the charge-separated bond disconnections,
-     * because those graph changes may alter the ring membership used by the
-     * main Molecular Inorganics decision-tree evaluation.
+     * Perceive ring systems for the decision-tree chelate check, after the
+     * charge-separated bond disconnections, because those graph changes may
+     * alter the ring membership.
     */
     MarkRingSystemsInp(at, num_at, 0);
 
