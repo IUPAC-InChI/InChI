@@ -665,3 +665,71 @@ M  END
 
     ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/2Na.H2O4S/c;;1-5(2,3)4/h;;(H2,1,2,3,4)/q2*+1;/p-2", 1);
 }
+
+/* Charged metal-ligand bonds of a metal outside Groups 1 and 2 depict oxidation
+ * states, not ionic interactions, and must stay connected (issue #304). */
+TEST(test_molecularInorganics, test_MI_Issue304_H2PtCl6_SID71150)
+{
+    const char* molblock = R"(
+  -OEChem-11032606492D
+
+  7  6  0     0  0  0  0  0  0999 V2000
+   -3.5492   -2.2500    0.0000 Pt  0  0  0  0  0  0  0  0  0  0  0  0
+   -2.2501   -3.0000    0.0000 Cl  0  5  0  0  0  0  0  0  0  0  0  0
+   -4.8482   -1.5000    0.0000 Cl  0  5  0  0  0  0  0  0  0  0  0  0
+   -3.5492   -0.7500    0.0000 Cl  0  5  0  0  0  0  0  0  0  0  0  0
+   -3.5492   -3.7500    0.0000 Cl  0  5  0  0  0  0  0  0  0  0  0  0
+   -4.8482   -3.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+   -2.2501   -1.5000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  1  0  0  0
+  1  3  1  6  0  0  0
+  1  4  1  0  0  0  0
+  1  5  1  0  0  0  0
+  1  6  1  1  0  0  0
+  1  7  1  6  0  0  0
+M  CHG  5   1   4   2  -1   3  -1   4  -1   5  -1
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/Cl6Pt/c1-7(2,3,4,5)6", 0);
+}
+
+TEST(test_molecularInorganics, test_MI_Issue304_AlH4_charged)
+{
+    const char* molblock = R"(
+  manual
+
+  5  4  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Al  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    0.0000    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.0000    0.0000    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    1.0000    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000   -1.0000    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0
+  1  3  1  0
+  1  4  1  0
+  1  5  1  0
+M  CHG  5   1   3   2  -1   3  -1   4  -1   5  -1
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/AlH4/h1H4/q-1", 0);
+}
+
+TEST(test_molecularInorganics, test_MI_Issue304_ZnCl2_charged)
+{
+    const char* molblock = R"(
+  manual
+
+  3  2  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Zn  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+    2.0000    1.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0
+  1  3  1  0
+M  CHG  3   1   2   2  -1   3  -1
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/Cl2Zn/c1-3-2", 0);
+}
