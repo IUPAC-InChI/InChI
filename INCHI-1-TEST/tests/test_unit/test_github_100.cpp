@@ -117,7 +117,7 @@ static const char *MultibyteLocale()
 // glibc can install any locale (see INCHI-1-TEST/install_build_dependencies.sh),
 // so a missing one is a setup error there. musl and others lack locale support.
 #ifdef __GLIBC__
-#define MISSING_LOCALE(msg) FAIL() << msg << ", run INCHI-1-TEST/install_build_dependencies.sh"
+#define MISSING_LOCALE(msg) FAIL() << msg
 #else
 #define MISSING_LOCALE(msg) GTEST_SKIP() << msg
 #endif
