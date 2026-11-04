@@ -1314,7 +1314,8 @@ int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
                                                  &nNumAddLines,
                                                  &num_bonds);
 
-    if (IntArray_Alloc(&written_bond_ends, num_bonds ? num_bonds : 255))
+    /* Two atom indices are stored per bond */
+    if (IntArray_Alloc(&written_bond_ends, num_bonds ? 2 * num_bonds : 255))
     {
         ret = _IS_ERROR;
         goto exit_function;
@@ -1323,8 +1324,12 @@ int OrigAtData_WriteToSDfile(const ORIG_ATOM_DATA *inp_at_data,
     OrigAtData_WriteToSDfileAtomsBlock(inp_at_data, fcb, name, comment,
                                        bAtomsDT, szLabel, szValue);
 
-    OrigAtData_WriteToSDfileBondsBlock(inp_at_data, fcb, name, comment,
-                                       szLabel, szValue, &written_bond_ends);
+    if (OrigAtData_WriteToSDfileBondsBlock(inp_at_data, fcb, name, comment,
+                                           szLabel, szValue, &written_bond_ends))
+    {
+        ret = _IS_ERROR;
+        goto exit_function;
+    }
 
     if (nNumAddLines)
     {
@@ -1678,8 +1683,11 @@ int OrigAtData_WriteToSDfileBondsBlock( const ORIG_ATOM_DATA *inp_at_data,
                                               a1, a2, (unsigned)(at[i].bond_type[j]));
                 }
 
-                IntArray_Append(written_bond_ends, a1);
-                IntArray_Append(written_bond_ends, a2);
+                if (IntArray_Append(written_bond_ends, a1) ||
+                    IntArray_Append(written_bond_ends, a2))
+                {
+                    return _IS_ERROR;
+                }
             }
         }
     }
