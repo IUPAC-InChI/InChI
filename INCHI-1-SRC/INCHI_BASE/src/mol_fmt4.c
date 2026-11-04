@@ -1094,7 +1094,8 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
     {
         return _IS_ERROR;
     }
-    if (IntArray_Alloc(&written_bond_ends, num_bonds ? num_bonds : 255))
+    /* Two atom indices are stored per bond */
+    if (IntArray_Alloc(&written_bond_ends, num_bonds ? 2 * num_bonds : 255))
     {
         inchi_free(iso_h_first);
         return _IS_ERROR;
@@ -1235,8 +1236,13 @@ static int WriteToSDfileV3000(const ORIG_ATOM_DATA *inp_at_data,
             }
             inchi_ios_print_nodisplay(fcb, "\n");
 
-            IntArray_Append(&written_bond_ends, a1);
-            IntArray_Append(&written_bond_ends, a2);
+            if (IntArray_Append(&written_bond_ends, a1) ||
+                IntArray_Append(&written_bond_ends, a2))
+            {
+                IntArray_Free(&written_bond_ends);
+                inchi_free(iso_h_first);
+                return _IS_ERROR;
+            }
         }
     }
 
