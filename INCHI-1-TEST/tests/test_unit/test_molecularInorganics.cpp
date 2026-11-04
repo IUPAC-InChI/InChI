@@ -916,3 +916,42 @@ M  END
 
     ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/C12H24O.4CH3O.Ti/c1-2-3-4-5-6-7-9-12-10-8-11-13-12;4*1-2;/h12H,2-11H2,1H3;4*1H3;/q;4*-1;+4", 1);
 }
+
+/* Issue #305: the "all metals terminal" exception of the metal-link rule is
+ * checked per fragment. Ag-F(+)-Ag has only terminal metals, so its Ag-F bonds
+ * are cut as when it is alone, although the separate Ti(OMe)4 has a
+ * non-terminal metal. */
+TEST(test_molecularInorganics, test_MI_Issue305_TerminalAg2F_TiOMe4)
+{
+    const char* molblock = R"(
+  manual
+
+ 12 10  0  0  0  0  0  0  0  0999 V2000
+    0.0000    5.0000    0.0000 Ag  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    5.0000    0.0000 F   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0000    5.0000    0.0000 Ag  0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.0000 Ti  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    3.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    3.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    4.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+    4.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  2  3  1  0  0  0  0
+  4  5  1  0  0  0  0
+  5  6  1  0  0  0  0
+  4  7  1  0  0  0  0
+  7  8  1  0  0  0  0
+  4  9  1  0  0  0  0
+  9 10  1  0  0  0  0
+  4 11  1  0  0  0  0
+ 11 12  1  0  0  0  0
+M  CHG  1   2   1
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/4CH3O.2Ag.FH.Ti/c4*1-2;;;;/h4*1H3;;;1H;/q4*-1;2*+1;;+4/p-1", 1);
+}
