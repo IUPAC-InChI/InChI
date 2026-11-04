@@ -4302,6 +4302,79 @@ static int MolecularInorganicsIsGroup1or2Metal(int el_number)
 }
 
 /*****************************************************************************
+ * @brief Label every atom with its fragment (connected component) and
+ * perceive ring systems in every fragment.
+ *
+ * MarkRingSystemsInp() walks only the fragment that contains its start atom
+ * and numbers ring systems from 1 on every call. It is therefore called once
+ * per fragment, and the ring-system IDs of each fragment are shifted so that
+ * they stay unique across the input (issue #305). nBlockSystem is not
+ * shifted; Molecular Inorganics does not read it.
+ *
+ * @param at        input atom array
+ * @param num_at    number of atoms
+ * @param fragment  output: fragment index of each atom (num_at elements)
+ * @param stack     work array (num_at elements)
+ *
+ * @return Number of fragments, or a negative value on error.
+ *****************************************************************************/
+static int MolecularInorganicsMarkFragments(inp_ATOM* at, int num_at, int* fragment, int* stack)
+{
+    int start, top, cur, n, nb, ret;
+    int num_fragments = 0;
+    int ring_offset = 0;
+
+    UnMarkRingSystemsInp(at, num_at);
+
+    for (start = 0; start < num_at; start++)
+    {
+        fragment[start] = -1;
+    }
+
+    for (start = 0; start < num_at; start++)
+    {
+        if (fragment[start] >= 0)
+        {
+            continue;
+        }
+
+        ret = MarkRingSystemsInp(at, num_at, start);
+        if (ret < 0)
+        {
+            return ret;
+        }
+
+        top = 0;
+        stack[top++] = start;
+        fragment[start] = num_fragments;
+
+        while (top)
+        {
+            cur = stack[--top];
+            at[cur].nRingSystem += (AT_NUMB)ring_offset;
+
+            for (n = 0; n < at[cur].valence; n++)
+            {
+                nb = at[cur].neighbor[n];
+
+                if (nb < 0 || nb >= num_at || fragment[nb] >= 0)
+                {
+                    continue;
+                }
+
+                fragment[nb] = num_fragments;
+                stack[top++] = nb;
+            }
+        }
+
+        ring_offset += ret;
+        num_fragments++;
+    }
+
+    return num_fragments;
+}
+
+/*****************************************************************************
  * @nnuk
  * @brief Count C, N, and O atoms in the metal's perceived ring system.
  *
@@ -4424,15 +4497,19 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     int neigh_pos;
     int neighbor_idx;
     int num_metals;
-    int all_metal_atoms_terminal;
     int has_single_bond_to_metal;
-    int keep_all_metal_bonds;
+    int fragment_idx;
 
     /* memory allocation */
     S_CHAR* dfs_visited = (S_CHAR*)inchi_calloc(num_at, sizeof(S_CHAR));
     int* dfs_stack = (int*)inchi_malloc(num_at * sizeof(int));
+    /* Per-fragment state: fragment index of each atom, whether the fragment
+     * keeps its metal bonds, and whether it contains a non-terminal metal. */
+    int* fragment = (int*)inchi_malloc(num_at * sizeof(int));
+    S_CHAR* keep_fragment = (S_CHAR*)inchi_calloc(num_at, sizeof(S_CHAR));
+    S_CHAR* fragment_has_nonterminal_metal = (S_CHAR*)inchi_calloc(num_at, sizeof(S_CHAR));
 
-    if (!dfs_visited || !dfs_stack)
+    if (!dfs_visited || !dfs_stack || !fragment || !keep_fragment || !fragment_has_nonterminal_metal)
     {
         ret_code = -1;
         goto cleanup;
@@ -4510,15 +4587,19 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     ConvertCoordinativeBondsToSingle(at, num_at);
 
     /*
-     * Perceive ring systems for the decision-tree chelate check, after the
-     * charge-separated bond disconnections, because those graph changes may
-     * alter the ring membership.
+     * Find the fragments and perceive ring systems in every fragment for the
+     * decision-tree chelate check, after the charge-separated bond
+     * disconnections, because those graph changes may alter both.
     */
-    MarkRingSystemsInp(at, num_at, 0);
+    if (MolecularInorganicsMarkFragments(at, num_at, fragment, dfs_stack) < 0)
+    {
+        ret_code = -1;
+        goto cleanup;
+    }
 
-    /* Compute the number of metals and whether every metal is terminal. */
+    /* Compute the number of metals and, per fragment, whether every metal in
+     * it is terminal. */
     num_metals = 0;
-    all_metal_atoms_terminal = 1;
 
     for (i = 0; i < num_at; i++)
     {
@@ -4528,7 +4609,7 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
 
             if (at[i].valence != 1 || at[i].bond_type[0] != BOND_TYPE_SINGLE)
             {
-                all_metal_atoms_terminal = 0;
+                fragment_has_nonterminal_metal[fragment[i]] = 1;
             }
         }
     }
@@ -4564,16 +4645,22 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     }
 
     /* Evaluate the complete decision tree before changing any remaining
-     * metal-ligand bond. If one bond must be retained, all remaining bonds to
-     * metal atoms are retained. */
-    keep_all_metal_bonds = 0;
-
-    for (i = 0; i < num_at && !keep_all_metal_bonds; i++)
+     * metal-ligand bond. Each fragment is decided on its own: if one bond in a
+     * fragment must be retained, all metal bonds in that fragment are
+     * retained, and other fragments are not affected (issue #305). */
+    for (i = 0; i < num_at; i++)
     {
         int ring_cno_count = 0;
         int current_metal_is_group_1_or_2;
 
         if (!is_el_a_metal(at[i].el_number))
+        {
+            continue;
+        }
+
+        fragment_idx = fragment[i];
+
+        if (keep_fragment[fragment_idx])
         {
             continue;
         }
@@ -4606,13 +4693,13 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
             /* The actual bond must be a non-stereogenic single bond. */
             if (at[i].bond_type[n] != BOND_TYPE_SINGLE || bond_has_stereo)
             {
-                keep_all_metal_bonds = 1;
+                keep_fragment[fragment_idx] = 1;
                 break;
             }
 
             if (disconnectDecision != 1)
             {
-                keep_all_metal_bonds = 1;
+                keep_fragment[fragment_idx] = 1;
                 break;
             }
 
@@ -4621,7 +4708,7 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
 
             if (binaryValue != 1)
             {
-                keep_all_metal_bonds = 1;
+                keep_fragment[fragment_idx] = 1;
                 break;
             }
 
@@ -4661,12 +4748,12 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
 
             /*
              * Retain a linkage to another metal unless:
-             * 1) all metal atoms are terminal, or
+             * 1) all metal atoms in the fragment are terminal, or
              * 2) the current metal belongs to Group 1 or Group 2.
             */
-            if (bond_links_to_other_metal && !all_metal_atoms_terminal && !current_metal_is_group_1_or_2)
+            if (bond_links_to_other_metal && fragment_has_nonterminal_metal[fragment_idx] && !current_metal_is_group_1_or_2)
             {
-                keep_all_metal_bonds = 1;
+                keep_fragment[fragment_idx] = 1;
                 break;
             }
 
@@ -4676,25 +4763,25 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
             */
             if (ring_cno_count >= 3)
             {
-                keep_all_metal_bonds = 1;
+                keep_fragment[fragment_idx] = 1;
                 break;
             }
         }
     }
 
-    if (keep_all_metal_bonds)
-    {
-        ip->bMolecularInorganicsReconnectedInChI = 1;
-        goto cleanup;
-    }
-
-    /* All remaining metal bonds satisfy the complete decision tree and may be
-     * disconnected.
+    /* All remaining metal bonds in a fragment that is not kept satisfy the
+     * complete decision tree and may be disconnected.
     **/
     for (i = 0; i < num_at; i++)
     {
         if (!is_el_a_metal(at[i].el_number))
         {
+            continue;
+        }
+
+        if (keep_fragment[fragment[i]])
+        {
+            ip->bMolecularInorganicsReconnectedInChI = 1;
             continue;
         }
 
@@ -4721,8 +4808,15 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     }
 
 cleanup:
+    /* Leave the ring-system fields as they were found; later stages mark
+     * ring systems themselves. */
+    UnMarkRingSystemsInp(at, num_at);
+
     if (dfs_visited) inchi_free(dfs_visited);
     if (dfs_stack) inchi_free(dfs_stack);
+    if (fragment) inchi_free(fragment);
+    if (keep_fragment) inchi_free(keep_fragment);
+    if (fragment_has_nonterminal_metal) inchi_free(fragment_has_nonterminal_metal);
 
     return (ret_code < 0) ? ret_code : num_disconnected;
 }
