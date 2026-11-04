@@ -733,3 +733,37 @@ M  END
 
     ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/Cl2Zn/c1-3-2", 0);
 }
+
+/* Issue #304: a +1/-1 pair on a metal outside Group 1/2. Charged and neutral
+ * CuCl give the same InChI: the charge-separated pass leaves the bond to the
+ * decision tree, and the bond table keeps Cu-Cl. */
+TEST(test_molecularInorganics, test_MI_Issue304_CuCl_charged)
+{
+    const char* molblock = R"(
+  manual
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Cu  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  CHG  2   1   1   2  -1
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/ClCu/c1-2", 0);
+}
+
+TEST(test_molecularInorganics, test_MI_Issue304_CuCl_neutral)
+{
+    const char* molblock = R"(
+  manual
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Cu  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/ClCu/c1-2", 0);
+}
