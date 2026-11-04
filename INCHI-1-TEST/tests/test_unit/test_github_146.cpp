@@ -199,6 +199,17 @@ TEST(test_github_146, v3000_max_length_label)
     ExpectInChI(molblock.c_str());
 }
 
+/* The SGROUP block may start with an optional DEFAULT record (Biovia CTfile
+   spec); it must be skipped and not read as an Sgroup entry */
+TEST(test_github_146, v3000_sgroup_default_record)
+{
+    std::string molblock = PolymerV3000(
+        "DEFAULT CLASS=SRU\n"
+        "M  V30 1 SRU 1 ATOMS=(3 3 2 4) XBONDS=(2 1 4) CONNECT=HT LABEL=n");
+
+    ExpectInChI(molblock.c_str());
+}
+
 TEST(test_github_146, v3000_brkxyz_without_value)
 {
     std::string molblock = PolymerV3000(

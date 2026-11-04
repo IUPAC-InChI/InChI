@@ -780,6 +780,13 @@ int MolfileV3000ReadSGroup(MOL_FMT_CTAB *ctab,
             return failed;
         }
 
+        /* GH #146: optional "DEFAULT CLASS=..." record: it only sets defaults
+           for the keywords below, none of which the polymer reader uses */
+        if (!strncmp(p, "DEFAULT", 7) && (p[7] == ' ' || p[7] == '\0'))
+        {
+            continue;
+        }
+
         /* GH #146: polymer Sgroups, as V2000 M  STY etc. */
         if (p && treat_polymers != POLYMERS_NO && V3000ReadPolymerSGroup(ctab, p))
         {
