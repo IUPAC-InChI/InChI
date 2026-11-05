@@ -355,12 +355,6 @@ static int GetINCHI1( inchi_InputEx *extended_input,
     inchi_Input prev_versions_input;
     inchi_Input *pvinp = &prev_versions_input;
 
-#ifdef GHI100_FIX
-#if ((SPRINTF_FLAG != 1) && (SPRINTF_FLAG != 2))
-    setlocale(LC_ALL, "en-US"); /* djb-rwth: setting all locales to "en-US" */
-#endif
-#endif
-
     pvinp->atom = extended_input->atom;
     pvinp->num_atoms = extended_input->num_atoms;
     pvinp->num_stereo0D = extended_input->num_stereo0D;
@@ -3340,6 +3334,7 @@ int SetInChIExtInputByExtOrigAtData( OAD_Polymer     *orp,
                 unitk[k]->blist = NULL;
             }
 
+            inchi_free(unitk[k]->blist); /* GH #209: was leaked */
             inchi_free(unitk[k]);
             inchi_free(uk_al_tmp[k]);
         }
