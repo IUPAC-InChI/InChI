@@ -30,6 +30,7 @@ class ConsumerResult(BaseModel):
     time: str = Field(
         default_factory=lambda: datetime.now().isoformat(timespec="seconds")
     )
+    error: str = Field(default="")
     result: dict[str, Any]
 
 
@@ -50,9 +51,7 @@ def _log_timeout(
             "seconds": round(timed_out.seconds, 1),
         }
     )
-    logger.info(
-        f"timed out{' expectedly' if expected_failure else ''}:{log_entry}"
-    )
+    logger.info(f"timed out{' expectedly' if expected_failure else ''}:{log_entry}")
 
     # Never reset the exit code, matching the other failure paths.
     return exit_code if expected_failure else 1
@@ -86,18 +85,18 @@ def regression(
                 continue
 
             molfile_id = consumer_result.molfile_id
-            assert (
-                molfile_id not in processed_molfile_ids
-            ), f"Molfile ID {molfile_id} has been processed multiple times."
+            assert molfile_id not in processed_molfile_ids, (
+                f"Molfile ID {molfile_id} has been processed multiple times."
+            )
             processed_molfile_ids.add(molfile_id)
 
             reference_query = reference_db.execute(
                 "SELECT result FROM results WHERE molfile_id = ?",
                 (molfile_id,),
             ).fetchone()
-            assert (
-                reference_query
-            ), f"Couldn't find molfile ID {molfile_id} in reference."
+            assert reference_query, (
+                f"Couldn't find molfile ID {molfile_id} in reference."
+            )
             reference_result = reference_query[0]
 
             current_result = json.dumps(consumer_result.result)
@@ -134,9 +133,9 @@ def regression(
             - processed_molfile_ids
         )
 
-        assert (
-            not unprocessed_molfile_ids
-        ), f"Reference contains molfile IDs that haven't been processed: {unprocessed_molfile_ids}."
+        assert not unprocessed_molfile_ids, (
+            f"Reference contains molfile IDs that haven't been processed: {unprocessed_molfile_ids}."
+        )
 
     reference_db.close()
 
@@ -176,7 +175,9 @@ def regression_reference(
                         "molfile_id": consumer_result.molfile_id,
                         "time": datetime.now().isoformat(timespec="seconds"),
                         "info": ConsumerInfo(consumer="timeout").model_dump_json(),
-                        "result": json.dumps({"timeout_seconds": consumer_result.seconds}),
+                        "result": json.dumps(
+                            {"timeout_seconds": consumer_result.seconds}
+                        ),
                     },
                 )
                 continue
@@ -221,19 +222,25 @@ def invariance(
             )
             continue
 
+        if consumer_result.error:
+            exit_code = 1
+            log_entry = json.dumps(
+                {
+                    "molfile_id": consumer_result.molfile_id,
+                    "sdf": sdf_path.name,
+                    "error": consumer_result.error,
+                }
+            )
+            logger.info(f"invariance consumer failed:{log_entry}")
+            continue
+
         n_variants = len(consumer_result.result["variants"])
         if n_variants == 1:
             continue
+
         expected_failure = consumer_result.molfile_id in expected_failures
-        # Never reset the exit code: once an unexpected failure has occurred the
-        # run must fail, regardless of any later expected failures.
         if not expected_failure:
             exit_code = 1
-        if n_variants == 0:
-            logger.info(
-                f"invariance test didn't run: molfile ID {consumer_result.molfile_id} from {sdf_path.name} could not be read."
-            )
-        else:
             log_entry = json.dumps(
                 {
                     "time": consumer_result.time,
