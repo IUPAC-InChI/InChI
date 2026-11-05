@@ -59,7 +59,7 @@ Build the tests with
 and subsequently run them with
 
 ```shell
-cd CMake_build/full_build/INCHI-1-TEST/tests/test_unit && ctest --output-on-failure
+ctest --test-dir CMake_build/full_build/INCHI-1-TEST/tests/test_unit --output-on-failure
 ```
 
 ## Meta tests
