@@ -112,10 +112,8 @@ def permute_molfile_text(inchi_lib: ctypes.CDLL, molfile: str) -> tuple[int, str
     if exit_code != 0:
         return exit_code, ""
 
-    permuted_molfile = (
-        ctypes.cast(permuted_molfile_buffer, ctypes.c_char_p)
-        .value.decode("utf-8")
-        .strip()
-    )
+    permuted_molfile = ctypes.cast(
+        permuted_molfile_buffer, ctypes.c_char_p
+    ).value.decode("utf-8")
 
     return exit_code, permuted_molfile
