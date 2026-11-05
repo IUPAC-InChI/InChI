@@ -4542,12 +4542,15 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
      * The pass is restricted to Group 1 and Group 2 metals. On any other metal
      * opposite formal charges usually depict oxidation states on a covalent
      * complex (e.g. Pt(4+) with Cl(-) in H2PtCl6, Al(3+) with H(-) in AlH4(-)),
-     * and those bonds are left to the decision tree below (issue #304).*/
+     * and those bonds are left to the decision tree below. If the bond table
+     * cuts that element pair (e.g. Ag(+)-F(-), likewise Cu/Hg/Tl-F), charged
+     * and neutral drawings cannot be reconciled by either keeping or cutting
+     * the bond, so the structure is rejected with an error (issue #304). */
     for (i = 0; i < num_at; i++)
     {
         for (k = 0; k < at[i].valence; )
         {
-            int metal_idx;
+            int metal_idx, ligand_idx;
 
             j = at[i].neighbor[k];
 
@@ -4567,9 +4570,15 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
             }
 
             metal_idx = is_el_a_metal(at[i].el_number) ? i : j;
+            ligand_idx = (metal_idx == i) ? j : i;
 
             if (!MolecularInorganicsIsGroup1or2Metal(at[metal_idx].el_number))
             {
+                if (shouldBondBeCut(at[metal_idx].el_number, at[ligand_idx].el_number) == 1)
+                {
+                    ret_code = MI_ERR_CHARGE_SEPARATED_NON_GROUP12;
+                    goto cleanup;
+                }
                 k++;
                 continue;
             }

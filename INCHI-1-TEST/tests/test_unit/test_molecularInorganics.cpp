@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstring>
 
 extern "C"
 {
@@ -25,6 +26,27 @@ static void ExpectedMolecularInorganicsInChI(const char* molblock,
     EXPECT_EQ(ret, expected_retcode);
     ASSERT_NE(poutput->szInChI, nullptr);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
+
+    FreeINCHI(poutput);
+}
+
+/* Expects MI to reject the structure with an error (no InChI) whose log
+ * contains expected_message. */
+static void ExpectedMolecularInorganicsError(const char* molblock,
+                                             const char* expected_message)
+{
+    char options[] = "-MolecularInorganics";
+
+    inchi_Output output;
+    inchi_Output* poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
+
+    int ret = MakeINCHIFromMolfileText(molblock, options, poutput);
+
+    EXPECT_EQ(ret, inchi_Ret_ERROR);
+    EXPECT_TRUE(poutput->szInChI == nullptr || poutput->szInChI[0] == '\0');
+    ASSERT_NE(poutput->szLog, nullptr);
+    EXPECT_NE(strstr(poutput->szLog, expected_message), nullptr) << poutput->szLog;
 
     FreeINCHI(poutput);
 }
@@ -1009,4 +1031,88 @@ M  END
 )";
 
     ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/C4H9O5Ti.3CH3O.Na.O.Ti/c1-6-10(9-4-5)7-2-3-8-10;3*1-2;;;/h2-4H2,1H3;3*1H3;;;/q4*-1;+1;-2;+4", 0);
+}
+
+/* Issue #304: a +1/-1 pair on a metal outside Group 1/2. Charged and neutral
+ * CuCl give the same InChI: the charge-separated pass leaves the bond to the
+ * decision tree, and the bond table keeps Cu-Cl. */
+TEST(test_molecularInorganics, test_MI_Issue304_CuCl_charged)
+{
+    const char* molblock = R"(
+  manual
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Cu  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  CHG  2   1   1   2  -1
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/ClCu/c1-2", 0);
+}
+
+TEST(test_molecularInorganics, test_MI_Issue304_CuCl_neutral)
+{
+    const char* molblock = R"(
+  manual
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Cu  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 Cl  0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/ClCu/c1-2", 0);
+}
+
+/* Issue #304: opposite charges across a bond the bond table cuts, on a metal
+ * outside Group 1/2 (Ag(+)-F(-), likewise Cu/Hg/Tl-F), are rejected with an
+ * error; the neutral drawing is still cut by the decision tree. */
+TEST(test_molecularInorganics, test_MI_Issue304_AgF_charged_is_error)
+{
+    const char* molblock = R"(
+  manual
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Ag  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 F   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  CHG  2   1   1   2  -1
+M  END
+)";
+
+    ExpectedMolecularInorganicsError(molblock, "Charge-separated bond to a non-Group 1/2 metal");
+}
+
+TEST(test_molecularInorganics, test_MI_Issue304_CuF_charged_is_error)
+{
+    const char* molblock = R"(
+  manual
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Cu  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 F   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  CHG  2   1   1   2  -1
+M  END
+)";
+
+    ExpectedMolecularInorganicsError(molblock, "Charge-separated bond to a non-Group 1/2 metal");
+}
+
+TEST(test_molecularInorganics, test_MI_Issue304_AgF_neutral)
+{
+    const char* molblock = R"(
+  manual
+
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0000 Ag  0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 F   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/Ag.FH/h;1H/q+1;/p-1", 1);
 }
