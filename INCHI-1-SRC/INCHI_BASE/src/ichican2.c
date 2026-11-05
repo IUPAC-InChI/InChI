@@ -24,6 +24,7 @@
 #define MAX_NODES    32766
 #define MAX_SET_SIZE 32766 /*16384*/
 #define NORMALLY_ALLOWED_MAX_SET_SIZE 2048
+#define INITIAL_SET_SIZE 16
 #define MAX_LAYERS   100
 
 #define SEPARATE_CANON_CALLS 0
@@ -727,6 +728,57 @@ void NodeSetFree( struct tagCANON_GLOBALS *pCG, NodeSet *pSet )
         inchi_free( pSet->bitword );
         pSet->bitword = NULL;
     }
+}
+
+
+/****************************************************************************/
+/**
+* @brief Grow a node set array so that it holds at least L sets.
+*
+* Capacity is doubled until it reaches L; existing sets are preserved.
+* New sets are left uninitialized, since callers always clear a set before
+* writing it (see PartitionGetMcrAndFixSet() and
+* TranspositionGetMcrAndFixSetAndUnorderedPartition()).
+*
+* @param pSet Node set array created by NodeSetCreate().
+* @param L Required number of sets.
+* @return 1 on success, 0 if out of memory (pSet is then unchanged).
+*/
+static int NodeSetReserve( NodeSet *pSet, int L )
+{
+    int i, len = pSet->len_set, new_num_set = pSet->num_set;
+    bitWord **bitword;
+
+    if (L <= pSet->num_set)
+    {
+        return 1;
+    }
+    while (new_num_set < L)
+    {
+        new_num_set *= 2;
+    }
+    bitword = (bitWord**) inchi_malloc( new_num_set * sizeof( bitword[0] ) );
+    if (!bitword)
+    {
+        return 0;
+    }
+    bitword[0] = (bitWord*) inchi_malloc( (size_t) len * new_num_set * sizeof( bitword[0][0] ) );
+    if (!bitword[0])
+    {
+        inchi_free( bitword );
+        return 0;
+    }
+    memcpy( bitword[0], pSet->bitword[0], (size_t) len * pSet->num_set * sizeof( bitword[0][0] ) );
+    for (i = 1; i < new_num_set; i++)
+    {
+        bitword[i] = bitword[i - 1] + len;
+    }
+    inchi_free( pSet->bitword[0] );
+    inchi_free( pSet->bitword );
+    pSet->bitword = bitword;
+    pSet->num_set = new_num_set;
+
+    return 1;
 }
 
 
@@ -3823,8 +3875,9 @@ int CanonGraph( INCHI_CLOCK *ic,
     ok &= ( ( pzb_rho = (ConTable *) inchi_calloc( 1, sizeof( *pzb_rho ) ) ) &&
             CTableCreate( pzb_rho, n, pCD ) );
 
-    ok &= NodeSetCreate( pCG, &Omega, n_tg, L_curr_max_set_size );
-    ok &= NodeSetCreate( pCG, &Phi, n_tg, L_curr_max_set_size );
+    /* Omega and Phi grow on demand up to L_curr_max_set_size sets (see NodeSetReserve) */
+    ok &= NodeSetCreate( pCG, &Omega, n_tg, inchi_min( INITIAL_SET_SIZE, L_curr_max_set_size ) );
+    ok &= NodeSetCreate( pCG, &Phi, n_tg, inchi_min( INITIAL_SET_SIZE, L_curr_max_set_size ) );
     ok &= NodeSetCreate( pCG, &cur_nodes, n_tg, 1 );
 
     ok &= PartitionCreate( &zeta, n_tg );
@@ -4168,6 +4221,11 @@ L6:
     }
 
     l = inchi_min( l + 1, L_curr_max_set_size );
+    if (!NodeSetReserve( &Omega, l ) || !NodeSetReserve( &Phi, l ))
+    {
+        ret = CT_OUT_OF_RAM;
+        goto exit_error;
+    }
     PartitionGetMcrAndFixSet( pCG, &pi[t_Lemma - 1], &Omega, &Phi, n_tg, l );
     goto L12;
 
@@ -4332,6 +4390,11 @@ L9:
 L10: /* discrete pi[k-1] && G^gamma == G */
     pCC->lNumEqualCT += bZetaEqRho || !( bZetaIsomorph || qzb_rho );
     l = inchi_min( l + 1, L_curr_max_set_size );
+    if (!NodeSetReserve( &Omega, l ) || !NodeSetReserve( &Phi, l ))
+    {
+        ret = CT_OUT_OF_RAM;
+        goto exit_error;
+    }
     /* Omega[l] := mcr(gamma);
        Phi[l]   := fix(gamma);
     */
