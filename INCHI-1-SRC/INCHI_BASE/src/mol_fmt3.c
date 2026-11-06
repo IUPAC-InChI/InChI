@@ -952,7 +952,10 @@ int MolfileV3000ReadAtomsBlock(MOL_FMT_CTAB *ctab,
                 char szcoords[40];
                 sprintf(szcoords, "%10g%10g%10g", fx, fy, fz);
                 inchi_dot_decimal(szcoords); /* GH #100 */
-                strcpy(ctab->coords[i], szcoords);
+                /* szcoords may exceed the fixed-size MOL_COORD slot for
+                   large-magnitude coordinates; bound the copy as the V2000
+                   reader does. */
+                mystrncpy(ctab->coords[i], szcoords, sizeof(ctab->coords[i]));
             }
 
             if (!strcmp(symbol, "*"))
