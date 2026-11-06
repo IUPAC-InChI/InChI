@@ -883,7 +883,8 @@ M  END
     ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/CH3O.Cl2Pd.Na/c1-2;1-3-2;/h1H3;;/q-1;;+1", 0);
 }
 
-/* Issue #305: Ring-system IDs must be unique across fragments: without the offset the THF ring ID collides with the Ti atom and Ti(OMe)4 is wrongly kept. */
+/* Issue #305: a metal-free fragment with a ring (octyl-THF) next to Ti(OMe)4.
+ * Its ring must not be counted for Ti, so Ti(OMe)4 is cut as when alone. */
 TEST(test_molecularInorganics, test_MI_Issue305_OctylTHF_TiOMe4)
 {
     const char* molblock = R"(
@@ -937,6 +938,65 @@ M  END
 )";
 
     ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/C12H24O.4CH3O.Ti/c1-2-3-4-5-6-7-9-12-10-8-11-13-12;4*1-2;/h12H,2-11H2,1H3;4*1H3;/q;4*-1;+4", 1);
+}
+
+/* Issue #305: ring perception is skipped for metal-free fragments, so the
+ * ring-ID offset is guarded with a metal in the first fragment too (octyl-THF
+ * with a terminal Li): without the offset its THF ring ID collides with the
+ * Ti atom and Ti(OMe)4 is wrongly kept. */
+TEST(test_molecularInorganics, test_MI_Issue305_LiOctylTHF_TiOMe4)
+{
+    const char* molblock = R"(
+  manual
+
+ 22 21  0  0  0  0  0  0  0  0999 V2000
+    0.0000    1.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.0000    1.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.5000   -1.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.5000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -3.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -4.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -5.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -6.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -7.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -8.0000    2.0000    0.0000 Li  0  0  0  0  0  0  0  0  0  0  0  0
+   10.0000    0.0000    0.0000 Ti  0  0  0  0  0  0  0  0  0  0  0  0
+   11.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+   11.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   12.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+   12.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   13.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+   13.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   14.0000    1.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+   14.0000    2.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  2  3  1  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  1  0  0  0  0
+  5  1  1  0  0  0  0
+  1  6  1  0  0  0  0
+  6  7  1  0  0  0  0
+  7  8  1  0  0  0  0
+  8  9  1  0  0  0  0
+  9 10  1  0  0  0  0
+ 10 11  1  0  0  0  0
+ 11 12  1  0  0  0  0
+ 12 13  1  0  0  0  0
+ 14 15  1  0  0  0  0
+ 15 16  1  0  0  0  0
+ 14 17  1  0  0  0  0
+ 17 18  1  0  0  0  0
+ 14 19  1  0  0  0  0
+ 19 20  1  0  0  0  0
+ 14 21  1  0  0  0  0
+ 21 22  1  0  0  0  0
+M  END
+)";
+
+    ExpectedMolecularInorganicsInChI(molblock, "InChI=1BB/C11H21LiO.4CH3O.Ti/c12-9-5-3-1-2-4-7-11-8-6-10-13-11;4*1-2;/h11H,1-10H2;4*1H3;/q;4*-1;+4", 1);
 }
 
 /* Issue #305: the "all metals terminal" exception of the metal-link rule is

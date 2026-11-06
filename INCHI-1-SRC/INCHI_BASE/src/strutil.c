@@ -4303,24 +4303,28 @@ static int MolecularInorganicsIsGroup1or2Metal(int el_number)
 
 /*****************************************************************************
  * @brief Label every atom with its fragment (connected component) and
- * perceive ring systems in every fragment.
+ * perceive ring systems in every fragment that contains a metal.
  *
- * MarkRingSystemsInp() walks only the fragment that contains its start atom
- * and numbers ring systems from 1 on every call. It is therefore called once
- * per fragment, and the ring-system IDs of each fragment are shifted so that
- * they stay unique across the input (issue #305). nBlockSystem is not
- * shifted; Molecular Inorganics does not read it.
+ * MarkRingSystemsInp() walks only the fragment that contains its start atom,
+ * numbers ring systems from 1 on every call, and allocates work arrays for
+ * all num_at atoms. It is therefore called once per fragment, and only for
+ * fragments with a metal: the chelate check compares a metal's ring system
+ * with atoms of its own fragment only. Atoms of metal-free fragments keep
+ * nRingSystem 0, which never equals a perceived ID (those start at 1). The
+ * ring-system IDs of each perceived fragment are shifted so that they stay
+ * unique across the input (issue #305). nBlockSystem is not shifted;
+ * Molecular Inorganics does not read it.
  *
  * @param at        input atom array
  * @param num_at    number of atoms
  * @param fragment  output: fragment index of each atom (num_at elements)
- * @param stack     work array (num_at elements)
+ * @param queue     work array (num_at elements)
  *
  * @return Number of fragments, or a negative value on error.
  *****************************************************************************/
-static int MolecularInorganicsMarkFragments(inp_ATOM* at, int num_at, int* fragment, int* stack)
+static int MolecularInorganicsMarkFragments(inp_ATOM* at, int num_at, int* fragment, int* queue)
 {
-    int start, top, cur, n, nb, ret;
+    int start, head, tail, cur, n, nb, ret, has_metal;
     int num_fragments = 0;
     int ring_offset = 0;
 
@@ -4338,20 +4342,19 @@ static int MolecularInorganicsMarkFragments(inp_ATOM* at, int num_at, int* fragm
             continue;
         }
 
-        ret = MarkRingSystemsInp(at, num_at, start);
-        if (ret < 0)
-        {
-            return ret;
-        }
-
-        top = 0;
-        stack[top++] = start;
+        /* Collect the atoms of this fragment in queue[0..tail). */
+        head = tail = 0;
+        queue[tail++] = start;
         fragment[start] = num_fragments;
+        has_metal = 0;
 
-        while (top)
+        while (head < tail)
         {
-            cur = stack[--top];
-            at[cur].nRingSystem += (AT_NUMB)ring_offset;
+            cur = queue[head++];
+            if (is_el_a_metal(at[cur].el_number))
+            {
+                has_metal = 1;
+            }
 
             for (n = 0; n < at[cur].valence; n++)
             {
@@ -4363,11 +4366,26 @@ static int MolecularInorganicsMarkFragments(inp_ATOM* at, int num_at, int* fragm
                 }
 
                 fragment[nb] = num_fragments;
-                stack[top++] = nb;
+                queue[tail++] = nb;
             }
         }
 
-        ring_offset += ret;
+        if (has_metal)
+        {
+            ret = MarkRingSystemsInp(at, num_at, start);
+            if (ret < 0)
+            {
+                return ret;
+            }
+
+            for (head = 0; head < tail; head++)
+            {
+                at[queue[head]].nRingSystem += (AT_NUMB)ring_offset;
+            }
+
+            ring_offset += ret;
+        }
+
         num_fragments++;
     }
 
@@ -4596,8 +4614,8 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     ConvertCoordinativeBondsToSingle(at, num_at);
 
     /*
-     * Find the fragments and perceive ring systems in every fragment for the
-     * decision-tree chelate check, after the charge-separated bond
+     * Find the fragments and perceive ring systems in every fragment with a
+     * metal for the decision-tree chelate check, after the charge-separated bond
      * disconnections, because those graph changes may alter both.
     */
     if (MolecularInorganicsMarkFragments(at, num_at, fragment, dfs_stack) < 0)
