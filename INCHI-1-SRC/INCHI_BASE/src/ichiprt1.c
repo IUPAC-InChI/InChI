@@ -2250,7 +2250,7 @@ int CleanOrigCoord(MOL_COORD szCoord, int delim)
         memcpy(szVal, szCoord + k, LEN_COORD);
         szVal[LEN_COORD] = '\0';
         lrtrim(szVal, &len);
-        coord = strtod(szVal, &q);
+        coord = inchi_strtod(szVal, (const char **)&q); /* GH #100 */
         if (MIN_BOND_LENGTH > fabs(coord))
         {
             strcpy(szVal, "0");
@@ -5109,6 +5109,18 @@ int OutputAUXINFO_ReversibilityInfo(CANON_GLOBALS *pCG,
     return 0;
 }
 
+/* "%f" of a double needs at most 317 chars (DBL_MAX) */
+#define LEN_DBL_STR 320
+
+/****************************************************************************/
+/* GH #100: print one number as "%f" with '.' decimal point, e.g. "5.042700" */
+static const char *DotDecimalStr(double x, char *buf)
+{
+    snprintf(buf, LEN_DBL_STR, "%f", x);
+    inchi_dot_decimal(buf);
+    return buf;
+}
+
 /****************************************************************************/
 int OutputAUXINFO_PolymerInfo(CANON_GLOBALS *pCG,
                               INCHI_IOSTREAM *out_file,
@@ -5121,6 +5133,7 @@ int OutputAUXINFO_PolymerInfo(CANON_GLOBALS *pCG,
     int k, i, q;
     OAD_Polymer *p;
     OAD_PolymerUnit *u;
+    char szNum[LEN_DBL_STR];
 
     if (!pOrigStruct)
     {
@@ -5165,18 +5178,18 @@ int OutputAUXINFO_PolymerInfo(CANON_GLOBALS *pCG,
             inchi_strbuf_printf(strbuf, "[");
             for (q = 0; q < 3; q++)
             {
-                inchi_strbuf_printf(strbuf, "%-f,", u->xbr1[q]);
+                inchi_strbuf_printf(strbuf, "%s,", DotDecimalStr(u->xbr1[q], szNum)); /* GH #100 */
             }
-            inchi_strbuf_printf(strbuf, "%-f]", u->xbr1[3]);
+            inchi_strbuf_printf(strbuf, "%s]", DotDecimalStr(u->xbr1[3], szNum)); /* GH #100 */
         }
         if (fabs(-fabs(u->xbr2[0]) + 777777.777) > 1.e-7)
         {
             inchi_strbuf_printf(strbuf, "[");
             for (q = 0; q < 3; q++)
             {
-                inchi_strbuf_printf(strbuf, "%-f,", u->xbr2[q]);
+                inchi_strbuf_printf(strbuf, "%s,", DotDecimalStr(u->xbr2[q], szNum)); /* GH #100 */
             }
-            inchi_strbuf_printf(strbuf, "%-f]", u->xbr2[3]);
+            inchi_strbuf_printf(strbuf, "%s]", DotDecimalStr(u->xbr2[3], szNum)); /* GH #100 */
         }
 
         if (i < p->n - 1)

@@ -248,7 +248,7 @@ MOL_FMT_DATA * MolfileReadDataLines( INCHI_IOSTREAM *inp_file,
     }
     else
     {
-        retcode = MolfileV3000ReadAtomsBlock( pCtab, inp_file, retcode, pStrErr );
+        retcode = MolfileV3000ReadAtomsBlock( pCtab, inp_file, treat_polymers, retcode, pStrErr );
     }
     if (retcode)
     {
@@ -304,7 +304,7 @@ MOL_FMT_DATA * MolfileReadDataLines( INCHI_IOSTREAM *inp_file,
         /* SGroup, 3D, link line(s), collections, END CTAB */
         if (pCtab->v3000)
         {
-            retcode = MolfileV3000ReadTailOfCTAB( pCtab, inp_file, retcode, pStrErr );
+            retcode = MolfileV3000ReadTailOfCTAB( pCtab, inp_file, treat_polymers, retcode, pStrErr );
             if (retcode)
             {
                 if (retcode < 0)
