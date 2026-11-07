@@ -413,7 +413,7 @@ int inchi_ios_print( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
             if (ios->s.nAllocatedLength - ios->s.nUsedLength <= max_len)
             {
                 /* enlarge output string */
-                int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
+                int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len + 1 );
                 char *new_str =
                     (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operator added */
                 if (new_str)
@@ -500,7 +500,7 @@ int inchi_ios_print_nodisplay( INCHI_IOSTREAM * ios, const char* lpszFormat, ...
             if (ios->s.nAllocatedLength - ios->s.nUsedLength <= max_len)
             {
                 /* enlarge output string */
-                int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
+                int  nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len + 1 );
                 char *new_str = (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operator added */
                 if (new_str)
                 {
@@ -587,7 +587,7 @@ int inchi_ios_eprint( INCHI_IOSTREAM * ios, const char* lpszFormat, ... )
             if (ios->s.nAllocatedLength - ios->s.nUsedLength <= max_len)
             {
                 /* enlarge output string */
-                nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len );
+                nAddLength = inchi_max( INCHI_ADD_STR_LEN, max_len + 1 );
                 new_str = (char *) inchi_calloc( (long long)ios->s.nAllocatedLength + nAddLength, sizeof( new_str[0] ) ); /* djb-rwth: cast operator added */
                 if (new_str)
                 {
