@@ -4456,17 +4456,10 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
         }
     }
 
-    /*
-     * Detect ring systems before the charge-separated bond pass so that a
-     * qualifying metal-containing chelate ring is not disconnected before
-     * the chelate protection rule can be applied.
-     */
-    MarkRingSystemsInp(at, num_at, 0);
-
     /* Disconnect charge-separated metal-ligand bonds, preserving the drawn
      * formal charges. A metal and ligand carrying opposite formal charges
      * across a single (type 1) or coordinative (type 9) bond depict an ionic
-     * interaction (e.g. M(2+) ... L(2-)) and must split into the drawn ions
+     * interaction (e.g. Na(+) ... O(-)) and must split into the drawn ions
      * regardless of the metal's nominal valence or the presence of other
      * metals in the same component - the heuristics in the disconnection loop
      * below would otherwise keep these bonds connected. DisconnectInpAtBond
@@ -4475,16 +4468,18 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
      * keeps exactly the charge drawn in the input. Higher-order bonds (e.g. a
      * drawn M=O double bond) are genuine covalent bonds and are left intact.
      *
-     *
-     * An exception is made for non-Group-1/2 metals that belong to a ring
-     * containing at least three carbon, nitrogen, or oxygen atoms. Such bonds
-     * form part of a qualifying chelate ring and must remain connected.*/
+     * The pass is restricted to Group 1 and Group 2 metals. On any other metal
+     * opposite formal charges usually depict oxidation states on a covalent
+     * complex (e.g. Pt(4+) with Cl(-) in H2PtCl6, Al(3+) with H(-) in AlH4(-)),
+     * and those bonds are left to the decision tree below. If the bond table
+     * cuts that element pair (e.g. Ag(+)-F(-), likewise Cu/Hg/Tl-F), charged
+     * and neutral drawings cannot be reconciled by either keeping or cutting
+     * the bond, so the structure is rejected with an error (issue #304). */
     for (i = 0; i < num_at; i++)
     {
         for (k = 0; k < at[i].valence; )
         {
-            int metal_idx;
-            int ring_cno_count = 0;
+            int metal_idx, ligand_idx;
 
             j = at[i].neighbor[k];
 
@@ -4504,21 +4499,15 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
             }
 
             metal_idx = is_el_a_metal(at[i].el_number) ? i : j;
+            ligand_idx = (metal_idx == i) ? j : i;
 
-            /*
-             * Deliberately apply the chelate-ring protection in this preliminary
-             * charge-separated bond pass. Without this check, an explicitly charged
-             * chelate of a non-Group-1/2 metal could be disconnected before the main
-             * decision-tree pass evaluates whether its metal bonds must be retained.
-             *
-             * The ring criterion follows the 2026-07-16 Molecular Inorganics decision
-             * tree: the metal-containing ring system must contain at least three atoms
-             * selected from C, N, and O.
-            */
-            ring_cno_count = MolecularInorganicsCountRingCNOAtoms(at, num_at, metal_idx);
-
-            if (ring_cno_count >= 3)
+            if (!MolecularInorganicsIsGroup1or2Metal(at[metal_idx].el_number))
             {
+                if (shouldBondBeCut(at[metal_idx].el_number, at[ligand_idx].el_number) == 1)
+                {
+                    ret_code = MI_ERR_CHARGE_SEPARATED_NON_GROUP12;
+                    goto cleanup;
+                }
                 k++;
                 continue;
             }
@@ -4536,9 +4525,9 @@ int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA *orig_at_data, INPUT_PARMS *
     ConvertCoordinativeBondsToSingle(at, num_at);
 
     /*
-     * Re-perceive ring systems after the charge-separated bond disconnections,
-     * because those graph changes may alter the ring membership used by the
-     * main Molecular Inorganics decision-tree evaluation.
+     * Perceive ring systems for the decision-tree chelate check, after the
+     * charge-separated bond disconnections, because those graph changes may
+     * alter the ring membership.
     */
     MarkRingSystemsInp(at, num_at, 0);
 
