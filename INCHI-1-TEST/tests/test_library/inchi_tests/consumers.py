@@ -48,7 +48,7 @@ def invariance_consumer(
     variants: list[dict[str, str | int]] = []
     inchi_string_variants = set()
     inchi_key_variants = set()
-    error = ""
+    errors: list[str] = []
 
     # Seed the random number generation that's used for molfile permutation.
     libc.srand(ctypes.c_uint(0))
@@ -56,20 +56,22 @@ def invariance_consumer(
     for _ in range(n_invariance_runs):
         exit_code, molfile_permuted = permute_molfile_text(inchi_lib, molfile)
         if exit_code:
-            error = f"Failed to permute molfile (exit code {exit_code})."
-            break
+            errors.append(f"Failed to permute molfile (exit code {exit_code}).")
+            continue
 
         exit_code, inchi_string, log, message, aux_info = make_inchi_from_molfile_text(
             inchi_lib, molfile_permuted, inchi_api_parameters
         )
         if exit_code not in [0, 1]:  # 1 signals Warning
-            error = log
-            break
+            errors.append(
+                log or f"Failed to generate InChI (exit code {exit_code})."
+            )
+            continue
 
         exit_code, inchi_key = get_inchi_key_from_inchi(inchi_lib, inchi_string)
         if exit_code not in [0, 11]:  # 11 signals Warning
-            error = f"Failed to generate InChI key (exit_code={exit_code})."
-            break
+            errors.append(f"Failed to generate InChI key (exit_code={exit_code}).")
+            continue
 
         if (inchi_string not in inchi_string_variants) or (
             inchi_key not in inchi_key_variants
@@ -96,7 +98,7 @@ def invariance_consumer(
             consumer="invariance",
             parameters=inchi_api_parameters + f"; number_of_runs={n_invariance_runs}",
         ),
-        error=error,
+        error="\n".join(errors),
         result={
             "variants": variants,
         },
