@@ -92,7 +92,7 @@ def get_inchi_key_from_inchi(inchi_lib: ctypes.CDLL, inchi: str) -> tuple[int, s
 
 def permute_molfile_text(inchi_lib: ctypes.CDLL, molfile: str) -> tuple[int, str]:
     moltext = molfile.encode("utf-8")
-    MOLTEXT_SIZE = len(moltext) + 1 + 1024  # null terminator + extra space
+    MOLTEXT_SIZE = len(moltext) + 1 + 2048  # null terminator + extra space
     permuted_molfile_buffer = ctypes.create_string_buffer(MOLTEXT_SIZE)
 
     inchi_lib.PermuteMolfileText.argtypes = [
