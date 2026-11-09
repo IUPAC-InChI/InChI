@@ -30,6 +30,7 @@
 
 ### Fixed
 
+- GHI #52: V3000 Molfiles declaring zero bonds but containing an explicit empty BEGIN BOND / END BOND block are now parsed correctly instead of failing with Error 71 ("No V3000 CTAB end marker").
 - GHI #236: v1.07.5 no longer reads structures from standard input, which worked in v1.06. Input from `stdin` is read again when the first command line argument is an option, non-seekable inputs such as `/dev/stdin` and named pipes are supported, and an input file placed after the options is accepted at an interactive terminal.
 - GHI #252: Explicit H/D/T atoms used as polymer crossing-bond end groups are now preserved during terminal-H processing when the `Polymers` option is enabled. This allows valid SRU/CRU structures with explicit hydrogen leaving groups to be processed instead of being rejected as unsupported. The retained H/D/T atom is represented explicitly as a numbered atom in the `/c` layer rather than being converted to an implicit hydrogen.
 - GHI #264: access violation when generating the InChI of head-to-head polymers through `GetINCHIEx()`.
