@@ -84,8 +84,7 @@ def get_inchi_key_from_inchi(inchi_lib: ctypes.CDLL, inchi: str) -> tuple[int, s
     )
 
     key: str = ""
-    if exit_code in [0, 11]:
-        # 11: reversal of InChI failed, InChIKey is computed with warning issued
+    if exit_code == 0:
         key = ctypes.cast(szKey, ctypes.c_char_p).value.decode("utf-8").strip()
 
     return exit_code, key

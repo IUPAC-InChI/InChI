@@ -69,7 +69,7 @@ def invariance_consumer(
             continue
 
         exit_code, inchi_key = get_inchi_key_from_inchi(inchi_lib, inchi_string)
-        if exit_code not in [0, 11]:  # 11 signals Warning
+        if exit_code != 0:
             errors.append(f"Failed to generate InChI key (exit_code={exit_code}).")
             continue
 
