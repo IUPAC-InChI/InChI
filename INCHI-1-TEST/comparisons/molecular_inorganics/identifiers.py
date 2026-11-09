@@ -10,6 +10,7 @@ prefix in the last two characters of its second block, e.g. `…SA-N`, `…NA-N`
 """
 
 import re
+from collections import Counter
 
 # Elements InChI treats as metals: the rows of `INCHI_BASE/src/eldata.c` whose
 # type is METAL or METAL2, i.e. what `is_el_a_metal` returns true for. Not the
@@ -66,3 +67,101 @@ def formula_elements(inchi: str) -> set[str]:
 
 def has_metal(inchi: str) -> bool:
     return not formula_elements(inchi).isdisjoint(METALS)
+
+
+_COMPONENT = re.compile(r"^(\d*)([A-Z].*)$")
+_ELEMENT_COUNT = re.compile(r"([A-Z][a-z]?)(\d*)")
+_CONNECTION_TOKEN = re.compile(r"\d+|[(),]")
+_REPEATED = re.compile(r"^(\d+)\*(.*)$")
+
+
+def _component_atoms(formula: str) -> list[str]:
+    """The elements of one component in canonical numbering order.
+
+    InChI numbers the atoms of a component in formula order without hydrogen:
+    carbon first, then alphabetically. A hydrogen that appears in `/c` (as
+    Molecular Inorganics writes one bonded to a metal) comes after them."""
+    counts = [(element, int(n or 1)) for element, n in _ELEMENT_COUNT.findall(formula)]
+    heavy = sorted(
+        ((e, n) for e, n in counts if e != "H"), key=lambda item: (item[0] != "C", item[0])
+    )
+    hydrogens = sum(n for e, n in counts if e == "H")
+
+    return [e for e, n in heavy for _ in range(n)] + ["H"] * hydrogens
+
+
+def _connections(layer: str) -> set[frozenset[int]]:
+    """The bonds of one component's `/c` layer, as pairs of atom numbers."""
+    bonds: set[frozenset[int]] = set()
+    branches: list[int | None] = []
+    previous: int | None = None
+    for token in _CONNECTION_TOKEN.findall(layer):
+        if token == "(":
+            branches.append(previous)
+        elif token == ",":
+            previous = branches[-1]
+        elif token == ")":
+            previous = branches.pop()
+        else:
+            atom = int(token)
+            if previous is not None:
+                bonds.add(frozenset((previous, atom)))
+            previous = atom
+
+    return bonds
+
+
+def _expand(items: list[str], pattern: re.Pattern) -> list[str]:
+    expanded: list[str] = []
+    for item in items:
+        match = pattern.match(item)
+        expanded += [match[2]] * int(match[1] or 1) if match else [item]
+
+    return expanded
+
+
+def most_bonds(body: str) -> int:
+    """The largest number of neighbours any atom has in the `/c` layer of an
+    InChI body (hydrogens in `/h` are not counted)."""
+    connections = next(
+        (layer[1:] for layer in body.split("/")[1:] if layer.startswith("c")), ""
+    )
+    most = 0
+    for table in connections.split(";"):
+        # Atom numbers restart in each component.
+        degrees: Counter = Counter()
+        for bond in _connections(_REPEATED.sub(r"\2", table)):
+            degrees.update(bond)
+        most = max(most, *degrees.values(), 0)
+
+    return most
+
+
+def metal_bonds(body: str) -> tuple[int, Counter] | None:
+    """The component count and the bonds to metals of an InChI body.
+
+    Bonds are counted per (metal, partner element) pair, so two InChIs of the
+    same atoms can be compared although their canonical numbering differs.
+    None when the formula and `/c` components do not line up."""
+    layers = body.split("/")
+    connections = next((layer[1:] for layer in layers[1:] if layer.startswith("c")), "")
+    formulas = _expand(layers[0].split("."), _COMPONENT)
+    tables = _expand(connections.split(";"), _REPEATED) if connections else []
+    tables += [""] * (len(formulas) - len(tables))
+    if len(tables) != len(formulas):
+        return None
+
+    bonds: Counter = Counter()
+    for formula, table in zip(formulas, tables):
+        atoms = _component_atoms(formula)
+        for bond in _connections(table):
+            pair = sorted(bond)
+            if len(pair) != 2 or not all(0 < atom <= len(atoms) for atom in pair):
+                return None
+            first, second = (atoms[atom - 1] for atom in pair)
+            if first in METALS:
+                bonds[(first, second)] += 1
+            if second in METALS and first != second:
+                bonds[(second, first)] += 1
+
+    return len(formulas), bonds

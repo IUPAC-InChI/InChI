@@ -1,8 +1,8 @@
 """Render the comparison report from the output of `classify.py`.
 
-Turns `classifications.csv`, `summary.json` and the three run logs into a
-self-contained HTML page, so every run of the comparison produces the same
-report without hand-assembly.
+Turns the `*_classifications.csv` files, `summary.json` and the three run logs
+into a self-contained HTML page, so every run of the comparison produces the
+same report without hand-assembly.
 
 The page is written for readers who are not InChI developers: it opens with the
 findings in plain words, explains the background and every check, and keeps the
@@ -29,7 +29,10 @@ from pathlib import Path
 
 from molecular_inorganics.classify import (
     CATEGORIES,
+    DIFFERENCES,
     LEGACY_CATEGORIES,
+    LEGACY_EXPLAINED,
+    LEGACY_UNEXPLAINED,
     ROUTE_CHECKS,
     has_reconnected_layer,
     parse_comparison_summary,
@@ -41,7 +44,9 @@ _ORGANIC = {"C", "H"}
 
 # Log lines, as `sdf_pipeline` and `run.py` write them.
 ABORTED = "Aborted "
-TIMED_OUT = "sdf_pipeline:timed out"
+# Only the record line: sdf_pipeline also logs an `ERROR:...timed out after`
+# line for the same molfile when it replaces the consumer.
+TIMED_OUT = "INFO:sdf_pipeline:timed out"
 REFERENCE_TIMED_OUT = "sdf_pipeline:reference timed out"
 
 
@@ -298,6 +303,11 @@ def _duration(seconds: float | None) -> str:
 
     return f"{minutes} min {secs:02d} s" if minutes else f"{secs} s"
 
+def _total(categories: dict | None, keys: tuple[str, ...]) -> int | None:
+    """The sum of some categories; None when they were not measured."""
+    return sum(categories[key] for key in keys) if categories is not None else None
+
+
 def _is_zero(count: int | None) -> bool | None:
     """A gate over a count that may not have been obtainable.
 
@@ -380,8 +390,8 @@ def build_control_data(
     )
     cross_check = summary.get("cross_check") if summary else None
     timeouts = _timeouts(run_c_log)
-    # Unexplained first: those are the ones to look at.
-    listed = sorted(rows, key=lambda row: row["category"] != "unexplained")
+    # Without a known cause first: those are the ones to look at.
+    listed = sorted(rows, key=lambda row: row["category"] not in LEGACY_UNEXPLAINED)
 
     return {
         "measured": measured,
@@ -389,11 +399,13 @@ def build_control_data(
         "mismatched": mismatched,
         "prefix_changed": comparison.get("prefix_changed"),
         "categories": categories,
+        "explained": _total(categories, LEGACY_EXPLAINED),
+        "unexplained": _total(categories, LEGACY_UNEXPLAINED),
         "cross_check": cross_check,
         "timeouts": timeouts,
         "rows": listed,
         "gates": {
-            "explained": _is_zero(categories["unexplained"]) if categories else None,
+            "explained": _is_zero(_total(categories, LEGACY_UNEXPLAINED)),
             "cross_check": _is_zero(cross_check["only_in_a_vs_c"])
             if cross_check
             else None,
@@ -465,6 +477,8 @@ def build_option_data(
         # Classifications and logs from before the breakdown have neither part.
         "prefix": summary.get("prefix"),
         "route": route,
+        # Classifications from before the split have no breakdown.
+        "differences": summary.get("differences"),
         "gates": {
             # MI only changes how bonds to metals are treated.
             "changed_without_metal": _is_zero(without_metal),
@@ -509,7 +523,7 @@ def build_report_data(
     summary = json.loads((comparison_dir / "summary.json").read_text(encoding="utf-8"))
 
     def rows(side: str) -> list[dict]:
-        path = comparison_dir / side / "classifications.csv"
+        path = comparison_dir / side / f"{side}_classifications.csv"
         return load_classifications(path) if path.is_file() else []
 
     return {
@@ -585,6 +599,118 @@ _PLAIN = {
     ),
 }
 
+# How a "metal bond kept, but differently" structure differs from the old
+# version's reconnected result, for the breakdown of that category.
+_PLAIN_D = {
+    "metal_hydrogen_bonded": (
+        "Hydrogen on the metal written as a bond",
+        "The only difference: the new version writes a hydrogen on a metal as a bonded "
+        "atom in the connection layer (<code>/c</code>), the old one as a hydrogen count "
+        "(<code>/h</code>). Required by GHI #168, so that the stereochemistry of metal "
+        "complexes can be expressed.",
+        "expected",
+    ),
+    "partly_disconnected": (
+        "Some metal bonds cut",
+        "The new version cuts some bonds the old version reconnects, at least one of them "
+        "to a metal outside groups 1 and 2, and keeps the rest. Typically bonds drawn "
+        "between oppositely charged atoms, e.g. PtCl<sub>6</sub> drawn as Pt<sup>4+</sup> "
+        "with four Cl<sup>&minus;</sup>.",
+        "review",
+    ),
+    "group_1_2_disconnected": (
+        "Group 1/2 metal cut off",
+        "The new version cuts only bonds to group 1 or 2 metals (Na, K, Mg, &hellip;) and "
+        "keeps the ions charged, as GHI #101 requires.",
+        "expected",
+    ),
+    "more_bonds_kept": (
+        "More bonds kept",
+        "The new version keeps bonds to the metal that the old version&rsquo;s reconnect "
+        "setting does not restore, e.g. ones it broke as a salt.",
+        "expected",
+    ),
+    "mixed": (
+        "Some bonds cut, others kept",
+        "The new version both cuts and keeps bonds the old version treats the other way. "
+        "Seen as two of the rows above at once: bonds drawn between oppositely charged "
+        "atoms are cut, and a hydrogen on the metal or a salt bond is kept.",
+        "review",
+    ),
+    "same_metal_bonds": (
+        "Same metal bonds",
+        "The bonds to metals agree; hydrogens, charges or the rest of the structure differ. "
+        "Seen where a hydride drawn as M<sup>+</sup>&ndash;H<sup>&minus;</sup> is cut by the "
+        "charge-separated pass, where the old version added an implicit hydrogen to a metal, "
+        "and where protons and charges are only written in other places.",
+        "review",
+    ),
+    "not_parsed": (
+        "Not analysed",
+        "The connection layer could not be read.",
+        "neutral",
+    ),
+}
+
+# The same for the A vs C categories. Known causes are expected; the rest fail
+# the control's gate.
+_PLAIN_C = {
+    "explained_by_npzz": (
+        "Placeholder atoms allowed",
+        "Structures with placeholder atoms (<code>*</code>). The option also allows "
+        "these, and the old version gives the same result once told to allow them "
+        "(<code>-NPZz</code>).",
+        "expected",
+    ),
+    "mn7_warning_dropped": (
+        "Manganese(7) warning dropped",
+        "Same InChI; only the warning about the unusual valence Mn(7) is gone. "
+        "Valence 7 was added to neutral manganese (CHANGELOG).",
+        "expected",
+    ),
+    "accepted_above_old_maxval": (
+        "Highly connected atom now accepted",
+        "Only the new version gives an InChI. The structure has an atom with more "
+        "than 20 bonds, the old limit, which GHI #77 raised to 50 (CHANGELOG).",
+        "expected",
+    ),
+    "message_text_changed": (
+        "Message reworded",
+        "Same InChI; only the wording of a V3000 message changed.",
+        "expected",
+    ),
+    "no_hydrogen_on_metal": (
+        "No hydrogen added to metal",
+        "The old version gave a metal without bonds or charge implicit hydrogens and "
+        "then cut them off, leaving bare H atoms. The new version adds none to "
+        "metals (CHANGELOG). Seen where an unreadable charge line left a metal "
+        "ion neutral.",
+        "expected",
+    ),
+    "metal_not_disconnected": (
+        "Metal not cut",
+        "The old version cut the bond to the metal, the legacy handling did not, "
+        "and the InChI differs. The legacy handling should cut it the same way.",
+        "review",
+    ),
+    "changed_otherwise": (
+        "Changed for another reason",
+        "The InChI differs, and none of the known causes applies.",
+        "review",
+    ),
+    "accepted_otherwise": (
+        "Now accepted, cause unknown",
+        "Only the new version gives an InChI, without an atom above the old limit "
+        "of 20 bonds.",
+        "review",
+    ),
+    "unexplained": (
+        "Unexplained",
+        "None of the above: a difference the comparison has no rule for.",
+        "unexpected",
+    ),
+}
+
 _KIND_LABELS = {
     "expected": "Expected",
     "review": "Needs review",
@@ -654,12 +780,13 @@ def _verdict_c(control: dict) -> tuple[str, str]:
     categories = control["categories"]
     if categories is None:
         return "is-muted", "Not measured: this report was rendered without A vs C results."
-    if categories["unexplained"] == 0:
+    if control["unexplained"] == 0:
         return (
             "is-good",
             "Every difference from the baseline has a known cause: the old version "
             "gives the same result with <code>-NPZz</code>, which "
-            "<code>-LegacyMetalHandling</code> switches on.",
+            "<code>-LegacyMetalHandling</code> switches on, or the difference is a "
+            "change since the baseline that the CHANGELOG lists.",
         )
 
     return (
@@ -722,7 +849,7 @@ def _control_mismatches(control: dict) -> str:
         for row in listed
     )
     more_note = (
-        f'<p class="tech-intro">{_fmt(more)} more in <code>a_vs_c/classifications.csv</code>.</p>'
+        f'<p class="tech-intro">{_fmt(more)} more in <code>a_vs_c/a_vs_c_classifications.csv</code>.</p>'
         if more
         else ""
     )
@@ -730,8 +857,8 @@ def _control_mismatches(control: dict) -> str:
     return f"""
   <section class="technical">
     <h3><span class="tag">A vs C</span> The differences, one by one</h3>
-    <p class="tech-intro">Unexplained ones first. The last column is the old version run
-    again with <code>-NPZz</code>.</p>
+    <p class="tech-intro">Those without a known cause first. The last column is the old
+    version run again with <code>-NPZz</code>.</p>
     <div class="scroll"><table class="diff">
       <colgroup><col style="width:16%"><col style="width:18%"><col style="width:33%"><col style="width:33%"></colgroup>
       <thead><tr><th>ID</th><th>A &middot; old version</th><th>C &middot; <code>-LegacyMetalHandling</code></th><th>old version <code>-NPZz</code></th></tr></thead>
@@ -744,6 +871,7 @@ _ROUTE_LABELS = {
     "agrees": "proxy and message name the same route",
     "disagrees": "proxy and message name different routes",
     "no_disconnection": "the baseline disconnected nothing",
+    "message_truncated": "the baseline message was cut off before naming a route",
     "no_metal": "no metal, so no route (<code>changed_without_metal</code>)",
     "not_checked": "no usable <code>-RecMet</code> result",
 }
@@ -894,6 +1022,62 @@ def _breakdown(option: dict) -> str:
       <tbody>{rows}</tbody></table></div>"""
 
 
+def _difference_breakdown(option: dict) -> str:
+    """The "metal bond kept, but differently" structures by how they differ."""
+    differences = option["differences"]
+    if not differences:
+        return ""
+    whole = option["categories"]["reconnected_differently"]
+    rows = "".join(
+        f'<tr><td><b>{_PLAIN_D[kind][0]}</b><span class="code">{kind}</span></td>'
+        f'<td>{_PLAIN_D[kind][1]}</td>'
+        f'<td><span class="pill {_PLAIN_D[kind][2]}">{_KIND_LABELS[_PLAIN_D[kind][2]]}</span></td>'
+        f'<td class="n">{_fmt(differences.get(kind, 0))}</td>'
+        f'<td class="n">{_pct(_share(differences.get(kind, 0), whole), 1)}</td></tr>'
+        for kind in DIFFERENCES
+    )
+
+    return f"""
+  <section>
+    <h3><span class="tag">A vs B</span> &ldquo;Metal bond kept, but differently&rdquo;, by how it differs</h3>
+    <p>Both versions keep the same atoms and the same total charge; they differ in which
+    bonds to the metal they keep and where they put hydrogens.</p>
+    <div class="scroll"><table class="breakdown">
+      <colgroup><col style="width:27%"><col style="width:37%"><col style="width:15%"><col style="width:12%"><col style="width:9%"></colgroup>
+      <thead><tr><th>how it differs</th><th>what it means</th><th>assessment</th>
+      <th class="n">structures</th><th class="n">share</th></tr></thead>
+      <tbody>{rows}</tbody></table></div>
+    <p class="tech-intro">The IDs are in <code>a_vs_b/ids/reconnected_differently/</code>,
+    one file per row.</p>
+  </section>"""
+
+
+def _control_breakdown(control: dict) -> str:
+    """The A vs C mismatches per category, in plain words."""
+    categories = control["categories"]
+    if not categories:
+        return ""
+    rows = "".join(
+        f'<tr><td><b>{_PLAIN_C[category][0]}</b><span class="code">{category}</span></td>'
+        f'<td>{_PLAIN_C[category][1]}</td>'
+        f'<td><span class="pill {_PLAIN_C[category][2]}">{_KIND_LABELS[_PLAIN_C[category][2]]}</span></td>'
+        f'<td class="n">{_fmt(categories[category])}</td>'
+        f'<td class="n">{_pct(_share(categories[category], control["mismatched"]), 1)}</td></tr>'
+        for category in LEGACY_CATEGORIES
+    )
+
+    return f"""
+  <section>
+    <h3><span class="tag">A vs C</span> The differences by cause</h3>
+    <div class="scroll"><table class="breakdown">
+      <colgroup><col style="width:27%"><col style="width:37%"><col style="width:15%"><col style="width:12%"><col style="width:9%"></colgroup>
+      <thead><tr><th>kind of difference</th><th>what it means</th><th>assessment</th>
+      <th class="n">structures</th><th class="n">share</th></tr></thead>
+      <tbody>{rows}</tbody></table></div>
+    <p class="tech-intro">The IDs are in <code>a_vs_c/ids/</code>, one file per category.</p>
+  </section>"""
+
+
 def _render_reference(data: dict) -> str:
     ref = data["reference"]
 
@@ -918,7 +1102,6 @@ def _render_control(data: dict) -> str:
     control = data["a_vs_c"]
     tone, caption = _verdict_c(control)
     gates = control["gates"]
-    categories = control["categories"] or {}
     cross_check = control["cross_check"] or {}
 
     return f"""
@@ -935,8 +1118,8 @@ def _render_control(data: dict) -> str:
   <section>
     <h3><span class="tag">A vs C</span> Answer</h3>
     <div class="figs">
-      {_fig(_fmt(categories.get("unexplained")), "unexplained differences", caption, tone)}
-      {_fig(_fmt(categories.get("explained_by_npzz")), "differences with a known cause", "Structures with placeholder atoms (<code>*</code>). The option also allows these, and the old version gives the same result once told to allow them (<code>-NPZz</code>).")}
+      {_fig(_fmt(control["unexplained"]), "unexplained differences", caption, tone)}
+      {_fig(_fmt(control["explained"]), "differences with a known cause", "Placeholder atoms (<code>*</code>), which the option allows and the old version accepts with <code>-NPZz</code>, and changes since the old version that the CHANGELOG lists.")}
       {_fig(_fmt(control["matched"]), "identical", "Same result as the old version, apart from the label at the start.", "is-good")}
       {_fig(_fmt(control["timeouts"]), "too slow", "Never compared. Expected ones are listed in the data config.")}
     </div>
@@ -945,13 +1128,13 @@ def _render_control(data: dict) -> str:
   <section>
     <h3><span class="tag">A vs C</span> Checks</h3>
     {_gates([
-        (gates["explained"], "Every difference has a known cause", "unexplained = 0"),
-        (gates["cross_check"], "Each of these differences also shows up with the new handling on", f"also mismatched in Run B: {_fmt(cross_check.get('also_in_a_vs_b'))}, only here: {_fmt(cross_check.get('only_in_a_vs_c'))} &middot; #259 cross-check"),
+        (gates["explained"], "Every difference has a known cause", "metal_not_disconnected + changed_otherwise + accepted_otherwise + unexplained = 0"),
+        (gates["cross_check"], "Each of these differences also shows up with the new handling on", f"also mismatched in Run B: {_fmt(cross_check.get('also_in_a_vs_b'))}, warning only (not compared in Run B): {_fmt(cross_check.get('warning_only'))}, only here: {_fmt(cross_check.get('only_in_a_vs_c'))} &middot; #259 cross-check"),
         (gates["completeness"], "Every structure was compared", "same + mismatched + timed out = reference rows"),
         (gates["no_aborted"], "All input files were read to the end", "no aborted SDFs &middot; Run C"),
     ])}
   </section>
-
+{_control_breakdown(control)}
   <div class="tech-divider">technical details</div>
 
   <section class="technical">
@@ -1021,6 +1204,7 @@ def _render_option(data: dict) -> str:
 {_without_metal_callout(option["changed_without_metal"], option["without_metal_warnings"])}
 {_review_callout(k)}
   </section>
+{_difference_breakdown(option)}
 
   <section>
     <h3><span class="tag">A vs B</span> Examples</h3>
@@ -1209,7 +1393,7 @@ def _in_short(data: dict) -> str:
     elif without_metal:
         points.append(f"<b>{_fmt(without_metal)} structures without a metal changed.</b> "
                       "That should not happen and needs investigating.")
-    unexplained = (control["categories"] or {}).get("unexplained")
+    unexplained = control["unexplained"]
     if unexplained == 0:
         points.append("With the new handling switched off, the new version gives the old "
                       "results: no unexplained differences.")
@@ -1290,7 +1474,7 @@ def render_html(data: dict) -> str:
 <section class="summary">
   <a class="card part-c" href="#a-vs-c">
     <span class="badge">A vs C &middot; control</span>
-    <div class="n {c_tone}">{_fmt((control["categories"] or {}).get("unexplained"))}</div>
+    <div class="n {c_tone}">{_fmt(control["unexplained"])}</div>
     <div class="d">unexplained differences. {c_caption}</div>
   </a>
   <a class="card part-b" href="#a-vs-b">
@@ -1308,7 +1492,7 @@ def render_html(data: dict) -> str:
 
 <footer>
   <p>Generated by <code>INCHI-1-TEST/comparisons/molecular_inorganics/report.py</code> from
-  <code>classifications.csv</code>, <code>summary.json</code> and the three run logs.</p>
+  <code>a_vs_b_classifications.csv</code>, <code>a_vs_c_classifications.csv</code>, <code>summary.json</code> and the three run logs.</p>
   <p>Context: issue #259 proposes making Molecular Inorganics the standard path with opt-out
   parameters for the legacy metal handling.</p>
 </footer>
