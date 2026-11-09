@@ -196,39 +196,43 @@ def invariance(
         get_molfile_id=get_molfile_id,
     ):
         if isinstance(consumer_result, core.TimedOut):
-            _log_timeout(consumer_result, sdf_path)
-            continue
-
-        if consumer_result.error:
+            exit_code = 1
             log_entry = json.dumps(
                 {
                     "molfile_id": consumer_result.molfile_id,
                     "sdf": sdf_path.name,
-                    "error": consumer_result.error,
+                    "error": f"Timed out after {round(consumer_result.seconds, 1)} seconds.",
                 }
             )
-            logger.info(f"invariance consumer failed:{log_entry}")
+            logger.info(f"error: {log_entry}")
             continue
 
         n_variants = len(consumer_result.result["variants"])
-        if n_variants == 1:
+        if n_variants <= 1 and not consumer_result.error:
             continue
 
+        test_failure = n_variants > 1
         expected_failure = consumer_result.molfile_id in expected_failures
-        if not expected_failure:
-            exit_code = 1
 
-        log_entry = json.dumps(
-            {
-                "time": consumer_result.time,
-                "molfile_id": consumer_result.molfile_id,
-                "sdf": sdf_path.name,
-                "info": dict(consumer_result.info),
-                "variants": consumer_result.result["variants"],
-            }
-        )
-        logger.info(
-            f"invariance test failed{' expectedly' if expected_failure else ''}:{log_entry}"
-        )
+        metadata = {
+            "time": consumer_result.time,
+            "molfile_id": consumer_result.molfile_id,
+            "sdf": sdf_path.name,
+            "info": dict(consumer_result.info),
+        }
+        if consumer_result.error:
+            exit_code = 1
+            log_entry = json.dumps({**metadata, "error": consumer_result.error})
+            logger.info(f"error:{log_entry}")
+
+        if test_failure:
+            if not expected_failure:
+                exit_code = 1
+            log_entry = json.dumps(
+                {**metadata, "variants": consumer_result.result["variants"]}
+            )
+            logger.info(
+                f"invariance test failed{' expectedly' if expected_failure else ''}:{log_entry}"
+            )
 
     return exit_code

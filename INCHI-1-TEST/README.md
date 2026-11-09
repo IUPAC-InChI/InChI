@@ -66,6 +66,13 @@ ctest --test-dir CMake_build/full_build/INCHI-1-TEST/tests/test_unit --output-on
 
 The tests under `tests/test_meta` are testing the tests (e.g., does structure permutation work properly?)
 Run with `pytest INCHI-1-TEST/tests/test_meta`.
+By default, these tests expect the InChI shared library at
+`CMake_build/full_build/INCHI-1-SRC/INCHI_API/libinchi/src/lib/libinchi.so`.
+You can override the library location via:
+
+```shell
+pytest INCHI-1-TEST/tests/test_meta --lib-path=path/to/libinchi.so
+```
 
 ## Executable tests
 
@@ -130,6 +137,12 @@ If not all permutations produce the same InChI output,
 a test failure is logged under `<datetime>.invariance_<dataset>.log`
 (where `<datetime>` reflects the start of the test run).
 
+The invariance tests distinguish errors and test failures.
+Errors in molfile-permutation, InChI-or InChI key generation, or timeouts are logged and result in an exit code 1 but they aren't logged as a test failure.
+Test failures (more than one distinct InChI string or key) also result in an exit code 1 and are explicitly logged as failures.
+That is, both errors and failures fail the CI, but only failures count towards the success of the invariance test.
+A dataset's `expected_failures["invariance"]` apply only to test failures, not to errors.
+
 ### Regression tests
 
 Regression tests investigate if the output of the current development version matches the reference output of a previous release.
@@ -168,9 +181,10 @@ The tests should now fail and indicate that the difference between the reference
 `sdf_pipeline.core.run` stops a consumer that spends more than
 `timeout_seconds_per_molfile` seconds (default 60) on one molfile, reports the
 molfile as timed out, and starts a new consumer for the rest of the SDF. The
-regression and invariance tests log the molfile as `timed out` and fail unless its
-ID is an expected failure in the data config. The reference run stores a row with
-`timeout_seconds` instead of a result.
+regression and invariance tests log the molfile as `timed out`. In invariance, a
+timeout is logged as a consumer error and always fails the run (timeouts are not
+covered by `expected_failures["invariance"]`). The reference run stores a row
+with `timeout_seconds` instead of a result.
 
 To find the molfile in an SDF that crashes the library or exceeds a time limit,
 run
