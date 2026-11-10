@@ -125,7 +125,7 @@ TEST(permutation_util_testing, test_PermuteMolfileText_happy_path)
 
     EXPECT_STRNE(permuted_moltext, MOLTEXT);
 
-    char options[] = "-DoNotAddH";
+    char options[] = "";
     inchi_Output original_output;
     inchi_Output *original_poutput = &original_output;
     inchi_Output permuted_output;
@@ -139,6 +139,31 @@ TEST(permutation_util_testing, test_PermuteMolfileText_happy_path)
 
     FreeINCHI(original_poutput);
     FreeINCHI(permuted_poutput);
+}
+
+TEST(permutation_util_testing, test_PermuteMolfileText_keeps_implicit_hydrogens)
+{
+    // Methanol without explicit H (GitHub issue #311).
+    const char *const methanol =
+        "\n"
+        "  test\n"
+        "\n"
+        "  2  1  0  0  0  0  0  0  0  0999 V2000\n"
+        "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "    1.0000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0\n"
+        "  1  2  1  0  0  0  0  0  0  0  0  0\n"
+        "M  END\n";
+    char permuted_moltext[MAX_MOLTEXT_SIZE] = {0};
+
+    srand(42);
+    ASSERT_EQ(PermuteMolfileText(methanol, permuted_moltext, MAX_MOLTEXT_SIZE), 0);
+
+    char options[] = "";
+    inchi_Output permuted_output{};
+    ASSERT_EQ(MakeINCHIFromMolfileText(permuted_moltext, options, &permuted_output), 0);
+    EXPECT_STREQ(permuted_output.szInChI, "InChI=1S/CH4O/c1-2/h2H,1H3");
+
+    FreeINCHI(&permuted_output);
 }
 
 TEST(permutation_util_testing, test_PermuteMolfileText_empty_moltext)
