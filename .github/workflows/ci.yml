@@ -19,7 +19,7 @@ jobs:
         run: ./.devcontainer/post_create_commands.sh
 
       - name: Run unit tests
-        run: cd CMake_build/full_build/INCHI-1-TEST/tests/test_unit && ctest --output-on-failure
+        run: ctest --test-dir CMake_build/full_build/INCHI-1-TEST/tests/test_unit --output-on-failure
 
       - name: Run executable tests
         run: pytest INCHI-1-TEST/tests/test_executable
@@ -79,7 +79,7 @@ jobs:
         run: ./INCHI-1-TEST/build_with_cmake.sh all
 
       - name: Run unit tests
-        run: cd CMake_build/full_build/INCHI-1-TEST/tests/test_unit && ctest --output-on-failure
+        run: ctest --test-dir CMake_build/full_build/INCHI-1-TEST/tests/test_unit --output-on-failure
 
       - name: Run executable tests
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}

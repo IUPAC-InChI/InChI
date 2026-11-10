@@ -7,6 +7,9 @@ from operator import add
 from functools import reduce
 from pathlib import Path
 from functools import partial
+from types import SimpleNamespace
+from unittest.mock import Mock
+from inchi_tests import parse_log
 from sdf_pipeline import drivers, core
 from consumers import (
     regression_consumer,
@@ -179,3 +182,111 @@ def test_core_raises(sdf_path, caplog, consumer):
         == f"could not process {sdf_path}: A process terminated unexpectedly."
     )
 
+
+@pytest.mark.parametrize("expected", [False, True])
+@pytest.mark.parametrize("error", ["", "first\nsecond\nfirst"])
+@pytest.mark.parametrize(
+    "variants",
+    [
+        [],
+        [{"inchi": "InChI=valid", "key": "KEY"}],
+        [
+            {"inchi": "InChI=valid", "key": "KEY"},
+            {"inchi": "InChI=other", "key": "OTHER"},
+        ],
+    ],
+)
+def test_driver_logs_errors_separately_and_parses_only_test_failures(
+    monkeypatch, caplog, tmp_path, expected, error, variants
+):
+    result = drivers.ConsumerResult(
+        molfile_id="id",
+        info=drivers.ConsumerInfo(consumer="invariance"),
+        error=error,
+        result={"variants": variants},
+    )
+    monkeypatch.setattr(drivers.core, "run", lambda **_: iter([result]))
+    caplog.set_level(logging.INFO, logger="sdf_pipeline")
+    sdf_path = tmp_path / "input.sdf.gz"
+
+    exit_code = drivers.invariance(
+        sdf_path, Mock(), Mock(), expected_failures={"id"} if expected else set()
+    )
+
+    test_failure = len(variants) > 1
+    assert exit_code == int(bool(error) or (test_failure and not expected))
+    assert len(caplog.records) == int(bool(error)) + int(test_failure)
+    suffix = " expectedly" if expected else ""
+    for record in caplog.records:
+        message = record.message
+        entry = json.loads(message[message.index("{") :])
+        assert entry["info"]["consumer"] == "invariance"
+        if message.startswith("error"):
+            assert entry["error"] == error
+            assert "variants" not in entry
+        else:
+            assert message.startswith(f"invariance test failed{suffix}:")
+            assert entry["variants"] == variants
+            assert "error" not in entry
+
+    log_path = tmp_path / "20261109_invariance_test.log"
+    log_path.write_text(
+        "".join(f"INFO:sdf_pipeline:{record.message}\n" for record in caplog.records)
+    )
+    monkeypatch.setattr(
+        parse_log,
+        "select_records_from_gzipped_sdf",
+        lambda *_: iter([("id", "original")]),
+    )
+    parse_log.main(
+        "invariance",
+        SimpleNamespace(name="test", path=tmp_path, molfile_id_getter=Mock()),
+    )
+    summary_path = tmp_path / f"{log_path.stem}_input.sdf.html"
+    assert summary_path.exists() == test_failure
+    if test_failure:
+        summary = summary_path.read_text()
+        assert "<h1>id</h1>" in summary
+        assert "InChI=valid" in summary
+        assert "InChI=other" in summary
+        assert "KEY" in summary
+        assert "second" not in summary
+
+
+def test_driver_error_failure_is_not_reset_by_expected_failure(monkeypatch):
+    results = [
+        drivers.ConsumerResult(
+            molfile_id=molfile_id,
+            info=drivers.ConsumerInfo(consumer="invariance"),
+            error="failed",
+            result={"variants": []},
+        )
+        for molfile_id in ["unexpected", "expected"]
+    ]
+    monkeypatch.setattr(drivers.core, "run", lambda **_: iter(results))
+    assert (
+        drivers.invariance(
+            Path("unused"), Mock(), Mock(), expected_failures={"expected"}
+        )
+        == 1
+    )
+
+
+def test_driver_timeout_is_logged_as_consumer_error_and_fails(
+    monkeypatch, caplog, tmp_path
+):
+    timeout = drivers.core.TimedOut(molfile_id="id", seconds=60.04)
+    monkeypatch.setattr(drivers.core, "run", lambda **_: iter([timeout]))
+    caplog.set_level(logging.INFO, logger="sdf_pipeline")
+    sdf_path = tmp_path / "input.sdf.gz"
+
+    exit_code = drivers.invariance(sdf_path, Mock(), Mock(), expected_failures={"id"})
+
+    assert exit_code == 1
+    assert len(caplog.records) == 1
+    message = caplog.records[0].message
+    assert message.startswith("error:")
+    entry = json.loads(message[message.index("{") :])
+    assert entry["molfile_id"] == "id"
+    assert entry["sdf"] == "input.sdf.gz"
+    assert entry["error"] == "Timed out after 60.0 seconds."

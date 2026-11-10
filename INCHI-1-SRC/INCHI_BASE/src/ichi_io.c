@@ -261,7 +261,8 @@ int inchi_ios_str_getc(INCHI_IOSTREAM* ios)
     int c;
     if (ios->type == INCHI_IOS_TYPE_STRING)
     {
-        if (ios->s.nPtr < ios->s.nUsedLength)
+        /* GH #146: stop at '\0'; nUsedLength may count it, never step past */
+        if (ios->s.nPtr < ios->s.nUsedLength && ios->s.pStr[ios->s.nPtr])
         {
             return (int)ios->s.pStr[ios->s.nPtr++];
         }
