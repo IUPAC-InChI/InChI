@@ -32,15 +32,6 @@ config = DataConfig(
             "PUBCHEM_COMPOUND_CID-102182973",
             "PUBCHEM_COMPOUND_CID-92178689",
         },
-        "invariance": {
-            "chg_O_N_05",
-            "NSC-608972",
-            "NSC-631477",
-            "NSC-683677",
-            "NSC-85765",
-            "NSC-85765-Err_1",
-            "NSC-Err_1.004",
-            "v1_err_NSC-103019",
-        },
+        "invariance": set(),
     },
 )
