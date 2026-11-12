@@ -21,14 +21,37 @@ Every mismatch gets one category, named for what happened to the structure:
   changed_without_disconnection  1.07.5 broke no bond to the metal, yet the
                                  InChI changed
 
+`reconnected_differently` is split further by how MI's bonds to metals differ
+from the reconnected layer's (`difference`, one ID file each under
+`ids/reconnected_differently/`).
+
 plus `error_in_reference`, `error_under_mi`, `recmet_missing` and
 `recmet_failed` where a side produced nothing to compare. The disconnection
 route is the one Run A's own warning states; the `/r` layer is checked against
 it per structure (`route_check`).
 
 A vs C: every mismatch is re-computed with the baseline and `-NPZz`, which
-column 3 implies and column 1 does not (`explained_by_npzz` / `unexplained`),
-and is checked for also occurring in A vs B, as #259 expects.
+column 3 implies and column 1 does not, and is checked for also occurring in
+A vs B, as #259 expects. A mismatch `-NPZz` does not explain is matched
+against the changes since 1.07.5 that the CHANGELOG lists:
+
+  explained_by_npzz           the baseline with -NPZz gives Run C's result
+  mn7_warning_dropped         only the Mn(7) unusual-valence warning is gone
+                              (valence 7 was added to neutral Mn)
+  accepted_above_old_maxval   only Run C gives an InChI, with an atom of more
+                              than 20 bonds (GHI #77 raised MAXVAL to 50)
+  message_text_changed        only the wording of a V3000 message changed
+  no_hydrogen_on_metal        the baseline's InChI has bare H components Run
+                              C's lacks: 1.07.5 gave a metal without bonds or
+                              charge implicit H, then disconnected it
+  metal_not_disconnected      the InChI changed and Run C did not disconnect
+                              the metal the baseline disconnected
+  changed_otherwise           the InChI changed for another reason
+  accepted_otherwise          only Run C gives an InChI, without an atom above
+                              the old MAXVAL
+  unexplained                 anything else
+
+The last four have no known cause and fail the control's gate.
 """
 
 import argparse
@@ -53,6 +76,8 @@ from molecular_inorganics.identifiers import (  # noqa: F401  (re-exported)
     inchi_body,
     inchi_prefix,
     is_failed,
+    metal_bonds,
+    most_bonds,
 )
 from molecular_inorganics.consumers import raw_regression_consumer
 
@@ -202,6 +227,9 @@ class Classification(BaseModel):
     dev_mi_message: str = ""
     recmet_message: str = ""
     route_check: str = ""
+    # For `reconnected_differently`: how MI's bonds to metals differ from the
+    # reconnected layer's (`difference_kind`); empty for every other category.
+    difference: str = ""
     # Carried through from the raw results so the CSV answers key and exit-code
     # questions without anyone having to parse the logs.
     reference_key: str = ""
@@ -277,8 +305,63 @@ def _categorize(mismatch: Mismatch, recmet_result: dict | None) -> str:
     return _BY_ROUTE[disconnection_route(mismatch.reference.get("message", ""))]
 
 
+# How a `reconnected_differently` structure differs, read from the bonds to
+# metals in MI's `/c` layer and the reconnected layer's. Both always have the
+# same heavy atoms; what differs is which bonds are kept and where H sits.
+DIFFERENCES = (
+    "metal_hydrogen_bonded",
+    "partly_disconnected",
+    "group_1_2_disconnected",
+    "more_bonds_kept",
+    "mixed",
+    "same_metal_bonds",
+    "not_parsed",
+)
+GROUP_1_2 = frozenset("Li Na K Rb Cs Fr Be Mg Ca Sr Ba Ra".split())
+
+
+def difference_kind(dev_mi_inchi: str, recmet_inchi: str) -> str:
+    """How MI's bonds to metals differ from the `-RecMet` reconnected layer's.
+
+    `metal_hydrogen_bonded`: MI only has extra metal-H bonds; it writes a
+    hydrogen on a metal as a bonded atom in `/c`, where 1.07.5 puts it in `/h`.
+    `partly_disconnected`: MI only lacks bonds, some of them to a metal outside
+    groups 1 and 2. `group_1_2_disconnected`: MI only lacks bonds to group 1/2
+    metals. `more_bonds_kept`: MI only has extra bonds, not all of them to H,
+    e.g. ones 1.07.5 broke as a salt. `mixed`: both extra and missing bonds.
+    `same_metal_bonds`: the same bonds to metals; H, charge or the rest of the
+    structure differ. `not_parsed`: a `/c` layer that could not be read."""
+    current = metal_bonds(inchi_body(dev_mi_inchi))
+    reconnected = metal_bonds(reconnected_layer(recmet_inchi))
+    if current is None or reconnected is None:
+        return "not_parsed"
+    difference = current[1].copy()
+    difference.subtract(reconnected[1])
+    extra = {pair for pair, n in difference.items() if n > 0}
+    missing = {pair for pair, n in difference.items() if n < 0}
+
+    if extra and missing:
+        return "mixed"
+    if extra:
+        return (
+            "metal_hydrogen_bonded"
+            if all(partner == "H" for _, partner in extra)
+            else "more_bonds_kept"
+        )
+    if missing:
+        return (
+            "group_1_2_disconnected"
+            if all(metal in GROUP_1_2 for metal, _ in missing)
+            else "partly_disconnected"
+        )
+
+    return "same_metal_bonds"
+
+
 # Outcomes of checking the `/r` proxy against the baseline's own message.
-ROUTE_CHECKS = ("agrees", "disagrees", "no_disconnection", "no_metal", "not_checked")
+ROUTE_CHECKS = (
+    "agrees", "disagrees", "no_disconnection", "message_truncated", "no_metal", "not_checked"
+)
 
 
 def route_check(recmet_result: dict | None) -> str:
@@ -288,14 +371,16 @@ def route_check(recmet_result: dict | None) -> str:
     the structural evidence for that route, against it. An `/r` layer means metal
     disconnection, which `-RecMet` reverses, and its absence salt disconnection,
     which it cannot. `no_disconnection` is a structure with a metal for which the
-    baseline broke no bond to it at all."""
+    baseline broke no bond to it at all, as far as its message tells:
+    `message_truncated` is one whose message was cut off at the library's
+    256-character limit (ending in "...") before naming any route."""
     if recmet_result is None or is_failed(recmet_result):
         return "not_checked"
     message = recmet_result.get("message", "")
     metal = METAL_DISCONNECTED in message
     salt = SALT_DISCONNECTED in message
     if not metal and not salt:
-        return "no_disconnection"
+        return "message_truncated" if "..." in message else "no_disconnection"
     if has_reconnected_layer(recmet_result["inchi"]):
         return "agrees" if metal else "disagrees"
 
@@ -328,6 +413,11 @@ def classify_mismatches(
                 route_check="no_metal"
                 if category == "changed_without_metal"
                 else route_check(recmet_result),
+                difference=difference_kind(
+                    mismatch.current["inchi"], recmet_result["inchi"]
+                )
+                if category == "reconnected_differently"
+                else "",
                 reference_key=mismatch.reference.get("key", ""),
                 dev_mi_key=mismatch.current.get("key", ""),
                 recmet_key=recmet_result.get("key", "") if recmet_result else "",
@@ -383,8 +473,127 @@ class LegacyClassification(BaseModel):
 
 
 # Column 3 of issue #259 implies NPZz; column 1 does not. A difference that the
-# baseline also produces with -NPZz is explained by that.
-LEGACY_CATEGORIES = ("explained_by_npzz", "unexplained")
+# baseline also produces with -NPZz is explained by that; the next four by a
+# change the CHANGELOG lists. The rest have no known cause.
+LEGACY_EXPLAINED = (
+    "explained_by_npzz",
+    "mn7_warning_dropped",
+    "accepted_above_old_maxval",
+    "message_text_changed",
+    "no_hydrogen_on_metal",
+)
+LEGACY_UNEXPLAINED = (
+    "metal_not_disconnected",
+    "changed_otherwise",
+    "accepted_otherwise",
+    "unexplained",
+)
+LEGACY_CATEGORIES = LEGACY_EXPLAINED + LEGACY_UNEXPLAINED
+
+# The atom valences of an `Accepted unusual valence(s): Mn(7); N(4)` warning.
+# The list shares the message's `; ` separator, so its entries are the items
+# that follow the warning and look like `El(n)`, charge included (`Mn+1(6)`).
+# The library cuts a long message off with `...` after the last entry.
+_VALENCE_WARNING = "Accepted unusual valence(s): "
+_VALENCE_ITEM = re.compile(r"^[A-Z][a-z]?(?:[+-]\d*)?\((?P<valence>\d+)\)(?:\.\.\.)?$")
+# MAXVAL up to 1.07.5; GHI #77 raised it to 50.
+OLD_MAXVAL = 20
+
+
+def split_message(message: str) -> tuple[list[str], list[str]]:
+    """The atom valences of the unusual-valence warning and the other items."""
+    valences: list[str] = []
+    others: list[str] = []
+    in_valences = False
+    for item in filter(None, (item.strip() for item in message.split(";"))):
+        if item.startswith(_VALENCE_WARNING):
+            valences.append(item[len(_VALENCE_WARNING):])
+            in_valences = True
+        elif in_valences and _VALENCE_ITEM.match(item):
+            valences.append(item)
+        else:
+            others.append(item)
+            in_valences = False
+
+    return valences, others
+
+
+_BARE_HYDROGEN = re.compile(r"\d*H")
+
+
+def only_hydrogen_on_metal_differs(legacy: dict, npzz: dict) -> bool:
+    """Whether the baseline's InChI is Run C's plus bare hydrogen components.
+
+    1.07.5 gives a metal without bonds or charge implicit hydrogens and then
+    disconnects them, leaving `.nH` components; Run C adds none to a metal
+    (CHANGELOG). Every layer must match once the components' trailing
+    separators are dropped, and the messages may differ only in "Metal was
+    disconnected", which is missing where the hydrogen was the metal's only
+    bond."""
+    legacy_layers = inchi_body(legacy["inchi"]).split("/")
+    npzz_layers = inchi_body(npzz["inchi"]).split("/")
+    npzz_components = npzz_layers[0].split(".")
+    bare = [c for c in npzz_components if _BARE_HYDROGEN.fullmatch(c)]
+    if not bare or npzz_components[-len(bare):] != bare:
+        return False
+    if ".".join(npzz_components[: -len(bare)]) != legacy_layers[0]:
+        return False
+    if len(legacy_layers) != len(npzz_layers) or any(
+        a.rstrip(";") != b.rstrip(";")
+        for a, b in zip(legacy_layers[1:], npzz_layers[1:])
+    ):
+        return False
+
+    def items(message: str) -> list[str]:
+        return [i.strip() for i in message.split(";") if i.strip() != METAL_DISCONNECTED]
+
+    return items(legacy.get("message", "")) == items(npzz.get("message", ""))
+
+
+def _legacy_cause(legacy: dict, npzz: dict | None) -> str:
+    """The category of an A vs C mismatch that `-NPZz` does not explain."""
+    if npzz is None:
+        return "unexplained"
+    legacy_valences, legacy_others = split_message(legacy.get("message", ""))
+    npzz_valences, npzz_others = split_message(npzz.get("message", ""))
+
+    if is_failed(npzz) and not is_failed(legacy):
+        # The unusual-valence warning does not cover every atom (none for
+        # I- with 38 bonds), so the /c layer is counted as well.
+        valences = [int(m["valence"]) for m in map(_VALENCE_ITEM.match, legacy_valences) if m]
+        valences.append(most_bonds(inchi_body(legacy["inchi"])))
+        if max(valences) > OLD_MAXVAL:
+            return "accepted_above_old_maxval"
+        return "accepted_otherwise"
+
+    if is_failed(npzz) or is_failed(legacy):
+        return "unexplained"
+
+    if inchi_body(legacy["inchi"]) != inchi_body(npzz["inchi"]):
+        if legacy["exit"] == npzz["exit"] and only_hydrogen_on_metal_differs(
+            legacy, npzz
+        ):
+            return "no_hydrogen_on_metal"
+        if METAL_DISCONNECTED in npzz_others and METAL_DISCONNECTED not in legacy_others:
+            return "metal_not_disconnected"
+        return "changed_otherwise"
+
+    # Same InChI body; the key hash and exit code must match too, so only the
+    # message differs.
+    if not LegacyComparator()({**legacy, "message": ""}, {**npzz, "message": ""}):
+        return "unexplained"
+    if "Mn(7)" in npzz_valences:
+        remaining = list(npzz_valences)
+        remaining.remove("Mn(7)")
+        if remaining == legacy_valences and legacy_others == npzz_others:
+            return "mn7_warning_dropped"
+    if legacy_valences == npzz_valences and all(
+        item.startswith("V3000 ")
+        for item in set(legacy_others).symmetric_difference(npzz_others)
+    ):
+        return "message_text_changed"
+
+    return "unexplained"
 
 
 def classify_legacy_mismatches(
@@ -396,7 +605,8 @@ def classify_legacy_mismatches(
 
     `explained_by_npzz`: the baseline with `-NPZz` gives Run C's result, compared
     with Run C's rule (every field except the prefix and the key flags).
-    `unexplained`: anything else, including no `-NPZz` result."""
+    Anything else gets the category of its cause (`_legacy_cause`), and
+    `unexplained` when it has none, including no `-NPZz` result."""
     same_except_prefix = LegacyComparator()
     classifications: list[LegacyClassification] = []
 
@@ -407,7 +617,9 @@ def classify_legacy_mismatches(
             LegacyClassification(
                 molfile_id=mismatch.molfile_id,
                 sdf=mismatch.sdf,
-                category="explained_by_npzz" if explained else "unexplained",
+                category="explained_by_npzz"
+                if explained
+                else _legacy_cause(mismatch.current, npzz),
                 in_a_vs_b=mismatch.molfile_id in a_vs_b_ids,
                 reference_inchi=mismatch.reference.get("inchi", ""),
                 legacy_inchi=mismatch.current.get("inchi", ""),
@@ -442,6 +654,7 @@ CSV_FIELDS = [
     "dev_mi_message",
     "recmet_message",
     "route_check",
+    "difference",
     "reference_key",
     "dev_mi_key",
     "recmet_key",
@@ -469,10 +682,24 @@ def a_vs_b_summary(
     return {
         "counts": classification_counts(classifications),
         "route_check": dict(Counter(c.route_check for c in classifications)),
+        "differences": dict(Counter(c.difference for c in classifications if c.difference)),
         "prefix": prefix_breakdown(classifications),
         "total": len(classifications),
         "comparison": comparison or {},
     }
+
+
+def _seen_by_option_comparator(row: LegacyClassification) -> bool:
+    """Whether Run B's comparator would count this A vs C difference."""
+    def result(inchi: str, exit: int | None) -> dict:
+        return {"inchi": inchi} if exit is None else {"inchi": inchi, "exit": exit}
+
+    reference = result(row.reference_inchi, row.reference_exit)
+    legacy = result(row.legacy_inchi, row.legacy_exit)
+
+    return inchi_body(row.reference_inchi) != inchi_body(row.legacy_inchi) or is_failed(
+        reference
+    ) != is_failed(legacy)
 
 
 def a_vs_c_summary(
@@ -480,12 +707,18 @@ def a_vs_c_summary(
     comparison: dict[str, int] | None = None,
 ) -> dict:
     in_a_vs_b = sum(c.in_a_vs_b for c in classifications)
+    # Run B compares only the InChI body and the failure state, so a difference
+    # in the warning alone cannot show up there.
+    warning_only = sum(
+        not c.in_a_vs_b and not _seen_by_option_comparator(c) for c in classifications
+    )
 
     return {
         "counts": dict(Counter(c.category for c in classifications)),
         "cross_check": {
             "also_in_a_vs_b": in_a_vs_b,
-            "only_in_a_vs_c": len(classifications) - in_a_vs_b,
+            "warning_only": warning_only,
+            "only_in_a_vs_c": len(classifications) - in_a_vs_b - warning_only,
         },
         "total": len(classifications),
         "comparison": comparison or {},
@@ -517,19 +750,22 @@ def write_id_lists(
     classifications: list[BaseModel],
     output_dir: Path,
     categories: tuple[str, ...] = CATEGORIES,
+    field: str = "category",
+    subdir: str = "ids",
 ) -> dict[str, int]:
     """Write the molfile IDs of every mismatch to one file per category.
 
-    Returns the count per category. Files land in `<output_dir>/ids/<category>.txt`,
-    one ID per line, sorted."""
+    Returns the count per category. Files land in `<output_dir>/<subdir>/<category>.txt`,
+    one ID per line, sorted. `field` names the attribute to group by; rows
+    where it is empty are left out."""
     grouped: dict[str, list[str]] = {category: [] for category in categories}
 
     for classification in classifications:
-        grouped.setdefault(classification.category, []).append(
-            classification.molfile_id
-        )
+        value = getattr(classification, field)
+        if value:
+            grouped.setdefault(value, []).append(classification.molfile_id)
 
-    ids_dir = output_dir.joinpath("ids")
+    ids_dir = output_dir.joinpath(subdir)
     ids_dir.mkdir(parents=True, exist_ok=True)
 
     counts: dict[str, int] = {}
@@ -558,9 +794,11 @@ def _load_data_config(data_config_path: str):
     return importlib.import_module(str(Path(data_config_path).stem)).config
 
 
-def _write_ids(classifications, output_dir: Path, categories) -> None:
-    counts = write_id_lists(classifications, output_dir, categories)
-    print(f"Wrote ID lists to {output_dir / 'ids'}:")
+def _write_ids(
+    classifications, output_dir: Path, categories, field="category", subdir="ids"
+) -> None:
+    counts = write_id_lists(classifications, output_dir, categories, field, subdir)
+    print(f"Wrote ID lists to {output_dir / subdir}:")
     for category, count in counts.items():
         print(f"  {count:>8,}  {category}.txt")
 
@@ -603,8 +841,11 @@ def main() -> None:
         b_mismatches, recompute(b_mismatches, "-RecMet")
     )
     b_dir = args.output / "a_vs_b"
-    write_classifications(b_classifications, b_dir / "classifications.csv")
+    write_classifications(b_classifications, b_dir / "a_vs_b_classifications.csv")
     _write_ids(b_classifications, b_dir, CATEGORIES)
+    _write_ids(
+        b_classifications, b_dir, DIFFERENCES, "difference", "ids/reconnected_differently"
+    )
     messages = explain_failures(b_classifications)
     if messages:
         (b_dir / "error_under_mi_messages.json").write_text(
@@ -621,7 +862,7 @@ def main() -> None:
         {mismatch.molfile_id for mismatch in b_mismatches},
     )
     c_dir = args.output / "a_vs_c"
-    write_classifications(c_classifications, c_dir / "classifications.csv")
+    write_classifications(c_classifications, c_dir / "a_vs_c_classifications.csv")
     _write_ids(c_classifications, c_dir, LEGACY_CATEGORIES)
 
     summary = {

@@ -216,6 +216,7 @@ printf '\n\033[1mComparison complete.\033[0m\n'
 echo "  everything in  $OUT"
 echo "    report.html          the rendered report"
 echo "    summary.json         counts and tallies of both comparisons"
-echo "    a_vs_b/ a_vs_c/      classifications.csv (one row per mismatch) and"
+echo "    a_vs_b/ a_vs_c/      a_vs_b_classifications.csv / a_vs_c_classifications.csv"
+echo "                         (one row per mismatch) and"
 echo "                         ids/ (mismatching IDs, one file per category)"
 echo "    logs/                the three run logs"
