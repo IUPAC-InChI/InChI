@@ -200,7 +200,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
     int num_atoms = CreateOrigInpDataFromMolfile(
         &input_stream,
         &atom_data,
-        0, 1, 1, 0, 0, NULL, NULL, NULL, NULL,
+        0, 1, 0, 0, 0, NULL, NULL, NULL, NULL, /* bDoNotAddH = 0: keep implicit H (#311) */
         &input_atom_flags,
         &struct_read_error,
         NULL, 0

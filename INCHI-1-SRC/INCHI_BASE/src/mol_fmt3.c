@@ -1788,6 +1788,30 @@ int MolfileV3000ReadTailOfCTAB(MOL_FMT_CTAB *ctab,
     }
     remove_one_lf(line);
 
+    /* GHI #52: Accept an optional empty bond block when no bonds are declared. */
+    if (ctab->n_bonds == 0 && p && !strcmp(p, "BEGIN BOND"))
+    {
+        nc = get_V3000_input_line_to_strbuf(pin, inp_file);
+
+        if (nc < 1 || strcmp(pin->pStr, "END BOND"))
+        {
+            TREAT_ERR_AND_FIN(err, 1, err_fin, "Error: No V3000 Bond block end marker");
+        }
+
+        /* Advance to the next CTAB section or END CTAB. */
+        nc = get_V3000_input_line_to_strbuf(pin, inp_file);
+
+        if (nc < 1)
+        {
+            p = NULL;
+        }
+        else
+        {
+            p = line = pin->pStr;
+            remove_one_lf(line);
+        }
+    }
+
     if (p && !strcmp(p, "BEGIN SGROUP"))
     {
         retcode = MolfileV3000ReadSGroup(ctab, inp_file, treat_polymers, retcode, pStrErr);
