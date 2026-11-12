@@ -29,13 +29,8 @@ config = DataConfig(
         "regression": {
             "PUBCHEM_COMPOUND_CID-20733713",
             "PUBCHEM_COMPOUND_CID-166625356",
-            "PUBCHEM_COMPOUND_CID-102182973",
             "PUBCHEM_COMPOUND_CID-92178689",
         },
-        "invariance": {
-            "iso-H-Bridge",
-            "3442296542",
-            "1980967343",
-        },
+        "invariance": set(),
     },
 )

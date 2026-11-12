@@ -84,8 +84,7 @@ def get_inchi_key_from_inchi(inchi_lib: ctypes.CDLL, inchi: str) -> tuple[int, s
     )
 
     key: str = ""
-    if exit_code in [0, 11]:
-        # 11: reversal of InChI failed, InChIKey is computed with warning issued
+    if exit_code == 0:
         key = ctypes.cast(szKey, ctypes.c_char_p).value.decode("utf-8").strip()
 
     return exit_code, key
@@ -93,7 +92,7 @@ def get_inchi_key_from_inchi(inchi_lib: ctypes.CDLL, inchi: str) -> tuple[int, s
 
 def permute_molfile_text(inchi_lib: ctypes.CDLL, molfile: str) -> tuple[int, str]:
     moltext = molfile.encode("utf-8")
-    MOLTEXT_SIZE = len(moltext) + 1 + 1024  # null terminator + extra space
+    MOLTEXT_SIZE = len(moltext) + 1 + 2048  # null terminator + extra space
     permuted_molfile_buffer = ctypes.create_string_buffer(MOLTEXT_SIZE)
 
     inchi_lib.PermuteMolfileText.argtypes = [
@@ -112,10 +111,8 @@ def permute_molfile_text(inchi_lib: ctypes.CDLL, molfile: str) -> tuple[int, str
     if exit_code != 0:
         return exit_code, ""
 
-    permuted_molfile = (
-        ctypes.cast(permuted_molfile_buffer, ctypes.c_char_p)
-        .value.decode("utf-8")
-        .strip()
-    )
+    permuted_molfile = ctypes.cast(
+        permuted_molfile_buffer, ctypes.c_char_p
+    ).value.decode("utf-8")
 
     return exit_code, permuted_molfile

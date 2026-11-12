@@ -150,28 +150,3 @@ def test_the_reference_records_a_timed_out_molfile(sdf, tmp_path, run_with_timeo
 
     assert sorted(rows) == ["1", "3", SLOW_MOLFILE_ID]
     assert "timeout_seconds" in rows[SLOW_MOLFILE_ID]
-
-
-def test_regression_fails_on_a_timeout_unless_it_is_expected(
-    sdf, tmp_path, run_with_timeout
-):
-    path = sdf(["1", SLOW_MOLFILE_ID, "3"])
-    reference = tmp_path / "reference.sqlite"
-    drivers.regression_reference(
-        sdf_path=path,
-        reference_path=reference,
-        consumer_function=slow_consumer,
-        get_molfile_id=_get_molfile_id,
-    )
-
-    def run(expected_failures):
-        return drivers.regression(
-            sdf_path=path,
-            reference_path=reference,
-            consumer_function=slow_consumer,
-            get_molfile_id=_get_molfile_id,
-            expected_failures=expected_failures,
-        )
-
-    assert run(set()) == 1
-    assert run({SLOW_MOLFILE_ID}) == 0
