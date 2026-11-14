@@ -4414,11 +4414,36 @@ void OAD_ValidateAndSortOutPseudoElementAtoms(ORIG_ATOM_DATA* orig_at_data,
 
             /* Now check if valid pseudoelement atom */
 
+            /* GHI #253: Allow multivalent pseudoatoms at paired undefined polymer caps. */
+            int is_polymer_cap = 0;
+
+            if (orig_at_data->valid_polymer && pd)
+            {
+                int pu_idx;
+
+                for (pu_idx = 0; pu_idx < pd->n; pu_idx++)
+                {
+                    OAD_PolymerUnit* pu = pd->units[pu_idx];
+
+                    if (!pu)
+                    {
+                        continue;
+                    }
+
+                    if (pu->cap1_is_undef && pu->cap2_is_undef &&
+                        (pu->cap1 == k + 1 || pu->cap2 == k + 1))
+                    {
+                        is_polymer_cap = 1;
+                        break;
+                    }
+                }
+            }
+
             /* Should be strictly univalent and single-bonded */
             /* Should not have isotopic enrichment */
-            if ( orig_at_data->at[k].valence > 1 ||
-                orig_at_data->at[k].chem_bonds_valence > 1 /* || orig_at_data->at[k].iso_atw_diff != 0    */
-                )
+            if (!is_polymer_cap &&
+                (orig_at_data->at[k].valence > 1 ||
+                 orig_at_data->at[k].chem_bonds_valence > 1 /* || orig_at_data->at[k].iso_atw_diff != 0    */))
             {
                 TREAT_ERR(*err, (70 + 7), "Invalid pseudo element(s) bonding");
                 /*TREAT_ERR( *err, ( 70 + 7 ), orig_at_data->at[k].elname );*/
