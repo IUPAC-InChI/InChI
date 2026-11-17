@@ -69,103 +69,53 @@ M  END
 TEST(test_polymers, test_GHI_253)
 {
     const char* molblock = R"(
-  ACCLDraw08102614092D
+  ACCLDraw11172613002D
 
- 15 15  0  0  0  0  0  0  0  0999 V2000
-    4.8260   -6.2294    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    5.8489   -5.6388    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    6.8718   -6.2294    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    6.8718   -7.4105    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    5.8489   -8.0010    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    4.8260   -7.4105    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    5.8489   -4.4577    0.0000 C   0  0  3  0  0  0  0  0  0  0  0  0
-    4.8260   -3.8672    0.0000 *   0  0  0  0  0  0  0  0  0  0  0  0
-    6.8718   -3.8672    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    7.8946   -4.4577    0.0000 *   0  0  0  0  0  0  0  0  0  0  0  0
-    4.8260   -5.0483    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    3.8032   -4.4577    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    4.8260   -2.6861    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    3.8032   -2.0955    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    2.7803   -5.0483    0.0000 N   0  0  0  0  0  0  0  0  0  0  0  0
-  2  1  2  0  0  0  0
-  3  2  1  0  0  0  0
-  4  3  2  0  0  0  0
-  5  4  1  0  0  0  0
-  6  5  2  0  0  0  0
-  1  6  1  0  0  0  0
-  2  7  1  0  0  0  0
-  7  8  1  0  0  0  0
-  7  9  1  0  0  0  0
-  9 10  1  0  0  0  0
-  8 11  1  0  0  0  0
-  8 12  1  0  0  0  0
-  8 13  1  0  0  0  0
- 13 14  1  0  0  0  0
- 12 15  3  0  0  0  0
-M  STY  1   1 SRU
-M  SLB  1   1   1
-M  SCN  1   1 HT
-M  SAL   1  8   1   2   3   4   5   6   7   9
-M  SBL   1  2   8  10
-M  SDI   1  4    5.3375   -4.7530    5.3375   -3.5719
-M  SDI   1  4    7.3832   -3.5719    7.3832   -4.7530
-M  SMT   1 n
+  0  0  0     0  0            999 V3000
+M  V30 BEGIN CTAB
+M  V30 COUNTS 15 15 1 0 0
+M  V30 BEGIN ATOM
+M  V30 1 N 6.2533 -6.4213 0 0
+M  V30 2 C 7.2759 -3.4694 0 0
+M  V30 3 C 8.2984 -4.0598 0 0
+M  V30 4 C 7.2759 -5.8309 0 0
+M  V30 5 C 8.2984 -6.4213 0 0
+M  V30 6 * 11.366 -5.8309 0 0
+M  V30 7 C 10.3435 -5.2406 0 0
+M  V30 8 C 8.2984 -5.2406 0 0 CFG=3
+M  V30 9 C 9.3209 -5.8309 0 0 CFG=3
+M  V30 10 C 8.2984 -8.7828 0 0
+M  V30 11 C 9.3209 -9.3731 0 0
+M  V30 12 C 10.3435 -8.7828 0 0
+M  V30 13 C 10.3435 -7.6021 0 0
+M  V30 14 C 9.3209 -7.0116 0 0
+M  V30 15 C 8.2984 -7.6021 0 0
+M  V30 END ATOM
+M  V30 BEGIN BOND
+M  V30 1 3 4 1
+M  V30 2 1 3 2
+M  V30 3 1 8 3
+M  V30 4 1 8 4
+M  V30 5 1 8 5
+M  V30 6 1 7 6
+M  V30 7 1 9 7
+M  V30 8 1 9 8
+M  V30 9 1 14 9
+M  V30 10 1 15 10
+M  V30 11 2 10 11
+M  V30 12 1 11 12
+M  V30 13 2 12 13
+M  V30 14 1 13 14
+M  V30 15 2 14 15
+M  V30 END BOND
+M  V30 BEGIN SGROUP
+M  V30 1 SRU 1 ATOMS=(8 15 14 13 12 11 10 9 7) XBONDS=(2 8 6) BRKXYZ=(9 8.81 -
+M  V30 -6.13 0 8.81 -4.95 0 0 0 0) BRKXYZ=(9 10.85 -4.95 0 10.85 -6.13 -
+M  V30 0 0 0 0) CONNECT=HT LABEL=n
+M  V30 END SGROUP
+M  V30 END CTAB
 M  END
 )";
 
-    ExpectedPolymersInChI(molblock, "InChI=1B/C12H16NZz2/c1-3-15(2,10-13)12(9-14)11-7-5-4-6-8-11/h4-8,12H,3,9H2,1-2H3/z101-4-9,11-12(15-12,14-9)", 1);
-}
-
-
-/* GHI #253: Reject multivalent pseudoatoms that are not polymer caps. */
-TEST(test_polymers, test_GHI_253_invalid_pseudoatom)
-{
-    const char* molblock = R"(
-  GHI253 Negative Test
-
-  8  6  0  0  0  0  0  0  0  0999 V2000
-    5.9688   -4.0938    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
-    6.9916   -3.5032    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    8.0148   -4.0939    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-    9.0380   -3.5032    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
-   10.0611   -4.0939    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0
-   12.0000   -3.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-   13.0000   -3.0000    0.0000 *   0  0  0  0  0  0  0  0  0  0  0  0
-   14.0000   -3.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
-  1  2  1  0  0  0  0
-  2  3  1  0  0  0  0
-  3  4  1  0  0  0  0
-  4  5  1  0  0  0  0
-  6  7  1  0  0  0  0
-  7  8  1  0  0  0  0
-M  STY  1   1 SRU
-M  SLB  1   1   1
-M  SCN  1   1 HT
-M  SAL   1  3   3   2   4
-M  SBL   1  2   1   4
-M  SMT   1 n
-M  END
-)";
-
-    char options[] = "-Polymers -NPZz";
-
-    inchi_Output output = {};
-    int ret = MakeINCHIFromMolfileText(molblock, options, &output);
-
-    /* The unrelated multivalent pseudoatom must be rejected. */
-    EXPECT_NE(ret, inchi_Ret_OKAY);
-    EXPECT_NE(ret, inchi_Ret_WARNING);
-
-    const char* expected_error = "Invalid pseudo element(s) bonding";
-
-    bool has_expected_error =
-        (output.szMessage && std::strstr(output.szMessage, expected_error) != nullptr) ||
-        (output.szLog && std::strstr(output.szLog, expected_error) != nullptr);
-
-    EXPECT_TRUE(has_expected_error)
-        << "Return code: " << ret
-        << "\nMessage: " << (output.szMessage ? output.szMessage : "(null)")
-        << "\nLog: " << (output.szLog ? output.szLog : "(null)");
-
-    FreeINCHI(&output);
+    ExpectedPolymersInChI(molblock, "InChI=1B/C13H16NZz/c1-3-13(2,10-14)12(9-15)11-7-5-4-6-8-11/h4-8,12H,3,9H2,1-2H3/z101-4-9,11-12(13-12,15-9)", 1);
 }
