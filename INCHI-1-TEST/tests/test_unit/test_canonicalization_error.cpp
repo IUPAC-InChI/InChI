@@ -5,24 +5,12 @@
 extern "C"
 {
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/inchi_api.h"
-#include "../../../INCHI-1-SRC/INCHI_BASE/src/ichierr.h"
 }
 
-static std::string GetOutputText(const inchi_Output &output)
-{
-    std::string text;
-    if (output.szMessage)
-    {
-        text += output.szMessage;
-    }
-    if (output.szLog)
-    {
-        text += output.szLog;
-    }
-    return text;
-}
-
-TEST(test_canonicalization, canonicalization_error)
+// PubChem CID 102182973, GitHub issue #322. The input atom order used to make
+// map_stereo_bonds4() reuse a stale rank partition after a total restart,
+// which ended in Error -30016 (CANON_ERR).
+TEST(test_canonicalization, github_322_stereo_restart)
 {
     const char *molfile = R"mol(
   -OEChem-09062315272D
@@ -197,13 +185,14 @@ M  END
 
     const int ret = MakeINCHIFromMolfileText(molfile, options, &output);
 
-    EXPECT_EQ(ret, inchi_Ret_ERROR);
-    EXPECT_TRUE(output.szInChI == nullptr || output.szInChI[0] == '\0');
-    const std::string canonicalization_error =
-        "Error " + std::to_string(CT_CANON_ERR) + " (CANON_ERR)";
-    EXPECT_NE(
-        GetOutputText(output).find(canonicalization_error),
-        std::string::npos
+    // The molfile sets the chiral flag on a meso structure.
+    EXPECT_EQ(ret, inchi_Ret_WARNING);
+    ASSERT_NE(output.szMessage, nullptr);
+    EXPECT_NE(std::string(output.szMessage).find("Not chiral"), std::string::npos);
+    ASSERT_NE(output.szInChI, nullptr);
+    EXPECT_STREQ(
+        output.szInChI,
+        "InChI=1S/C32H38N4O4/c1-27(2)28(3,4)34(38)25(33(27)37)21-15-11-19-14-18-24-22(26-35(39)29(5,6)30(7,8)36(26)40)16-12-20-13-17-23(21)31(19,9)32(20,24)10/h11-18H,1-10H3/q-2/t31-,32+"
     );
 
     FreeINCHI(&output);
