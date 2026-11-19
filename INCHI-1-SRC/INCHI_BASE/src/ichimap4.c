@@ -84,6 +84,22 @@ total_restart:
         memset( pCS->bRankUsedForStereo, 0, sizeof( pCS->bRankUsedForStereo[0] )*num_atoms ); /* djb-rwth: memset_s C11/Annex K variant? */
         SetUseAtomForStereo( pCS->bAtomUsedForStereo, at, num_atoms );
 
+        if (pCS->bFirstCT)
+        {
+            /* A total restart changes the stereo CT and hence the sequence of
+             * "from" atoms mapped at each stack level; partitions left on the
+             * stack by the previous attempt must not be reused. */
+            int n;
+            for (n = 2; pRankStack1[n]; n++)
+            {
+                pRankStack1[n][0] = 0;
+            }
+            for (n = 2; pRankStack2[n]; n++)
+            {
+                pRankStack2[n][0] = 0;
+            }
+        }
+
         if (pCS->bFirstCT && nSymmStereo && !pCS->bKeepSymmRank)
         {
             int i;
