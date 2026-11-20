@@ -213,6 +213,13 @@ typedef struct tagAtom
 #define GET_BITS_CUMULENE_LEN(X)    ((X)&MASK_CUMULENE_LEN)
 #define BOND_CHAIN_LEN(X)           (GET_BITS_CUMULENE_LEN(X)/MULT_STEREOBOND) /* 0 => double bond, 1 => allene, 2 => cumulene,..*/
 #define IS_ALLENE_CHAIN(X)          ((GET_BITS_CUMULENE_LEN(X)/MULT_STEREOBOND)%2)
+/* Atropisomer axis: a stereo bond of chain length 0 stored on a SINGLE bond
+   (set_atrop_axes_parity). Chiral like an allene: /m inverts it, and it is
+   cited as a /t centre on the lower-numbered axis atom. SB_PARITY/SB_ORD are
+   the atom's stereo_bond_parity[k]/stereo_bond_ord[k] (or the *2 pair). */
+#define IS_ATROP_AXIS(AT, I, SB_PARITY, SB_ORD) \
+    (0 == BOND_CHAIN_LEN(SB_PARITY) && \
+     BOND_SINGLE == ((AT)[I].bond_type[(int)(SB_ORD)] & BOND_TYPE_MASK))
 
 /* atom or bond parity value definitions */
 #define AB_PARITY_NONE   0  /* 0 => no parity; also parity&0x38 = 0 */

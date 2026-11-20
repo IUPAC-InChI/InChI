@@ -19,6 +19,8 @@
 
 #include "bcf_s.h"
 
+#include "atropisomers.h"
+
 /*
     Local functions
 */
@@ -3882,6 +3884,37 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     /*fix_odd_things( num_atoms, out_at );*/
 #if ( FIND_RING_SYSTEMS == 1 )
     MarkRingSystemsInp(out_at, num_atoms, 0);
+
+    /* orig_inp_data is NULL when restoring a structure from an InChI string */
+    if (orig_inp_data) {
+        orig_inp_data->bAtropisomer = 0;
+    }
+    if (ip->bEnhancedStereo && orig_inp_data) {
+        int ret_ai = find_atropisomeric_atoms_and_bonds(out_at, num_atoms, orig_inp_data);
+
+        /* Map the per-atom flags back to the original atom order. out_at was
+           renumbered by remove_terminal_HDT() (heavy atoms shift down by the
+           number of preceding explicit terminal H), so out_at[i] does not
+           generally correspond to orig_inp_data->at[i]; use the preserved
+           original atom number instead. */
+        if (orig_inp_data->bAtropisomer) {
+            for (i = 0; i < num_atoms; i++) {
+                if (out_at[i].bAtropisomeric) {
+                    int orig_idx = (int) out_at[i].orig_at_number - 1;
+                    if (orig_idx >= 0 && orig_idx < orig_inp_data->num_inp_atoms) {
+                        orig_inp_data->at[orig_idx].bAtropisomeric = out_at[i].bAtropisomeric;
+                    }
+                }
+            }
+        }
+
+        if (orig_inp_data->atrop_axes) {
+            inchi_free(orig_inp_data->atrop_axes);
+            orig_inp_data->atrop_axes = NULL;
+            orig_inp_data->num_atrop_axes = 0;
+        }
+    }
+
 #endif
     /*  duplicate the preprocessed structure so that all supplied out_norm_data[]->at buffers are filled */
     if (out_at != out_norm_data[TAUT_YES]->at && out_norm_data[TAUT_YES]->at)

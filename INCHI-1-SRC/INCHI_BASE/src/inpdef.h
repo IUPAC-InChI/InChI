@@ -149,6 +149,8 @@ typedef struct tagInputAtom
     S_CHAR sb_parity[MAX_NUM_STEREO_BONDS];
     AT_NUMB sn_orig_at_num[MAX_NUM_STEREO_BONDS]; /* orig. at number of sn_ord[] neighbors        */
 
+    AT_NUMB bAtropisomeric; /* flag indicating if the atom is part of an atropisomeric bond */
+
 #if (FIND_RING_SYSTEMS == 1)
     S_CHAR bCutVertex;
     AT_NUMB nRingSystem;
@@ -379,6 +381,17 @@ typedef struct OAD_V3000
     int **lists_stebrac;
 } OAD_V3000;
 
+/* Atropisomer candidate axis record (geometric axial parity), see atropisomers.c/.h. */
+typedef struct tagATROP_AXIS {
+    int    at1;          /* 0-based index into out_at */
+    int    at2;
+    AT_NUMB orig_at1;    /* out_at[at1].orig_at_number (for Sub-project B mapping) */
+    AT_NUMB orig_at2;
+    S_CHAR parity;       /* AB_PARITY_ODD / AB_PARITY_EVEN / AB_PARITY_UNDF */
+    S_CHAR z_dir1[3];
+    S_CHAR z_dir2[3];
+} ATROP_AXIS;
+
 /**
  * @brief Structure describing original atom data
  *
@@ -432,7 +445,12 @@ typedef struct tagOrigAtom
     OAD_Polymer *polymer;
     OAD_V3000 *v3000;
     int valid_polymer;
-    int n_zy; /* number of non-polymeric pseudoatoms (Zy)             */
+    int n_zy;               /* number of non-polymeric pseudoatoms (Zy)             */
+
+    int bAtropisomer;     /* flag indicating whether the structure is an atropisomer; it is set to 1 if the structure has been identified as an atropisomer during input processing, and 0 otherwise */
+
+    ATROP_AXIS *atrop_axes;   /* detected candidate axes; NULL if none. Owned here. */
+    int         num_atrop_axes;
 
 } ORIG_ATOM_DATA;
 
