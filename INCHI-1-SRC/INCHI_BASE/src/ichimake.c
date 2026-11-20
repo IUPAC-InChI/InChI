@@ -3885,8 +3885,11 @@ int  Create_INChI(CANON_GLOBALS* pCG,
 #if ( FIND_RING_SYSTEMS == 1 )
     MarkRingSystemsInp(out_at, num_atoms, 0);
 
-    orig_inp_data->bAtropisomer = 0;
-    if (ip->bEnhancedStereo) {
+    /* orig_inp_data is NULL when restoring a structure from an InChI string */
+    if (orig_inp_data) {
+        orig_inp_data->bAtropisomer = 0;
+    }
+    if (ip->bEnhancedStereo && orig_inp_data) {
         int ret_ai = find_atropisomeric_atoms_and_bonds(out_at, num_atoms, orig_inp_data);
 
         /* Map the per-atom flags back to the original atom order. out_at was
