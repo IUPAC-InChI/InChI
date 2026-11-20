@@ -601,8 +601,6 @@ extern "C" {
                                        /* 0=> allow other definitions (below) to be active */
 #define ONE_BAD_SB_NEIGHBOR         1  /* 1 => allow 1 "bad" bond type neighbor to a stereobond atom. 2004-06-02 */
 
-#define ENH_STEREO_DICT_SIZE        100 /* 100 => size of the dictionary for enhanced stereo */
-
 /* more stereo settings */
 #define BREAK_ONE_MORE_SC_TIE       1   /* break one more tie when comparing possible stereocenter neighbors */
 #define BREAK_ALSO_NEIGH_TIE        0   /* post 1.12Beta 2004-08-20: if fixed neighbor has equ neighbors, fix the one with smaller canon. rank */
@@ -942,6 +940,7 @@ extern "C" {
 #define TG_FLAG_ARSINE_STEREO            0x00010000   /* add arsine sp3 stereo */
 #define TG_FLAG_H_ALREADY_REMOVED        0x00020000   /* processing structure restored from InChI */
 #define TG_FLAG_FIX_SP3_BUG              0x00040000   /* fix sp3 stereo bug: overlapping 2D stereo bond & coordinate scaling */
+#define TG_FLAG_ALLENE_ONE_WEDGE         0x20000000   /* one wedge at one allene terminal defines the axis */
 
 #define TG_FLAG_KETO_ENOL_TAUT           0x00080000   /* turn on keto-enol tautomerism detection */
 #define TG_FLAG_1_5_TAUT                 0x00100000   /* turn on 1,5 tautomerism detection */

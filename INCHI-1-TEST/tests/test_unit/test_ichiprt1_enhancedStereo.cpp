@@ -86,6 +86,13 @@ TEST(test_ichiprt1_enhancedStereo, test_OutputINCHI_StereoLayer_enhanced_stereo_
     INChI *inchi = Alloc_INChI(atoms, num_at, &found_num_bonds, &found_num_isotopic, 0);
     inchi->nNumberOfAtoms = num_at;
 
+    // every canonical atom is a stereocentre: only those reach /s
+    for (int i = 0; i < num_at; i++)
+    {
+        inchi->Stereo->nNumber[i] = (AT_NUMB)(i + 1);
+    }
+    inchi->Stereo->nNumberOfStereoCenters = num_at;
+
     INChI_Aux *pAux = Alloc_INChI_Aux(num_at, num_iso_at, alloc_mode, bOrigatomflag);
 
     pAux->nNumberOfAtoms = num_at;
