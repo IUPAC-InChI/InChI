@@ -400,6 +400,19 @@ int OrigAtData_Duplicate(ORIG_ATOM_DATA* new_orig_atom,
                 }
             }
 
+            /* Double-bond collections; memcpy above shared their pointers */
+            new_v3000->lists_stebabs = new_v3000->lists_stebrel = new_v3000->lists_stebrac = NULL;
+            if ( (orig_atom->v3000->n_stebabs &&
+                  !(new_v3000->lists_stebabs = CopyIntLists(orig_atom->v3000->lists_stebabs, orig_atom->v3000->n_stebabs))) ||
+                 (orig_atom->v3000->n_stebrel &&
+                  !(new_v3000->lists_stebrel = CopyIntLists(orig_atom->v3000->lists_stebrel, orig_atom->v3000->n_stebrel))) ||
+                 (orig_atom->v3000->n_stebrac &&
+                  !(new_v3000->lists_stebrac = CopyIntLists(orig_atom->v3000->lists_stebrac, orig_atom->v3000->n_stebrac))) )
+            {
+                FreeExtOrigAtData(NULL, new_v3000);
+                goto exit_function;
+            }
+
             new_orig_atom->v3000 = new_v3000;
         }
 
@@ -478,6 +491,12 @@ static void DropStereoCollections(OAD_V3000 *v3k)
 
     v3k->lists_steabs = v3k->lists_sterel = v3k->lists_sterac = NULL;
     v3k->n_steabs = v3k->n_sterel = v3k->n_sterac = 0;
+
+    FreeIntLists(v3k->lists_stebabs, v3k->n_stebabs);
+    FreeIntLists(v3k->lists_stebrel, v3k->n_stebrel);
+    FreeIntLists(v3k->lists_stebrac, v3k->n_stebrac);
+    v3k->lists_stebabs = v3k->lists_stebrel = v3k->lists_stebrac = NULL;
+    v3k->n_stebabs = v3k->n_stebrel = v3k->n_stebrac = 0;
 }
 
 /****************************************************************************
@@ -522,11 +541,16 @@ static int StereoGroupSpansComponents(const ORIG_ATOM_DATA *oad, char *msg)
         component_of[oad->at[k].orig_at_number] = oad->at[k].component;
     }
 
-    /* Every atom of an OR (t=0) or AND (t=1) group in one component */
-    for (t = 0; t < 2 && !bad; t++)
+    /* Every atom of an OR or AND group, of centres or double bonds, in one component */
+    for (t = 0; t < 4 && !bad; t++)
     {
-        int **lists = (t == 0) ? oad->v3000->lists_sterel : oad->v3000->lists_sterac;
-        int n_lists = (t == 0) ? oad->v3000->n_sterel : oad->v3000->n_sterac;
+        static const char *tag[4] = { "STEREL", "STERAC", "STEBREL", "STEBRAC" };
+        int **all_lists[4] = { oad->v3000->lists_sterel, oad->v3000->lists_sterac,
+                               oad->v3000->lists_stebrel, oad->v3000->lists_stebrac };
+        int all_n[4] = { oad->v3000->n_sterel, oad->v3000->n_sterac,
+                         oad->v3000->n_stebrel, oad->v3000->n_stebrac };
+        int **lists = all_lists[t];
+        int n_lists = all_n[t];
 
         for (k = 0; lists && k < n_lists && !bad; k++)
         {
@@ -548,7 +572,7 @@ static int StereoGroupSpansComponents(const ORIG_ATOM_DATA *oad, char *msg)
                 else if (c != first)
                 {
                     sprintf(msg, "V3000 collections: %s%d spans more than one component",
-                            t == 0 ? "STEREL" : "STERAC", lists[k][0]);
+                            tag[t], lists[k][0]);
                     bad = 1;
                     break;
                 }
