@@ -248,7 +248,9 @@ sha2.o	\
 strutil.o	\
 permutation_util.o	\
 util.o	\
-bcf_s.o
+bcf_s.o	\
+atropisomers.o	\
+ring_detection.o
 # === InChI Library link rule =========
 ifneq ($(OS_ID),0)
 # djb-rwth: creating .so on Linux

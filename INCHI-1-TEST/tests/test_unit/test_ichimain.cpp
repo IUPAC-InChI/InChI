@@ -14,6 +14,13 @@ extern "C"
 #include "../../../INCHI-1-SRC/INCHI_BASE/src/ichimain.h"
 }
 
+/* Absolute path to the fixture directory, supplied by CMake so the tests do not
+   depend on the working directory they happen to be launched from. The literal
+   below is only a fallback for builds that do not define it. */
+#ifndef FIXTURES_DIR
+#define FIXTURES_DIR "../../../../../INCHI-1-TEST/tests/test_unit/fixtures"
+#endif
+
 static char* make_arg(const char* s) {
     size_t len = strlen(s) + 1;
     char* p = (char*)malloc(len);
@@ -154,7 +161,7 @@ TEST(test_ichimain, test_CalcAndPrintINCHIAndINCHIKEY) {
         szSdfDataValue, &ulDisplTime,
         bReleaseVersion, plog);
 
-    const char* inchi_filename = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/output.txt";
+    const char* inchi_filename = FIXTURES_DIR "/output.txt";
     FILE *file_inchi = nullptr;
     file_inchi = fopen(inchi_filename, "w");
     EXPECT_NE(file_inchi, nullptr);
@@ -287,9 +294,9 @@ TEST(test_ichimain, test_ProcessMultipleInputFiles_2mol_files)
         "caffeine.mol"
     };
 
-    const char *path_fixtures = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures";
+    const char *path_fixtures = FIXTURES_DIR;
 
-    char tmpl[] = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/inchi_mol_test_XXXXXX";
+    char tmpl[] = FIXTURES_DIR "/inchi_mol_test_XXXXXX";
     char *tmpd = mkdtemp(tmpl);
 
     EXPECT_NE(tmpd, nullptr);
@@ -355,8 +362,8 @@ TEST(test_ichimain, test_ProcessSingleInputFile_caffeine)
 
     const char *filename_caffeine = "caffeine.mol";
 
-    const char *path_fixtures = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures";
-    char tmpl[] = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/inchi_mol_test_XXXXXX";
+    const char *path_fixtures = FIXTURES_DIR;
+    char tmpl[] = FIXTURES_DIR "/inchi_mol_test_XXXXXX";
     char *tmpd = mkdtemp(tmpl);
     ASSERT_NE(tmpd, nullptr);
 
@@ -413,8 +420,8 @@ TEST(test_ichimain, test_ProcessSingleInputFile_2mols_sdf)
 
     const char *filename_2mols = "test_mols_2.sdf";
 
-    const char *path_fixtures = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures";
-    char tmpl[] = "../../../../../INCHI-1-TEST/tests/test_unit/fixtures/inchi_mol_test_XXXXXX";
+    const char *path_fixtures = FIXTURES_DIR;
+    char tmpl[] = FIXTURES_DIR "/inchi_mol_test_XXXXXX";
     char *tmpd = mkdtemp(tmpl);
     ASSERT_NE(tmpd, nullptr);
 
