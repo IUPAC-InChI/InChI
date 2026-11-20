@@ -3718,7 +3718,8 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     int        bPointedEdgeStereo = ((TG_FLAG_POINTED_EDGE_STEREO & *pbTautFlags) ? PES_BIT_POINT_EDGE_STEREO : 0)
         | ((TG_FLAG_PHOSPHINE_STEREO & *pbTautFlags) ? PES_BIT_PHOSPHINE_STEREO : 0)
         | ((TG_FLAG_ARSINE_STEREO & *pbTautFlags) ? PES_BIT_ARSINE_STEREO : 0)
-        | ((TG_FLAG_FIX_SP3_BUG & *pbTautFlags) ? PES_BIT_FIX_SP3_BUG : 0);
+        | ((TG_FLAG_FIX_SP3_BUG & *pbTautFlags) ? PES_BIT_FIX_SP3_BUG : 0)
+        | ((TG_FLAG_ALLENE_ONE_WEDGE & *pbTautFlags) ? PES_BIT_ALLENE_ONE_WEDGE : 0);
     INCHI_MODE bTautFlags = (*pbTautFlags & (~(INCHI_MODE)TG_FLAG_ALL_TAUTOMERIC));
     INCHI_MODE bTautFlagsDone = (*pbTautFlagsDone /*& (~(INCHI_MODE)TG_FLAG_ALL_TAUTOMERIC) */);
 #if ( bRELEASE_VERSION == 0 )

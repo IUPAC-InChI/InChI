@@ -45,6 +45,7 @@ extern "C" {
 #define PES_BIT_PHOSPHINE_STEREO     2
 #define PES_BIT_ARSINE_STEREO        4
 #define PES_BIT_FIX_SP3_BUG          8
+#define PES_BIT_ALLENE_ONE_WEDGE    16
 
 #ifndef COMPILE_ALL_CPP
 #ifdef __cplusplus
