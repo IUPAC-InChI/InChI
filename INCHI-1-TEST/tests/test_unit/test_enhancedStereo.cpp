@@ -17,6 +17,12 @@ extern "C"
 #define FIXTURES_DIR "../../../../../INCHI-1-TEST/tests/test_unit/fixtures"
 #endif
 
+/* InChI without its version prefix, e.g. "InChI=1BB/C2H6O/..." -> "/C2H6O/..." */
+static std::string Body(const std::string &inchi)
+{
+    return inchi.substr(inchi.find('/', strlen("InChI=")));
+}
+
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_molfile_v2)
 {
     const char *molblock =
@@ -314,7 +320,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_and_only_omit_m_layer)
         FreeINCHI(poutput);
 
         /* identical apart from the version prefix: 1B vs the plain non-standard 1 */
-        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")));
+        EXPECT_EQ(Body(enh), Body(ref));
     }
 }
 
@@ -582,10 +588,11 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_independent_of_aux_none)
         const char *expected;
     };
     const AuxNoneCase cases[] = {
-        /* both alcohols AND, Na+ OH-: no ABS anywhere, so no /m */
+        /* both alcohols AND, Na+ OH-: no ABS anywhere, so no /m;
+           Na makes it a Molecular Inorganics structure: 1BB */
         { alcohols_with_naoh_head,
           "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
-          "InChI=1B/C5H12O.C4H10O.Na.H2O/c1-3-4-5(2)6;1-3-4(2)5;;/h5-6H,3-4H2,1-2H3;"
+          "InChI=1BB/C5H12O.C4H10O.Na.H2O/c1-3-4-5(2)6;1-3-4(2)5;;/h5-6H,3-4H2,1-2H3;"
           "4-5H,3H2,1-2H3;;1H2/q;;+1;/p-1/t5-;4-;;/s3" },
         /* pentanol AND, butanol ungrouped: '.' on the racemic pentanol */
         { pentanol_first_head,
@@ -678,15 +685,14 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_
         const char *collections;
         Spectators spectators;
         const char *ref_option;
-        const char *ref_prefix;
     };
     const UniformCase cases[] = {
-        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NONE, "", "InChI=1S/" },
-        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NAOH, "", "InChI=1S/" },
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NONE, "" },
+        { "M  V30 MDLV30/STEABS ATOMS=(2 2 7)\n", Spectators::NAOH, "" },
         { "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\nM  V30 MDLV30/STEREL2 ATOMS=(1 7)\n",
-          Spectators::NONE, "-SRel", "InChI=1/" },
+          Spectators::NONE, "-SRel" },
         { "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\nM  V30 MDLV30/STERAC2 ATOMS=(1 7)\n",
-          Spectators::NAOH, "-SRac", "InChI=1/" },
+          Spectators::NAOH, "-SRac" },
     };
 
     for (const UniformCase &c : cases)
@@ -706,7 +712,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_uniform_class_reduces_to_
         const std::string ref = poutput->szInChI;
         FreeINCHI(poutput);
 
-        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen(c.ref_prefix)))
+        EXPECT_EQ(Body(enh), Body(ref))
             << "enhanced: " << enh << "\nreference: " << ref;
     }
 }
@@ -853,7 +859,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_only_orphan_collections_k
         const std::string ref = poutput->szInChI;
         FreeINCHI(poutput);
 
-        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/"))) << coll;
+        EXPECT_EQ(Body(enh), Body(ref)) << coll;
     }
 
     /* Two components, both centres wedged and ungrouped; the only collection
@@ -1046,7 +1052,8 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_only_omits_m_with_mobi
     inchi_Output output;
     inchi_Output *poutput = &output;
 
-    const char expected_enh[] = "InChI=1B/C4H6BrClO2/c1-2(6)3(5)4(7)8/h2-3H,1H3,(H,7,8)/t2-,3+/s2/f/h7H";
+    /* non-standard -FixedH outranks the beta designator: 1N, not 1B */
+    const char expected_enh[] = "InChI=1N/C4H6BrClO2/c1-2(6)3(5)4(7)8/h2-3H,1H3,(H,7,8)/t2-,3+/s2/f/h7H";
 
     char options_enh[] = "-EnhancedStereochemistry -FixedH";
     ASSERT_EQ(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 0);
@@ -1064,7 +1071,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_or_only_omits_m_with_mobi
     poutput->szMessage = nullptr;
     FreeINCHI(poutput);
 
-    EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")));
+    EXPECT_EQ(Body(enh), Body(ref));
 }
 
 /* The BIOVIA white-paper Appendix B / fig. 22 reference molfile, located in
@@ -1821,7 +1828,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_group_spanning_disconnect
         FreeINCHI(poutput);
 
         /* collections dropped: standard InChI apart from the prefix */
-        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/"))) << cfg_b;
+        EXPECT_EQ(Body(enh), Body(ref)) << cfg_b;
     }
 }
 
@@ -2189,7 +2196,8 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_isotopic_layer_states_its
    AuxInfo-only pass has no input data, and the /t-/m normalisation read
    through that NULL (a crash under valgrind; garbage natively, e.g. /r
    without /s). One AND group per Mg ligand: every wedge set is the same
-   substance, so one InChI, and /r carries /s3. */
+   substance, so one InChI, and /r carries /s3. Molecular Inorganics (the
+   default) emits no /r, hence -LegacyMetalHandling. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_reconnected_metal_layer)
 {
     std::string first;
@@ -2204,7 +2212,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_reconnected_metal_layer)
         inchi_Output output = {};
         inchi_Output *poutput = &output;
 
-        char options[] = "-EnhancedStereochemistry -RecMet";
+        char options[] = "-EnhancedStereochemistry -RecMet -LegacyMetalHandling";
         ASSERT_LT(MakeINCHIFromMolfileText(molblock.c_str(), options, poutput), 2);
         const std::string inchi = poutput->szInChI;
         FreeINCHI(poutput);
@@ -2224,8 +2232,8 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_reconnected_metal_layer)
 /* With -MolecularInorganics a haptically bound alkene stays in the metal's
    component, so an AND group over a centre on it and a centre on another
    ligand does not span components. The reader's CTab-only check ignored
-   haptic bonds and rejected it. Without the option InChI splits the complex,
-   and the same group is rejected. */
+   haptic bonds and rejected it. With -LegacyMetalHandling InChI splits the
+   complex, and the same group is rejected. */
 TEST(test_enhancedStereo, test_EnhancedStereochemistry_haptic_group_follows_inchi_components)
 {
     const char *molblock =
@@ -2289,17 +2297,17 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_haptic_group_follows_inch
 
     /* complex split into components: rejected, so standard InChI with 1B.
        (szMessage carries the reader's star-atom warning here, not this one.) */
-    char options_enh[] = "-EnhancedStereochemistry";
+    char options_enh[] = "-EnhancedStereochemistry -LegacyMetalHandling";
     ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_enh, poutput), 2);
     const std::string enh = poutput->szInChI;
     FreeINCHI(poutput);
 
-    char options_std[] = "";
+    char options_std[] = "-LegacyMetalHandling";
     ASSERT_LT(MakeINCHIFromMolfileText(molblock, options_std, poutput), 2);
     const std::string ref = poutput->szInChI;
     FreeINCHI(poutput);
 
-    EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1S/")));
+    EXPECT_EQ(Body(enh), Body(ref));
 }
 
 /* Centres of unknown configuration ('?' under -SUU) carry no class, so a
@@ -2337,7 +2345,7 @@ TEST(test_enhancedStereo, test_EnhancedStereochemistry_unknown_centres_do_not_bl
         FreeINCHI(poutput);
 
         EXPECT_NE(enh.find("/t5?;4-"), std::string::npos) << enh;
-        EXPECT_EQ(enh.substr(strlen("InChI=1B/")), ref.substr(strlen("InChI=1/")))
+        EXPECT_EQ(Body(enh), Body(ref))
             << "enhanced: " << enh << "\nreference: " << ref;
     }
 }
