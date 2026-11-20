@@ -19,10 +19,16 @@ jobs:
         run: ./.devcontainer/post_create_commands.sh
 
       - name: Run unit tests
-        run: cd CMake_build/full_build/INCHI-1-TEST/tests/test_unit && ctest --output-on-failure
+        run: ctest --test-dir CMake_build/full_build/INCHI-1-TEST/tests/test_unit --output-on-failure
 
       - name: Run executable tests
         run: pytest INCHI-1-TEST/tests/test_executable
+
+      # test_performance.py asserts wall-clock bounds that depend on the machine.
+      - name: Run meta tests
+        run: >-
+          pytest INCHI-1-TEST/tests/test_meta
+          --ignore=INCHI-1-TEST/tests/test_meta/test_performance.py
 
       - name: Run multithreading test
         run: python INCHI-1-TEST/tests/test_library/test_multithreading.py
@@ -73,11 +79,18 @@ jobs:
         run: ./INCHI-1-TEST/build_with_cmake.sh all
 
       - name: Run unit tests
-        run: cd CMake_build/full_build/INCHI-1-TEST/tests/test_unit && ctest --output-on-failure
+        run: ctest --test-dir CMake_build/full_build/INCHI-1-TEST/tests/test_unit --output-on-failure
 
       - name: Run executable tests
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pytest INCHI-1-TEST/tests/test_executable
+
+      # test_performance.py asserts wall-clock bounds that depend on the machine.
+      - name: Run meta tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: >-
+          pytest INCHI-1-TEST/tests/test_meta
+          --ignore=INCHI-1-TEST/tests/test_meta/test_performance.py
 
       - name: Run multithreading test
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}

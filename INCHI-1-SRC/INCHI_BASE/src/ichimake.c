@@ -3725,12 +3725,6 @@ int  Create_INChI(CANON_GLOBALS* pCG,
     int bExtract = 0; /*  EXTR_HAS_ATOM_WITH_DEFINED_PARITY; */
 #endif
 
-#ifdef GHI100_FIX
-#if ((SPRINTF_FLAG != 1) && (SPRINTF_FLAG != 2))
-    setlocale(LC_ALL, "en-US"); /* djb-rwth: setting all locales to "en-US" */
-#endif
-#endif
-
     /* */
     int bFixIsoFixedH = 0;
     int bFixTermHChrg = 0;

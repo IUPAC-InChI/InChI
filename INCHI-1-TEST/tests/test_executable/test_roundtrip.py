@@ -178,6 +178,16 @@ M  END
 
 
 @pytest.mark.xfail(strict=True, raises=AssertionError)
+def test_roundtrip_legacy_metal_handling(molfile, run_inchi_exe):
+    result = run_inchi_exe(molfile, "-LegacyMetalHandling")
+    inchi = parse_inchi_from_executable_output(result.output)
+
+    result_roundtripped = run_inchi_exe(inchi, "-InChI2Struct -LegacyMetalHandling")
+    inchi_roundtripped = parse_inchi_from_executable_output(result_roundtripped.output)
+
+    assert inchi == inchi_roundtripped
+
+
 def test_roundtrip(molfile, run_inchi_exe):
     result = run_inchi_exe(molfile)
     inchi = parse_inchi_from_executable_output(result.output)
@@ -186,3 +196,25 @@ def test_roundtrip(molfile, run_inchi_exe):
     inchi_roundtripped = parse_inchi_from_executable_output(result_roundtripped.output)
 
     assert inchi == inchi_roundtripped
+
+
+def test_inchi2inchi_legacy_metal_handling_rejects_mi_input_and_continues(
+    run_inchi_exe,
+):
+    inchis = "InChI=1S/H2O/h1H2\nInChI=1BB/CH3Li/c1-2/h1H3\nInChI=1S/CH4/h1H4\n"
+
+    result = run_inchi_exe(inchis, "-InChI2InChI -LegacyMetalHandling -OutErrInChI")
+
+    assert result.output.splitlines()[-3:] == [
+        "InChI=1N/H2O/h1H2",
+        "InChI=1N//",
+        "InChI=1N/CH4/h1H4",
+    ]
+    assert "LegacyMetalHandling cannot be used with InChI2InChI" in result.log
+    assert "Finished processing 3 structures: 1 error" in result.log
+
+
+def test_inchi2inchi_unknown_class_letter_gets_no_mi_marker(run_inchi_exe):
+    result = run_inchi_exe("InChI=1XB/H2O/h1H2\n", "-InChI2InChI")
+
+    assert "InChI=1N/H2O/h1H2" in result.output

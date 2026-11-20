@@ -887,6 +887,12 @@ NEIGH_LIST *CreateNeighList( int num_atoms,
                 pAtList[start] = length - start - 1;  /*  number of neighbors before the list of neighbors */
                 pp[num_atoms + i] = pAtList + start;    /*  pointer to the <num.neigh.><list of neigh> */
             }
+
+            /* GH #209: empty list; pAtList not owned by pp[0], FreeNeighList can't free it */
+            if (!pp[0])
+            {
+                inchi_free( pAtList );
+            }
         }
         else
         {

@@ -76,16 +76,16 @@ void ExpectSingleAtomInChI(const SingleAtomCase& c)
 TEST(test_implicitHydrogen, mainGroupMetals_skipImplicitH)
 {
     const SingleAtomCase cases[] = {
-        /* alkali */          {"Li", "InChI=1S/Li"}, {"Na", "InChI=1S/Na"},
-                              {"K", "InChI=1S/K"},   {"Rb", "InChI=1S/Rb"},
-                              {"Cs", "InChI=1S/Cs"}, {"Fr", "InChI=1S/Fr"},
-        /* alkaline earth */  {"Be", "InChI=1S/Be"}, {"Mg", "InChI=1S/Mg"},
-                              {"Ca", "InChI=1S/Ca"}, {"Sr", "InChI=1S/Sr"},
-                              {"Ba", "InChI=1S/Ba"}, {"Ra", "InChI=1S/Ra"},
-        /* group 13 */        {"Al", "InChI=1S/Al"}, {"Ga", "InChI=1S/Ga"},
-                              {"In", "InChI=1S/In"}, {"Tl", "InChI=1S/Tl"},
-        /* heavier p-block */ {"Sn", "InChI=1S/Sn"}, {"Pb", "InChI=1S/Pb"},
-                              {"Bi", "InChI=1S/Bi"}, {"Po", "InChI=1S/Po"},
+        /* alkali */          {"Li", "InChI=1BB/Li"}, {"Na", "InChI=1BB/Na"},
+                              {"K", "InChI=1BB/K"},   {"Rb", "InChI=1BB/Rb"},
+                              {"Cs", "InChI=1BB/Cs"}, {"Fr", "InChI=1BB/Fr"},
+        /* alkaline earth */  {"Be", "InChI=1BB/Be"}, {"Mg", "InChI=1BB/Mg"},
+                              {"Ca", "InChI=1BB/Ca"}, {"Sr", "InChI=1BB/Sr"},
+                              {"Ba", "InChI=1BB/Ba"}, {"Ra", "InChI=1BB/Ra"},
+        /* group 13 */        {"Al", "InChI=1BB/Al"}, {"Ga", "InChI=1BB/Ga"},
+                              {"In", "InChI=1BB/In"}, {"Tl", "InChI=1BB/Tl"},
+        /* heavier p-block */ {"Sn", "InChI=1BB/Sn"}, {"Pb", "InChI=1BB/Pb"},
+                              {"Bi", "InChI=1BB/Bi"}, {"Po", "InChI=1BB/Po"},
     };
 
     for (const auto& c : cases)
@@ -99,8 +99,8 @@ TEST(test_implicitHydrogen, mainGroupMetals_skipImplicitH)
 TEST(test_implicitHydrogen, transitionMetals_skipImplicitH)
 {
     const SingleAtomCase cases[] = {
-        {"Fe", "InChI=1S/Fe"}, {"Cu", "InChI=1S/Cu"}, {"Zn", "InChI=1S/Zn"},
-        {"Pt", "InChI=1S/Pt"}, {"Au", "InChI=1S/Au"},
+        {"Fe", "InChI=1BB/Fe"}, {"Cu", "InChI=1BB/Cu"}, {"Zn", "InChI=1BB/Zn"},
+        {"Pt", "InChI=1BB/Pt"}, {"Au", "InChI=1BB/Au"},
     };
 
     for (const auto& c : cases)
@@ -121,7 +121,7 @@ TEST(test_implicitHydrogen, nonmetalsAndMetalloids_addImplicitH)
         {"P", "InChI=1S/H3P/h1H3"},   {"S", "InChI=1S/H2S/h1H2"},
         {"Cl", "InChI=1S/ClH/h1H"},   {"Ge", "InChI=1S/GeH4/h1H4"},
         {"As", "InChI=1S/AsH3/h1H3"}, {"Se", "InChI=1S/H2Se/h1H2"},
-        {"Br", "InChI=1S/BrH/h1H"},   {"Sb", "InChI=1S/Sb.3H", 1},
+        {"Br", "InChI=1S/BrH/h1H"},   {"Sb", "InChI=1BB/H3Sb/h1H3", 0},
         {"Te", "InChI=1S/H2Te/h1H2"}, {"I", "InChI=1S/HI/h1H"},
         {"At", "InChI=1S/AtH/h1H"},
     };

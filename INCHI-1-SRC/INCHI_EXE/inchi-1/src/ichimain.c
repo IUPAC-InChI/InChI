@@ -1038,11 +1038,11 @@ void emit_empty_inchi(INPUT_PARMS* ip,
 {
     if (ip->bINChIOutputOptions & INCHI_OUT_STDINCHI)
     {
-        inchi_ios_eprint(pout, "InChI=1S//\n"); /* emit empty Std InChI */
+        inchi_ios_eprint(pout, "InChI=1S//\n"); /* emit empty Standard InChI */
     }
     else
     {
-        inchi_ios_eprint(pout, "InChI=1//\n"); /* emit empty InChI */
+        inchi_ios_eprint(pout, "InChI=1N//\n"); /* emit empty non-standard InChI */
     }
     inchi_ios_flush(pout);
 }
