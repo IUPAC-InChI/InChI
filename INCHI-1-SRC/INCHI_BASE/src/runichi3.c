@@ -4413,9 +4413,10 @@ void OAD_ValidateAndSortOutPseudoElementAtoms(ORIG_ATOM_DATA* orig_at_data,
             }
 
             /* Now check if valid pseudoelement atom */
+
             /* Should be strictly univalent and single-bonded */
             /* Should not have isotopic enrichment */
-            if (orig_at_data->at[k].valence > 1 ||
+            if ( orig_at_data->at[k].valence > 1 ||
                 orig_at_data->at[k].chem_bonds_valence > 1 /* || orig_at_data->at[k].iso_atw_diff != 0    */
                 )
             {
