@@ -63,11 +63,18 @@ def main(test, inchi_lib_path, data_config) -> None:
 
                         continue
 
+                    # Written under a temporary name and renamed once complete, so
+                    # an aborted run leaves no reference that the existence check
+                    # above would mistake for a finished one.
+                    partial_path = reference_path.with_name(
+                        reference_path.name + ".partial"
+                    )
+                    partial_path.unlink(missing_ok=True)
                     exit_code = max(
                         exit_code,
                         drivers.regression_reference(
                             sdf_path=sdf_path,
-                            reference_path=reference_path,
+                            reference_path=partial_path,
                             consumer_function=partial(
                                 regression_consumer,
                                 inchi_lib_path=inchi_lib_path,
@@ -77,6 +84,7 @@ def main(test, inchi_lib_path, data_config) -> None:
                             number_of_consumer_processes=n_processes,
                         ),
                     )
+                    partial_path.rename(reference_path)
 
                 case "invariance":
                     exit_code = max(

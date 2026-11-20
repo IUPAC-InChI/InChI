@@ -120,7 +120,6 @@ target_sources(inchi-1 PRIVATE
 	${P_BASE}/runichi4.c
 	${P_BASE}/sha2.c
 	${P_BASE}/sha2.h
-	${P_BASE}/stb_sprintf.h
 	${P_BASE}/strutil.c
 	${P_BASE}/molecular_inorganics_data.c
 	${P_BASE}/strutil.h
@@ -160,3 +159,6 @@ target_include_directories(inchi-1 PUBLIC
 
 string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
+install(FILES "${PROJECT_BINARY_DIR}/inchi_version_rc.h" DESTINATION include/inchi)
+install(TARGETS inchi-1)
