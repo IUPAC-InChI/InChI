@@ -212,11 +212,6 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
     int err, ret1 = 0;
 
     /* djb-rwth: removing redundant code */
-#ifdef GHI100_FIX
-#if ((SPRINTF_FLAG != 1) && (SPRINTF_FLAG != 2))
-    setlocale(LC_ALL, "en-US"); /* djb-rwth: setting all locales to "en-US" */
-#endif
-#endif
 
     /*    1. Preliminary work */
 
@@ -281,6 +276,21 @@ int ProcessOneStructure(INCHI_CLOCK* ic,
 
         /* Call the MolecularInorganicsPreprocessing function to handle specific inorganics-related tasks */
         ret1 = MolecularInorganicsPreprocessing(orig_inp_data, ip);
+
+        /* A charge-separated bond to a non-Group-1/2 metal whose element pair
+         * the bond table cuts (e.g. Ag(+)-F(-)): reject this structure with
+         * an error and continue with the next one (issue #304). */
+        if ( ret1 == MI_ERR_CHARGE_SEPARATED_NON_GROUP12 )
+        {
+            long num_inp2 = num_inp;
+            AddErrorMessage(sd->pStrErrStruct, "Charge-separated bond to a non-Group 1/2 metal");
+            sd->nStructReadError = 99;
+            sd->nErrorType = _IS_ERROR;
+            TreatErrorsInReadTheStructure(sd, ip, LOG_MASK_ALL, inp_file, log_file, out_file, prb_file,
+                orig_inp_data, &num_inp2);
+            nRet = _IS_ERROR;
+            goto after_structure_generation;
+        }
 
         /* Check for errors during preprocessing */
         if ( ret1 < 0 )
@@ -888,12 +898,6 @@ int CreateOneStructureINChI(CANON_GLOBALS* pCG,
     int i, j, k, nRet = 0, n = 0l;
 #if defined (TARGET_EXE_STANDALONE) && defined(_WIN32)
     int err_display;
-#endif
-
-#ifdef GHI100_FIX
-#if ((SPRINTF_FLAG != 1) && (SPRINTF_FLAG != 2))
-    setlocale(LC_ALL, "en-US"); /* djb-rwth: setting all locales to "en-US" */
-#endif
 #endif
 
     PINChI2     *pINChI = NULL;
@@ -1830,12 +1834,6 @@ int CreateOneComponentINChI(CANON_GLOBALS* pCG,
 
     int nAllocMode = 0;  /* moved from below 2024-09-01 DT */
 
-#ifdef GHI100_FIX
-#if ((SPRINTF_FLAG != 1) && (SPRINTF_FLAG != 2))
-    setlocale(LC_ALL, "en-US"); /* djb-rwth: setting all locales to "en-US" */
-#endif
-#endif
-
     InchiTimeGet( &ulTStart );
 
     bOrigCoord =
@@ -2155,13 +2153,13 @@ int ProcessOneStructureEx(struct tagINCHI_CLOCK* ic,
     {
         if ( ret == _IS_FATAL || ret == _IS_ERROR )
         {
-            if ( ip->bINChIOutputOptions & INCHI_OUT_STDINCHI )
+            if (ip->bINChIOutputOptions & INCHI_OUT_STDINCHI)
             {
                 inchi_ios_eprint(out_file, "InChI=1S//\n");
             }
             else
             {
-                inchi_ios_eprint(out_file, "InChI=1//\n");
+                inchi_ios_eprint(out_file, "InChI=1N//\n");
             }
         }
     }

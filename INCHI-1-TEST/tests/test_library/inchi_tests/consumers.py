@@ -48,21 +48,30 @@ def invariance_consumer(
     variants: list[dict[str, str | int]] = []
     inchi_string_variants = set()
     inchi_key_variants = set()
+    errors: list[str] = []
 
     # Seed the random number generation that's used for molfile permutation.
     libc.srand(ctypes.c_uint(0))
 
     for _ in range(n_invariance_runs):
-        _, molfile_permuted = permute_molfile_text(inchi_lib, molfile)
-        if not molfile_permuted:
-            # Failure to parse `molfile`,
-            # return empty result which will be handled upstream.
-            break
+        exit_code, molfile_permuted = permute_molfile_text(inchi_lib, molfile)
+        if exit_code:
+            errors.append(f"Failed to permute molfile (exit code {exit_code}).")
+            continue
 
         exit_code, inchi_string, log, message, aux_info = make_inchi_from_molfile_text(
             inchi_lib, molfile_permuted, inchi_api_parameters
         )
-        _, inchi_key = get_inchi_key_from_inchi(inchi_lib, inchi_string)
+        if exit_code not in [0, 1]:  # 1 signals Warning
+            errors.append(
+                log or f"Failed to generate InChI (exit code {exit_code})."
+            )
+            continue
+
+        exit_code, inchi_key = get_inchi_key_from_inchi(inchi_lib, inchi_string)
+        if exit_code != 0:
+            errors.append(f"Failed to generate InChI key (exit_code={exit_code}).")
+            continue
 
         if (inchi_string not in inchi_string_variants) or (
             inchi_key not in inchi_key_variants
@@ -80,7 +89,6 @@ def invariance_consumer(
                     "aux": aux_info,
                     "log": log,
                     "message": message,
-                    "exit": exit_code,
                 },
             )
 
@@ -90,6 +98,7 @@ def invariance_consumer(
             consumer="invariance",
             parameters=inchi_api_parameters + f"; number_of_runs={n_invariance_runs}",
         ),
+        error="\n".join(errors),
         result={
             "variants": variants,
         },

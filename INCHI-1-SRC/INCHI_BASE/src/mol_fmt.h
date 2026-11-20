@@ -862,12 +862,14 @@ int MolfileV3000ReadCTABBeginAndCountsLine(MOL_FMT_CTAB *ctab,
  *
  * @param ctab Pointer to the connection table data structure.
  * @param inp_file Pointer to the input file stream.
+ * @param treat_polymers Polymer treatment mode (POLYMERS_NO ignores polymer data).
  * @param err Error code.
  * @param pStrErr Pointer to the error string buffer.
  * @return 0 on success, -1 on failure.
  */
 int MolfileV3000ReadAtomsBlock(MOL_FMT_CTAB *ctab,
                                INCHI_IOSTREAM *inp_file,
+                               int treat_polymers,
                                int err,
                                char *pStrErr);
 
@@ -895,6 +897,7 @@ int MolfileV3000ReadBondsBlock(MOL_FMT_CTAB *ctab,
  *
  * @param ctab Pointer to the connection table data structure.
  * @param inp_file Pointer to the input file stream.
+ * @param treat_polymers Polymer treatment mode (POLYMERS_NO ignores polymer data).
  * @param err Error code.
  * @param pStrErr Pointer to the error string buffer.
  * @return 0: Success (no error encountered, tail of CTAB read correctly)
@@ -906,6 +909,7 @@ int MolfileV3000ReadBondsBlock(MOL_FMT_CTAB *ctab,
  */
 int MolfileV3000ReadTailOfCTAB(MOL_FMT_CTAB *ctab,
                                INCHI_IOSTREAM *inp_file,
+                               int treat_polymers,
                                int err,
                                char *pStrErr);
 
@@ -946,6 +950,7 @@ int MolfileV3000ReadStereoCollection(MOL_FMT_CTAB *ctab,
  *
  * @param ctab Pointer to the connection table data structure.
  * @param inp_file Pointer to the input file stream.
+ * @param treat_polymers Polymer treatment mode (POLYMERS_NO ignores polymer data).
  * @param err Error code.
  * @param pStrErr Pointer to the error string buffer.
  * @return 0: Success (no error encountered, SGroup read correctly)
@@ -953,6 +958,7 @@ int MolfileV3000ReadStereoCollection(MOL_FMT_CTAB *ctab,
  */
 int MolfileV3000ReadSGroup(MOL_FMT_CTAB *ctab,
                            INCHI_IOSTREAM *inp_file,
+                           int treat_polymers,
                            int err,
                            char *pStrErr);
 

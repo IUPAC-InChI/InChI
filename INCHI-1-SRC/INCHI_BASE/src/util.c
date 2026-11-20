@@ -1450,7 +1450,6 @@ int read_upto_delim( char **pstring, char *field, int maxlen, char* delims )
     }
 
     mystrncpy( field, p, n + 1 );
-    field[n + 1] = '\0';
 
     if ( !p[n] )
     {
