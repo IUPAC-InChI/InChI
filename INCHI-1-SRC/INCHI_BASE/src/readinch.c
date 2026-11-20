@@ -1194,7 +1194,7 @@ int InchiToInpAtom( INCHI_IOSTREAM *inp_file,
                             }
                             else
                             {
-                                xyz = strtod(p, &q);
+                                xyz = inchi_strtod(p, (const char **)&q); /* GH #100 */
                                 bNonZeroXYZ = fabs(xyz) > MIN_BOND_LENGTH;
                                 if (q != NULL)
                                 {

@@ -13,6 +13,7 @@ COPY INCHI-1-SRC/INCHI_API /inchi/INCHI-1-SRC/INCHI_API
 COPY INCHI-1-SRC/INCHI_EXE /inchi/INCHI-1-SRC/INCHI_EXE
 COPY INCHI-1-TEST /inchi/INCHI-1-TEST
 COPY CMakeLists.txt /inchi/CMakeLists.txt
+COPY cmake /inchi/cmake
 
 # Ignore future changes, i.e., mounted custom files.
 RUN echo "*" > /inchi/.gitignore

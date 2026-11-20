@@ -64,6 +64,10 @@ extern "C"
 
     } ElementsMolecularInorganics;
 
+    /* MolecularInorganicsPreprocessing() result: the structure has a
+     * charge-separated bond to a metal outside Group 1/2 whose element pair
+     * the bond table cuts (e.g. Ag(+)-F(-)); it is rejected with an error. */
+#define MI_ERR_CHARGE_SEPARATED_NON_GROUP12 (-2)
     /* (@nnuk : Nauman Ullah Khan) :: Main function for molecular inorganics */
     int MolecularInorganicsPreprocessing(ORIG_ATOM_DATA* orig_at_data, INPUT_PARMS* ip);
     /* (@nnuk : Nauman Ullah Khan) :: Function related to molecular inorganics, for getting the binary value of the electronegativity difference between any two elements */

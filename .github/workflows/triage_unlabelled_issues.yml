@@ -1,0 +1,24 @@
+name: Label unlabelled issues for triage
+
+# Issue forms apply their labels only when used through the web UI.
+# Issues opened via `gh issue create --body` or the REST API bypass the
+# forms and arrive unlabelled; this adds `triage` so they are not missed.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  add_triage_label:
+    if: ${{ github.event.issue.labels[0] == null }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Add triage label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: gh issue edit "$ISSUE" --add-label triage

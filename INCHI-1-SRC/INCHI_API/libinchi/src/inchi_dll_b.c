@@ -213,7 +213,7 @@ int INCHI_DECL MakeINCHIFromMolfileText( const char *moltext,
                     }
                     else
                     {
-                        strcpy(result->szInChI, "InChI=1//");
+                        strcpy(result->szInChI, "InChI=1N//");
                     }
                 }
             }
@@ -1326,7 +1326,7 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
                                 }
                                 else
                                 {
-                                    xyz = strtod( p, &q );
+                                    xyz = inchi_strtod( p, (const char **) &q ); /* GH #100 */
                                     bNonZeroXYZ = fabs( xyz ) > MIN_BOND_LENGTH;
                                     if (q != NULL)
                                     {
@@ -2580,7 +2580,7 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
                             }
                             else
                             {
-                                xyz = strtod( p, &q );
+                                xyz = inchi_strtod( p, (const char **) &q ); /* GH #100 */
                                 bNonZeroXYZ = fabs( xyz ) > MIN_BOND_LENGTH;
                                 if (q != NULL)
                                 {

@@ -46,12 +46,6 @@
 /****************************************************************************/
 int main(int argc, char* argv[])
 {
-#ifdef GHI100_FIX
-#if ((SPRINTF_FLAG != 1) && (SPRINTF_FLAG != 2))
-    setlocale(LC_ALL, "en-US"); /* djb-rwth: setting all locales to "en-US" */
-#endif
-#endif
-
 /*************************/
 // #if ( BUILD_WITH_AMI == 1 )
 /*************************/
