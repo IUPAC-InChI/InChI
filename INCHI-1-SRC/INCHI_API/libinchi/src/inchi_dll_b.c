@@ -1121,7 +1121,7 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
 
                         neigh = (int) strtol( p, &q, 10 ) - 1;
 
-                        if (i >= num_atoms || neigh >= num_atoms)
+                        if (i >= num_atoms || neigh >= num_atoms || neigh < 0)
                         {
                             num_atoms = INCHI_INP_ERROR_RET; /* error */
                             *err = INCHI_INP_ERROR_ERR;
@@ -2365,7 +2365,7 @@ int InchiToInchiAtom( INCHI_IOSTREAM *inp_file,
 
                     neigh = (int) strtol( p, &q, 10 ) - 1;
 
-                    if (i >= num_atoms || neigh >= num_atoms)
+                    if (i >= num_atoms || neigh >= num_atoms || neigh < 0)
                     {
                         num_atoms = INCHI_INP_ERROR_RET; /* error in input data */
                         *err = INCHI_INP_ERROR_ERR;
