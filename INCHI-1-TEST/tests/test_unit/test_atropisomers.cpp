@@ -299,7 +299,7 @@ TEST(test_atropisomers, test_dummy_3_atropismer)
     FreeINCHI(poutput);
 }
 
-TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
+TEST(test_atropisomers, test_dummy_4_cn_axis_anilide)
 {
     const char *molblock =
         "atropisomer atypical no 2 rings                                                  \n"
@@ -373,7 +373,7 @@ TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C20H28N2O2/c1-5-17(23)22(14-10-7-6-8-11-14)18-15(19(21)24)12-9-13-16(18)20(2,3)4/h5,9,12-14H,1,6-8,10-11H2,2-4H3,(H2,21,24)";
+    const char expected_inchi[] = "InChI=1B/C20H28N2O2/c1-5-17(23)22(14-10-7-6-8-11-14)18-15(19(21)24)12-9-13-16(18)20(2,3)4/h5,9,12-14H,1,6-8,10-11H2,2-4H3,(H2,21,24)/t18-/m0/s1";
 
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
@@ -381,7 +381,7 @@ TEST(test_atropisomers, test_dummy_4_atypical_no_2_rings)
     FreeINCHI(poutput);
 }
 
-TEST(test_atropisomers, test_dummy_5_no_atropisomer_no_wedge_bonds)
+TEST(test_atropisomers, test_dummy_5_cn_axis_flat_omitted)
 {
     const char *molblock =
         "atropisomer test mol                                                        \n"
@@ -466,7 +466,9 @@ TEST(test_atropisomers, test_dummy_5_no_atropisomer_no_wedge_bonds)
     memset(poutput, 0, sizeof(*poutput));
     const char expected_inchi[] = "InChI=1B/C23H21FN6O3/c1-12-15(11-28(2)27-12)13-6-14-17(7-19(13)32-4)26-9-18-21(14)30(23(31)29(18)3)22-16(24)8-25-10-20(22)33-5/h6-11H,1-5H3";
 
-    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
+    // C-N axis (ATM inhibitor, N-pyridyl imidazolone) drawn flat:
+    // undefined, omitted with warning -> return code 1
+    EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 1);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
     FreeINCHI(poutput);
@@ -1080,10 +1082,9 @@ TEST(test_atropisomers, test_dummy_14_atropisomer)
     inchi_Output output;
     inchi_Output *poutput = &output;
     memset(poutput, 0, sizeof(*poutput));
-    const char expected_inchi[] = "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3";
+    const char expected_inchi[] = "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3/t21-/m0/s1";
 
-    // N-N axis (2,2'-diethyl-1,1'-biindole): outside the v1 carbon-only scope
-    // (AT-R11), so no stereo layer and no warning -> return code 0.
+    // N-N axis (2,2'-diethyl-1,1'-biindole): two planar indole N ends
     EXPECT_EQ(MakeINCHIFromMolfileText(molblock, options, poutput), 0);
     EXPECT_STREQ(poutput->szInChI, expected_inchi);
 
@@ -1157,13 +1158,13 @@ TEST(test_atropisomers, test_dummy_15_test_file_1)
         "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
         "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m0/s1",
         "InChI=1B/C20H22O3/c1-21-17-5-3-13-7-15-11-23-12-16(15)8-14-4-6-18(22-2)10-20(14)19(13)9-17/h3-6,9-10,15-16H,7-8,11-12H2,1-2H3/t15?,16?,19-/m1/s1",
-        "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
-        "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3",
-        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3",
-        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3",
-        "InChI=1B/C20H22N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-13,18H,3-4,14H2,1-2H3/t18-/m1/s1",
+        "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3/t19-/m0/s1",
+        "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3/t19-/m0/s1",
+        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3/t21-/m0/s1",
+        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3/t21-/m1/s1",
+        "InChI=1B/C20H22N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-13,18H,3-4,14H2,1-2H3/t18-,21-/m1/s1",
         "InChI=1B/C16H20N2/c1-4-15-10-9-12(2)17(15)18-13(3)11-14-7-5-6-8-16(14)18/h5-12,15H,4H2,1-3H3/t12-,15+/m0/s1",
-        "InChI=1B/C14H15NO/c1-10(2)12-8-9-14(16)15(12)13-7-5-4-6-11(13)3/h4-9H,1-3H3",
+        "InChI=1B/C14H15NO/c1-10(2)12-8-9-14(16)15(12)13-7-5-4-6-11(13)3/h4-9H,1-3H3/t13-/m1/s1",
         "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H",
         "InChI=1B/C10H8N2/c1-3-9(7-11-5-1)10-4-2-6-12-8-10/h1-8H",
         "InChI=1B/C12H6Br2Cl2/c13-7-3-1-5-9(15)11(7)12-8(14)4-2-6-10(12)16/h1-6H/t11-/m1/s1",
@@ -1175,7 +1176,7 @@ TEST(test_atropisomers, test_dummy_15_test_file_1)
         "InChI=1B/C20H14O2/c21-17-11-9-13-5-1-3-7-15(13)19(17)20-16-8-4-2-6-14(16)10-12-18(20)22/h1-12,21-22H/t19-/m1/s1",
         "InChI=1B/C14H26/c1-9(2)13(10(3)4)14(11(5)6)12(7)8/h9,11H,1-8H3/t13-/m1/s1",
         "InChI=1B/C12H17NO/c1-5-10-8-6-7-9(2)11(10)12(14)13(3)4/h6-8H,5H2,1-4H3/t11-/m1/s1",
-        "InChI=1B/C15H22ClNO2/c1-5-13-8-6-7-11(2)15(13)17(14(18)9-16)12(3)10-19-4/h6-8,12H,5,9-10H2,1-4H3/t12-/m0/s1",
+        "InChI=1B/C15H22ClNO2/c1-5-13-8-6-7-11(2)15(13)17(14(18)9-16)12(3)10-19-4/h6-8,12H,5,9-10H2,1-4H3/t12-,15-/m0/s1",
         "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23-",
         "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23-",
         "InChI=1B/C24H14N2O2/c1-4-8-20-15(5-1)23(17-9-11-26-14-22(17)28-20)24-16-6-2-3-7-19(16)27-21-10-12-25-13-18(21)24/h1-14H/b24-23+",

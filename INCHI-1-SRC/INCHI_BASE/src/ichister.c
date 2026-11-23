@@ -3082,7 +3082,7 @@ static void allene_one_wedge_z( inp_ATOM *at,
 
 
 /****************************************************************************
- Atropisomer axis (spec 4): a hindered single bond between two sp2 carbons,
+ Atropisomer axis (spec 4): a hindered single bond between two sp2 C or planar N,
  e.g. a biaryl. Chiral like an allene, but the "cumulene chain" has no
  middle atom, so it is stored as a stereo bond of chain length 0 on a
  SINGLE bond; IS_ATROP_AXIS() tells it from a double bond downstream
@@ -3131,11 +3131,59 @@ static int count_hindered_ortho( inp_ATOM *at, int at_1, int at_2 )
 }
 
 /**
+ * @brief May atom a be one end of an axis to atom other?
+ *
+ * C-C: any sp2 C (unchanged v1 rule).
+ * C-N / N-N (n_N > 0):
+ *   - N must be neutral and planar, i.e. conjugated through a neighbour
+ *     other than the axis partner (amide, imide, urea, pyrrole, indole);
+ *     a pyramidal amine N inverts fast and has no axis.
+ *   - C must be a ring atom (aryl). This keeps the amide C(=O)-N bond out:
+ *     an sp2 C carrying =O and N has no room for two ring bonds.
+ *
+ *        O=C(R)              Ar-N(-C=O)(R)   -> axis Ar-N
+ *              \N-Ar          O=C-N          -> never (C not in ring)
+ *
+ * @param at Input atoms
+ * @param a Axis end
+ * @param other Other axis end
+ * @param n_N Number of N atoms among the two ends
+ * @return Returns 1 if a qualifies, else 0
+ */
+static int is_atrop_axis_end( inp_ATOM *at, int a, int other, int n_N )
+{
+    int k, x;
+
+    if (at[a].el_number == EL_NUMBER_C)
+    {
+        /* ponytail: aryl C only; acyclic enamide C-N axes need a vinyl rule */
+        return !n_N || at[a].nNumAtInRingSystem > 1;
+    }
+
+    if (at[a].el_number != EL_NUMBER_N || at[a].charge || at[a].radical)
+    {
+        return 0;
+    }
+
+    /* Planar N: some other neighbour is unsaturated */
+    for (k = 0; k < at[a].valence; k++)
+    {
+        x = (int) at[a].neighbor[k];
+        if (x != other && at[x].chem_bonds_valence > at[x].valence)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/**
  * @brief Is the bond at_1-neighbor[ord_1] a stable atropisomer axis?
  *
  * Both ends must be flagged by find_atropisomeric_atoms_and_bonds(); the
- * check is repeated here because the flag marks atoms, not bonds. v1 scope:
- * a C-C single bond with both ends three-connected and without H, not in a
+ * check is repeated here because the flag marks atoms, not bonds. Scope:
+ * a C-C, C-N or N-N (acyclic) single bond with both ends three-connected and without H, not in a
  * ring of size <= ATROP_MIN_ROTATABLE_RING, and hindered at >= 3 of the four
  * ortho positions (2 for a biaryl bridged into an 8-ring).
  *
@@ -3155,11 +3203,25 @@ static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
         return 0;
     }
 
-    /* v1 scope: C-C single bond, both ends three-connected without H */
+    /* Single bond, both ends three-connected without H */
     if (BOND_SINGLE != ( at[at_1].bond_type[ord_1] & BOND_TYPE_MASK ) ||
-         at[at_1].el_number != EL_NUMBER_C || at[at_2].el_number != EL_NUMBER_C ||
          at[at_1].valence != 3 || at[at_2].valence != 3 ||
          at[at_1].num_H || at[at_2].num_H)
+    {
+        return 0;
+    }
+
+    /* Element classes: C-C, C-N, N-N (see is_atrop_axis_end) */
+    int n_N = ( at[at_1].el_number == EL_NUMBER_N ) + ( at[at_2].el_number == EL_NUMBER_N );
+    if (!is_atrop_axis_end( at, at_1, at_2, n_N ) || !is_atrop_axis_end( at, at_2, at_1, n_N ))
+    {
+        return 0;
+    }
+
+    /* C-N / N-N: acyclic bonds only. In a ring, an N end with an acyl or aryl
+       substituent passes the hindrance count almost for free (benzodiazepinone
+       N1-C9a), and the 8-ring exemption below is for C-C lignans only. */
+    if (n_N && at[at_1].nRingSystem == at[at_2].nRingSystem)
     {
         return 0;
     }
@@ -3360,8 +3422,7 @@ static int set_atrop_axes_parity( sp_ATOM *out_at, inp_ATOM *at, int num_at,
             for (ord_2 = 0; (int) at[at_2].neighbor[ord_2] != at_1; ord_2++)
             {
                 ;
-            }
-            ret = set_atrop_axis_parity( out_at, at, at_1, ord_1, at_2, ord_2,
+            }            ret = set_atrop_axis_parity( out_at, at, at_1, ord_1, at_2, ord_2,
                                          at_removed_H, num_removed_H,
                                          bPointedEdgeStereo, vABParityUnknown );
             if (RETURNED_ERROR( ret ))
