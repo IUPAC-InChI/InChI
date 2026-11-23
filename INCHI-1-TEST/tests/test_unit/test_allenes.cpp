@@ -440,3 +440,29 @@ TEST( test_allenes, opposite_wedges_at_one_end )
     EXPECT_EQ( inchi( both, kEnh ), "InChI=1B/C4H3BrClF" + kAxis + "/m1/s1" );
     EXPECT_EQ( inchi( mirror, kEnh ), "InChI=1B/C4H3BrClF" + kAxis + "/m0/s1" );
 }
+
+/* Allene drawn bent at the central atom (A. Yerin, image 4): wedge and
+   hash at C3, flat C1. The middle atom carries no stereo, so the bent
+   drawing gives the linear drawing's axis.
+
+        O4             O6 (wedge)
+        |              |
+   C5 - C1 == C2 == C3 - C7 (hash)
+
+   with C2 drawn 1.1 below the C1..C3 line (120 degree angles). */
+TEST( test_allenes, bent_drawing_keeps_axis )
+{
+    std::vector<Atom> bent = {
+        { "C", 44.41, -18.43 }, { "C", 46.32, -19.53 }, { "C", 48.22, -18.43 },
+        { "O", 44.41, -16.75 }, { "C", 43.01, -19.24 }, { "O", 48.22, -16.75 },
+        { "C", 49.58, -19.00 } };
+    std::vector<Atom> linear = bent;
+    linear[1].y = -18.43;
+    std::vector<Bond> bonds = { { 1, 2, 2, FLAT }, { 2, 3, 2, FLAT }, { 1, 4, 1, FLAT },
+                                { 1, 5, 1, FLAT }, { 3, 6, 1, UP }, { 3, 7, 1, DOWN } };
+
+    EXPECT_EQ( inchi( molblock( bent, bonds, "" ), kStd ),
+               "InChI=1S/C5H8O2/c1-4(6)3-5(2)7/h6-7H,1-2H3/t3-/m1/s1" );
+    EXPECT_EQ( inchi( molblock( bent, bonds, "" ), kStd ),
+               inchi( molblock( linear, bonds, "" ), kStd ) );
+}
