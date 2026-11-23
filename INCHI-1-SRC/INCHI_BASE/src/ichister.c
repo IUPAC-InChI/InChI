@@ -3546,7 +3546,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at,
     int n2sh, num_2s_hetero[2], num_2s_hetero_next[2], next_next_at, type_N, type_N_next;
 #endif
     int num_stored_isotopic_stereo_bonds; /* djb-rwth: removing redundant variables/code */
-    int chain_length, num_chains, cur_chain_length;
+    int chain_length, num_chains, cur_chain_length, max_chain;
     int all_at_2[MAX_NUM_STEREO_BONDS];
     int all_pos_1[MAX_NUM_STEREO_BONDS], all_pos_2[MAX_NUM_STEREO_BONDS];
     S_CHAR all_unkn[MAX_NUM_STEREO_BONDS];
@@ -3870,7 +3870,9 @@ int set_stereo_bonds_parity( sp_ATOM *out_at,
     /*  Accept only short chains for now */
     /*  chain_length=1: >C=C=C<      tetrahedral center, allene */
     /*  chain_length=2: >C=C=C=C<    stereogenic bond, cumulene */
-    if (chain_length && ( num_stereo_bonds != 1 || num_alt_1 || chain_length > MAX_CUMULENE_LEN ))
+    /*  chain_length=3,4: [4], [5]cumulene, -EnhancedStereochemistry only */
+    max_chain = ( bPointedEdgeStereo & PES_BIT_LONG_CUMULENE ) ? MAX_CUMULENE_LEN : MAX_CUMULENE_LEN_STD;
+    if (chain_length && ( num_stereo_bonds != 1 || num_alt_1 || chain_length > max_chain ))
     {
         return 0;
     }

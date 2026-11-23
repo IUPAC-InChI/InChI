@@ -941,6 +941,7 @@ extern "C" {
 #define TG_FLAG_H_ALREADY_REMOVED        0x00020000   /* processing structure restored from InChI */
 #define TG_FLAG_FIX_SP3_BUG              0x00040000   /* fix sp3 stereo bug: overlapping 2D stereo bond & coordinate scaling */
 #define TG_FLAG_ALLENE_ONE_WEDGE         0x20000000   /* one wedge at one allene terminal defines the axis */
+#define TG_FLAG_LONG_CUMULENE            0x40000000   /* cumulene stereo up to 5 double bonds, not 3 */
 
 #define TG_FLAG_KETO_ENOL_TAUT           0x00080000   /* turn on keto-enol tautomerism detection */
 #define TG_FLAG_1_5_TAUT                 0x00100000   /* turn on 1,5 tautomerism detection */
