@@ -127,3 +127,38 @@ TEST(test_atropisomers_roundtrip, zero_d_axis_is_defined)
     EXPECT_TRUE(even == k_biaryl_m || even == k_biaryl_p) << even;
     EXPECT_NE(odd, even);
 }
+
+// InChI -> structure -> InChI keeps the axis (AT-R8)
+TEST(test_atropisomers_roundtrip, biaryl_m_and_p)
+{
+    EXPECT_EQ(round_trip(k_biaryl_m), k_biaryl_m);
+    EXPECT_EQ(round_trip(k_biaryl_p), k_biaryl_p);
+}
+
+TEST(test_atropisomers_roundtrip, cn_axis_n_aryl_indole)
+{
+    const char inchi[] =
+        "InChI=1B/C20H23N/c1-14-9-8-11-17(20(3,4)5)19(14)21-15(2)13-16-10-6-7-12-18(16)21/h6-13H,1-5H3/t19-/m0/s1";
+
+    EXPECT_EQ(round_trip(inchi), inchi);
+}
+
+TEST(test_atropisomers_roundtrip, nn_axis_biindole)
+{
+    const char m[] =
+        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3/t21-/m0/s1";
+    const char p[] =
+        "InChI=1B/C20H20N2/c1-3-17-13-15-9-5-7-11-19(15)21(17)22-18(4-2)14-16-10-6-8-12-20(16)22/h5-14H,3-4H2,1-2H3/t21-/m1/s1";
+
+    EXPECT_EQ(round_trip(m), m);
+    EXPECT_EQ(round_trip(p), p);
+}
+
+// Axis next to a tetrahedral centre (dataset mol 45, metolachlor-like)
+TEST(test_atropisomers_roundtrip, axis_and_centre)
+{
+    const char inchi[] =
+        "InChI=1B/C15H22ClNO2/c1-5-13-8-6-7-11(2)15(13)17(14(18)9-16)12(3)10-19-4/h6-8,12H,5,9-10H2,1-4H3/t12-,15-/m0/s1";
+
+    EXPECT_EQ(round_trip(inchi), inchi);
+}
