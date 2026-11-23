@@ -3101,6 +3101,7 @@ static void allene_one_wedge_z( inp_ATOM *at,
 #define ATROP_MIN_HINDERED         3  /* ortho positions with a non-H substituent */
 #define ATROP_BRIDGED_RING         8  /* biaryl bridged into an 8-ring: stable */
 #define ATROP_MIN_HINDERED_BRIDGED 2  /* ... needs only the two bridge positions */
+#define ATROP_0D_CHAIN_LEN         1  /* odd: 0D parity read like an allene's */
 
 /**
  * @brief Count the hindered ortho positions at one end of an axis
@@ -3375,6 +3376,15 @@ static int set_atrop_axis_parity( sp_ATOM *out_at, inp_ATOM *at,
     {
         return CT_CALC_STEREO_ERR;
     }
+
+    /* 0D input (API record, reversed InChI): no geometry, so set the end-plane
+       normals perpendicular, as for an allene */
+    if (( at[at_1].bUsed0DParity | at[at_2].bUsed0DParity ) & FlagSB_0D)
+    {
+        FixSb0DParities( at, ATROP_0D_CHAIN_LEN, at_1, ord_1, z_dir1, at_2, ord_2, z_dir2,
+                         &parity_1, &parity_2 );
+    }
+
     if (parity_1 == AB_PARITY_NONE || abs( parity_1 ) == AB_PARITY_IISO ||
          parity_2 == AB_PARITY_NONE || abs( parity_2 ) == AB_PARITY_IISO)
     {
