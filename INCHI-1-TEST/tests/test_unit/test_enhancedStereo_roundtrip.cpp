@@ -89,3 +89,65 @@ INSTANTIATE_TEST_SUITE_P(
         "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s(4)(5)",
         /* more slots than components */
         "InChI=1B/2CBrClFI/c2*2-1(3,4)5/t2*1-/s2;3;1"));
+
+/* InChI -> structure (Ex, with V3000 stereo collections) -> InChI */
+static std::string round_trip(const char *inchi)
+{
+    inchi_InputINCHI ii;
+    inchi_OutputStructEx os;
+    inchi_InputEx in;
+    inchi_Output out;
+    char opts[sizeof(k_opts)];
+    char opts2[sizeof(k_opts)];
+
+    memcpy(opts, k_opts, sizeof(k_opts));
+    memcpy(opts2, k_opts, sizeof(k_opts));
+    memset(&ii, 0, sizeof(ii));
+    memset(&os, 0, sizeof(os));
+    ii.szInChI = (char *) inchi;
+    ii.szOptions = opts;
+    GetStructFromINCHIEx(&ii, &os);
+
+    memset(&in, 0, sizeof(in));
+    memset(&out, 0, sizeof(out));
+    in.atom = os.atom;
+    in.num_atoms = os.num_atoms;
+    in.stereo0D = os.stereo0D;
+    in.num_stereo0D = os.num_stereo0D;
+    in.v3000 = os.v3000;
+    in.szOptions = opts2;
+    GetINCHIEx(&in, &out);
+
+    std::string s = out.szInChI ? out.szInChI : "";
+    FreeINCHI(&out);
+    FreeStructFromINCHIEx(&os);
+
+    return s;
+}
+
+class RoundTripTest : public ::testing::TestWithParam<const char *>
+{
+};
+
+TEST_P(RoundTripTest, structure_keeps_groups)
+{
+    EXPECT_EQ(round_trip(GetParam()), GetParam());
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    test_enhancedStereo_roundtrip, RoundTripTest,
+    ::testing::Values(
+        /* bare digits: one OR / one AND group over all centres */
+        "InChI=1B/C4H10O2/c1-3(5)4(2)6/h3-6H,1-2H3/t3-,4-/s2",
+        "InChI=1B/C10H15NO/c1-8(11-2)10(12)9-6-4-3-5-7-9/h3-8,10-12H,1-2H3/t8-,10-/s2",
+        /* groups inside one component */
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/m1/s1(4)3(5)",
+        "InChI=1B/C5H13NO/c1-3-5(6)4(2)7/h4-5,7H,3,6H2,1-2H3/t4-,5-/s2(4)(5)",
+        "InChI=1B/C6H13ClO/c1-5(7)3-4-6(2)8/h5-6,8H,3-4H2,1-2H3/t5-,6-/m0/s2(6)",
+        /* several components */
+        "InChI=1B/2CBrClFI/c2*2-1(3,4)5/t2*1-/s2;3",
+        "InChI=1B/C4H8Br2.C4H8Cl2/c2*1-3(5)4(2)6/h2*3-4H,1-2H3/t2*3-,4-/m.1/s2;1",
+        "InChI=1B/2C10H14BrCl7/c2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12/h2*3-10H,1-2H3/t2*3-,4-,5+,6-,7-,8-,9+,10-/m00/s2*1(3,5)2(4)(6,8)3(7,9)(10)",
+        "InChI=1B/C12H26.2C10H14BrCl7.C9H20/c1-8(2)11(7)12(9(3)4)10(5)6;2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6-8(4)9(5)7(2)3/h8-12H,1-7H3;2*3-10H,1-2H3;7-9H,6H2,1-5H3/t11-;2*3-,4-,5+,6-,7-,8-,9+,10-;8-,9+/m100./s1;2*1(3,5)2(4)(6,8)3(7,9)(10);3",
+        /* centre stereogenic only through an isotope */
+        "InChI=1B/C2H6O/c1-2-3/h3H,2H2,1H3/i2D/t2-/s3"));

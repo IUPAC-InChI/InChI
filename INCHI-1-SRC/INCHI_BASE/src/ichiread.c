@@ -11366,6 +11366,220 @@ int ConvertInChI2InChI(INPUT_PARMS* ip,
 }
 
 
+/**
+ * @brief Append one stereo collection [tag, count, atoms...] to a V3000 list
+ *
+ * @return Returns 0 or RI_ERR_ALLOC
+ */
+static int AddStereoCollection(int*** plists, int* pn, int tag, const int* atoms, int count)
+{
+    int** lists = (int**)inchi_calloc((size_t)*pn + 1, sizeof(lists[0]));
+    int* rec = (int*)inchi_calloc((size_t)count + 2, sizeof(rec[0]));
+
+    if (!lists || !rec)
+    {
+        inchi_free(lists);
+        inchi_free(rec);
+        return RI_ERR_ALLOC;
+    }
+    if (*pn)
+    {
+        memcpy(lists, *plists, (size_t)*pn * sizeof(lists[0]));
+    }
+    inchi_free(*plists);
+
+    rec[0] = tag;
+    rec[1] = count;
+    memcpy(rec + 2, atoms, (size_t)count * sizeof(rec[0]));
+    lists[(*pn)++] = rec;
+    *plists = lists;
+
+    return 0;
+}
+
+
+/**
+ * @brief Turn one component's /s slot into V3000 stereo collections
+ *
+ * Atoms become restored-structure numbers (offset + canonical number). A bare
+ * "1"/"2"/"3" puts all the component's centres in ABS / one OR / one AND
+ * group; centres a grouped slot leaves out stay ungrouped. ABS atoms of every
+ * component are gathered in abs[] for the single structure-wide STEABS collection.
+ *
+ *     slot "1(4)3(5)", offset 7   ->   STEABS += 11;  STERACn (12)
+ *
+ * @param v V3000 data receiving STEREL/STERAC collections
+ * @param slot The /s slot (parser-validated)
+ * @param st The component's stereo (its /t centres)
+ * @param offset Number of atoms of the components before this one
+ * @param abs ABS atoms collected so far; *n_abs is their count
+ * @param buf Work buffer of at least the structure's atom count
+ * @return Returns 0 or RI_ERR_ALLOC
+ */
+static int EnhSlotToCollections(OAD_V3000* v, const char* slot, const INChI_Stereo* st,
+                                int offset, int* abs, int* n_abs, int* buf)
+{
+    const char* p = slot;
+    const char* q;
+    int type, n, i, ret = 0;
+
+    /* bare digit: the whole component; "1" in one slot is its ABS collection
+       (the forward /s writes it only then: ungrouped centres give "") */
+    if (!p[1])
+    {
+        type = *p - '0';
+        if (!st)
+        {
+            return 0;
+        }
+        for (i = 0; i < st->nNumberOfStereoCenters; i++)
+        {
+            buf[i] = offset + st->nNumber[i];
+        }
+        if (type == 1)
+        {
+            memcpy(abs + *n_abs, buf, (size_t)i * sizeof(buf[0]));
+            *n_abs += i;
+            return 0;
+        }
+        return type == 2
+            ? AddStereoCollection(&v->lists_sterel, &v->n_sterel, v->n_sterel + 1, buf, i)
+            : AddStereoCollection(&v->lists_sterac, &v->n_sterac, v->n_sterac + 1, buf, i);
+    }
+
+    /* s-groups: class digit, then "(a,b,...)" groups */
+    while (*p && !ret)
+    {
+        type = *p++ - '0';
+        while (*p == '(' && !ret)
+        {
+            n = 0;
+            do
+            {
+                buf[n++] = offset + (int)inchi_strtol(p + 1, &q, 10);
+                p = q;
+            } while (*p == ',');
+            p++; /* ')' */
+
+            if (type == 1)
+            {
+                memcpy(abs + *n_abs, buf, (size_t)n * sizeof(buf[0]));
+                *n_abs += n;
+            }
+            else
+            {
+                ret = type == 2
+                    ? AddStereoCollection(&v->lists_sterel, &v->n_sterel, v->n_sterel + 1, buf, n)
+                    : AddStereoCollection(&v->lists_sterac, &v->n_sterac, v->n_sterac + 1, buf, n);
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+/**
+ * @brief Put the parsed /s groups on the restored structure as V3000 stereo
+ *        collections, so that the InChI computed from it has the same /s
+ *
+ * Follows MergeStructureComponents(): the same layer (reconnected/fixed-H
+ * before main/mobile-H) and component k's atoms at the summed atom counts of
+ * the components before it. The slot comes from the main (mobile-H) /s when
+ * the chosen layer has none. pOneInput->v3000 then reaches GetStructFromINCHIEx
+ * and the self-check unchanged.
+ *
+ * @param pOneInput Parsed InChI with the merged structure
+ * @return Returns 0 or RI_ERR_ALLOC
+ */
+static int SetEnhStereoCollections(InpInChI* pOneInput)
+{
+    int iRec, iTaut, nComp, k, offset = 0, n_abs = 0, ret = 0;
+    int *abs, *buf;
+    const char* slot;
+    INChI *comp, *alt, *pI;
+    INChI_Stereo* st;
+    OAD_V3000* v;
+
+    /* the layer MergeStructureComponents restored */
+    iRec = (pOneInput->nNumComponents[INCHI_REC][TAUT_NON] || pOneInput->nNumComponents[INCHI_REC][TAUT_YES])
+        ? INCHI_REC : INCHI_BAS;
+    iTaut = pOneInput->nNumComponents[iRec][TAUT_NON] ? TAUT_NON : TAUT_YES;
+    nComp = pOneInput->nNumComponents[iRec][iTaut];
+    comp = pOneInput->pInpInChI[iRec][iTaut];
+    alt = (iTaut == TAUT_NON && pOneInput->nNumComponents[iRec][TAUT_YES]) ? pOneInput->pInpInChI[iRec][TAUT_YES] : NULL;
+
+    abs = (int*)inchi_calloc((size_t)pOneInput->num_atoms + 1, sizeof(abs[0]));
+    buf = (int*)inchi_calloc((size_t)pOneInput->num_atoms + 1, sizeof(buf[0]));
+    v = (OAD_V3000*)inchi_calloc(1, sizeof(OAD_V3000));
+    if (!abs || !buf || !v)
+    {
+        inchi_free(v);
+        ret = RI_ERR_ALLOC;
+        goto exit_function;
+    }
+
+    for (k = 0; k < nComp && !ret; k++)
+    {
+        pI = comp[k].nNumberOfAtoms ? comp + k : (alt ? alt + k : NULL);
+        if (!pI)
+        {
+            continue;
+        }
+
+        /* centres stereogenic only through isotopes are in the isotopic layer */
+        st = (pI->Stereo && pI->Stereo->nNumberOfStereoCenters) ? pI->Stereo : pI->StereoIsotopic;
+
+        slot = st ? st->szEnhS : NULL;
+        if (!slot && alt && alt[k].Stereo)
+        {
+            slot = alt[k].Stereo->szEnhS;
+        }
+        if (!slot)
+        {
+            /* one bare /s digit for the whole structure */
+            slot = (pI->nFlags & INCHI_FLAG_REL_STEREO) ? "2" : (pI->nFlags & INCHI_FLAG_RAC_STEREO) ? "3" : NULL;
+        }
+        if (slot)
+        {
+            ret = EnhSlotToCollections(v, slot, st, offset, abs, &n_abs, buf);
+        }
+        offset += pI->nNumberOfAtoms;
+    }
+
+    if (!ret && n_abs)
+    {
+        ret = AddStereoCollection(&v->lists_steabs, &v->n_steabs, 0, abs, n_abs);
+    }
+    if (ret || !(v->n_steabs + v->n_sterel + v->n_sterac))
+    {
+        FreeExtOrigAtData(NULL, v); /* frees v too */
+        goto exit_function;
+    }
+
+    if (!pOneInput->v3000)
+    {
+        pOneInput->v3000 = v;
+        goto exit_function;
+    }
+
+    /* V3000 data already there (polymer): add the collections */
+    pOneInput->v3000->n_steabs = v->n_steabs;
+    pOneInput->v3000->lists_steabs = v->lists_steabs;
+    pOneInput->v3000->n_sterel = v->n_sterel;
+    pOneInput->v3000->lists_sterel = v->lists_sterel;
+    pOneInput->v3000->n_sterac = v->n_sterac;
+    pOneInput->v3000->lists_sterac = v->lists_sterac;
+    inchi_free(v);
+
+exit_function:
+    inchi_free(abs);
+    inchi_free(buf);
+
+    return ret;
+}
+
+
 /* InChi --> Structure (presented as AuxInfo or MolFile) */
 
 
@@ -11609,6 +11823,14 @@ int ConvertInChI2Struct(ICHICONST INPUT_PARMS* ip_inp,
     if (ret < 0)
     {
         AddOneMsg(szMessage, (int)strlen(szMessage), nMessageLen, "Merge Components error", "; ");
+        (*num_errors)++;
+        goto dealloc;
+    }
+
+    /* enhanced stereo: /s groups -> V3000 stereo collections of the structure */
+    if (ip->bEnhancedStereo && 0 > (ret = SetEnhStereoCollections(pOneInput)))
+    {
+        AddOneMsg(szMessage, (int)strlen(szMessage), nMessageLen, "Enhanced stereo groups error", "; ");
         (*num_errors)++;
         goto dealloc;
     }
