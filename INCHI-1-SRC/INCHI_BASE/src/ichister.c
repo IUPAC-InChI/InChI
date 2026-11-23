@@ -3101,6 +3101,7 @@ static void allene_one_wedge_z( inp_ATOM *at,
 #define ATROP_MIN_HINDERED         3  /* ortho positions with a non-H substituent */
 #define ATROP_BRIDGED_RING         8  /* biaryl bridged into an 8-ring: stable */
 #define ATROP_MIN_HINDERED_BRIDGED 2  /* ... needs only the two bridge positions */
+#define ATROP_MIN_HINDERED_WEDGED  2  /* acyclic axis drawn with a wedge */
 #define ATROP_0D_CHAIN_LEN         1  /* odd: 0D parity read like an allene's */
 
 /**
@@ -3129,6 +3130,37 @@ static int count_hindered_ortho( inp_ATOM *at, int at_1, int at_2 )
     }
 
     return num;
+}
+
+/**
+ * @brief Does a 2D wedge (up or down, not wavy) start at axis end a?
+ *
+ * A chemist who wedges the axis specifies a stereoisomer, so the hindrance
+ * count drops from 3 to 2 (A. Yerin, 2026-11-19: a 1,3-diaxis phenylene
+ * with two ortho groups per axis has four separable isomers). 3D
+ * coordinates are a conformer, not a choice: they keep 3, or every
+ * 2,2'-disubstituted biaryl conformer would get its own InChI.
+ *
+ * @param at Input atoms
+ * @param a Axis end
+ * @param other Other axis end
+ * @return Returns 1 if a wedge in the drawing plane starts at a, else 0
+ */
+static int has_axis_wedge( inp_ATOM *at, int a, int other )
+{
+    int k, x;
+
+    for (k = 0; k < at[a].valence; k++)
+    {
+        x = (int) at[a].neighbor[k];
+        if (x != other && at[a].z == 0.0 && at[x].z == 0.0 &&
+            ( at[a].bond_stereo[k] == STEREO_SNGL_UP || at[a].bond_stereo[k] == STEREO_SNGL_DOWN ))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 /**
@@ -3289,6 +3321,13 @@ static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
             CH2--CH---CH--CH2                                            */
     int min_hindered = ring == ATROP_BRIDGED_RING ? ATROP_MIN_HINDERED_BRIDGED
                                                   : ATROP_MIN_HINDERED;
+
+    /* A wedge at an acyclic axis is the chemist's choice of isomer: two
+       ortho groups suffice (no ortho group, e.g. 3,3'-bipyridine, never) */
+    if (!ring && ( has_axis_wedge( at, at_1, at_2 ) || has_axis_wedge( at, at_2, at_1 ) ))
+    {
+        min_hindered = ATROP_MIN_HINDERED_WEDGED;
+    }
     if (count_hindered_ortho( at, at_1, at_2 ) + count_hindered_ortho( at, at_2, at_1 ) < min_hindered)
     {
         return 0;

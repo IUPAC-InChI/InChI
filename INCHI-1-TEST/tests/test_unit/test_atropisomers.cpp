@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <fstream>
 #include <cstring>
+#include <algorithm>
 #include <chrono>
 
 extern "C"
@@ -1951,4 +1952,189 @@ TEST(test_atropisomers, ring_axis_with_fused_ends_emitted)
     EXPECT_STREQ(poutput->szInChI, "InChI=1B/C22H25NO6/c1-12(24)23-16-8-6-13-10-19(27-3)21(28-4)22(29-5)20(13)14-7-9-18(26-2)17(25)11-15(14)16/h7,9-11,16H,6,8H2,1-5H3,(H,23,24)/t14-,16+/m1/s1");
 
     FreeINCHI(poutput);
+}
+
+
+// Wedged axes need no hindrance count, only dissymmetry: a chemist who
+// draws the configuration specifies a stereoisomer (A. Yerin, 2026-11-19).
+// 1,3-diaxis phenylene (biaryl C-C + N-aryl pyrimidinone C-N), two ortho
+// groups per axis, all four isomers separable in the literature.
+static const char k_img5_wedged[] =
+    "img5 1,3-diaxis\n"
+    "     RDKit          2D\n"
+    "\n"
+    "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+    "M  V30 BEGIN CTAB\n"
+    "M  V30 COUNTS 23 25 0 0 0\n"
+    "M  V30 BEGIN ATOM\n"
+    "M  V30 1 Cl 2.750087 -1.845583 0.000000 0\n"
+    "M  V30 2 C 1.884487 -2.346383 0.000000 0\n"
+    "M  V30 3 C 1.885287 -3.346383 0.000000 0\n"
+    "M  V30 4 C 1.019687 -3.846983 0.000000 0\n"
+    "M  V30 5 C 0.153287 -3.347783 0.000000 0\n"
+    "M  V30 6 C 0.152487 -2.347783 0.000000 0\n"
+    "M  V30 7 C 1.018087 -1.846983 0.000000 0\n"
+    "M  V30 8 C 1.017287 -0.846983 0.000000 0\n"
+    "M  V30 9 C 1.882887 -0.346383 0.000000 0\n"
+    "M  V30 10 C 1.882087 0.653617 0.000000 0\n"
+    "M  V30 11 C 1.015687 1.153017 0.000000 0\n"
+    "M  V30 12 C 0.150087 0.652217 0.000000 0\n"
+    "M  V30 13 N -0.716313 1.151617 0.000000 0\n"
+    "M  V30 14 C -1.581913 0.651017 0.000000 0\n"
+    "M  V30 15 N -2.448313 1.150217 0.000000 0\n"
+    "M  V30 16 C -2.449113 2.150217 0.000000 0\n"
+    "M  V30 17 C -3.315513 2.649617 0.000000 0\n"
+    "M  V30 18 C -1.583513 2.651018 0.000000 0\n"
+    "M  V30 19 C -1.584313 3.651018 0.000000 0\n"
+    "M  V30 20 C -0.717113 2.151618 0.000000 0\n"
+    "M  V30 21 O 0.148487 2.652217 0.000000 0\n"
+    "M  V30 22 C 0.150887 -0.347783 0.000000 0\n"
+    "M  V30 23 C -0.714713 -0.848383 0.000000 0\n"
+    "M  V30 END ATOM\n"
+    "M  V30 BEGIN BOND\n"
+    "M  V30 1 1 1 2\n"
+    "M  V30 2 2 2 3\n"
+    "M  V30 3 1 3 4\n"
+    "M  V30 4 2 4 5\n"
+    "M  V30 5 1 5 6\n"
+    "M  V30 6 2 7 6 CFG=1\n"
+    "M  V30 7 1 7 8\n"
+    "M  V30 8 1 8 9\n"
+    "M  V30 9 2 9 10\n"
+    "M  V30 10 1 10 11\n"
+    "M  V30 11 2 12 11 CFG=1\n"
+    "M  V30 12 1 12 13\n"
+    "M  V30 13 1 13 14\n"
+    "M  V30 14 2 14 15\n"
+    "M  V30 15 1 15 16\n"
+    "M  V30 16 1 16 17\n"
+    "M  V30 17 2 16 18\n"
+    "M  V30 18 1 18 19\n"
+    "M  V30 19 1 18 20\n"
+    "M  V30 20 2 20 21\n"
+    "M  V30 21 1 12 22\n"
+    "M  V30 22 1 22 23\n"
+    "M  V30 23 1 7 2\n"
+    "M  V30 24 2 22 8\n"
+    "M  V30 25 1 20 13\n"
+    "M  V30 END BOND\n"
+    "M  V30 END CTAB\n"
+    "M  END\n";
+
+static const char k_img5_mirror[] =
+    "img5 mirror\n"
+    "     RDKit          2D\n"
+    "\n"
+    "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+    "M  V30 BEGIN CTAB\n"
+    "M  V30 COUNTS 23 25 0 0 0\n"
+    "M  V30 BEGIN ATOM\n"
+    "M  V30 1 Cl 2.750087 -1.845583 0.000000 0\n"
+    "M  V30 2 C 1.884487 -2.346383 0.000000 0\n"
+    "M  V30 3 C 1.885287 -3.346383 0.000000 0\n"
+    "M  V30 4 C 1.019687 -3.846983 0.000000 0\n"
+    "M  V30 5 C 0.153287 -3.347783 0.000000 0\n"
+    "M  V30 6 C 0.152487 -2.347783 0.000000 0\n"
+    "M  V30 7 C 1.018087 -1.846983 0.000000 0\n"
+    "M  V30 8 C 1.017287 -0.846983 0.000000 0\n"
+    "M  V30 9 C 1.882887 -0.346383 0.000000 0\n"
+    "M  V30 10 C 1.882087 0.653617 0.000000 0\n"
+    "M  V30 11 C 1.015687 1.153017 0.000000 0\n"
+    "M  V30 12 C 0.150087 0.652217 0.000000 0\n"
+    "M  V30 13 N -0.716313 1.151617 0.000000 0\n"
+    "M  V30 14 C -1.581913 0.651017 0.000000 0\n"
+    "M  V30 15 N -2.448313 1.150217 0.000000 0\n"
+    "M  V30 16 C -2.449113 2.150217 0.000000 0\n"
+    "M  V30 17 C -3.315513 2.649617 0.000000 0\n"
+    "M  V30 18 C -1.583513 2.651018 0.000000 0\n"
+    "M  V30 19 C -1.584313 3.651018 0.000000 0\n"
+    "M  V30 20 C -0.717113 2.151618 0.000000 0\n"
+    "M  V30 21 O 0.148487 2.652217 0.000000 0\n"
+    "M  V30 22 C 0.150887 -0.347783 0.000000 0\n"
+    "M  V30 23 C -0.714713 -0.848383 0.000000 0\n"
+    "M  V30 END ATOM\n"
+    "M  V30 BEGIN BOND\n"
+    "M  V30 1 1 1 2\n"
+    "M  V30 2 2 2 3\n"
+    "M  V30 3 1 3 4\n"
+    "M  V30 4 2 4 5\n"
+    "M  V30 5 1 5 6\n"
+    "M  V30 6 2 7 6 CFG=3\n"
+    "M  V30 7 1 7 8\n"
+    "M  V30 8 1 8 9\n"
+    "M  V30 9 2 9 10\n"
+    "M  V30 10 1 10 11\n"
+    "M  V30 11 2 12 11 CFG=3\n"
+    "M  V30 12 1 12 13\n"
+    "M  V30 13 1 13 14\n"
+    "M  V30 14 2 14 15\n"
+    "M  V30 15 1 15 16\n"
+    "M  V30 16 1 16 17\n"
+    "M  V30 17 2 16 18\n"
+    "M  V30 18 1 18 19\n"
+    "M  V30 19 1 18 20\n"
+    "M  V30 20 2 20 21\n"
+    "M  V30 21 1 12 22\n"
+    "M  V30 22 1 22 23\n"
+    "M  V30 23 1 7 2\n"
+    "M  V30 24 2 22 8\n"
+    "M  V30 25 1 20 13\n"
+    "M  V30 END BOND\n"
+    "M  V30 END CTAB\n"
+    "M  END\n";
+
+TEST(test_atropisomers, wedged_axis_needs_no_hindrance_count) {
+    std::string drawn = run_inchi(k_img5_wedged, "-EnhancedStereochemistry");
+    std::string mirror = run_inchi(k_img5_mirror, "-EnhancedStereochemistry");
+
+    // both axes: two /t entries, defined; the mirror image flips /m only
+    ASSERT_NE(drawn.find("/t"), std::string::npos) << drawn;
+    std::string t = drawn.substr(drawn.find("/t"));
+    EXPECT_EQ(std::count(t.begin(), t.begin() + t.find('/', 1), ','), 1) << drawn;
+    EXPECT_EQ(t.find('?'), std::string::npos) << drawn;
+    EXPECT_EQ(drawn.substr(0, drawn.find("/m")), mirror.substr(0, mirror.find("/m")));
+    EXPECT_NE(drawn, mirror);
+}
+
+// 3D coordinates are a conformer, not a specification: the twist of a
+// 2,2'-dimethylbiphenyl (fast rotation) stays out of the InChI
+static const char k_dmbp_3d[] =
+    "\n"
+    "     RDKit          3D\n"
+    "\n"
+    " 14 15  0  0  0  0  0  0  0  0999 V2000\n"
+    "    1.1561    1.2175   -1.7567 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.6281    0.4120   -0.5755 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.9949    0.1079   -0.4574 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.4719   -0.6304    0.6254 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.5913   -1.0722    1.6066 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.2322   -0.7752    1.5040 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    0.7287   -0.0352    0.4184 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7147    0.2562    0.3618 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.1887    1.4603    0.9143 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -2.5463    1.7798    0.8910 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -3.4549    0.8974    0.3172 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -3.0073   -0.3034   -0.2330 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.6424   -0.6372   -0.2195 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -1.2024   -1.9469   -0.8178 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  2  1  0\n"
+    "  2  3  2  0\n"
+    "  3  4  1  0\n"
+    "  4  5  2  0\n"
+    "  5  6  1  0\n"
+    "  6  7  2  0\n"
+    "  7  8  1  0\n"
+    "  8  9  2  0\n"
+    "  9 10  1  0\n"
+    " 10 11  2  0\n"
+    " 11 12  1  0\n"
+    " 12 13  2  0\n"
+    " 13 14  1  0\n"
+    "  7  2  1  0\n"
+    " 13  8  1  0\n"
+    "M  END\n";
+
+TEST(test_atropisomers, unhindered_3d_axis_not_emitted) {
+    std::string s = run_inchi(k_dmbp_3d, "-EnhancedStereochemistry");
+    EXPECT_EQ(s.find("/t"), std::string::npos) << s;
 }
