@@ -1793,3 +1793,162 @@ TEST(test_atropisomers, axis_end_with_second_stereo_bond) {
     EXPECT_EQ(run_inchi(k_alkene_axes_molblock, "-EnhancedStereochemistry"),
               "InChI=1B/C18H18Cl2/c1-11-7-5-9-15(19)17(11)13(3)14(4)18-12(2)8-6-10-16(18)20/h5-10H,1-4H3/b14-13+/t13-,14-/m1/s1");
 }
+
+// A 7-ring bond whose end carries an exocyclic group is a bond of the flexible
+// ring, not a bridged biaryl axis: thiophene C-C(=O) of a thieno-benzothiepinone
+// (mcule 11957), wedged at the thiophene end.
+TEST(test_atropisomers, ring_axis_with_exocyclic_end_not_emitted)
+{
+    const char *molblock =
+        "benzothiepinone\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 20 22 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 1.454060 2.252270 0.000000 0\n"
+        "M  V30 2 C 1.368060 1.254870 0.000000 0\n"
+        "M  V30 3 S 2.124860 0.601070 0.000000 0\n"
+        "M  V30 4 C 1.734460 -0.319730 0.000000 0\n"
+        "M  V30 5 C 2.251660 -1.176530 0.000000 0\n"
+        "M  V30 6 N 1.767860 -2.051930 0.000000 0\n"
+        "M  V30 7 C 2.283860 -2.908530 0.000000 0\n"
+        "M  V30 8 C 0.768060 -2.070530 0.000000 0\n"
+        "M  V30 9 C 0.740260 -0.234930 0.000000 0\n"
+        "M  V30 10 C 0.511660 0.740470 0.000000 0\n"
+        "M  V30 11 C -0.388940 1.169270 0.000000 0\n"
+        "M  V30 12 O -0.393140 2.170070 0.000000 0\n"
+        "M  V30 13 C -1.289340 0.733670 0.000000 0\n"
+        "M  V30 14 C -2.022540 1.410470 0.000000 0\n"
+        "M  V30 15 C -2.978540 1.115070 0.000000 0\n"
+        "M  V30 16 C -3.196340 0.138870 0.000000 0\n"
+        "M  V30 17 C -2.464540 -0.540730 0.000000 0\n"
+        "M  V30 18 C -1.506940 -0.242530 0.000000 0\n"
+        "M  V30 19 C -0.882340 -1.023130 0.000000 0\n"
+        "M  V30 20 S 0.117860 -1.017530 0.000000 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 3 4\n"
+        "M  V30 4 1 4 5\n"
+        "M  V30 5 1 5 6\n"
+        "M  V30 6 1 6 7\n"
+        "M  V30 7 1 6 8\n"
+        "M  V30 8 2 4 9\n"
+        "M  V30 9 1 9 10\n"
+        "M  V30 10 1 10 11\n"
+        "M  V30 11 2 11 12\n"
+        "M  V30 12 1 11 13\n"
+        "M  V30 13 2 13 14\n"
+        "M  V30 14 1 14 15\n"
+        "M  V30 15 2 15 16\n"
+        "M  V30 16 1 16 17\n"
+        "M  V30 17 2 17 18\n"
+        "M  V30 18 1 18 19\n"
+        "M  V30 19 1 19 20\n"
+        "M  V30 20 2 10 2 CFG=1\n"
+        "M  V30 21 1 18 13\n"
+        "M  V30 22 1 20 9\n"
+        "M  V30 END BOND\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+    char options[] = "-EnhancedStereochemistry";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
+
+    MakeINCHIFromMolfileText(molblock, options, poutput);
+    EXPECT_STREQ(poutput->szInChI, "InChI=1B/C16H17NOS2/c1-10-14-15(18)12-7-5-4-6-11(12)9-19-16(14)13(20-10)8-17(2)3/h4-7H,8-9H2,1-3H3");
+
+    FreeINCHI(poutput);
+}
+
+// Colchicine: the biaryl axis lies in the 7-ring B with fused ends on both
+// sides, so it stays an axis next to the C7 centre.
+TEST(test_atropisomers, ring_axis_with_fused_ends_emitted)
+{
+    const char *molblock =
+        "colchicine\n"
+        "     RDKit          2D\n"
+        "\n"
+        "  0  0  0  0  0  0  0  0  0  0999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 29 31 0 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C -0.791655 -4.225759 0.000000 0\n"
+        "M  V30 2 O 0.074345 -3.725959 0.000000 0\n"
+        "M  V30 3 C 0.074545 -2.724759 0.000000 0\n"
+        "M  V30 4 C -0.792655 -2.225959 0.000000 0\n"
+        "M  V30 5 C -0.791655 -1.226359 0.000000 0\n"
+        "M  V30 6 C 0.073745 -0.725159 0.000000 0\n"
+        "M  V30 7 C 0.939345 -1.226759 0.000000 0\n"
+        "M  V30 8 O 1.806145 -0.725959 0.000000 0\n"
+        "M  V30 9 C 2.672345 -1.225559 0.000000 0\n"
+        "M  V30 10 C 0.941345 -2.226759 0.000000 0\n"
+        "M  V30 11 O 1.806545 -2.726159 0.000000 0\n"
+        "M  V30 12 C 1.806745 -3.725959 0.000000 0\n"
+        "M  V30 13 C 0.222145 0.262841 0.000000 0\n"
+        "M  V30 14 C 1.219545 0.338841 0.000000 0\n"
+        "M  V30 15 C 1.782145 1.163641 0.000000 0\n"
+        "M  V30 16 C 1.488745 2.120841 0.000000 0\n"
+        "M  V30 17 O 2.220745 2.800441 0.000000 0\n"
+        "M  V30 18 C 1.997745 3.775241 0.000000 0\n"
+        "M  V30 19 C 0.556945 2.484241 0.000000 0\n"
+        "M  V30 20 O 0.481745 3.482441 0.000000 0\n"
+        "M  V30 21 C -0.310255 1.985441 0.000000 0\n"
+        "M  V30 22 C -0.457455 0.996641 0.000000 0\n"
+        "M  V30 23 C -1.455255 0.919841 0.000000 0\n"
+        "M  V30 24 N -1.955855 1.786641 0.000000 0\n"
+        "M  V30 25 C -2.955855 1.786441 0.000000 0\n"
+        "M  V30 26 C -3.455655 0.920241 0.000000 0\n"
+        "M  V30 27 O -3.456055 2.652241 0.000000 0\n"
+        "M  V30 28 C -2.019655 0.094841 0.000000 0\n"
+        "M  V30 29 C -1.722855 -0.859759 0.000000 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 3 4\n"
+        "M  V30 4 2 4 5\n"
+        "M  V30 5 1 6 5 CFG=1\n"
+        "M  V30 6 2 6 7\n"
+        "M  V30 7 1 7 8\n"
+        "M  V30 8 1 8 9\n"
+        "M  V30 9 1 7 10\n"
+        "M  V30 10 1 10 11\n"
+        "M  V30 11 1 11 12\n"
+        "M  V30 12 1 6 13\n"
+        "M  V30 13 2 13 14\n"
+        "M  V30 14 1 14 15\n"
+        "M  V30 15 2 15 16\n"
+        "M  V30 16 1 16 17\n"
+        "M  V30 17 1 17 18\n"
+        "M  V30 18 1 16 19\n"
+        "M  V30 19 2 19 20\n"
+        "M  V30 20 1 19 21\n"
+        "M  V30 21 2 21 22\n"
+        "M  V30 22 1 22 23\n"
+        "M  V30 23 1 23 24 CFG=3\n"
+        "M  V30 24 1 24 25\n"
+        "M  V30 25 1 25 26\n"
+        "M  V30 26 2 25 27\n"
+        "M  V30 27 1 23 28\n"
+        "M  V30 28 1 28 29\n"
+        "M  V30 29 2 10 3\n"
+        "M  V30 30 1 13 22 CFG=3\n"
+        "M  V30 31 1 29 5\n"
+        "M  V30 END BOND\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+    char options[] = "-EnhancedStereochemistry";
+    inchi_Output output;
+    inchi_Output *poutput = &output;
+    memset(poutput, 0, sizeof(*poutput));
+
+    MakeINCHIFromMolfileText(molblock, options, poutput);
+    EXPECT_STREQ(poutput->szInChI, "InChI=1B/C22H25NO6/c1-12(24)23-16-8-6-13-10-19(27-3)21(28-4)22(29-5)20(13)14-7-9-18(26-2)17(25)11-15(14)16/h7,9-11,16H,6,8H2,1-5H3,(H,23,24)/t14-,16+/m1/s1");
+
+    FreeINCHI(poutput);
+}

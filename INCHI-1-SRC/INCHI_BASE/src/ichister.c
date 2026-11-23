@@ -3131,6 +3131,30 @@ static int count_hindered_ortho( inp_ATOM *at, int at_1, int at_2 )
 }
 
 /**
+ * @brief Are all bonds of atom a ring bonds (a ring-fusion atom)?
+ *
+ * A bond is a ring bond when both atoms share a ring system.
+ *
+ * @param at Input atoms
+ * @param a Atom
+ * @return Returns 1 if every neighbour is in a's ring system, else 0
+ */
+static int is_fused_atom( inp_ATOM *at, int a )
+{
+    int k;
+
+    for (k = 0; k < at[a].valence; k++)
+    {
+        if (at[(int) at[a].neighbor[k]].nRingSystem != at[a].nRingSystem)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/**
  * @brief May atom a be one end of an axis to atom other?
  *
  * C-C: any sp2 C (unchanged v1 rule).
@@ -3236,6 +3260,18 @@ static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
 
     /* A small ring locks the rotation */
     if (0 < ring && ring <= ATROP_MIN_ROTATABLE_RING)
+    {
+        return 0;
+    }
+
+    /* Axis inside a 7/8-ring: a bridged biaryl, so both ends are fusion atoms.
+       An end with an exocyclic group (=O, =NR, aryl) is a bond of the flexible
+       ring itself, which flips (benzothiepinone C(=O)-Ar, tropone).
+
+            Ar===Ar   fused ends: axis   Ar---C(=O)   exocyclic =O: no axis
+            |     |                      |       |
+            X--Y--X                      X---Y---X                        */
+    if (ring && ( !is_fused_atom( at, at_1 ) || !is_fused_atom( at, at_2 ) ))
     {
         return 0;
     }
