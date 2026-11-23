@@ -3648,7 +3648,7 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             /* OR/AND double-bond groups: grouped /b in the main layer.
                ponytail: fixed-H and isotopic /b stay flat; group them too if needed */
             if (INCHI_SEGM_FILL == io->nSegmAction && io->nCurINChISegment == DIFL_M &&
-                orig_inp_data->v3000 &&
+                orig_inp_data && orig_inp_data->v3000 &&
                 (orig_inp_data->v3000->n_stebrel > 0 || orig_inp_data->v3000->n_stebrac > 0))
             {
                 io->tot_len = MakeBlayerString( orig_inp_data, io->pINChISort, strbuf, io->bOutType,
@@ -3745,7 +3745,7 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
         io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_s_STYPE] );
         if (!io->nSegmAction && io->nCurINChISegment == DIFL_M &&
             INCHI_SEGM_FILL == INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_t_SATOMS] ) &&
-            orig_inp_data->v3000 &&
+            orig_inp_data && orig_inp_data->v3000 &&
             bHasRelRacComponent( orig_inp_data, io->pINChISort, io->bOutType, io->num_components ))
         {
             io->nSegmAction = INCHI_SEGM_FILL;
@@ -3762,7 +3762,7 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             if (INCHI_SEGM_FILL == io->nSegmAction)
             {
                 /* v3000 is NULL for V2000 input and for V3000 without collections */
-                if (orig_inp_data->v3000 &&
+                if (orig_inp_data && orig_inp_data->v3000 &&
                    (orig_inp_data->v3000->n_steabs > 0 ||
                     orig_inp_data->v3000->n_sterel > 0 ||
                     orig_inp_data->v3000->n_sterac > 0)) {
