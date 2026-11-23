@@ -6157,6 +6157,8 @@ int Free_INChI_Stereo(INChI_Stereo *pINChI_Stereo)
         qzfree(pINChI_Stereo->nBondAtom1);
         qzfree(pINChI_Stereo->nBondAtom2);
         qzfree(pINChI_Stereo->b_parity);
+        qzfree(pINChI_Stereo->szEnhS);
+        qzfree(pINChI_Stereo->szEnhB);
     }
 
     return 0;

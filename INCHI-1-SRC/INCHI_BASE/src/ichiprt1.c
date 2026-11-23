@@ -3574,6 +3574,33 @@ static int bHasAbsStereoComponent( INCHI_SORT   *pINChISort,
 
 
 /**
+ * @brief Check whether any component of InChI input kept /s slots (szEnhS).
+ *
+ * Without /m the standard rules give such an InChI no /s, e.g. /t4-,5-/s2(4)(5);
+ * the slots are the information and must be written.
+ *
+ * @return Returns 1 if a component has slots, else 0.
+ */
+static int bHasEnhSlots( INCHI_SORT *pINChISort, int bOutType, int num_components )
+{
+    int i, ii;
+
+    for (i = 0; i < num_components; i++)
+    {
+        INCHI_SORT *is = pINChISort + i;
+
+        if (0 <= ( ii = GET_II( bOutType, is ) ) &&
+            is->pINChI[ii]->Stereo && is->pINChI[ii]->Stereo->szEnhS)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+/**
  * @brief Check whether any component has a stereocentre in an OR/AND group.
  *
  * The /s segment presence was decided by CompINChILayers() as for standard
@@ -3648,12 +3675,19 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             /* OR/AND double-bond groups: grouped /b in the main layer.
                ponytail: fixed-H and isotopic /b stay flat; group them too if needed */
             if (INCHI_SEGM_FILL == io->nSegmAction && io->nCurINChISegment == DIFL_M &&
-                orig_inp_data->v3000 &&
+                orig_inp_data && orig_inp_data->v3000 &&
                 (orig_inp_data->v3000->n_stebrel > 0 || orig_inp_data->v3000->n_stebrac > 0))
             {
                 io->tot_len = MakeBlayerString( orig_inp_data, io->pINChISort, strbuf, io->bOutType,
                                                 io->num_components, &io->bOverflow );
 
+                io->bNonTautNonIsoIdentifierNotEmpty += io->bSecondNonTautPass;
+            }
+            /* InChI input (-InChI2InChI) whose /b has groups: the slots the parser kept */
+            else if (INCHI_SEGM_FILL == io->nSegmAction && io->nCurINChISegment == DIFL_M && !orig_inp_data &&
+                     0 < ( io->tot_len = MakeEnhSlotsFromInChI( ENH_SLOTS_B, io->pINChISort, strbuf, io->bOutType,
+                                                                io->num_components, &io->bOverflow ) ))
+            {
                 io->bNonTautNonIsoIdentifierNotEmpty += io->bSecondNonTautPass;
             }
             else if (INCHI_SEGM_FILL == io->nSegmAction)
@@ -3745,8 +3779,14 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
         io->nSegmAction = INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_s_STYPE] );
         if (!io->nSegmAction && io->nCurINChISegment == DIFL_M &&
             INCHI_SEGM_FILL == INChI_SegmentAction( io->sDifSegs[io->nCurINChISegment][DIFS_t_SATOMS] ) &&
-            orig_inp_data->v3000 &&
+            orig_inp_data && orig_inp_data->v3000 &&
             bHasRelRacComponent( orig_inp_data, io->pINChISort, io->bOutType, io->num_components ))
+        {
+            io->nSegmAction = INCHI_SEGM_FILL;
+        }
+        /* ... and for InChI input whose /s carries groups or per-component digits */
+        if (!io->nSegmAction && io->nCurINChISegment == DIFL_M && !orig_inp_data &&
+            bHasEnhSlots( io->pINChISort, io->bOutType, io->num_components ))
         {
             io->nSegmAction = INCHI_SEGM_FILL;
         }
@@ -3754,6 +3794,7 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
         {
             const char *p_stereo = io->bRelativeStereo[io->iCurTautMode] ? x_rel :
                 io->bRacemicStereo[io->iCurTautMode] ? x_rac : x_abs;
+            int len_s;
 
             szGetTag( IdentLbl, io->nTag, io->bTag2 = io->bTag1 | IL_TYPS, io->szTag2, &io->bAlways, 1 );
             inchi_strbuf_reset( strbuf ); io->tot_len = 0;
@@ -3762,7 +3803,7 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             if (INCHI_SEGM_FILL == io->nSegmAction)
             {
                 /* v3000 is NULL for V2000 input and for V3000 without collections */
-                if (orig_inp_data->v3000 &&
+                if (orig_inp_data && orig_inp_data->v3000 &&
                    (orig_inp_data->v3000->n_steabs > 0 ||
                     orig_inp_data->v3000->n_sterel > 0 ||
                     orig_inp_data->v3000->n_sterac > 0)) {
@@ -3775,6 +3816,11 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
                         io->TAUT_MODE,
                         &io->bOverflow
                     );
+                } else if (!orig_inp_data &&
+                           0 < ( len_s = MakeEnhSlotsFromInChI( ENH_SLOTS_S, io->pINChISort, strbuf, io->bOutType,
+                                                                io->num_components, &io->bOverflow ) )) {
+                    /* InChI input (-InChI2InChI): the /s slots the parser kept */
+                    io->tot_len += len_s;
                 } else {
                     ( io->tot_len ) += MakeDelim( p_stereo, strbuf, &io->bOverflow );
                 }

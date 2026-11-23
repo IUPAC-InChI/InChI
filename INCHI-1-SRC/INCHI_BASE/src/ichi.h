@@ -111,6 +111,11 @@ typedef struct tagINChI_Stereo
     int         bMeso;        /* 1=> Inv = Abs stereo as canonicalised; unlike nCompInv2Abs,
                                  never changed by enhanced stereochemistry */
 
+    char       *szEnhS;       /* reading InChI: this component's /s slot verbatim,
+                                 e.g. "1(4)3(5)"; NULL if /s is one bare digit */
+    char       *szEnhB;       /* reading InChI: this component's /b slot verbatim if
+                                 the layer has OR/AND groups, e.g. "4-2+,2(5-3-)" */
+
     /* ---- possibly stereogenic bonds and tetrahedral cumulenes */
     int         nNumberOfStereoBonds;
     AT_NUMB    *nBondAtom1; /* Canonical number of a first atom

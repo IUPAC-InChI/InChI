@@ -16,6 +16,9 @@
 
 #include "bcf_s.h"
 
+static int FoldSlots( char **substrings, int n_entries, INCHI_IOS_STRING *strbuf,
+                      int tot_len, int *bOverflow );
+
  /****************************************************************************/
 int Eql_INChI_Stereo( INChI_Stereo  *s1,
                       int           eql1,
@@ -2476,9 +2479,24 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         n_entries = 0;
     }
 
-    // Fold only runs of consecutive equal substrings into count*substring, one ';'
-    // slot per run. Empty slots are never folded, as in /t:
-    // "3", "3", "", "" -> "2*3;;"
+    tot_len = FoldSlots( substrings, n_entries, strbuf, tot_len, bOverflow );
+    inchi_free(substrings);
+
+    return tot_len;
+}
+
+/**
+ * @brief Write per-component /s substrings with ';' slots, folding runs
+ *
+ * Only runs of consecutive equal substrings fold into count*substring, one
+ * ';' slot per run. Empty slots are never folded, as in /t:
+ * "3", "3", "", "" -> "2*3;;". Frees each substring.
+ *
+ * @return Returns the updated total length
+ */
+static int FoldSlots( char **substrings, int n_entries, INCHI_IOS_STRING *strbuf,
+                      int tot_len, int *bOverflow )
+{
     for (int i = 0; i < n_entries; ) {
         int run = 1;
         while (substrings[i][0] != '\0' && i + run < n_entries &&
@@ -2501,6 +2519,69 @@ int MakeSlayerString( ORIG_ATOM_DATA   *orig_inp_data,
         i += run;
     }
 
+    return tot_len;
+}
+
+/**
+ * @brief The /s or /b layer of InChI read from a string (-InChI2InChI)
+ *
+ * Without an input structure there are no stereo collections; the groups
+ * are the per-component slots the parser kept verbatim (szEnhS, szEnhB),
+ * written back in component order with the same folding as MakeSlayerString().
+ *
+ * @param layer ENH_SLOTS_S or ENH_SLOTS_B
+ * @param pINChISort Components in output order
+ * @param strbuf Output string buffer
+ * @param bOutType Output type flag
+ * @param num_components Number of components
+ * @param bOverflow Overflow flag
+ * @return Returns the length written, 0 if no component has slots
+ */
+int MakeEnhSlotsFromInChI( ENH_SLOTS        layer,
+                           INCHI_SORT       *pINChISort,
+                               INCHI_IOS_STRING *strbuf,
+                               int              bOutType,
+                               int              num_components,
+                               int              *bOverflow )
+{
+    int any = 0, ii;
+    INChI *pINChI;
+    const char *slot;
+
+    if (num_components < 1) {
+        return 0;
+    }
+    char **substrings = (char**)inchi_calloc(num_components, sizeof(char*));
+    if (substrings == NULL) {
+        *bOverflow = 1;
+        return 0;
+    }
+
+    /* one slot per component; "" where the parser found none */
+    for (int i = 0; i < num_components; i++) {
+        INCHI_SORT *is = pINChISort + i; /* GET_II does not parenthesise its argument */
+        pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
+        slot = !( pINChI && pINChI->Stereo ) ? NULL
+             : layer == ENH_SLOTS_S ? pINChI->Stereo->szEnhS : pINChI->Stereo->szEnhB;
+        any = any || slot;
+        slot = slot ? slot : "";
+
+        substrings[i] = (char*)inchi_calloc(strlen(slot) + 1, sizeof(char));
+        if (substrings[i] == NULL) {
+            *bOverflow = 1;
+            break;
+        }
+        strcpy(substrings[i], slot);
+    }
+
+    int tot_len = 0;
+    if (any && !*bOverflow) {
+        tot_len = FoldSlots( substrings, num_components, strbuf, 0, bOverflow );
+    } else {
+        for (int i = 0; i < num_components; i++) {
+            inchi_free(substrings[i]);
+        }
+    }
     inchi_free(substrings);
 
     return tot_len;
