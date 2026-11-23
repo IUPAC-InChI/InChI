@@ -163,6 +163,8 @@ static int ParseSegmentSp3s(const char* str, int bMobileH, INChI* pInpInChI[],
     int s[TAUT_NUM][2], int ppnNumComponents[], int state);
 static int ParseEnhancedSlots(const char* pStart, const char* pEnd, INChI* pInChI,
     int nNumComponents, int bIso);
+static int ParseSegmentSp2Enh(const char* str, int bMobileH, INChI* pInpInChI[],
+    int ppnNumComponents[], int state, int* pbAbc);
 
 /* Summary /s digit for grouped or per-component /s: the groups themselves
    are in each component's szEnhS, so the structure-wide flags stay absolute */
@@ -5271,8 +5273,8 @@ next_line:
                 (*ppPolymer)->is_in_reconn = bReconn;
             state = IST_MOBILE_H_SP2;
             break;
-        case IST_MOBILE_H_SP2:           /* /b */
-            ret = ParseSegmentSp2(pLine->str, bMobileH, pInpInChI[bReconn], nNumComponents[bReconn], state, &bAbc);
+        case IST_MOBILE_H_SP2:           /* /b, possibly with OR/AND groups */
+            ret = ParseSegmentSp2Enh(pLine->str, bMobileH, pInpInChI[bReconn], nNumComponents[bReconn], state, &bAbc);
             state = IST_MOBILE_H_SP3;
             break;
         case IST_MOBILE_H_SP3:         /* t */
@@ -6495,6 +6497,249 @@ static int ParseEnhancedSlots(const char* pStart, const char* pEnd, INChI* pInCh
     }
 
     return 0;
+}
+
+
+/** @brief One /b entry: bond hi-lo and its parity character */
+typedef struct tagBPair
+{
+    long hi, lo;
+    char par;
+} B_PAIR;
+
+/* qsort: ascending by (hi, lo), the flat /b order */
+static int CompBPair(const void* a, const void* b)
+{
+    const B_PAIR *x = (const B_PAIR*)a, *y = (const B_PAIR*)b;
+
+    return x->hi != y->hi ? (x->hi > y->hi) - (x->hi < y->hi) : (x->lo > y->lo) - (x->lo < y->lo);
+}
+
+/**
+ * @brief Read one "hi-lo<par>" entry at *pp; par must be in allowed
+ *
+ * @return Returns 1 and advances *pp, or 0 on a syntax error
+ */
+static int ReadBPair(const char** pp, const char* end, const char* allowed, B_PAIR* pair)
+{
+    const char* q;
+
+    if (!isdigit(UCINT **pp))
+    {
+        return 0;
+    }
+    pair->hi = inchi_strtol(*pp, &q, 10);
+    if (q >= end || *q != '-' || !isdigit(UCINT q[1]))
+    {
+        return 0;
+    }
+    pair->lo = inchi_strtol(q + 1, &q, 10);
+    if (q >= end || !*q || !strchr(allowed, *q) || pair->lo >= pair->hi)
+    {
+        return 0;
+    }
+    pair->par = *q;
+    *pp = q + 1;
+
+    return 1;
+}
+
+/**
+ * @brief Flatten one grouped /b slot (spec 3, §6) into a standard /b slot
+ *
+ * Every bond of a block keeps its parity: the group's relative geometry,
+ * read as absolute. The flat entries and the block entries are merged in
+ * ascending (hi, lo) order:
+ *
+ *     "12-11+,9-6+,2(17-13-),3(16-8-)"  ->  "9-6+,12-11+,16-8-,17-13-"
+ *
+ * @param p Slot start
+ * @param end Slot end
+ * @param flat Receives the flat slot, at least (end - p + 1) chars
+ * @return Returns 0 or RI_ERR_SYNTAX / RI_ERR_ALLOC
+ */
+static int FlattenEnhancedBSlot(const char* p, const char* end, char* flat)
+{
+    const char* q;
+    B_PAIR* pairs;
+    int n = 0, i, in_block, ret = 0;
+    long type;
+
+    /* every entry has a '-' */
+    pairs = (B_PAIR*)inchi_calloc((size_t)(end - p) / 2 + 1, sizeof(pairs[0]));
+    if (!pairs)
+    {
+        return RI_ERR_ALLOC;
+    }
+
+    while (p < end && !ret)
+    {
+        for (q = p; q < end && isdigit(UCINT * q); q++)
+            ;
+        if (q < end && *q == '(')
+        {
+            /* class "2"/"3", then blocks "(pair,...)": first pair '-', ascending */
+            type = inchi_strtol(p, NULL, 10);
+            if (type != 2 && type != 3)
+            {
+                ret = RI_ERR_SYNTAX;
+                break;
+            }
+            p = q;
+            while (p < end && *p == '(' && !ret)
+            {
+                p++;
+                for (in_block = 0; !ret; in_block++)
+                {
+                    if (!ReadBPair(&p, end, "-+", pairs + n) ||
+                        (!in_block && pairs[n].par != '-') ||
+                        (in_block && CompBPair(pairs + n - 1, pairs + n) >= 0))
+                    {
+                        ret = RI_ERR_SYNTAX;
+                        break;
+                    }
+                    n++;
+                    if (p < end && *p == ',')
+                    {
+                        p++;
+                        continue;
+                    }
+                    break;
+                }
+                if (!ret && (p >= end || *p++ != ')'))
+                {
+                    ret = RI_ERR_SYNTAX;
+                }
+            }
+        }
+        else if (!ReadBPair(&p, end, "-+u?", pairs + n++))
+        {
+            ret = RI_ERR_SYNTAX;
+        }
+
+        if (!ret && p < end && *p++ != ',')
+        {
+            ret = RI_ERR_SYNTAX;
+        }
+    }
+
+    if (!ret)
+    {
+        qsort(pairs, (size_t)n, sizeof(pairs[0]), CompBPair);
+        for (i = 0, *flat = '\0'; i < n; i++)
+        {
+            flat += sprintf(flat, "%s%ld-%ld%c", i ? "," : "", pairs[i].hi, pairs[i].lo, pairs[i].par);
+        }
+    }
+    inchi_free(pairs);
+
+    return ret;
+}
+
+/**
+ * @brief Parse the main /b layer, which may carry OR/AND groups (spec 3)
+ *
+ * A layer without groups goes to ParseSegmentSp2() as is. Otherwise each
+ * ';' slot (n* repeats as usual) is flattened, the flat layer is parsed as
+ * standard /b, and every component keeps its slot verbatim in
+ * Stereo->szEnhB for -InChI2InChI output:
+ *
+ *     "b2(2-1-);3(2-1-)"  ->  parse "b2-1-;2-1-", keep "2(2-1-)" | "3(2-1-)"
+ *
+ * @return Same as ParseSegmentSp2()
+ */
+static int ParseSegmentSp2Enh(const char* str, int bMobileH, INChI* pInpInChI[],
+                              int ppnNumComponents[], int state, int* pbAbc)
+{
+    const char *p, *end, *star, *r;
+    char *flat = NULL, *out;
+    char **verb = NULL;
+    int nComp = ppnNumComponents[bMobileH], iComp = 0, mult, k, ret;
+    size_t len;
+
+    if (str[0] != 'b' || !strchr(str, '('))
+    {
+        return ParseSegmentSp2(str, bMobileH, pInpInChI, ppnNumComponents, state, pbAbc);
+    }
+
+    /* a flat slot is never longer than its grouped form */
+    len = strlen(str);
+    flat = (char*)inchi_calloc(len + 2, sizeof(char));
+    verb = (char**)inchi_calloc((size_t)nComp + 1, sizeof(verb[0]));
+    if (!flat || !verb)
+    {
+        ret = RI_ERR_ALLOC;
+        goto exit_function;
+    }
+    out = flat;
+    *out++ = 'b';
+
+    for (p = str + 1; ; p = end + 1)
+    {
+        for (end = p; *end && *end != ';'; end++)
+            ;
+
+        /* optional repeat count "n*" */
+        mult = 1;
+        for (star = p; star < end && isdigit(UCINT * star); star++)
+            ;
+        if (star > p && star < end && *star == '*')
+        {
+            mult = (int)inchi_strtol(p, &r, 10);
+            out += sprintf(out, "%d*", mult);
+            p = star + 1;
+        }
+        if (mult < 1 || iComp + mult > nComp)
+        {
+            ret = RI_ERR_SYNTAX;
+            goto exit_function;
+        }
+
+        if (0 > (ret = FlattenEnhancedBSlot(p, end, out)))
+        {
+            goto exit_function;
+        }
+        out += strlen(out);
+
+        for (k = 0; k < mult; k++, iComp++)
+        {
+            if (!(verb[iComp] = (char*)inchi_calloc((size_t)(end - p) + 1, sizeof(char))))
+            {
+                ret = RI_ERR_ALLOC;
+                goto exit_function;
+            }
+            memcpy(verb[iComp], p, (size_t)(end - p));
+        }
+
+        if (!*end)
+        {
+            break;
+        }
+        *out++ = ';';
+    }
+
+    ret = ParseSegmentSp2(flat, bMobileH, pInpInChI, ppnNumComponents, state, pbAbc);
+
+    /* keep the slots on the components that have stereo */
+    for (k = 0; ret >= 0 && k < iComp; k++)
+    {
+        INChI_Stereo* st = pInpInChI[bMobileH][k].Stereo;
+        if (st)
+        {
+            st->szEnhB = verb[k];
+            verb[k] = NULL;
+        }
+    }
+
+exit_function:
+    for (k = 0; verb && k < nComp; k++)
+    {
+        inchi_free(verb[k]);
+    }
+    inchi_free(verb);
+    inchi_free(flat);
+
+    return ret;
 }
 
 

@@ -2523,12 +2523,13 @@ static int FoldSlots( char **substrings, int n_entries, INCHI_IOS_STRING *strbuf
 }
 
 /**
- * @brief The /s layer of InChI read from a string (-InChI2InChI)
+ * @brief The /s or /b layer of InChI read from a string (-InChI2InChI)
  *
  * Without an input structure there are no stereo collections; the groups
- * are the per-component slots the parser kept verbatim (szEnhS), written
- * back in component order with the same folding as MakeSlayerString().
+ * are the per-component slots the parser kept verbatim (szEnhS, szEnhB),
+ * written back in component order with the same folding as MakeSlayerString().
  *
+ * @param layer ENH_SLOTS_S or ENH_SLOTS_B
  * @param pINChISort Components in output order
  * @param strbuf Output string buffer
  * @param bOutType Output type flag
@@ -2536,7 +2537,8 @@ static int FoldSlots( char **substrings, int n_entries, INCHI_IOS_STRING *strbuf
  * @param bOverflow Overflow flag
  * @return Returns the length written, 0 if no component has slots
  */
-int MakeSlayerStringFromInChI( INCHI_SORT       *pINChISort,
+int MakeEnhSlotsFromInChI( ENH_SLOTS        layer,
+                           INCHI_SORT       *pINChISort,
                                INCHI_IOS_STRING *strbuf,
                                int              bOutType,
                                int              num_components,
@@ -2559,8 +2561,10 @@ int MakeSlayerStringFromInChI( INCHI_SORT       *pINChISort,
     for (int i = 0; i < num_components; i++) {
         INCHI_SORT *is = pINChISort + i; /* GET_II does not parenthesise its argument */
         pINChI = ( 0 <= ( ii = GET_II( bOutType, is ) ) ) ? is->pINChI[ii] : NULL;
-        slot = ( pINChI && pINChI->Stereo && pINChI->Stereo->szEnhS ) ? pINChI->Stereo->szEnhS : "";
-        any = any || *slot;
+        slot = !( pINChI && pINChI->Stereo ) ? NULL
+             : layer == ENH_SLOTS_S ? pINChI->Stereo->szEnhS : pINChI->Stereo->szEnhB;
+        any = any || slot;
+        slot = slot ? slot : "";
 
         substrings[i] = (char*)inchi_calloc(strlen(slot) + 1, sizeof(char));
         if (substrings[i] == NULL) {

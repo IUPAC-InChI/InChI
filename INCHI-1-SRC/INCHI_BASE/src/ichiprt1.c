@@ -3683,6 +3683,13 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
 
                 io->bNonTautNonIsoIdentifierNotEmpty += io->bSecondNonTautPass;
             }
+            /* InChI input (-InChI2InChI) whose /b has groups: the slots the parser kept */
+            else if (INCHI_SEGM_FILL == io->nSegmAction && io->nCurINChISegment == DIFL_M && !orig_inp_data &&
+                     0 < ( io->tot_len = MakeEnhSlotsFromInChI( ENH_SLOTS_B, io->pINChISort, strbuf, io->bOutType,
+                                                                io->num_components, &io->bOverflow ) ))
+            {
+                io->bNonTautNonIsoIdentifierNotEmpty += io->bSecondNonTautPass;
+            }
             else if (INCHI_SEGM_FILL == io->nSegmAction)
             {
                 io->tot_len = str_Sp2( io->pINChISort, io->pINChISort2, strbuf, &io->bOverflow,
@@ -3810,8 +3817,8 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
                         &io->bOverflow
                     );
                 } else if (!orig_inp_data &&
-                           0 < ( len_s = MakeSlayerStringFromInChI( io->pINChISort, strbuf, io->bOutType,
-                                                                    io->num_components, &io->bOverflow ) )) {
+                           0 < ( len_s = MakeEnhSlotsFromInChI( ENH_SLOTS_S, io->pINChISort, strbuf, io->bOutType,
+                                                                io->num_components, &io->bOverflow ) )) {
                     /* InChI input (-InChI2InChI): the /s slots the parser kept */
                     io->tot_len += len_s;
                 } else {

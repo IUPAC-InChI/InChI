@@ -151,3 +151,49 @@ INSTANTIATE_TEST_SUITE_P(
         "InChI=1B/C12H26.2C10H14BrCl7.C9H20/c1-8(2)11(7)12(9(3)4)10(5)6;2*1-3(11)5(13)7(15)9(17)10(18)8(16)6(14)4(2)12;1-6-8(4)9(5)7(2)3/h8-12H,1-7H3;2*3-10H,1-2H3;7-9H,6H2,1-5H3/t11-;2*3-,4-,5+,6-,7-,8-,9+,10-;8-,9+/m100./s1;2*1(3,5)2(4)(6,8)3(7,9)(10);3",
         /* centre stereogenic only through an isotope */
         "InChI=1B/C2H6O/c1-2-3/h3H,2H2,1H3/i2D/t2-/s3"));
+
+// Grouped /b (spec 3, §6): InChI -> InChI reprints it; the structure keeps
+// each bond's E/Z but not its group (no bond groups in the public API)
+class Inchi2InchiBTest : public ::testing::TestWithParam<const char *>
+{
+};
+
+TEST_P(Inchi2InchiBTest, reprints_unchanged)
+{
+    EXPECT_EQ(inchi2inchi(GetParam()), GetParam());
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    test_enhancedStereo_roundtrip, Inchi2InchiBTest,
+    ::testing::Values(
+        /* one OR / one AND block */
+        "InChI=1B/C2BrCl2F/c3-1(4)2(5)6/b2(2-1-)",
+        "InChI=1B/C10H16O/c1-9(2)5-4-6-10(3)7-8-11/h5,7-8H,4,6H2,1-3H3/b3(10-7-)",
+        /* flat entries before the classes, OR class before AND class */
+        "InChI=1B/C20H28O/c1-16(8-6-9-17(2)13-15-21)11-12-19-18(3)10-7-14-20(19,4)5/h6,8-9,11-13,15H,7,10,14H2,1-5H3/b9-6+,12-11+,2(17-13-),3(16-8-)",
+        "InChI=1B/C5H2BrCl2F2I/c6-4(9)2(7)1-3(8)5(10)11/h1H2/b4-2+,2(5-3-)",
+        /* two blocks of one class, two bonds in one block (relative +) */
+        "InChI=1B/C5H2BrCl2F2I/c6-4(9)2(7)1-3(8)5(10)11/h1H2/b3(4-2-)(5-3-)",
+        "InChI=1B/C5H2BrCl2F2I/c6-4(9)2(7)1-3(8)5(10)11/h1H2/b3(4-2-,5-3+)",
+        /* next to /t, several components */
+        "InChI=1B/C4H5BrClFO/c1-2(8)3(5)4(6)7/h2,8H,1H3/b2(4-3-)/t2-/m1/s1",
+        "InChI=1B/2C2BrCl2F/c2*3-1(4)2(5)6/b2(2-1-);3(2-1-)"));
+
+// The structure keeps the E/Z of a grouped bond: the group's relative
+// geometry, read as absolute (lowest bond '-')
+TEST(test_enhancedStereo_roundtrip, grouped_b_structure_keeps_geometry)
+{
+    EXPECT_EQ(round_trip("InChI=1B/C5H2BrCl2F2I/c6-4(9)2(7)1-3(8)5(10)11/h1H2/b3(4-2-,5-3+)"),
+              "InChI=1B/C5H2BrCl2F2I/c6-4(9)2(7)1-3(8)5(10)11/h1H2/b4-2-,5-3+");
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    test_enhancedStereo_roundtrip_b, Inchi2InchiRejectTest,
+    ::testing::Values(
+        /* first bond of a block not '-' */
+        "InChI=1B/C2BrCl2F/c3-1(4)2(5)6/b2(2-1+)",
+        /* class digit not 2/3 */
+        "InChI=1B/C2BrCl2F/c3-1(4)2(5)6/b4(2-1-)",
+        /* unclosed block, bonds not ascending in a block */
+        "InChI=1B/C2BrCl2F/c3-1(4)2(5)6/b2(2-1-",
+        "InChI=1B/C5H2BrCl2F2I/c6-4(9)2(7)1-3(8)5(10)11/h1H2/b3(5-3-,4-2+)"));

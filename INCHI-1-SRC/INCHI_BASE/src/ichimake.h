@@ -189,11 +189,18 @@ const char *EquString( int EquVal );
                           int              num_components,
                           int              nCtMode,
                           int              *bOverflow );
-    int MakeSlayerStringFromInChI( INCHI_SORT       *pINChISort,
-                                   INCHI_IOS_STRING *strbuf,
-                                   int              bOutType,
-                                   int              num_components,
-                                   int              *bOverflow );
+    /** @brief Layer whose verbatim slots MakeEnhSlotsFromInChI() writes */
+    typedef enum tagEnhSlots
+    {
+        ENH_SLOTS_S,    /* /s: INChI_Stereo.szEnhS */
+        ENH_SLOTS_B     /* /b: INChI_Stereo.szEnhB */
+    } ENH_SLOTS;
+    int MakeEnhSlotsFromInChI( ENH_SLOTS        layer,
+                               INCHI_SORT       *pINChISort,
+                               INCHI_IOS_STRING *strbuf,
+                               int              bOutType,
+                               int              num_components,
+                               int              *bOverflow );
     int MakeBlayerString( ORIG_ATOM_DATA   *orig_inp_data,
                           INCHI_SORT       *pINChISort,
                           INCHI_IOS_STRING *strbuf,
