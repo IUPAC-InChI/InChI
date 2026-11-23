@@ -3574,6 +3574,33 @@ static int bHasAbsStereoComponent( INCHI_SORT   *pINChISort,
 
 
 /**
+ * @brief Check whether any component of InChI input kept /s slots (szEnhS).
+ *
+ * Without /m the standard rules give such an InChI no /s, e.g. /t4-,5-/s2(4)(5);
+ * the slots are the information and must be written.
+ *
+ * @return Returns 1 if a component has slots, else 0.
+ */
+static int bHasEnhSlots( INCHI_SORT *pINChISort, int bOutType, int num_components )
+{
+    int i, ii;
+
+    for (i = 0; i < num_components; i++)
+    {
+        INCHI_SORT *is = pINChISort + i;
+
+        if (0 <= ( ii = GET_II( bOutType, is ) ) &&
+            is->pINChI[ii]->Stereo && is->pINChI[ii]->Stereo->szEnhS)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+/**
  * @brief Check whether any component has a stereocentre in an OR/AND group.
  *
  * The /s segment presence was decided by CompINChILayers() as for standard
@@ -3750,10 +3777,17 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
         {
             io->nSegmAction = INCHI_SEGM_FILL;
         }
+        /* ... and for InChI input whose /s carries groups or per-component digits */
+        if (!io->nSegmAction && io->nCurINChISegment == DIFL_M && !orig_inp_data &&
+            bHasEnhSlots( io->pINChISort, io->bOutType, io->num_components ))
+        {
+            io->nSegmAction = INCHI_SEGM_FILL;
+        }
         if (io->nSegmAction)
         {
             const char *p_stereo = io->bRelativeStereo[io->iCurTautMode] ? x_rel :
                 io->bRacemicStereo[io->iCurTautMode] ? x_rac : x_abs;
+            int len_s;
 
             szGetTag( IdentLbl, io->nTag, io->bTag2 = io->bTag1 | IL_TYPS, io->szTag2, &io->bAlways, 1 );
             inchi_strbuf_reset( strbuf ); io->tot_len = 0;
@@ -3775,6 +3809,11 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
                         io->TAUT_MODE,
                         &io->bOverflow
                     );
+                } else if (!orig_inp_data &&
+                           0 < ( len_s = MakeSlayerStringFromInChI( io->pINChISort, strbuf, io->bOutType,
+                                                                    io->num_components, &io->bOverflow ) )) {
+                    /* InChI input (-InChI2InChI): the /s slots the parser kept */
+                    io->tot_len += len_s;
                 } else {
                     ( io->tot_len ) += MakeDelim( p_stereo, strbuf, &io->bOverflow );
                 }

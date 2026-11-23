@@ -161,6 +161,12 @@ static int bIsSp3LayerNotEmpty(INChI* pInpInChI[], int bMobileH,
     int bIso, int nNumComponents);
 static int ParseSegmentSp3s(const char* str, int bMobileH, INChI* pInpInChI[],
     int s[TAUT_NUM][2], int ppnNumComponents[], int state);
+static int ParseEnhancedSlots(const char* pStart, const char* pEnd, INChI* pInChI,
+    int nNumComponents, int bIso);
+
+/* Summary /s digit for grouped or per-component /s: the groups themselves
+   are in each component's szEnhS, so the structure-wide flags stay absolute */
+#define ENH_S_SUMMARY 1
 static int ParseSegmentIsoAtoms(const char* str, int bMobileH, INChI* pInpInChI[],
     int nNumComponents[], int state, int* pbAbc);
 static int ParseSegmentIsoExchgH(const char* str, int bMobileH,
@@ -6339,13 +6345,156 @@ int ParseSegmentSp3s(const char* str,
         }
         else
         {
-            ret = RI_ERR_SYNTAX; /* syntax error */
+            /* enhanced stereo: per-component slots, e.g. "1(4)3(5)" or "2;3" */
+            ret = ParseEnhancedSlots(pStart, pEnd, pInChI, nNumComponents, bIso);
+            if (ret >= 0)
+            {
+                s[bMobileH][bIso] = ENH_S_SUMMARY;
+                ret = nNumComponents + 1;
+            }
         }
     }
 
 exit_function:
 
     return ret;
+}
+
+
+/**
+ * @brief Is [p, end) one enhanced-stereo /s slot of a component?
+ *
+ * Grammar (spec 1, §6): a bare digit 1..3, or one or more s-groups, each a
+ * digit followed by atom groups of ascending canonical numbers <= num_atoms:
+ *
+ *     "3"   "1(4)3(5)"   "1(3,5)2(4)(6,8)3(7,9)(10)"
+ *
+ * @param p Slot start
+ * @param end Slot end
+ * @param num_atoms Number of atoms of the component
+ * @return Returns 1 if valid, else 0
+ */
+static int IsEnhancedSlot(const char* p, const char* end, int num_atoms)
+{
+    const char* q;
+    long atom, prev;
+
+    if (end - p == 1)
+    {
+        return '1' <= *p && *p <= '3';
+    }
+
+    while (p < end)
+    {
+        /* s-type digit, then at least one atom group */
+        if (*p < '1' || *p > '3' || p + 1 >= end || p[1] != '(')
+        {
+            return 0;
+        }
+        p++;
+
+        while (p < end && *p == '(')
+        {
+            prev = 0;
+            do
+            {
+                p++;
+                if (!isdigit(UCINT * p))
+                {
+                    return 0;
+                }
+                atom = inchi_strtol(p, &q, 10);
+                if (atom <= prev || atom > num_atoms)
+                {
+                    return 0; /* not ascending or out of range */
+                }
+                prev = atom;
+                p = q;
+            } while (p < end && *p == ',');
+
+            if (p >= end || *p != ')')
+            {
+                return 0;
+            }
+            p++;
+        }
+    }
+
+    return 1;
+}
+
+
+/**
+ * @brief Store the slots of an enhanced-stereo /s layer per component
+ *
+ * Slots are separated by ';' and may carry a repeat count, like /t:
+ *
+ *     "1;2*1(3,5)2(4)(6,8);3"   ->   "1" | "1(3,5)2(4)(6,8)" x2 | "3"
+ *
+ * Each non-empty slot is kept verbatim in the component's Stereo (or
+ * StereoIsotopic) szEnhS; the component must already have that stereo.
+ *
+ * @param pStart Layer text after "s"
+ * @param pEnd Layer end
+ * @param pInChI Components
+ * @param nNumComponents Number of components
+ * @param bIso 1 for the isotopic layer
+ * @return Returns 0 or an RI_ERR_* code
+ */
+static int ParseEnhancedSlots(const char* pStart, const char* pEnd, INChI* pInChI,
+                              int nNumComponents, int bIso)
+{
+    const char *p = pStart, *end, *star, *r;
+    int iComponent = 0, mult, k;
+    size_t len;
+    INChI_Stereo* pStereo;
+
+    while (p <= pEnd)
+    {
+        for (end = p; end < pEnd && *end != ';'; end++)
+            ;
+
+        /* optional repeat count "n*" */
+        mult = 1;
+        for (star = p; star < end && *star != '*'; star++)
+            ;
+        if (star < end)
+        {
+            mult = (int)inchi_strtol(p, &r, 10);
+            if (r != star || mult < 1)
+            {
+                return RI_ERR_SYNTAX;
+            }
+            p = star + 1;
+        }
+        if (iComponent + mult > nNumComponents)
+        {
+            return RI_ERR_SYNTAX;
+        }
+
+        len = (size_t)(end - p);
+        for (k = 0; k < mult && len; k++, iComponent++)
+        {
+            pStereo = bIso ? pInChI[iComponent].StereoIsotopic : pInChI[iComponent].Stereo;
+            if (!pStereo || !IsEnhancedSlot(p, end, pInChI[iComponent].nNumberOfAtoms))
+            {
+                return RI_ERR_SYNTAX;
+            }
+            if (!(pStereo->szEnhS = (char*)inchi_calloc(len + 1, sizeof(char))))
+            {
+                return RI_ERR_ALLOC;
+            }
+            memcpy(pStereo->szEnhS, p, len);
+        }
+        if (!len)
+        {
+            iComponent += mult; /* empty slot: no stereo groups */
+        }
+
+        p = end + 1;
+    }
+
+    return 0;
 }
 
 
