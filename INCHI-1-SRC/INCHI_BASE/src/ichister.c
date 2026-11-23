@@ -3422,7 +3422,8 @@ static int set_atrop_axes_parity( sp_ATOM *out_at, inp_ATOM *at, int num_at,
             for (ord_2 = 0; (int) at[at_2].neighbor[ord_2] != at_1; ord_2++)
             {
                 ;
-            }            ret = set_atrop_axis_parity( out_at, at, at_1, ord_1, at_2, ord_2,
+            }
+            ret = set_atrop_axis_parity( out_at, at, at_1, ord_1, at_2, ord_2,
                                          at_removed_H, num_removed_H,
                                          bPointedEdgeStereo, vABParityUnknown );
             if (RETURNED_ERROR( ret ))
