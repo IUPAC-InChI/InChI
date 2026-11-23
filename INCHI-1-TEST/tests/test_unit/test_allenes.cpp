@@ -242,3 +242,201 @@ TEST( test_allenes, A3_single_stereobond_inchigen )
     INCHIGEN_Reset( h, &gen, &gen_out );
     INCHIGEN_Destroy( h );
 }
+
+/* Longer cumulenes (AL-R8, A. Yerin 2026-11-19): 3D, methyl at each end,
+   records of InChI-Specifications allenes/datasets/cumulenes.sdf */
+const char k3Z[] =
+    "[3]cumulene hexa-2,3,4-triene, Z\n"
+    "  3D, built for AL-R8\n"
+    "\n"
+    "  6  5  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    4.6500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  5  1  0\n"
+    "  4  6  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "M  END\n";
+const char k3E[] =
+    "[3]cumulene hexa-2,3,4-triene, E\n"
+    "  3D, built for AL-R8\n"
+    "\n"
+    "  6  5  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    4.6500   -1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  5  1  0\n"
+    "  4  6  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "M  END\n";
+const char k4a[] =
+    "[4]cumulene hepta-2,3,4,5-tetraene, isomer a\n"
+    "  3D, built for AL-R8\n"
+    "\n"
+    "  7  6  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.2000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.9500    0.0000    1.1000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  6  1  0\n"
+    "  5  7  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "  4  5  2  0\n"
+    "M  END\n";
+const char k4b[] =
+    "[4]cumulene hepta-2,3,4,5-tetraene, isomer b, mirror image\n"
+    "  3D, built for AL-R8\n"
+    "\n"
+    "  7  6  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.2000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.9500    0.0000   -1.1000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  6  1  0\n"
+    "  5  7  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "  4  5  2  0\n"
+    "M  END\n";
+const char k5Z[] =
+    "[5]cumulene octa-2,3,4,5,6-pentaene, Z\n"
+    "  3D, built for AL-R8\n"
+    "\n"
+    "  8  7  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.2000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    6.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    7.2500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  7  1  0\n"
+    "  6  8  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "  4  5  2  0\n"
+    "  5  6  2  0\n"
+    "M  END\n";
+const char k5E[] =
+    "[5]cumulene octa-2,3,4,5,6-pentaene, E\n"
+    "  3D, built for AL-R8\n"
+    "\n"
+    "  8  7  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.2000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    6.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    7.2500   -1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  7  1  0\n"
+    "  6  8  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "  4  5  2  0\n"
+    "  5  6  2  0\n"
+    "M  END\n";
+const char k6a[] =
+    "[6]cumulene\n"
+    "  3D\n"
+    "\n"
+    "  9  8  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.2000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    6.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    7.8000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    8.5500    0.0000    1.1000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  8  1  0\n"
+    "  7  9  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "  4  5  2  0\n"
+    "  5  6  2  0\n"
+    "  6  7  2  0\n"
+    "M  END\n";
+const char k6b[] =
+    "[6]cumulene\n"
+    "  3D\n"
+    "\n"
+    "  9  8  0  0  0  0  0  0  0  0999 V2000\n"
+    "    0.0000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    1.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    2.6000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    3.9000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    5.2000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    6.5000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    7.8000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "   -0.7500    1.1000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "    8.5500    0.0000   -1.1000 C   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    "  1  8  1  0\n"
+    "  7  9  1  0\n"
+    "  1  2  2  0\n"
+    "  2  3  2  0\n"
+    "  3  4  2  0\n"
+    "  4  5  2  0\n"
+    "  5  6  2  0\n"
+    "  6  7  2  0\n"
+    "M  END\n";
+
+/* Under -EnhancedStereochemistry chains up to five cumulated double bonds
+   carry stereo: [4] an axis (/t on the central atom), [5] E/Z (/b on the
+   ends). Standard InChI keeps three, and six stay out. */
+TEST( test_allenes, long_cumulenes_enhanced_only )
+{
+    EXPECT_EQ( inchi( k3Z, kStd ), "InChI=1S/C6H8/c1-3-5-6-4-2/h3-4H,1-2H3/b4-3-" );
+    EXPECT_EQ( inchi( k4a, kStd ), inchi( k4b, kStd ) );
+    EXPECT_EQ( inchi( k5Z, kStd ), inchi( k5E, kStd ) );
+
+    std::string a = inchi( k4a, kEnh ), b = inchi( k4b, kEnh );
+    EXPECT_NE( a.find( "/t" ), std::string::npos ) << a;
+    EXPECT_EQ( a.substr( 0, a.find( "/m" ) ), b.substr( 0, b.find( "/m" ) ) );
+    EXPECT_NE( a, b );
+
+    std::string z = inchi( k5Z, kEnh ), e = inchi( k5E, kEnh );
+    EXPECT_NE( z.find( "/b" ), std::string::npos ) << z;
+    EXPECT_NE( z, e );
+
+    EXPECT_EQ( inchi( k6a, kEnh ), inchi( k6b, kEnh ) );
+    EXPECT_EQ( inchi( k6a, kEnh ).find( "/t" ), std::string::npos );
+}
+
+/* Two opposite wedges at one end, the strictest drawing (A. Yerin): the
+   same axis as one wedge at that end */
+TEST( test_allenes, opposite_wedges_at_one_end )
+{
+    std::string both = molblock( kAllene, allene_bonds( FLAT, UP, DOWN ), "" );
+    std::string br_up = molblock( kAllene, allene_bonds( FLAT, UP ), "" );
+    std::string mirror = molblock( kAllene, allene_bonds( FLAT, DOWN, UP ), "" );
+
+    EXPECT_EQ( inchi( both, kEnh ), inchi( br_up, kEnh ) );
+    EXPECT_EQ( inchi( both, kEnh ), "InChI=1B/C4H3BrClF" + kAxis + "/m1/s1" );
+    EXPECT_EQ( inchi( mirror, kEnh ), "InChI=1B/C4H3BrClF" + kAxis + "/m0/s1" );
+}

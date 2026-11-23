@@ -204,7 +204,9 @@ typedef struct tagAtom
 #define BITS_PARITY        0x07  /* mask to retrieve half-bond parity */
 #define MASK_CUMULENE_LEN  0x38  /* mask to retrieve (cumulene chain length - 1)*MULT_STEREOBOND    */
 #define KNOWN_PARITIES_EQL 0x40  /* parity is same for all pairs of constit. equivalent atoms       */
-#define MAX_CUMULENE_LEN   2     /* max number of bonds in a cumulene chain - 1                     */
+#define MAX_CUMULENE_LEN   4     /* max number of bonds in a cumulene chain - 1: 5 double bonds    */
+#define MAX_CUMULENE_LEN_STD 2   /* ... in standard InChI: 3 double bonds; 4 needs
+                                    -EnhancedStereochemistry (PES_BIT_LONG_CUMULENE)               */
 
 #define MULT_STEREOBOND    0x08  /* multiplier for cumulene chain length
                                     odd length => chiral, even length => stereogenic bond           */
