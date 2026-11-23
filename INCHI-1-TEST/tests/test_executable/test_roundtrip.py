@@ -218,3 +218,12 @@ def test_inchi2inchi_unknown_class_letter_gets_no_mi_marker(run_inchi_exe):
     result = run_inchi_exe("InChI=1XB/H2O/h1H2\n", "-InChI2InChI")
 
     assert "InChI=1N/H2O/h1H2" in result.output
+
+
+def test_inchi2inchi_enhanced_stereo_keeps_stereo(run_inchi_exe):
+    """-InChI2InChI has no input structure; the /s printer must not need one."""
+    inchi = "InChI=1S/C4H9Br/c1-3-4(2)5/h4H,3H2,1-2H3/t4-/m0/s1"
+
+    result = run_inchi_exe(inchi + "\n", "-InChI2InChI -EnhancedStereochemistry")
+
+    assert result.output.splitlines()[-1] == inchi.replace("InChI=1S/", "InChI=1B/")
