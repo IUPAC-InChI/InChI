@@ -16,10 +16,6 @@
 #endif
 
 
-#ifdef _WIN32
-#include <crtdbg.h>
-#endif
-
 #include "ichimain.h"
 #include "inchi_api.h"
 #include "bcf_s.h"
@@ -36,23 +32,13 @@ int rrand(int m)
 
 void shuffle(void* obj, size_t nmemb, size_t size)
 {
-    void* temp = inchi_malloc(size);
+    char *base = (char *)obj;
     size_t n = nmemb;
     while (n > 1)
     {
         size_t k = rrand((int)n--);
-        if (temp) /* djb-rwth: fixing a NULL pointer dereference */
-        {
-            memcpy(temp, BYTE(obj) + n * size, size);
-            memcpy(BYTE(obj) + n * size, BYTE(obj) + k * size, size);
-            memcpy(BYTE(obj) + k * size, temp, size);
-        }
+        inchi_swap(base + n * size, base + k * size, size);
     }
-#ifdef _WIN32
-    _free_dbg(temp, _NORMAL_BLOCK); /* djb-rwth: _free_dbg for _malloc_dbg must be used if Windows SDK is used */
-#else
-    free(temp); /* djb-rwth: otherwise just free */
-#endif
 }
 
 
