@@ -115,10 +115,12 @@ void OrigAtData_Permute(ORIG_ATOM_DATA* permuted, ORIG_ATOM_DATA* saved, int* nu
                     {
                         unit->alist[j] = get_permuted_index(numbers, nat, unit->alist[j]);
                     }
-                    for (j = 0; j < unit->nb; j++)
+                }
+                if (unit->blist)
+                {
+                    for (j = 0; j < 2 * unit->nb; j++)
                     {
-                        unit->blist[2 * j] = get_permuted_index(numbers, nat, unit->blist[2 * j]);
-                        unit->blist[2 * j + 1] = get_permuted_index(numbers, nat, unit->blist[2 * j + 1]);
+                        unit->blist[j] = get_permuted_index(numbers, nat, unit->blist[j]);
                     }
                 }
             }
