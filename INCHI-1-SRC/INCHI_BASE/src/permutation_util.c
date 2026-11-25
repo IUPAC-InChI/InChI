@@ -197,16 +197,13 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
 
     INCHI_MODE input_atom_flags = 0;
     int struct_read_error = 0;
-    int num_atoms = CreateOrigInpDataFromMolfile(
+    if (CreateOrigInpDataFromMolfile(
         &input_stream,
         &atom_data,
         0, 1, 0, 0, 0, NULL, NULL, NULL, NULL, /* bDoNotAddH = 0: keep implicit H (#311) */
         &input_atom_flags,
         &struct_read_error,
-        NULL, 0
-    );
-
-    if (num_atoms <= 0)
+        NULL, 0) <= 0)
         goto exit;
 
     if (struct_read_error != 0)
@@ -215,6 +212,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
     if (OrigAtData_Duplicate(&permuted_atom_data, &atom_data) != 0)
         goto exit;
 
+    const int num_atoms = atom_data.num_inp_atoms;
     permutation_mapping = inchi_malloc(num_atoms * sizeof(int));
     if (!permutation_mapping)
         goto exit;
