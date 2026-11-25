@@ -7151,7 +7151,7 @@ int ParseSegmentSp2(const char* str,
                 p = pStart;
             }
 #if (FIX_DALKE_BUGS == 1)
-        if (iComponent + mpy_component > nNumComponents)
+        if (mpy_component < 1 || iComponent + mpy_component > nNumComponents)
         {
             ret = RI_ERR_SYNTAX; /* syntax error */
             goto exit_function;
