@@ -143,11 +143,12 @@ void OrigAtData_Permute(ORIG_ATOM_DATA* permuted, ORIG_ATOM_DATA* saved, int* nu
         }
         if (saved->v3000->n_haptic_bonds && saved->v3000->lists_haptic_bonds && v3000->n_haptic_bonds && v3000->lists_haptic_bonds)
         {
+            /* Layout: [0] bond type, [1] metal atom, [2] number of endpoints, [3..] endpoints */
             for (j = 0; j < saved->v3000->n_haptic_bonds; j++)
             {
                 int* lst = v3000->lists_haptic_bonds[j];
                 lst[1] = get_permuted_index(numbers, nat, lst[1]);
-                for (k = 3; k < lst[2]; k++)
+                for (k = 3; k < lst[2] + 3; k++)
                 {
                     lst[k] = get_permuted_index(numbers, nat, lst[k]);
                 }
