@@ -259,7 +259,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
     if (OrigAtData_WriteToSDfile(
             &permuted_atom_data,
             &output_stream,
-            NULL, NULL, 0, 0, NULL, NULL) != 0)
+            NULL, NULL, (input_atom_flags & FLAG_INP_AT_CHIRAL) != 0, 0, NULL, NULL) != 0)
         goto exit;
 
     size_t out_len = output_stream.s.nUsedLength;
