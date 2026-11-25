@@ -116,6 +116,104 @@ TEST(permutation_util_testing, test_OrigAtData_Permute)
     FreeOrigAtData(&permuted_atom_data);
 }
 
+TEST(permutation_util_testing, test_OrigAtData_Permute_atom_lists)
+{
+    // GitHub issue #333: one-based and exceptional (0, -1) atom indices
+    // in polymer units and V3000 lists must be permuted correctly.
+    const char *const moltext =
+        "\n"
+        "  test\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 2 1 1 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 Fe 0 0 0 0\n"
+        "M  V30 2 C 0 0 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 9 1 2 ENDPTS=(1 2) ATTACH=ALL\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN SGROUP\n"
+        "M  V30 1 SRU 1 ATOMS=(2 1 2)\n"
+        "M  V30 END SGROUP\n"
+        "M  V30 BEGIN COLLECTION\n"
+        "M  V30 MDLV30/STEABS ATOMS=(1 1)\n"
+        "M  V30 MDLV30/STEREL1 ATOMS=(1 2)\n"
+        "M  V30 MDLV30/STERAC1 ATOMS=(1 2)\n"
+        "M  V30 END COLLECTION\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    INCHI_IOSTREAM input_stream;
+    inchi_ios_init(&input_stream, INCHI_IOS_TYPE_STRING, nullptr);
+    inchi_ios_print_nodisplay(&input_stream, "%s", moltext);
+
+    ORIG_ATOM_DATA atom_data{};
+    INCHI_MODE input_atom_flags = 0;
+    int struct_read_error = 0;
+    ASSERT_EQ(CreateOrigInpDataFromMolfile(
+                  &input_stream,
+                  &atom_data,
+                  0, 0, 0, POLYMERS_MODERN, 0,
+                  nullptr, nullptr, nullptr, nullptr,
+                  &input_atom_flags,
+                  &struct_read_error,
+                  nullptr, 0),
+              2);
+    ASSERT_EQ(struct_read_error, 0);
+
+    // Preconditions: the lists contain one-based and exceptional indices.
+    const OAD_PolymerUnit *unit = atom_data.polymer->units[0];
+    ASSERT_EQ(unit->cap1, 0);
+    ASSERT_EQ(unit->cap2, 0);
+    ASSERT_EQ(unit->end_atom1, 0);
+    ASSERT_EQ(unit->end_atom2, 0);
+    const OAD_V3000 *v3000 = atom_data.v3000;
+    ASSERT_EQ(v3000->atom_index_orig[0], 1);
+    ASSERT_EQ(v3000->atom_index_orig[1], 0); // GitHub issue #330
+    ASSERT_EQ(v3000->atom_index_fin[0], 1);
+    ASSERT_EQ(v3000->atom_index_fin[1], 0); // GitHub issue #330
+    ASSERT_EQ(v3000->n_haptic_bonds, 1);
+    ASSERT_EQ(v3000->lists_haptic_bonds[0][1], 1); // metal atom
+    ASSERT_EQ(v3000->lists_haptic_bonds[0][2], 1); // number of endpoints
+    ASSERT_EQ(v3000->lists_haptic_bonds[0][3], 2); // endpoint
+    ASSERT_EQ(v3000->n_steabs, 1);
+    ASSERT_EQ(v3000->lists_steabs[0][2], 1);
+    ASSERT_EQ(v3000->n_sterel, 1);
+    ASSERT_EQ(v3000->lists_sterel[0][2], 2);
+    ASSERT_EQ(v3000->n_sterac, 1);
+    ASSERT_EQ(v3000->lists_sterac[0][2], 2);
+
+    ORIG_ATOM_DATA permuted_atom_data{};
+    ASSERT_EQ(OrigAtData_Duplicate(&permuted_atom_data, &atom_data), 0);
+
+    // Swap the two atoms: one-based atom 1 <-> 2.
+    int permutation_mapping[] = {1, 0};
+    OrigAtData_Permute(&permuted_atom_data, &atom_data, permutation_mapping);
+
+    const OAD_PolymerUnit *permuted_unit = permuted_atom_data.polymer->units[0];
+    EXPECT_EQ(permuted_unit->cap1, 0);
+    EXPECT_EQ(permuted_unit->cap2, 0);
+    EXPECT_EQ(permuted_unit->end_atom1, 0);
+    EXPECT_EQ(permuted_unit->end_atom2, 0);
+
+    const OAD_V3000 *permuted_v3000 = permuted_atom_data.v3000;
+    EXPECT_EQ(permuted_v3000->atom_index_orig[0], 2);
+    EXPECT_EQ(permuted_v3000->atom_index_orig[1], 0);
+    EXPECT_EQ(permuted_v3000->atom_index_fin[0], 2);
+    EXPECT_EQ(permuted_v3000->atom_index_fin[1], 0);
+    EXPECT_EQ(permuted_v3000->lists_haptic_bonds[0][1], 2);
+    EXPECT_EQ(permuted_v3000->lists_haptic_bonds[0][3], 1);
+    EXPECT_EQ(permuted_v3000->lists_steabs[0][2], 2);
+    EXPECT_EQ(permuted_v3000->lists_sterel[0][2], 1);
+    EXPECT_EQ(permuted_v3000->lists_sterac[0][2], 1);
+
+    inchi_ios_free_str(&input_stream);
+    FreeOrigAtData(&atom_data);
+    FreeOrigAtData(&permuted_atom_data);
+}
+
 TEST(permutation_util_testing, test_PermuteMolfileText_happy_path)
 {
     char permuted_moltext[MAX_MOLTEXT_SIZE] = {0};
