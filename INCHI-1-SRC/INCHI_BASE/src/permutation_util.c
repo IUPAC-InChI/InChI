@@ -6,12 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <limits.h>
-#include <float.h>
-#include <ctype.h>
 #include <locale.h>
 
 #include "mode.h"
