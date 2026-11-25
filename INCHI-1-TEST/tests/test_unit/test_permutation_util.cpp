@@ -118,8 +118,10 @@ TEST(permutation_util_testing, test_OrigAtData_Permute)
 
 TEST(permutation_util_testing, test_OrigAtData_Permute_atom_lists)
 {
-    // GitHub issue #333: one-based and exceptional (0, -1) atom indices
+    // GitHub issue #333: one-based and exceptional (0) atom indices
     // in polymer units and V3000 lists must be permuted correctly.
+    // Positive and -1 cap/end-atom indices are covered by
+    // test_OrigAtData_Permute_polymer_caps_and_end_atoms.
     const char *const moltext =
         "\n"
         "  test\n"
@@ -208,6 +210,90 @@ TEST(permutation_util_testing, test_OrigAtData_Permute_atom_lists)
     EXPECT_EQ(permuted_v3000->lists_steabs[0][2], 2);
     EXPECT_EQ(permuted_v3000->lists_sterel[0][2], 1);
     EXPECT_EQ(permuted_v3000->lists_sterac[0][2], 1);
+
+    inchi_ios_free_str(&input_stream);
+    FreeOrigAtData(&atom_data);
+    FreeOrigAtData(&permuted_atom_data);
+}
+
+TEST(permutation_util_testing, test_OrigAtData_Permute_polymer_caps_and_end_atoms)
+{
+    // GitHub issue #333: each cap/end-atom field must be permuted into
+    // itself, and -1 sentinels (unset, see runichi3.c) must stay unchanged.
+    const char *const moltext =
+        "\n"
+        "  test\n"
+        "\n"
+        "  0  0  0     0  0            999 V3000\n"
+        "M  V30 BEGIN CTAB\n"
+        "M  V30 COUNTS 4 3 2 0 0\n"
+        "M  V30 BEGIN ATOM\n"
+        "M  V30 1 C 0 0 0 0\n"
+        "M  V30 2 C 0 0 0 0\n"
+        "M  V30 3 C 0 0 0 0\n"
+        "M  V30 4 C 0 0 0 0\n"
+        "M  V30 END ATOM\n"
+        "M  V30 BEGIN BOND\n"
+        "M  V30 1 1 1 2\n"
+        "M  V30 2 1 2 3\n"
+        "M  V30 3 1 3 4\n"
+        "M  V30 END BOND\n"
+        "M  V30 BEGIN SGROUP\n"
+        "M  V30 1 SRU 1 ATOMS=(2 1 2)\n"
+        "M  V30 2 SRU 2 ATOMS=(2 3 4)\n"
+        "M  V30 END SGROUP\n"
+        "M  V30 END CTAB\n"
+        "M  END\n";
+
+    INCHI_IOSTREAM input_stream;
+    inchi_ios_init(&input_stream, INCHI_IOS_TYPE_STRING, nullptr);
+    inchi_ios_print_nodisplay(&input_stream, "%s", moltext);
+
+    ORIG_ATOM_DATA atom_data{};
+    INCHI_MODE input_atom_flags = 0;
+    int struct_read_error = 0;
+    ASSERT_EQ(CreateOrigInpDataFromMolfile(
+                  &input_stream,
+                  &atom_data,
+                  0, 0, 0, POLYMERS_MODERN, 0,
+                  nullptr, nullptr, nullptr, nullptr,
+                  &input_atom_flags,
+                  &struct_read_error,
+                  nullptr, 0),
+              4);
+    ASSERT_EQ(struct_read_error, 0);
+    ASSERT_NE(atom_data.polymer, nullptr);
+    ASSERT_EQ(atom_data.polymer->n, 2);
+
+    ORIG_ATOM_DATA permuted_atom_data{};
+    ASSERT_EQ(OrigAtData_Duplicate(&permuted_atom_data, &atom_data), 0);
+
+    // Caps and end atoms are assigned during polymer analysis, not parsing,
+    // so seed them in the copy that OrigAtData_Permute updates in place.
+    OAD_PolymerUnit *unit = permuted_atom_data.polymer->units[0];
+    unit->cap1 = 1;
+    unit->end_atom1 = 2;
+    unit->end_atom2 = 3;
+    unit->cap2 = 4;
+    OAD_PolymerUnit *unset_unit = permuted_atom_data.polymer->units[1];
+    unset_unit->cap1 = -1;
+    unset_unit->end_atom1 = -1;
+    unset_unit->end_atom2 = -1;
+    unset_unit->cap2 = -1;
+
+    // One-based mapping: 1 -> 3, 2 -> 1, 3 -> 4, 4 -> 2.
+    int permutation_mapping[] = {2, 0, 3, 1};
+    OrigAtData_Permute(&permuted_atom_data, &atom_data, permutation_mapping);
+
+    EXPECT_EQ(unit->cap1, 3);
+    EXPECT_EQ(unit->end_atom1, 1);
+    EXPECT_EQ(unit->end_atom2, 4);
+    EXPECT_EQ(unit->cap2, 2);
+
+    EXPECT_EQ(unset_unit->cap1, -1);
+    EXPECT_EQ(unset_unit->end_atom1, -1);
+    EXPECT_EQ(unset_unit->end_atom2, -1);
+    EXPECT_EQ(unset_unit->cap2, -1);
 
     inchi_ios_free_str(&input_stream);
     FreeOrigAtData(&atom_data);
