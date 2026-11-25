@@ -92,9 +92,9 @@ void OrigAtData_Permute(ORIG_ATOM_DATA* permuted, ORIG_ATOM_DATA* saved, int* nu
             for (k = 0; k < saved->polymer->n; k++)
             {
                 permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->cap1 - 1];
-                permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->end_atom1 - 1];
-                permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->cap2 - 1];
-                permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->end_atom2 - 1];
+                permuted->polymer->units[k]->end_atom1 = 1 + numbers[permuted->polymer->units[k]->end_atom1 - 1];
+                permuted->polymer->units[k]->cap2 = 1 + numbers[permuted->polymer->units[k]->cap2 - 1];
+                permuted->polymer->units[k]->end_atom2 = 1 + numbers[permuted->polymer->units[k]->end_atom2 - 1];
                 if (permuted->polymer->units[k]->alist)
                 {
                     for (j = 0; j < permuted->polymer->units[k]->na; j++)
