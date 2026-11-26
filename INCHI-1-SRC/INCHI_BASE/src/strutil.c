@@ -5233,7 +5233,8 @@ int set_EnhancedStereo_t_m_layers( const ORIG_ATOM_DATA *orig_inp_data,
 {
     int ret = 0;
 
-    if (!orig_inp_data->v3000)
+    /* no input structure (-InChI2InChI) or no V3000 collections */
+    if (!orig_inp_data || !orig_inp_data->v3000)
     {
         return 1;
     }

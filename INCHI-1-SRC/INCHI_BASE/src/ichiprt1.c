@@ -3654,9 +3654,11 @@ int OutputINCHI_StereoLayer_EnhancedStereo(
             io->tot_len = 0;
             if (INCHI_SEGM_FILL == io->nSegmAction)
             {
-                if (orig_inp_data->v3000->n_steabs > 0 ||
-                    orig_inp_data->v3000->n_sterel > 0 ||
-                    orig_inp_data->v3000->n_sterac > 0) {
+                /* no input structure (-InChI2InChI) or no V3000 collections */
+                if (orig_inp_data && orig_inp_data->v3000 &&
+                    (orig_inp_data->v3000->n_steabs > 0 ||
+                     orig_inp_data->v3000->n_sterel > 0 ||
+                     orig_inp_data->v3000->n_sterac > 0)) {
                     io->tot_len += MakeSlayerString(
                         orig_inp_data,
                         io->pINChISort,
