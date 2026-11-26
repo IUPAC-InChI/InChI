@@ -3942,7 +3942,9 @@ int  Create_INChI(CANON_GLOBALS* pCG,
         inp2spATOM(out_norm_data[TAUT_YES]->at, num_inp_at, at[TAUT_YES]);
 
         /* set stereo parities to at[]; nUserMode: accept alt. stereo bonds, min ring size */
-        ret = set_stereo_parity(pCG, out_norm_data[TAUT_YES]->at, at[TAUT_YES],
+        /* skip stereo perception if stereo is not requested (SNon) */
+        ret = !(nUserMode & REQ_MODE_STEREO) ? 0 :
+            set_stereo_parity(pCG, out_norm_data[TAUT_YES]->at, at[TAUT_YES],
             num_taut_at, num_removed_H_taut,
             &s[TAUT_YES].nMaxNumStereoAtoms,
             &s[TAUT_YES].nMaxNumStereoBonds,
@@ -4069,7 +4071,9 @@ int  Create_INChI(CANON_GLOBALS* pCG,
         inp2spATOM(out_norm_data[TAUT_NON]->at, num_inp_at, at[TAUT_NON]);
 
         /* set stereo parities to at[]; nUserMode: accept alt. stereo bonds, min ring size */
-        ret = set_stereo_parity(pCG, out_norm_data[TAUT_NON]->at,
+        /* skip stereo perception if stereo is not requested (SNon) */
+        ret = !(nUserMode & REQ_MODE_STEREO) ? 0 :
+            set_stereo_parity(pCG, out_norm_data[TAUT_NON]->at,
             at[TAUT_NON], num_atoms, num_removed_H,
             &s[TAUT_NON].nMaxNumStereoAtoms,
             &s[TAUT_NON].nMaxNumStereoBonds, nUserMode,
