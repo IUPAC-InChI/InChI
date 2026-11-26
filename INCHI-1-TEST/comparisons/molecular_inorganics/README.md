@@ -39,7 +39,7 @@ passes, classifies the differences and writes everything to
 | --- | --- |
 | `report.html` | the rendered report |
 | `summary.json` | counts of both comparisons, one section each (`a_vs_b`, `a_vs_c`) |
-| `a_vs_b/classifications.csv`, `a_vs_c/classifications.csv` | one row per mismatch |
+| `a_vs_b/a_vs_b_classifications.csv`, `a_vs_c/a_vs_c_classifications.csv` | one row per mismatch |
 | `a_vs_b/ids/`, `a_vs_c/ids/` | mismatching IDs, one file per category |
 | `logs/` | the three pass logs |
 
@@ -151,10 +151,27 @@ The `/r` layer is the structural evidence for the stated route, and it is checke
 per structure: `route_check` records whether "Metal was disconnected" comes with
 an `/r` layer and "Salt was disconnected" alone without one (`agrees` /
 `disagrees`), whether the baseline disconnected nothing although the structure
-has a metal (`no_disconnection`), whether there is no metal and so no route
+has a metal (`no_disconnection`), whether the message was cut off at the
+library's 256-character limit before naming a route (`message_truncated`, e.g.
+after a long `Charge not recognized` list), whether there is no metal and so no route
 (`no_metal`), or whether there was no usable `-RecMet` result (`not_checked`).
 A prefix may only change on a structure with a metal; the report's *Prefix
 changes* table shows every outcome by whether the prefix changed.
+
+`reconnected_differently` is split further by how the bonds to metals in Molecular
+Inorganics' `/c` layer differ from those in the `/r` layer, counted per (metal,
+partner element) pair since the two are numbered differently (`difference`
+column, `identifiers.metal_bonds`). Both sides always have the same heavy atoms:
+
+| difference | Molecular Inorganics, compared with the `/r` layer |
+| --- | --- |
+| `metal_hydrogen_bonded` | only has extra metal-H bonds: it writes a hydrogen on a metal as a bonded atom in `/c`, where 1.07.5 counts it in `/h` |
+| `partly_disconnected` | only lacks bonds, at least one of them to a metal outside groups 1 and 2, e.g. bonds drawn between oppositely charged atoms |
+| `group_1_2_disconnected` | only lacks bonds to group 1/2 metals |
+| `more_bonds_kept` | only has extra bonds, not all to H, e.g. ones 1.07.5 broke as a salt |
+| `mixed` | has both extra and missing bonds |
+| `same_metal_bonds` | has the same bonds to metals; H, charges or the rest differ |
+| `not_parsed` | the `/c` layer could not be read |
 
 ### A vs C: does the legacy handling reproduce the baseline
 
@@ -166,16 +183,28 @@ mismatch is re-computed with the baseline and `-NPZz`:
 | category | what happened |
 | --- | --- |
 | `explained_by_npzz` | the baseline with `-NPZz` gives Run C's result (compared with Run C's rule), e.g. a structure with star atoms that 1.07.5 rejects without `NPZz` |
-| `unexplained` | anything else; fails a gate |
+| `mn7_warning_dropped` | same result except that the `Mn(7)` unusual-valence warning is gone; valence 7 was added to neutral Mn |
+| `accepted_above_old_maxval` | only pass C gives an InChI, and its warning names an atom with more than 20 bonds; GHI #77 raised `MAXVAL` from 20 to 50 |
+| `message_text_changed` | same result except for the wording of a V3000 message |
+| `no_hydrogen_on_metal` | the baseline's InChI is Run C's plus bare `H` components: 1.07.5 gives a metal without bonds or charge implicit H and disconnects them, Run C adds no H to metals; may lack "Metal was disconnected" |
+| `metal_not_disconnected` | the InChI differs, and the baseline says "Metal was disconnected" where pass C does not; fails a gate |
+| `changed_otherwise` | the InChI differs for another reason; fails a gate |
+| `accepted_otherwise` | only pass C gives an InChI, without an atom above the old `MAXVAL`; fails a gate |
+| `unexplained` | anything else, including no `-NPZz` result; fails a gate |
+
+The first five have a known cause: `NPZz`, or a change since 1.07.5 that the
+CHANGELOG lists. The other four do not, and fail the control's gate.
 
 As #259 expects, every A vs C difference must also occur in A vs B; a difference
-only in A vs C fails a second gate.
+only in A vs C fails a second gate. A difference in the warning alone (exit code
+or message, same InChI body) is left out of that gate, since pass B does not
+compare warnings.
 
 ### Output
 
-`a_vs_b/classifications.csv` carries one row per A vs B mismatch with the InChI,
+`a_vs_b/a_vs_b_classifications.csv` carries one row per A vs B mismatch with the InChI,
 InChIKey, exit code and message of the baseline, pass B and the `-RecMet`
-re-run, plus the route check; `a_vs_c/classifications.csv` the same for the
+re-run, plus the route check; `a_vs_c/a_vs_c_classifications.csv` the same for the
 baseline, pass C and the `-NPZz` re-run, plus whether the molfile also mismatches
 in A vs B. `a_vs_b/error_under_mi_messages.json` lists the message of every
 structure that failed only in pass B. An empty `recmet_*` or `npzz_*` cell means
@@ -191,8 +220,17 @@ a_vs_b/ids/
     changed_without_disconnection.txt
     error_under_mi.txt            error_in_reference.txt
     recmet_failed.txt             recmet_missing.txt
+a_vs_b/ids/reconnected_differently/
+    metal_hydrogen_bonded.txt     partly_disconnected.txt
+    group_1_2_disconnected.txt    more_bonds_kept.txt
+    mixed.txt                     same_metal_bonds.txt
+    not_parsed.txt
 a_vs_c/ids/
-    explained_by_npzz.txt         unexplained.txt
+    explained_by_npzz.txt         mn7_warning_dropped.txt
+    accepted_above_old_maxval.txt message_text_changed.txt
+    no_hydrogen_on_metal.txt
+    metal_not_disconnected.txt    changed_otherwise.txt
+    accepted_otherwise.txt        unexplained.txt
 ```
 
 One ID per line, numerically sorted where the IDs are numeric. Every file is

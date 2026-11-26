@@ -575,6 +575,8 @@ def test_a_failure_wins_over_changed_without_metal():
         (PTEN_RECMET, "Metal was disconnected; Salt was disconnected", "agrees"),
         ("InChI=1/C8H11N.2ClH.Hg/c;;;", "Metal was disconnected; Salt was disconnected", "disagrees"),
         ("InChI=1/C8H11N.2ClH.Hg/c;;;", "", "no_disconnection"),
+        # Cut off at 256 characters before "Metal was disconnected".
+        (PTEN_RECMET, "Charge not recognized: M  CHG  8  49 -37  51 -37...; W(1)", "message_truncated"),
     ],
 )
 def test_route_check_compares_the_r_proxy_with_the_baseline_message(inchi, message, expected):
@@ -654,6 +656,7 @@ from molecular_inorganics.classify import (
     LEGACY_CATEGORIES,
     a_vs_c_summary,
     classify_legacy_mismatches,
+    split_message,
     write_id_lists,
 )
 
@@ -671,7 +674,7 @@ def test_a_vs_c_mismatches_are_explained_by_npzz_or_not():
     mismatches = [
         # 1.07.5 rejected it; with -NPZz it gives the legacy result (prefix aside).
         _legacy_mismatch("6", legacy, failed),
-        # -NPZz gives something else.
+        # -NPZz gives another InChI, for no known reason.
         _legacy_mismatch("7", legacy, failed),
         # No -NPZz result at all.
         _legacy_mismatch("8", legacy, failed),
@@ -683,15 +686,29 @@ def test_a_vs_c_mismatches_are_explained_by_npzz_or_not():
 
     rows = classify_legacy_mismatches(mismatches, npzz, a_vs_b_ids={"6", "7"})
 
-    assert [row.category for row in rows] == ["explained_by_npzz", "unexplained", "unexplained"]
+    assert [row.category for row in rows] == ["explained_by_npzz", "changed_otherwise", "unexplained"]
     assert [row.in_a_vs_b for row in rows] == [True, True, False]
     assert rows[0].npzz_inchi.startswith("InChI=1B/")
     assert rows[2].npzz_inchi == ""
 
     summary = a_vs_c_summary(rows, {"matched": 97, "mismatched": 3})
-    assert summary["counts"] == {"explained_by_npzz": 1, "unexplained": 2}
-    assert summary["cross_check"] == {"also_in_a_vs_b": 2, "only_in_a_vs_c": 1}
+    assert summary["counts"] == {"explained_by_npzz": 1, "changed_otherwise": 1, "unexplained": 1}
+    assert summary["cross_check"] == {"also_in_a_vs_b": 2, "warning_only": 0, "only_in_a_vs_c": 1}
     assert summary["comparison"]["mismatched"] == 3
+
+
+def test_a_vs_c_cross_check_leaves_out_warning_only_differences():
+    """Run B does not compare warnings, so a difference only in the message
+    cannot show up there."""
+    inchi = "InChI=1N/356CH4.197H2/h356*1H4;197*1H"
+    legacy = {"inchi": inchi, "key": "K", "exit": 1, "message": "V3000 star atoms ignored if MolecularInorganics or NPZz parameter not used"}
+    reference = {"inchi": "InChI=1S/356CH4.197H2/h356*1H4;197*1H", "key": "K", "exit": 1, "message": "V3000 star atoms ignored"}
+    rows = classify_legacy_mismatches(
+        [_legacy_mismatch("9", legacy, reference)], {"9": {**reference, "inchi": inchi}}, a_vs_b_ids=set()
+    )
+
+    assert rows[0].category == "message_text_changed"
+    assert a_vs_c_summary(rows)["cross_check"] == {"also_in_a_vs_b": 0, "warning_only": 1, "only_in_a_vs_c": 0}
 
 
 def test_a_vs_c_id_lists_have_one_file_per_category(tmp_path):
@@ -703,9 +720,123 @@ def test_a_vs_c_id_lists_have_one_file_per_category(tmp_path):
 
     counts = write_id_lists(rows, tmp_path, LEGACY_CATEGORIES)
 
-    assert counts == {"explained_by_npzz": 0, "unexplained": 1}
+    assert counts == {category: 0 for category in LEGACY_CATEGORIES} | {"unexplained": 1}
     assert (tmp_path / "ids" / "unexplained.txt").read_text() == "6\n"
     assert (tmp_path / "ids" / "explained_by_npzz.txt").read_text() == ""
+
+
+KMNO4 = "K.Mn.H2O.3O/h;;1H2;;;/q2*+1;;;;/p-1"
+
+
+def _result(inchi, message, exit=1, key="AAAAAAAAAAAAAA-BBBBBBBBSA-N"):
+    return {"inchi": inchi, "key": key, "exit": exit, "message": message}
+
+
+@pytest.mark.parametrize(
+    ("legacy", "npzz", "category"),
+    [
+        (
+            _result(f"InChI=1N/{KMNO4}", "Accepted unusual valence(s): N(4); Metal was disconnected"),
+            _result(f"InChI=1S/{KMNO4}", "Accepted unusual valence(s): Mn(7); N(4); Metal was disconnected"),
+            "mn7_warning_dropped",
+        ),
+        (
+            _result(f"InChI=1N/{KMNO4}", "Metal was disconnected"),
+            _result(f"InChI=1S/{KMNO4}", "Accepted unusual valence(s): Mn(7); Metal was disconnected"),
+            "mn7_warning_dropped",
+        ),
+        (
+            _result("InChI=1N/C2Yb2/c1-2", "Accepted unusual valence(s): Yb(19); Yb(22); Metal was disconnected"),
+            _result("", "", exit=2, key=""),
+            "accepted_above_old_maxval",
+        ),
+        # A long message is cut off after the last valence.
+        (
+            _result("InChI=1N/BH26/h1H26", "Accepted unusual valence(s): B(15); B(20); B(21)..."),
+            _result("", "", exit=2, key=""),
+            "accepted_above_old_maxval",
+        ),
+        # No valence warning, but the /c layer gives atom 1 21 bonds.
+        (
+            _result("InChI=1N/I22/c1(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21)22", "", exit=0),
+            _result("", "", exit=2, key=""),
+            "accepted_above_old_maxval",
+        ),
+        (
+            _result("InChI=1N/I3/c1-2-3", "", exit=0),
+            _result("", "", exit=2, key=""),
+            "accepted_otherwise",
+        ),
+        (
+            _result(f"InChI=1N/{KMNO4}", "V3000 star atoms ignored if MolecularInorganics or NPZz parameter not used"),
+            _result(f"InChI=1S/{KMNO4}", "V3000 star atoms ignored"),
+            "message_text_changed",
+        ),
+        (
+            _result(f"InChI=1N/{KMNO4}", "Omitted undefined stereo"),
+            _result(f"InChI=1S/{KMNO4}", "V3000 enhanced stereo read/stored but ignored; Omitted undefined stereo"),
+            "message_text_changed",
+        ),
+        (
+            _result("InChI=1N/C2H5O.Na/c1-2-3;", "Proton(s) added/removed"),
+            _result("InChI=1S/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;", "Metal was disconnected; Proton(s) added/removed"),
+            "metal_not_disconnected",
+        ),
+        (
+            _result("InChI=1N/C2H5O.Na/c1-2-3;", "Metal was disconnected"),
+            _result("InChI=1S/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;", "Metal was disconnected"),
+            "changed_otherwise",
+        ),
+        # 1.07.5 gave seven neutral Ca implicit H, then disconnected them.
+        (
+            _result("InChI=1N/12Ca.ClH.Fe/h;;;;;;;;;;;;1H;/q;;;;;;;5*+2;;+1/p-1", "Metal was disconnected"),
+            _result("InChI=1S/12Ca.ClH.Fe.14H/h;;;;;;;;;;;;1H;;;;;;;;;;;;;;;/q;;;;;;;5*+2;;+1;;;;;;;;;;;;;;/p-1",
+                    "Metal was disconnected"),
+            "no_hydrogen_on_metal",
+        ),
+        # The hydrogen was the Na's only bond, so Run C disconnects nothing.
+        (
+            _result("InChI=1N/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;", "Not chiral"),
+            _result("InChI=1S/C2H6O.Na.H/c1-2-3;;/h3H,2H2,1H3;;", "Metal was disconnected; Not chiral"),
+            "no_hydrogen_on_metal",
+        ),
+        # Bare H, but another layer changed too.
+        (
+            _result("InChI=1N/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1", "Metal was disconnected"),
+            _result("InChI=1S/C2H6O.Na.H/c1-2-3;;/h3H,2H2,1H3;;", "Metal was disconnected"),
+            "changed_otherwise",
+        ),
+        # Same InChI, but a message change no rule covers.
+        (
+            _result(f"InChI=1N/{KMNO4}", "Not chiral"),
+            _result(f"InChI=1S/{KMNO4}", "Proton(s) added/removed"),
+            "unexplained",
+        ),
+        # The Mn(7) warning dropped, but the exit code changed too.
+        (
+            _result(f"InChI=1N/{KMNO4}", "", exit=0),
+            _result(f"InChI=1S/{KMNO4}", "Accepted unusual valence(s): Mn(7)"),
+            "unexplained",
+        ),
+    ],
+)
+def test_a_vs_c_mismatches_get_the_category_of_their_cause(legacy, npzz, category):
+    reference = _result(npzz["inchi"], npzz["message"], npzz["exit"], npzz["key"])
+    rows = classify_legacy_mismatches(
+        [_legacy_mismatch("1", legacy, reference)], {"1": npzz}, a_vs_b_ids=set()
+    )
+
+    assert rows[0].category == category
+
+
+def test_split_message_separates_the_valence_list():
+    valences, others = split_message(
+        "Charge not recognized: M  CHG  1 2 -1; Accepted unusual valence(s): Mn(7); "
+        "Mn+1(6); C-1(4); Metal was disconnected; Not chiral"
+    )
+
+    assert valences == ["Mn(7)", "Mn+1(6)", "C-1(4)"]
+    assert others == ["Charge not recognized: M  CHG  1 2 -1", "Metal was disconnected", "Not chiral"]
 
 
 def test_a_timed_out_reference_row_is_classified_not_a_crash():
@@ -717,3 +848,80 @@ def test_a_timed_out_reference_row_is_classified_not_a_crash():
     )
 
     assert rows[0].category == "error_in_reference"
+
+
+from molecular_inorganics.classify import DIFFERENCES, a_vs_b_summary, difference_kind
+from molecular_inorganics.identifiers import metal_bonds, most_bonds
+
+
+def test_metal_bonds_counts_bonds_per_metal_and_partner():
+    # Hexachloroplatinate: six Pt-Cl bonds, one component.
+    assert metal_bonds("Cl6Pt/c1-7(2,3,4,5)6") == (1, {("Pt", "Cl"): 6})
+    # Bu3SnH as MI writes it: the H (atom 14) is bonded to Sn in /c.
+    components, bonds = metal_bonds("C12H28Sn/c1-4-7-10-13(14,11-8-5-2)12-9-6-3/h4-12H2,1-3H3")
+    assert components == 1 and bonds == {("Sn", "C"): 3, ("Sn", "H"): 1}
+    # Repeated components on both sides line up.
+    assert metal_bonds("2C2H2O4.Zn/c2*3-1(4)2(5)6;") == (3, {})
+    # A /c layer that does not fit the formula.
+    assert metal_bonds("Cl2Pt/c1-3-9") is None
+
+
+def test_most_bonds_counts_each_component_separately():
+    assert most_bonds("Cl6Pt/c1-7(2,3,4,5)6") == 6
+    # Atom 6 has four neighbours in each component, not eight in total.
+    assert most_bonds("C6H13NO2.C5H11NO2/c1-6(2,5(8)9)7(3)4;1-5(2,6-3)4(7)8") == 4
+    assert most_bonds("2C2H2O4.Zn/c2*3-1(4)2(5)6;") == 3
+    assert most_bonds("Na") == 0
+
+
+@pytest.mark.parametrize(
+    ("dev_mi", "recmet", "kind"),
+    [
+        # 3139146: only the Sn-H bond is extra.
+        ("InChI=1BB/C12H28Sn/c1-4-7-10-13(14,11-8-5-2)12-9-6-3/h4-12H2,1-3H3",
+         "InChI=1/3C4H9.Sn.H/c3*1-3-4-2;;/h3*1,3-4H2,2H3;;/rC12H28Sn/c1-4-7-10-13(11-8-5-2)12-9-6-3/h13H,4-12H2,1-3H3",
+         "metal_hydrogen_bonded"),
+        # 71150: PtCl6 drawn as Pt4+ with four Cl-; MI keeps two Pt-Cl bonds.
+        ("InChI=1BB/Cl2Pt.4ClH/c1-3-2;;;;/h;4*1H/q+4;;;;/p-4",
+         "InChI=1/6ClH.Pt/h6*1H;/q;;;;;;+6/p-6/rCl6Pt/c1-7(2,3,4,5)6",
+         "partly_disconnected"),
+        # 227945: K cut off as K+.
+        ("InChI=1BB/C15H15O10.K/c1-21-11(16)6-7(12(17)22-2)9(14(19)24-4)10(15(20)25-5)8(6)13(18)23-3;/h1-5H3;/q-1;+1",
+         "InChI=1/C15H15O10.K/c1-21-11(16)6-7(12(17)22-2)9(14(19)24-4)10(15(20)25-5)8(6)13(18)23-3;/h1-5H3;"
+         "/rC15H15KO10/c1-22-10(17)6-7(11(18)23-2)9(13(20)25-4)15(16,14(21)26-5)8(6)12(19)24-3/h1-5H3",
+         "group_1_2_disconnected"),
+        # 794909: MI keeps two Fe-Cl bonds 1.07.5 broke as a salt.
+        ("InChI=1BB/2C5H5.Cl4Fe2O.Cl2Fe/c2*1-2-4-5-3-1;1-5(2)7-6(3)4;1-3-2/h2*1-5H;;",
+         "InChI=1/2C5H5.6ClH.3Fe.O/c2*1-2-4-5-3-1;;;;;;;;;;/h2*1-5H;6*1H;;;;/q;;;;;;;;3*+2;/p-6"
+         "/r2C5H5.Cl4Fe2O.2ClH.Fe/c2*1-2-4-5-3-1;1-5(2)7-6(3)4;;;/h2*1-5H;;2*1H;/q;;;;;+2/p-2",
+         "more_bonds_kept"),
+        # Same bonds to metals, different hydrogens.
+        ("InChI=1BB/Cl2Pt/c1-3-2/q+1", "InChI=1/2ClH.Pt/rCl2Pt/c1-3-2", "same_metal_bonds"),
+        ("InChI=1BB/Cl2Pt/c1-3-9", "InChI=1/2ClH.Pt/rCl2Pt/c1-3-2", "not_parsed"),
+    ],
+)
+def test_difference_kind_reads_how_the_metal_bonds_differ(dev_mi, recmet, kind):
+    assert kind in DIFFERENCES
+    assert difference_kind(dev_mi, recmet) == kind
+
+
+def test_reconnected_differently_gets_a_difference_and_its_own_id_files(tmp_path):
+    reference = {"inchi": "InChI=1S/6ClH.Pt/h6*1H;/q;;;;;;+6/p-6", "key": "K", "exit": 1,
+                 "message": "Metal was disconnected"}
+    recmet = {"inchi": "InChI=1/6ClH.Pt/h6*1H;/q;;;;;;+6/p-6/rCl6Pt/c1-7(2,3,4,5)6", "key": "K",
+              "exit": 1, "message": "Metal was disconnected"}
+    rows = classify_mismatches(
+        [_mismatch("71150", {"inchi": "InChI=1BB/Cl2Pt.4ClH/c1-3-2;;;;/h;4*1H/q+4;;;;/p-4",
+                             "key": "K", "exit": 0}, reference),
+         _mismatch("1", {"inchi": PTEN_MI, "key": "K1", "exit": 0},
+                   {"inchi": PTEN_PLAIN, "key": "K0", "exit": 1})],
+        {"71150": recmet, "1": {"inchi": PTEN_RECMET, "key": "K2", "exit": 1}},
+    )
+
+    assert [(row.category, row.difference) for row in rows] == [
+        ("reconnected_differently", "partly_disconnected"), ("reconnected_as_recmet", "")]
+    assert a_vs_b_summary(rows)["differences"] == {"partly_disconnected": 1}
+    counts = write_id_lists(rows, tmp_path, DIFFERENCES, "difference", "ids/reconnected_differently")
+    assert counts["partly_disconnected"] == 1 and sum(counts.values()) == 1
+    assert (tmp_path / "ids" / "reconnected_differently" / "partly_disconnected.txt").read_text() == "71150\n"
+    assert (tmp_path / "ids" / "reconnected_differently" / "mixed.txt").read_text() == ""

@@ -18,12 +18,12 @@ def build_report_data(classifications_path, summary_path, a_vs_c=None, a_vs_c_ro
     `summary_path` holds the A vs B section; `a_vs_c` the A vs C section, if any."""
     root = Path(classifications_path).parent / "comparison"
     (root / "a_vs_b").mkdir(parents=True, exist_ok=True)
-    shutil.copy(classifications_path, root / "a_vs_b" / "classifications.csv")
+    shutil.copy(classifications_path, root / "a_vs_b" / "a_vs_b_classifications.csv")
     summary = {"a_vs_b": json.loads(Path(summary_path).read_text(encoding="utf-8"))}
     if a_vs_c is not None:
         summary["a_vs_c"] = a_vs_c
         (root / "a_vs_c").mkdir(exist_ok=True)
-        with open(root / "a_vs_c" / "classifications.csv", "w", newline="", encoding="utf-8") as f:
+        with open(root / "a_vs_c" / "a_vs_c_classifications.csv", "w", newline="", encoding="utf-8") as f:
             fields = list(a_vs_c_rows[0]) if a_vs_c_rows else ["molfile_id"]
             writer = csv.DictWriter(f, fieldnames=fields)
             writer.writeheader()
@@ -152,6 +152,27 @@ def summary_path(tmp_path):
     return path
 
 
+def test_the_report_breaks_down_reconnected_differently(classifications_path, summary_path):
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["differences"] = {"metal_hydrogen_bonded": 1}
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+    data = build_report_data(classifications_path=classifications_path, summary_path=summary_path,
+                             baseline_label="base", test_label="test")
+
+    assert data["a_vs_b"]["differences"] == {"metal_hydrogen_bonded": 1}
+    html = render_html(data)
+    assert '<span class="code">metal_hydrogen_bonded</span>' in html
+    assert "a_vs_b/ids/reconnected_differently/" in html
+
+
+def test_a_summary_without_the_breakdown_renders_no_table(classifications_path, summary_path):
+    data = build_report_data(classifications_path=classifications_path, summary_path=summary_path,
+                             baseline_label="base", test_label="test")
+
+    assert data["a_vs_b"]["differences"] is None
+    assert "a_vs_b/ids/reconnected_differently/" not in render_html(data)
+
+
 def test_load_classifications(classifications_path):
     rows = load_classifications(classifications_path)
     assert len(rows) == 3
@@ -208,7 +229,10 @@ def test_build_report_data_keeps_the_comparisons_apart(
 
     control = data["a_vs_c"]
     assert control["matched"] == 98
-    assert control["categories"] == {"explained_by_npzz": 1, "unexplained": 1}
+    assert control["categories"]["explained_by_npzz"] == 1
+    assert control["categories"]["unexplained"] == 1
+    assert sum(control["categories"].values()) == 2
+    assert (control["explained"], control["unexplained"]) == (1, 1)
     assert control["gates"]["explained"] is False
     assert control["gates"]["cross_check"] is False
     assert control["gates"]["completeness"] is True   # 98 + 2 + 0 == 100
@@ -228,6 +252,48 @@ def test_control_lists_unexplained_mismatches_first(classifications_path, summar
     control = _part(render_html(data), "a-vs-c")
     # Baseline, legacy and the baseline with -NPZz, side by side.
     assert "InChI=1N/C2Zz2.Gd/c1" in control and "InChI=1B/C2Zz2.Gd/c1" in control
+
+
+def test_a_control_with_only_known_causes_passes_its_gate(
+    classifications_path, summary_path, run_c_log
+):
+    known = {"explained_by_npzz": 1, "mn7_warning_dropped": 1,
+             "accepted_above_old_maxval": 1, "message_text_changed": 1}
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+        run_c_log=run_c_log,
+        a_vs_c={**A_VS_C, "counts": known},
+        a_vs_c_rows=[_a_vs_c_row(str(i), c) for i, c in enumerate(known)],
+    )
+
+    control = data["a_vs_c"]
+    assert (control["explained"], control["unexplained"]) == (4, 0)
+    assert control["gates"]["explained"] is True
+    html = _part(render_html(data), "a-vs-c")
+    for category in known:
+        assert f'<span class="code">{category}</span>' in html
+
+
+def test_a_control_with_a_metal_not_disconnected_fails_its_gate(
+    classifications_path, summary_path, run_c_log
+):
+    data = build_report_data(
+        classifications_path=classifications_path,
+        summary_path=summary_path,
+        baseline_label="base",
+        test_label="test",
+        run_c_log=run_c_log,
+        a_vs_c={**A_VS_C, "counts": {"explained_by_npzz": 1, "metal_not_disconnected": 1}},
+        a_vs_c_rows=[_a_vs_c_row("6", "explained_by_npzz"), _a_vs_c_row("7", "metal_not_disconnected")],
+    )
+
+    control = data["a_vs_c"]
+    assert control["unexplained"] == 1
+    assert control["gates"]["explained"] is False
+    assert [row["molfile_id"] for row in control["rows"]] == ["7", "6"]
 
 
 def test_a_control_with_every_difference_explained_passes(
@@ -300,6 +366,8 @@ def test_completeness_counts_timed_out_molfiles(
     """A timed-out molfile is never compared but is still a reference row."""
     log = tmp_path / "run_b.log"
     log.write_text(
+        "ERROR:sdf_pipeline:timed out after 60s on molfile ID 141382403 from "
+        "x.sdf.gz; stopping consumer 3 and starting a new one.\n"
         'INFO:sdf_pipeline:timed out expectedly:{"molfile_id": "141382403"}\n'
     )
     data = build_report_data(
@@ -427,7 +495,7 @@ def test_each_part_holds_only_its_own_comparison(
     assert control.count("<h3>") == control.count('<span class="tag">A vs C</span>')
     assert option.count("<h3>") == option.count('<span class="tag">A vs B</span>')
     # The control's mismatches are listed in its own part.
-    assert "a_vs_c/classifications.csv" in control or "unexplained" in control
+    assert "a_vs_c/a_vs_c_classifications.csv" in control or "unexplained" in control
 
 
 def test_specimen_captions_are_not_double_escaped(classifications_path, summary_path):
@@ -498,7 +566,8 @@ def test_changes_without_a_metal_and_route_disagreements_fail_their_gates(
     assert option["gates"]["changed_without_metal"] is False
     assert option["gates"]["route"] is False
     assert option["route"] == {
-        "agrees": 2, "disagrees": 1, "no_disconnection": 0, "no_metal": 0, "not_checked": 0
+        "agrees": 2, "disagrees": 1, "no_disconnection": 0, "message_truncated": 0,
+        "no_metal": 0, "not_checked": 0,
     }
 
     html = _part(render_html(data), "a-vs-b")
