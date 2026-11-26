@@ -2244,6 +2244,7 @@ int PreprocessPolymerCRUData(struct tagINCHI_CLOCK* ic,
                 if ( orig_inp_data->polymer->treat == POLYMERS_MODERN )
                 {
                     int n_done, n_todo = 0, n_poly_zz = 0; /* djb-rwth: ignoring LLVM warning: variable used */
+                    int unit_index;
 
                     /*  First, get InChI and AuxInfo for the unedited original input
                     (actually, we are interested in AuxInfo for original structure;
@@ -2272,6 +2273,19 @@ int PreprocessPolymerCRUData(struct tagINCHI_CLOCK* ic,
                         goto exit_function;
                     }
 
+                    /* Skip CRU folding and frame-shift analysis for the entire structure
+                     * when a multi-ended polymer unit is present, as legacy CRU editing
+                     * supports only two-ended units.
+                     */
+                    for (unit_index = 0; unit_index < orig_inp_data->polymer->n; unit_index++)
+                    {
+                        const OAD_PolymerUnit* u = orig_inp_data->polymer->units[unit_index];
+
+                        if (u && u->nb > 2)
+                        {
+                            goto exit_function;
+                        }
+                    }
 
                     /* Prepare and perform CRU folding related edits */
                     if (ip->bFoldPolymerSRU != 0)

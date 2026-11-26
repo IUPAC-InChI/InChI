@@ -7766,31 +7766,140 @@ int ParseSegmentPolymer(const char* str,
             if (unit) /* djb-rwth: fixing a NULL pointer dereference */
             {
                 unit->cyclizable = CLOSING_SRU_NOT_APPLICABLE;
+
                 if (have == endgroups)
                 {
-                    /* Read end groups notation */
-                    p = ParseSegmentReadDelimitedNumbers(p, pEnd, &numlist, dash, comma, &res);
-                    if (res == 1 && numlist.used == 2)
+                    const char* next;
+                    long cap, unit_atom;
+                    int atom_index;
+
+                    /* Skip the previously validated opening parenthesis. */
+                    p++;
+
+                    for (;;)
                     {
-                        p = ParseSegmentReadDelimitedNumbers(p, pEnd, &numlist, dash, rt_par, &res);
-                    }
-                    if (res == 1 && numlist.used == 4)
-                    {
-                        pStart = p + 1;
-                        unit->nb = 2;
-                        unit->blist = (int*)inchi_calloc(2 * (long long)unit->nb, sizeof(int)); /* djb-rwth: cast operator added */
-                        if (!unit->blist)
+                        if (p >= pEnd || !isdigit(UCINT * p))
                         {
-                            ret = RI_ERR_ALLOC; IntArray_Free(&numlist); goto exit_function;
+                            ret = RI_ERR_SYNTAX;
+                            IntArray_Free(&numlist);
+                            goto exit_function;
                         }
-                        unit->blist[0] = numlist.item[0];    unit->blist[1] = numlist.item[1];
-                        unit->blist[2] = numlist.item[2];    unit->blist[3] = numlist.item[3];
-                        unit->cap1 = numlist.item[0]; /* just for GAF check belows */
-                        unit->cap2 = numlist.item[2];
-                        IntArray_Free(&numlist);
-                        continue;
+
+                        cap = inchi_strtol(p, &next, 10);
+                        if (cap <= 0 || cap > na_total || next >= pEnd || *next != dash)
+                        {
+                            ret = RI_ERR_SYNTAX;
+                            IntArray_Free(&numlist);
+                            goto exit_function;
+                        }
+
+                        p = next + 1;
+
+                        if (p >= pEnd || !isdigit(UCINT * p))
+                        {
+                            ret = RI_ERR_SYNTAX;
+                            IntArray_Free(&numlist);
+                            goto exit_function;
+                        }
+
+                        unit_atom = inchi_strtol(p, &next, 10);
+                        if (unit_atom <= 0 || unit_atom > na_total || unit_atom == cap || next >= pEnd || (*next != comma && *next != rt_par))
+                        {
+                            ret = RI_ERR_SYNTAX;
+                            IntArray_Free(&numlist);
+                            goto exit_function;
+                        }
+
+                        if (IntArray_Append(&numlist, (int)cap) ||
+                            IntArray_Append(&numlist, (int)unit_atom))
+                        {
+                            ret = RI_ERR_ALLOC;
+                            IntArray_Free(&numlist);
+                            goto exit_function;
+                        }
+
+                        if (*next == rt_par)
+                        {
+                            p = next;
+                            break;
+                        }
+
+                        p = next + 1;
                     }
+
+                    /* At least two complete crossing-bond pairs are required. */
+                    if (numlist.used < 4 || numlist.used % 2 != 0)
+                    {
+                        ret = RI_ERR_SYNTAX;
+                        IntArray_Free(&numlist);
+                        goto exit_function;
+                    }
+
+
+                    /* Validate crossing bonds of multi-ended SRUs. */
+                    if (numlist.used > 4)
+                    {
+                        if (unit->type != POLYMER_STY_SRU ||
+                            !unit->alist || unit->na < 1)
+                        {
+                            ret = RI_ERR_SYNTAX;
+                            IntArray_Free(&numlist);
+                            goto exit_function;
+                        }
+
+                        for (atom_index = 0; atom_index < numlist.used; atom_index += 2)
+                        {
+                            int previous_atom_index;
+
+                            cap = numlist.item[atom_index];
+                            unit_atom = numlist.item[atom_index + 1];
+
+                            /* The cap must be outside and its partner inside the SRU. */
+                            if (is_in_the_ilist(unit->alist, (int)cap, unit->na) ||
+                                !is_in_the_ilist(unit->alist, (int)unit_atom, unit->na))
+                            {
+                                ret = RI_ERR_SYNTAX;
+                                IntArray_Free(&numlist);
+                                goto exit_function;
+                            }
+
+                            /* Each crossing bond must have a distinct external cap. */
+                            for (previous_atom_index = 0; previous_atom_index < atom_index; previous_atom_index += 2)
+                            {
+                                if (cap == numlist.item[previous_atom_index])
+                                {
+                                    ret = RI_ERR_SYNTAX;
+                                    IntArray_Free(&numlist);
+                                    goto exit_function;
+                                }
+                            }
+                        }
+                    }
+
+                    unit->nb = numlist.used / 2;
+                    unit->blist = (int*)inchi_calloc((size_t)numlist.used, sizeof(int));
+
+                    if (!unit->blist)
+                    {
+                        ret = RI_ERR_ALLOC;
+                        IntArray_Free(&numlist);
+                        goto exit_function;
+                    }
+
+                    for (atom_index = 0; atom_index < numlist.used; atom_index++)
+                    {
+                        unit->blist[atom_index] = numlist.item[atom_index];
+                    }
+
+                    /* Retain the first two caps for existing compatibility checks. */
+                    unit->cap1 = numlist.item[0];
+                    unit->cap2 = numlist.item[2];
+
+                    pStart = p + 1;
+                    IntArray_Free(&numlist);
+                    continue;
                 }
+
                 else if (have == stars_ring ||
                     have == stars_bond ||
                     have == stars_atom)

@@ -1458,9 +1458,7 @@ int  OAD_PolymerUnit_OrderBondAtomsAndBondsThemselves(OAD_PolymerUnit* u,
         }
     }
 
-    /* Sort bond themselves
-        for now, consider only the simplest cases of 2 bonds
-    */
+    /* Sort crossing bonds after normalizing their endpoint orientation. */
     if ( u->nb == 2 )            /* two bonds in SBL */
     {
         int b1a1 = u->blist[0];
@@ -1474,6 +1472,31 @@ int  OAD_PolymerUnit_OrderBondAtomsAndBondsThemselves(OAD_PolymerUnit* u,
             u->blist[2] = b1a1; u->blist[3] = b1a2;
         }
     }
+
+	else if (u->nb > 2)
+	{
+		int i, j;
+		int cap, end;
+
+		/* Sort multi-ended SRU crossing bonds by canonical atom numbers. */
+		for (i = 1; i < u->nb; i++)
+		{
+			cap = u->blist[2 * i];
+			end = u->blist[2 * i + 1];
+			j = i - 1;
+
+			while (j >= 0 && (u->blist[2 * j] > cap || (u->blist[2 * j] == cap && u->blist[2 * j + 1] > end)))
+			{
+				u->blist[2 * (j + 1)] = u->blist[2 * j];
+				u->blist[2 * (j + 1) + 1] = u->blist[2 * j + 1];
+				j--;
+			}
+
+			u->blist[2 * (j + 1)] = cap;
+			u->blist[2 * (j + 1) + 1] = end;
+		}
+	}
+
 
     /* for single or no bonds, do nothing
     else
@@ -1540,12 +1563,14 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
     {
         /* Check if unit data makes sense */
         u = pd->units[i];
-        if ( u->nb != 0 && u->nb != 2)
-        {
-            TREAT_ERR(err, 9003, "Number of crossing bonds in polymer unit is not 0 or 2");
-            goto exit_function;
-        }
-        if ( u->na < 1 )
+
+		/* Multi-ended SRUs are supported only in modern polymer mode. */
+		if (u->nb < 0 || u->nb == 1 || (u->nb > 2 && (treat_polymers != POLYMERS_MODERN || u->type != POLYMER_STY_SRU)))
+		{
+			TREAT_ERR(err, 9003, "Unsupported number of crossing bonds in polymer unit");
+			goto exit_function;
+		}
+        if ( u->na < 1 || !u->alist  )
         {
             TREAT_ERR(err, 9004, "Empty polymer unit");
             goto exit_function;
@@ -1849,9 +1874,9 @@ int OAD_ValidatePolymerAndPseudoElementData(ORIG_ATOM_DATA* orig_at_data,
                     u->conn = POLYMER_CONN_EU;
                 }
 
-                if ( u->cap1 && u->cap2 )
+                if ( u->nb == 2 && u->cap1 && u->cap2 )
                 {
-                    /* Set SRU closure type */
+                    /* Set SRU closure type for two-ended units only */
                     if ( u->na == 1 )
                     {
 #ifdef ALLOW_CLOSING_SRU_VIA_DIRADICAL
@@ -2146,15 +2171,86 @@ void OAD_PolymerUnit_FindEndsAndCaps(OAD_PolymerUnit* unit,
 {
     int i, j, i_inside = 0, j_inside = 0;
     int num_atoms = orig_at_data->num_inp_atoms;
+	int crossing_bond_index;
 
     *end1 = *end2 = *cap1 = *cap2 = 0;
     *cap1_is_star = *cap2_is_star = 0;
     *err = 0;
 
-    if ( !unit->blist || unit->nb < 1 )
-    {
-        return;
-    }
+	/* Polymer units without crossing bonds require no cap identification. */
+	if (unit->nb == 0)
+	{
+		return;
+	}
+
+	/* Validate the crossing-bond count and associated atom lists. */
+	if (unit->nb < 2 || unit->nb > orig_at_data->num_inp_bonds || !unit->blist || !unit->alist)
+	{
+		TREAT_ERR(*err, 9090, "Invalid polymer CRU crossing bond data");
+		return;
+	}
+
+	/* Validate all crossing bonds before accessing their endpoint atoms. */
+	for (crossing_bond_index = 0; crossing_bond_index < unit->nb; crossing_bond_index++)
+	{
+		int atom1 = unit->blist[2 * crossing_bond_index];
+		int atom2 = unit->blist[2 * crossing_bond_index + 1];
+		int atom1_in_unit, atom2_in_unit;
+		int cap, end_atom;
+		int neighbor_index, previous_bond_index;
+		const inp_ATOM* cap_atom;
+
+		/* Validate both atom numbers before accessing the atom array. */
+		if (atom1 < 1 || atom1 > num_atoms ||
+			atom2 < 1 || atom2 > num_atoms ||
+			atom1 == atom2)
+		{
+			TREAT_ERR(*err, 9090, "Invalid polymer CRU crossing bond");
+			return;
+		}
+
+		atom1_in_unit = (NULL != is_in_the_ilist(unit->alist, atom1, unit->na));
+		atom2_in_unit = (NULL != is_in_the_ilist(unit->alist, atom2, unit->na));
+
+		/* Exactly one endpoint must belong to the polymer unit. */
+		if (atom1_in_unit == atom2_in_unit)
+		{
+			TREAT_ERR(*err, 9032, "Invalid polymer CRU crossing bond endpoints");
+			return;
+		}
+
+		cap = atom1_in_unit ? atom2 : atom1;
+		end_atom = atom1_in_unit ? atom1 : atom2;
+
+		/* Verify that the crossing bond exists in the molecular structure. */
+		cap_atom = &orig_at_data->at[cap - 1];
+
+		for (neighbor_index = 0; neighbor_index < cap_atom->valence; neighbor_index++)
+		{
+			if (cap_atom->neighbor[neighbor_index] == end_atom - 1)
+			{
+				break;
+			}
+		}
+
+		if (neighbor_index == cap_atom->valence)
+		{
+			TREAT_ERR(*err, 9090, "Polymer CRU crossing bond does not exist");
+			return;
+		}
+
+		/* Ensure that each crossing bond has a distinct external cap. */
+		for (previous_bond_index = 0; previous_bond_index < crossing_bond_index; previous_bond_index++)
+		{
+			if (cap == unit->blist[2 * previous_bond_index] ||
+				cap == unit->blist[2 * previous_bond_index + 1])
+			{
+				TREAT_ERR(*err, 9090, "Invalid polymer CRU surrounding");
+				return;
+			}
+		}
+	}
+
     /* Left crossing bond */
     i = unit->blist[0];
     j = unit->blist[1];
@@ -2264,7 +2360,13 @@ void OAD_PolymerUnit_SetEndsAndCaps(OAD_PolymerUnit* unit,
         goto exit_function;
     }
 
-    /* The rest is applicable only to *---SRU---* case */
+	/* The rest is applicable only to *---SRU---* case */
+
+	/* Cyclization is applicable only to two-ended polymer units. */
+	if (unit->nb != 2)
+	{
+		goto exit_function;
+	}
 
     /* Stars are separated by one atom - that's not error but do nothing */
     if ( unit->end_atom1 == unit->end_atom2 )
@@ -4441,16 +4543,49 @@ void OAD_ValidateAndSortOutPseudoElementAtoms(ORIG_ATOM_DATA* orig_at_data,
         for ( i = 0; i < nsgroups; i++ )
         {
             u = pd->units[i];
-            if ( u )
-            {
-                if ( u->cap1_is_undef && u->cap2_is_undef )
-                {
-                    /* valid pair: CRU is capped with two undefined-nature atoms, call them "Zz", finally */
-                    strcpy(orig_at_data->at[u->cap1 - 1].elname, "Zz");
-                    strcpy(orig_at_data->at[u->cap2 - 1].elname, "Zz");
-                    nzz += 2;
-                }
-            }
+
+			if (u)
+			{
+
+				if (u->nb > 2 && u->blist)
+				{
+					int crossing_bond;
+
+					/* Identify all undefined caps of multi-ended polymer units. */
+					for (crossing_bond = 0; crossing_bond < u->nb; crossing_bond++)
+					{
+						int atom1 = u->blist[2 * crossing_bond];
+						int atom2 = u->blist[2 * crossing_bond + 1];
+						int atom1_in_unit = (NULL != is_in_the_ilist(u->alist, atom1, u->na));
+						int cap;
+
+						cap = atom1_in_unit ? atom2 : atom1;
+
+						/* Count each polymer pseudoatom only once. */
+						if (!strcmp(orig_at_data->at[cap - 1].elname, "Zy"))
+						{
+							strcpy(orig_at_data->at[cap - 1].elname, "Zz");
+							nzz++;
+						}
+					}
+				}
+				else if (u->cap1_is_undef && u->cap2_is_undef)
+				{
+					/* Count each polymer pseudoatom only once. */
+					if (!strcmp(orig_at_data->at[u->cap1 - 1].elname, "Zy"))
+					{
+						strcpy(orig_at_data->at[u->cap1 - 1].elname, "Zz");
+						nzz++;
+					}
+
+					if (!strcmp(orig_at_data->at[u->cap2 - 1].elname, "Zy"))
+					{
+						strcpy(orig_at_data->at[u->cap2 - 1].elname, "Zz");
+						nzz++;
+					}
+				}
+			}
+
         }
         orig_at_data->polymer->n_pzz = nzz;
     }
