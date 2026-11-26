@@ -15,6 +15,7 @@
 
 #include "ichister.h"
 #include "ichirvrs.h"
+#include "atropisomers.h"
 
 #include "bcf_s.h"
 
@@ -64,6 +65,157 @@ void CopySt2At( inp_ATOM *at, inp_ATOM_STEREO * st, int num_atoms )
             memcpy(at[i].sn_orig_at_num, st[i].sn_orig_at_num, sizeof(at[0].sn_orig_at_num));
         }
     }
+}
+
+
+/**
+ * @brief May atom a be an atropisomer axis end towards atom other?
+ *
+ * Reversal counterpart of the forward predicate; bond orders are not known
+ * yet. The end is a neutral C or N with three heavy neighbours and no H.
+ * An N end must be planar: a neighbour other than the partner has more
+ * bonds or fewer H than its normal valence (C=O, C=C, S(=O)2, aromatic C),
+ * which keeps a pyramidal N stereocentre (N-aryl aziridine) tetrahedral.
+ *
+ * @param at Atoms being restored
+ * @param a Axis end candidate
+ * @param other Partner candidate
+ * @return Returns 1 if a qualifies, else 0
+ */
+static int is_rev_axis_end( inp_ATOM *at, int a, int other )
+{
+    int k, x;
+
+    if (at[a].charge || at[a].radical || at[a].num_H || at[a].valence != 3)
+    {
+        return 0;
+    }
+    if (at[a].el_number == EL_NUMBER_C)
+    {
+        return 1;
+    }
+    if (at[a].el_number != EL_NUMBER_N)
+    {
+        return 0;
+    }
+
+    for (k = 0; k < at[a].valence; k++)
+    {
+        x = (int) at[a].neighbor[k];
+        if (x != other &&
+            at[x].valence + at[x].num_H != get_el_valence( at[x].el_number, at[x].charge, 0 ))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+/**
+ * @brief Axis partner of a /t atom, if the entry is an atropisomer axis
+ *
+ * An axis is cited in /t on its lower-numbered atom, so the partner is a
+ * higher-numbered neighbour across a candidate axis bond (single, not in a
+ * ring <= ATROP_MIN_ROTATABLE_RING).
+ *
+ *     /t11-   ->   C11 -- C12   (partner 12 > 11)
+ *
+ * @param at Atoms being restored
+ * @param num_at Number of atoms including added explicit H
+ * @param a Atom cited in /t
+ * @param partner Receives the partner index, -1 if none or ambiguous
+ * @return Returns 0 or RI_ERR_ALLOC
+ */
+static int find_axis_partner( inp_ATOM *at, int num_at, int a, int *partner )
+{
+    int k, x, ret = 0;
+    QUEUE *q;
+    AT_RANK *nAtomLevel;
+    S_CHAR *cSource;
+
+    *partner = -1;
+    if (!is_rev_axis_end( at, a, -1 ))
+    {
+        return 0;
+    }
+
+    q = QueueCreate( num_at + 1, sizeof( qInt ) );
+    nAtomLevel = (AT_RANK *) inchi_calloc( num_at, sizeof( nAtomLevel[0] ) );
+    cSource = (S_CHAR *) inchi_calloc( num_at, sizeof( cSource[0] ) );
+    if (!q || !nAtomLevel || !cSource)
+    {
+        ret = RI_ERR_ALLOC;
+        goto exit_function;
+    }
+
+    for (k = 0; k < at[a].valence; k++)
+    {
+        x = (int) at[a].neighbor[k];
+        if (x < a || !is_rev_axis_end( at, x, a ) || !is_rev_axis_end( at, a, x ) ||
+            !is_candidate_atrop_axis( at, a, x, q, nAtomLevel, cSource ))
+        {
+            continue;
+        }
+
+        /* ponytail: two candidate partners -> keep the tetrahedral reading */
+        if (*partner >= 0)
+        {
+            *partner = -1;
+            break;
+        }
+        *partner = x;
+    }
+
+exit_function:
+    QueueDelete( q );
+    inchi_free( nAtomLevel );
+    inchi_free( cSource );
+
+    return ret;
+}
+
+
+/**
+ * @brief Restore a /t entry that is an atropisomer axis as a 0D stereo bond
+ *
+ * The axis parity is a stereo bond parity (Copy2StereoBondOrAllene), so it
+ * is restored like a /b double bond of length 1, with the lowest-numbered
+ * other neighbour at each end. Both ends get bAtropisomeric so that
+ * SetStereoBondTypeFor0DParity keeps the bond single.
+ *
+ * @param at Atoms being restored
+ * @param st Mobile-H stereo or NULL
+ * @param num_at Number of heavy atoms
+ * @param num_del_H Number of added explicit H
+ * @param a Atom cited in /t
+ * @param parity Its parity
+ * @return Returns 1 if restored as an axis, 0 if not an axis, or an error
+ */
+static int set_axis_0D_parity( inp_ATOM *at, inp_ATOM_STEREO *st, int num_at,
+                               int num_del_H, int a, int parity )
+{
+    int b, n1, n2, ret;
+
+    ret = find_axis_partner( at, num_at + num_del_H, a, &b );
+    if (ret < 0 || b < 0)
+    {
+        return ret;
+    }
+
+    /* neighbours are sorted; skip the partner */
+    n1 = at[a].neighbor[at[a].neighbor[0] == b];
+    n2 = at[b].neighbor[at[b].neighbor[0] == a];
+
+    ret = set_cumulene_0D_parity( at, st, num_at, n1, a, b, n2, parity, 1 );
+    if (ret < 0)
+    {
+        return ret;
+    }
+    at[a].bAtropisomeric = at[b].bAtropisomeric = 1;
+
+    return 1;
 }
 
 
@@ -496,6 +648,15 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
                     goto exit_function;
                 }
             }
+            else if (0 != ( ret = set_axis_0D_parity( at, st, num_atoms, nNumDeletedH,
+                                                       n_vertex, parity ) ))
+            {
+                /* atropisomer axis: restored as a single-bond stereo bond */
+                if (ret < 0)
+                {
+                    goto exit_function;
+                }
+            }
             else
             {
                 /* stereogenic sp3 atom */
@@ -663,6 +824,15 @@ int RestoreAtomConnectionsSetStereo( StrFromINChI *pStruct,
                     goto exit_function;
                 }
             }
+            else if (0 != ( ret = set_axis_0D_parity( at, st, num_atoms, nNumDeletedH,
+                                                       n_vertex, parity ) ))
+            {
+                /* atropisomer axis: restored as a single-bond stereo bond */
+                if (ret < 0)
+                {
+                    goto exit_function;
+                }
+            }
             else
             {
                 /* stereogenic sp3 atom */
@@ -783,6 +953,10 @@ int SetStereoBondTypeFor0DParity( inp_ATOM *at, int i1, int m1 )
     return RI_ERR_SYNTAX; /* failed */
 
 found:
+    if (nLenCumulene == 2 && at[nCumulene[0]].bAtropisomeric && at[nCumulene[1]].bAtropisomeric)
+    {
+        return nLenCumulene; /* atropisomer axis: the bond stays single */
+    }
     if (nLenCumulene == 2)
     {
         bond_type = BOND_TYPE_STEREO; /* double bond or alternating bond */

@@ -204,7 +204,9 @@ typedef struct tagAtom
 #define BITS_PARITY        0x07  /* mask to retrieve half-bond parity */
 #define MASK_CUMULENE_LEN  0x38  /* mask to retrieve (cumulene chain length - 1)*MULT_STEREOBOND    */
 #define KNOWN_PARITIES_EQL 0x40  /* parity is same for all pairs of constit. equivalent atoms       */
-#define MAX_CUMULENE_LEN   2     /* max number of bonds in a cumulene chain - 1                     */
+#define MAX_CUMULENE_LEN   4     /* max number of bonds in a cumulene chain - 1: 5 double bonds    */
+#define MAX_CUMULENE_LEN_STD 2   /* ... in standard InChI: 3 double bonds; 4 needs
+                                    -EnhancedStereochemistry (PES_BIT_LONG_CUMULENE)               */
 
 #define MULT_STEREOBOND    0x08  /* multiplier for cumulene chain length
                                     odd length => chiral, even length => stereogenic bond           */
@@ -213,6 +215,13 @@ typedef struct tagAtom
 #define GET_BITS_CUMULENE_LEN(X)    ((X)&MASK_CUMULENE_LEN)
 #define BOND_CHAIN_LEN(X)           (GET_BITS_CUMULENE_LEN(X)/MULT_STEREOBOND) /* 0 => double bond, 1 => allene, 2 => cumulene,..*/
 #define IS_ALLENE_CHAIN(X)          ((GET_BITS_CUMULENE_LEN(X)/MULT_STEREOBOND)%2)
+/* Atropisomer axis: a stereo bond of chain length 0 stored on a SINGLE bond
+   (set_atrop_axes_parity). Chiral like an allene: /m inverts it, and it is
+   cited as a /t centre on the lower-numbered axis atom. SB_PARITY/SB_ORD are
+   the atom's stereo_bond_parity[k]/stereo_bond_ord[k] (or the *2 pair). */
+#define IS_ATROP_AXIS(AT, I, SB_PARITY, SB_ORD) \
+    (0 == BOND_CHAIN_LEN(SB_PARITY) && \
+     BOND_SINGLE == ((AT)[I].bond_type[(int)(SB_ORD)] & BOND_TYPE_MASK))
 
 /* atom or bond parity value definitions */
 #define AB_PARITY_NONE   0  /* 0 => no parity; also parity&0x38 = 0 */

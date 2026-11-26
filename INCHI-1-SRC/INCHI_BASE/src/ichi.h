@@ -108,6 +108,14 @@ typedef struct tagINChI_Stereo
 
     int         bTrivialInv;  /* 1=> nCompInv2Abs!= 0 && Inverted = Abs stereo with inverted parities 1<-->2 */
 
+    int         bMeso;        /* 1=> Inv = Abs stereo as canonicalised; unlike nCompInv2Abs,
+                                 never changed by enhanced stereochemistry */
+
+    char       *szEnhS;       /* reading InChI: this component's /s slot verbatim,
+                                 e.g. "1(4)3(5)"; NULL if /s is one bare digit */
+    char       *szEnhB;       /* reading InChI: this component's /b slot verbatim if
+                                 the layer has OR/AND groups, e.g. "4-2+,2(5-3-)" */
+
     /* ---- possibly stereogenic bonds and tetrahedral cumulenes */
     int         nNumberOfStereoBonds;
     AT_NUMB    *nBondAtom1; /* Canonical number of a first atom
@@ -274,6 +282,7 @@ typedef struct tagINChIforSort {
     short      n1; /* points to the original; used in structure reconstruction only */
     short      n2; /* points to the original; used in structure reconstruction only */
     short      n3; /* points to the original; used in structure reconstruction only */
+    const char *enh_key; /* enhanced-stereo classes of the component, last sort key; may be NULL */
 }INCHI_SORT;
 
 
