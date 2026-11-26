@@ -6702,7 +6702,7 @@ int ParseSegmentSp3(const char* str,			/* input; string of segment starting with
             p = pStart;
         }
 #if (FIX_DALKE_BUGS == 1)
-        if (iComponent + mpy_component > nNumComponents)
+        if (mpy_component < 1 || iComponent + mpy_component > nNumComponents)
         {
             ret = RI_ERR_SYNTAX;
             goto exit_function;
@@ -8374,6 +8374,12 @@ int ParseSegmentMobileH(const char* str,
 #else
             if (p != q)
 #endif
+            {
+                ret = RI_ERR_SYNTAX; /* syntax error */
+                goto exit_function;
+            }
+            /* multiplier must not run past the last component */
+            if (iComponent + mpy_component > nNumComponents)
             {
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
