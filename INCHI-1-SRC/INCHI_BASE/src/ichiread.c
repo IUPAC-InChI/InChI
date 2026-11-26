@@ -8378,6 +8378,12 @@ int ParseSegmentMobileH(const char* str,
                 ret = RI_ERR_SYNTAX; /* syntax error */
                 goto exit_function;
             }
+            /* multiplier must not run past the last component */
+            if (iComponent + mpy_component > nNumComponents)
+            {
+                ret = RI_ERR_SYNTAX; /* syntax error */
+                goto exit_function;
+            }
             p++;
         }
         else
