@@ -6,12 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <limits.h>
-#include <float.h>
-#include <ctype.h>
 #include <locale.h>
 
 #include "mode.h"
@@ -21,10 +15,6 @@
 #include <io.h>
 #endif
 
-
-#ifdef _WIN32
-#include <crtdbg.h>
-#endif
 
 #include "ichimain.h"
 #include "inchi_api.h"
@@ -42,23 +32,28 @@ int rrand(int m)
 
 void shuffle(void* obj, size_t nmemb, size_t size)
 {
-    void* temp = inchi_malloc(size);
+    char *base = (char *)obj;
     size_t n = nmemb;
     while (n > 1)
     {
         size_t k = rrand((int)n--);
-        if (temp) /* djb-rwth: fixing a NULL pointer dereference */
-        {
-            memcpy(temp, BYTE(obj) + n * size, size);
-            memcpy(BYTE(obj) + n * size, BYTE(obj) + k * size, size);
-            memcpy(BYTE(obj) + k * size, temp, size);
-        }
+        inchi_swap(base + n * size, base + k * size, size);
     }
-#ifdef _WIN32
-    _free_dbg(temp, _NORMAL_BLOCK); /* djb-rwth: _free_dbg for _malloc_dbg must be used if Windows SDK is used */
-#else
-    free(temp); /* djb-rwth: otherwise just free */
-#endif
+}
+
+
+/*
+    Map a one-based atom index through the zero-based permutation `numbers`.
+    Indices outside [1, nat] (e.g., 0 or -1 marking missing or star atoms)
+    are exceptional and returned unchanged.
+*/
+static int get_permuted_index(const int* numbers, int nat, int index)
+{
+    if (index < 1 || index > nat)
+    {
+        return index;
+    }
+    return 1 + numbers[index - 1];
 }
 
 
@@ -80,31 +75,38 @@ void OrigAtData_Permute(ORIG_ATOM_DATA* permuted, ORIG_ATOM_DATA* saved, int* nu
     }
     if (saved->polymer && permuted->polymer)
     {
-        if (saved->polymer->pzz)
+        if (saved->polymer->pzz && permuted->polymer->pzz)
         {
             for (k = 0; k < saved->polymer->n_pzz; k++)
             {
-                permuted->polymer->pzz[k] = numbers[permuted->polymer->pzz[k]];
+                permuted->polymer->pzz[k] = get_permuted_index(numbers, nat, permuted->polymer->pzz[k]);
             }
         }
-        if (saved->polymer->units)
+        if (saved->polymer->units && permuted->polymer->units)
         {
             for (k = 0; k < saved->polymer->n; k++)
             {
-                permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->cap1 - 1];
-                permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->end_atom1 - 1];
-                permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->cap2 - 1];
-                permuted->polymer->units[k]->cap1 = 1 + numbers[permuted->polymer->units[k]->end_atom2 - 1];
-                if (permuted->polymer->units[k]->alist)
+                OAD_PolymerUnit* unit = permuted->polymer->units[k];
+                if (!unit)
                 {
-                    for (j = 0; j < permuted->polymer->units[k]->na; j++)
+                    continue;
+                }
+                unit->cap1 = get_permuted_index(numbers, nat, unit->cap1);
+                unit->end_atom1 = get_permuted_index(numbers, nat, unit->end_atom1);
+                unit->cap2 = get_permuted_index(numbers, nat, unit->cap2);
+                unit->end_atom2 = get_permuted_index(numbers, nat, unit->end_atom2);
+                if (unit->alist)
+                {
+                    for (j = 0; j < unit->na; j++)
                     {
-                        permuted->polymer->units[k]->alist[j] = 1 + numbers[permuted->polymer->units[k]->alist[j] - 1];
+                        unit->alist[j] = get_permuted_index(numbers, nat, unit->alist[j]);
                     }
-                    for (j = 0; j < permuted->polymer->units[k]->nb; j++)
+                }
+                if (unit->blist)
+                {
+                    for (j = 0; j < 2 * unit->nb; j++)
                     {
-                        permuted->polymer->units[k]->blist[2 * j] = 1 + numbers[permuted->polymer->units[k]->blist[2 * j] - 1];
-                        permuted->polymer->units[k]->blist[2 * j + 1] = 1 + numbers[permuted->polymer->units[k]->blist[2 * j + 1] - 1];
+                        unit->blist[j] = get_permuted_index(numbers, nat, unit->blist[j]);
                     }
                 }
             }
@@ -112,58 +114,64 @@ void OrigAtData_Permute(ORIG_ATOM_DATA* permuted, ORIG_ATOM_DATA* saved, int* nu
     }
     if (saved->v3000 && permuted->v3000)
     {
-        if (saved->v3000->atom_index_orig && permuted->v3000->atom_index_orig)
+        OAD_V3000* v3000 = permuted->v3000;
+        if (saved->v3000->atom_index_orig && v3000->atom_index_orig)
         {
             for (k = 0; k < nat; k++)
             {
-                permuted->v3000->atom_index_orig[k] = numbers[permuted->v3000->atom_index_orig[k]];
+                v3000->atom_index_orig[k] = get_permuted_index(numbers, nat, v3000->atom_index_orig[k]);
             }
         }
-        if (saved->v3000->atom_index_fin && permuted->v3000->atom_index_fin)
+        if (saved->v3000->atom_index_fin && v3000->atom_index_fin)
         {
             for (k = 0; k < nat; k++)
             {
-                permuted->v3000->atom_index_fin[k] = numbers[permuted->v3000->atom_index_fin[k]];
+                v3000->atom_index_fin[k] = get_permuted_index(numbers, nat, v3000->atom_index_fin[k]);
             }
         }
-        if (saved->v3000->n_haptic_bonds && saved->v3000->lists_haptic_bonds && permuted->v3000->n_haptic_bonds && permuted->v3000->lists_haptic_bonds)
+        if (saved->v3000->n_haptic_bonds && saved->v3000->lists_haptic_bonds && v3000->n_haptic_bonds && v3000->lists_haptic_bonds)
         {
+            /* Layout: [0] bond type, [1] metal atom, [2] number of endpoints, [3..] endpoints */
             for (j = 0; j < saved->v3000->n_haptic_bonds; j++)
             {
-                permuted->v3000->lists_haptic_bonds[j][1] = numbers[permuted->v3000->lists_haptic_bonds[j][1]];
-                for (k = 3; k < saved->v3000->lists_haptic_bonds[j][2]; k++)
+                int* lst = v3000->lists_haptic_bonds[j];
+                lst[1] = get_permuted_index(numbers, nat, lst[1]);
+                for (k = 3; k < lst[2] + 3; k++)
                 {
-                    permuted->v3000->lists_haptic_bonds[j][k] = numbers[permuted->v3000->lists_haptic_bonds[j][k]];
+                    lst[k] = get_permuted_index(numbers, nat, lst[k]);
                 }
             }
         }
-        if (saved->v3000->n_steabs && saved->v3000->lists_steabs && permuted->v3000->n_steabs && permuted->v3000->lists_steabs)
+        if (saved->v3000->n_steabs && saved->v3000->lists_steabs && v3000->n_steabs && v3000->lists_steabs)
         {
             for (j = 0; j < saved->v3000->n_steabs; j++)
             {
-                for (k = 2; k < saved->v3000->lists_steabs[j][1] + 2; k++)
+                int* lst = v3000->lists_steabs[j];
+                for (k = 2; k < lst[1] + 2; k++)
                 {
-                    permuted->v3000->lists_steabs[j][k] = numbers[permuted->v3000->lists_steabs[j][k]];
+                    lst[k] = get_permuted_index(numbers, nat, lst[k]);
                 }
             }
         }
-        if (saved->v3000->n_sterel && saved->v3000->lists_sterel && permuted->v3000->n_sterel && permuted->v3000->lists_sterel)
+        if (saved->v3000->n_sterel && saved->v3000->lists_sterel && v3000->n_sterel && v3000->lists_sterel)
         {
             for (j = 0; j < saved->v3000->n_sterel; j++)
             {
-                for (k = 2; k < saved->v3000->lists_sterel[j][1] + 2; k++)
+                int* lst = v3000->lists_sterel[j];
+                for (k = 2; k < lst[1] + 2; k++)
                 {
-                    permuted->v3000->lists_sterel[j][k] = numbers[permuted->v3000->lists_sterel[j][k]];
+                    lst[k] = get_permuted_index(numbers, nat, lst[k]);
                 }
             }
         }
-        if (saved->v3000->n_sterac && saved->v3000->lists_sterac && permuted->v3000->n_sterac && permuted->v3000->lists_sterac)
+        if (saved->v3000->n_sterac && saved->v3000->lists_sterac && v3000->n_sterac && v3000->lists_sterac)
         {
             for (j = 0; j < saved->v3000->n_sterac; j++)
             {
-                for (k = 2; k < saved->v3000->lists_sterac[j][1] + 2; k++)
+                int* lst = v3000->lists_sterac[j];
+                for (k = 2; k < lst[1] + 2; k++)
                 {
-                    permuted->v3000->lists_sterac[j][k] = numbers[permuted->v3000->lists_sterac[j][k]];
+                    lst[k] = get_permuted_index(numbers, nat, lst[k]);
                 }
             }
         }
@@ -197,16 +205,13 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
 
     INCHI_MODE input_atom_flags = 0;
     int struct_read_error = 0;
-    int num_atoms = CreateOrigInpDataFromMolfile(
+    if (CreateOrigInpDataFromMolfile(
         &input_stream,
         &atom_data,
         0, 1, 0, 0, 0, NULL, NULL, NULL, NULL, /* bDoNotAddH = 0: keep implicit H (#311) */
         &input_atom_flags,
         &struct_read_error,
-        NULL, 0
-    );
-
-    if (num_atoms <= 0)
+        NULL, 0) <= 0)
         goto exit;
 
     if (struct_read_error != 0)
@@ -215,6 +220,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
     if (OrigAtData_Duplicate(&permuted_atom_data, &atom_data) != 0)
         goto exit;
 
+    const int num_atoms = atom_data.num_inp_atoms;
     permutation_mapping = inchi_malloc(num_atoms * sizeof(int));
     if (!permutation_mapping)
         goto exit;
@@ -239,7 +245,7 @@ EXPIMP_TEMPLATE INCHI_API int INCHI_DECL PermuteMolfileText(
     if (OrigAtData_WriteToSDfile(
             &permuted_atom_data,
             &output_stream,
-            NULL, NULL, 0, 0, NULL, NULL) != 0)
+            NULL, NULL, (input_atom_flags & FLAG_INP_AT_CHIRAL) != 0, 0, NULL, NULL) != 0)
         goto exit;
 
     size_t out_len = output_stream.s.nUsedLength;
