@@ -4319,15 +4319,42 @@ static int OutputINCHI_PolymerLayer_SingleUnit(OAD_PolymerUnit *u,
     print_sequence_of_nums_compressing_ranges(u->na, u->alist, strbuf);
 
     /* Print the crossing bonds or frame-shiftable pattern */
+
     if (u->nb > 2)
     {
-        /* not supported yet, too many bonds in SBL */
-        err = 12;
-        goto exit_function;
-    }
+        int crossing_bond;
 
+        if (!u->blist)
+        {
+            err = 12;
+            goto exit_function;
+        }
+
+        /* Print all crossing bonds of a multi-ended polymer unit. */
+        inchi_strbuf_printf(strbuf, "(");
+
+        for (crossing_bond = 0; crossing_bond < u->nb; crossing_bond++)
+        {
+            int cap = u->blist[2 * crossing_bond];
+            int end = u->blist[2 * crossing_bond + 1];
+
+            /* Each crossing bond must connect an external cap to the unit. */
+            if (is_in_the_ilist(u->alist, cap, u->na) ||
+                !is_in_the_ilist(u->alist, end, u->na))
+            {
+                err = 12;
+                goto exit_function;
+            }
+
+            inchi_strbuf_printf(strbuf, "%s%-d-%-d",
+                crossing_bond == 0 ? "" : ",",
+                cap, end);
+        }
+
+        inchi_strbuf_printf(strbuf, ")");
+    }
     /* Print crossing bonds "(cap1-partner1,cap2-partner2)"    */
-    if (u->nb == 2 && (!u->cyclizable || !u->cyclized))
+    else if (u->nb == 2 && (!u->cyclizable || !u->cyclized))
     {
         int swap = 0;
         a1 = u->blist[0];

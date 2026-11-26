@@ -170,14 +170,41 @@ int InChI2Atom(INCHI_CLOCK* ic,
             if (pInChI[0]->nAtom[a] == EL_NUMBER_ZZ)
             {
                 new_num = EL_NUMBER_ZY; /* Zy */
+
                 for (k = 0; k < p->n; k++)
                 {
-                    if ((aglob == p->units[k]->cap1) || (aglob == p->units[k]->cap2))
+                    const OAD_PolymerUnit* unit = p->units[k];
+
+                    if (unit->nb > 2 && unit->blist)
+                    {
+                        int crossing_bond_index;
+
+                        /* Recognize all caps of multi-ended polymer units. */
+                        for (crossing_bond_index = 0;
+                            crossing_bond_index < unit->nb;
+                            crossing_bond_index++)
+                        {
+                            int cap = unit->blist[2 * crossing_bond_index];
+
+                            if (aglob == cap)
+                            {
+                                new_num = EL_NUMBER_ZZ;
+                                break;
+                            }
+                        }
+
+                        if (new_num == EL_NUMBER_ZZ)
+                        {
+                            break;
+                        }
+                    }
+                    else if (aglob == unit->cap1 || aglob == unit->cap2)
                     {
                         new_num = EL_NUMBER_ZZ;
                         break;
                     }
                 }
+
                 pInChI[0]->nAtom[a] = new_num;
                 if (new_num == EL_NUMBER_ZY)
                 {
@@ -474,7 +501,7 @@ int MergeStructureComponents(ICHICONST INPUT_PARMS* ip,
         pStruct1 = pStruct[iInchiRec][iMobileH][k].num_atoms ? pStruct[iInchiRec][iMobileH] + k :
             iAlternH >= 0 &&
             pStruct[iInchiRec][iAlternH][k].num_atoms ? pStruct[iInchiRec][iAlternH] + k : NULL;
-        if ((len = nAtomOffs[k + 1] - nAtomOffs[k]) && pStruct1) /* djb-rwth: addressing LLVM warning; fixing coverity ID #499555 */ 
+        if ((len = nAtomOffs[k + 1] - nAtomOffs[k]) && pStruct1) /* djb-rwth: addressing LLVM warning; fixing coverity ID #499555 */
         {
             memcpy(at + nAtomOffs[k], pStruct1->at2, len * sizeof(at[0]));
             if ((len2 = nDelHOffs[k + 1] - nDelHOffs[k])) /* djb-rwth: addressing LLVM warning */
@@ -564,6 +591,37 @@ int MergeStructureComponents(ICHICONST INPUT_PARMS* ip,
             a->orig_at_number += iShiftH;
         }
     }
+
+    /* Validate crossing bonds of multi-ended polymer units. */
+    if (pOneInput->polymer)
+    {
+        for (k = 0; k < pOneInput->polymer->n; k++)
+        {
+            const OAD_PolymerUnit* unit = pOneInput->polymer->units[k];
+
+            if (unit && unit->nb > 2)
+            {
+                if (!unit->blist)
+                {
+                    ret = RI_ERR_SYNTAX;
+                    goto exit_function;
+                }
+
+                for (i = 0; i < unit->nb; i++)
+                {
+                    int atom1 = unit->blist[2 * i];
+                    int atom2 = unit->blist[2 * i + 1];
+
+                    if (atom1 < 1 || atom1 > tot_atoms || atom2 < 1 || atom2 > tot_atoms || Inp_Atom_GetBondType(at, atom1 - 1, atom2 - 1) == -1)
+                    {
+                        ret = RI_ERR_SYNTAX;
+                        goto exit_function;
+                    }
+                }
+            }
+        }
+    }
+
     /* save the results */
     pOneInput->atom = at;
     pOneInput->num_atoms = tot_atoms;
@@ -1485,7 +1543,7 @@ void FreeInpInChI(InpInChI* pOneInput)
 
                         }
                     }
-#endif                    
+#endif
 
                 }
                 inchi_free(pOneInput->pInpInChI[iINChI][j]);
