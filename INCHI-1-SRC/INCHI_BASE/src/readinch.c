@@ -141,9 +141,10 @@ int Extract0DParities( inp_ATOM *at,
             sb_ord_from_i1 = sb_ord_from_i2 = sn_ord_from_i1 = sn_ord_from_i2 = -1;
             i1n = i2n = i1 = i2 = MAX_ATOMS + 1;
 
-            if (( type == INCHI_StereoType_Tetrahedral ||
-                ((type == INCHI_StereoType_Allene ) &&
-                  0 <= a2 && a2 < nNumAtoms)) ||
+            /* Tetrahedral and allene need a valid centre: at[a2] is read below (GH #324) */
+            if (( ( type == INCHI_StereoType_Tetrahedral ||
+                    type == INCHI_StereoType_Allene ) &&
+                  0 <= a2 && a2 < nNumAtoms) ||
                   (type == INCHI_StereoType_DoubleBond &&
                   a2 == NO_ATOM)) /* djb-rwth: addressing LLVM warning */
             {
