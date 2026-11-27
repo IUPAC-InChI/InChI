@@ -14,6 +14,7 @@
 #include "ichicomp.h"
 #include "ichicant.h"
 #include "util.h"
+#include "atropisomers.h"
 
 #include "bcf_s.h"
 
@@ -64,18 +65,18 @@ static int dot_prodchar3( const S_CHAR a[], const S_CHAR b[] );
 static double triple_prod( double a[], double b[], double c[], double *sine_value );
 static double triple_prod_and_min_abs_sine( double at_coord[][3], double *min_sine );
 static int are_3_vect_in_one_plane( double at_coord[][3], double min_sine );
-static int triple_prod_char( inp_ATOM *at, int at_1, int i_next_at_1, S_CHAR *z_dir1,
+int triple_prod_char( inp_ATOM *at, int at_1, int i_next_at_1, S_CHAR *z_dir1,
                                            int at_2, int i_next_at_2, S_CHAR *z_dir2 );
 
 static int CompDble( const void *a1, const void *a2, void * );
 static int Get2DTetrahedralAmbiguity( CANON_GLOBALS *pCG, double at_coord[][3], int bAddExplicitNeighbor, int bFix2DstereoBorderCase, double vMinAngle );
 static double triple_prod_and_min_abs_sine2( double at_coord[][3], double central_at_coord[], int bAddedExplicitNeighbor,
                                             double *min_sine, int *bAmbiguous, double vMinSine );
-static int are_4at_in_one_plane( double at_coord[][3], double min_sine );
+// static int are_4at_in_one_plane( double at_coord[][3], double min_sine );
 static int bInpAtomHasRequirdNeigh( inp_ATOM *at, int cur_at, int RequirdNeighType, int NumDbleBonds, int bStereoAtZz );
 static int bIsSuitableHeteroInpAtom( inp_ATOM  *at );
 static int bIsOxide( inp_ATOM  *at, int cur_at );
-static int half_stereo_bond_parity( inp_ATOM *at, int cur_at, inp_ATOM *at_removed_H, int num_removed_H, S_CHAR *z_dir,
+int half_stereo_bond_parity( inp_ATOM *at, int cur_at, inp_ATOM *at_removed_H, int num_removed_H, S_CHAR *z_dir,
                                    int bPointedEdgeStereo, int vABParityUnknown );
 static int get_allowed_stereo_bond_type( int bond_type );
 static int can_be_a_stereo_bond_with_isotopic_H( inp_ATOM *at, int cur_at, INCHI_MODE nMode );
@@ -2155,7 +2156,7 @@ int half_stereo_bond_parity( inp_ATOM *at,
     {
         for (k = 0; k < 3; k++)
         {
-            at_coord[j][k] = 0; 
+            at_coord[j][k] = 0;
         }
     }
 
@@ -2500,6 +2501,28 @@ exit_function:
     }
 
     return bond_parity;
+}
+
+
+/****************************************************************************
+ Slot k of the stereo bond to atom j: sb_neighbor[k] == j+1, where
+ sb_neighbor is at[i].stereo_bond_neighbor or stereo_bond_neighbor2.
+ Returns 0 if absent; an atropisomer axis may share its end with a C=C
+ or another axis, so slot [0] is not always the bond looked for.
+****************************************************************************/
+int find_stereo_bond_slot( const AT_NUMB *sb_neighbor, int j )
+{
+    int k;
+
+    for (k = 0; k < MAX_NUM_STEREO_BONDS && sb_neighbor[k]; k++)
+    {
+        if ((int) sb_neighbor[k] == j + 1)
+        {
+            return k;
+        }
+    }
+
+    return 0;
 }
 
 
@@ -2970,6 +2993,536 @@ int half_stereo_bond_action( int nParity,
 }
 
 
+/* Min in-plane part (of |z_dir| = 100) a lone allene wedge must tilt the plane by */
+#define ALLENE_MIN_TILT 20
+
+
+/****************************************************************************
+ Is this stereo bond end drawn in 2D (the atom and its neighbours at z = 0)?
+****************************************************************************/
+static int is_2d_end( inp_ATOM *at, int cur_at )
+{
+    int j;
+
+    if (at[cur_at].z != 0.0)
+    {
+        return 0;
+    }
+    for (j = 0; j < at[cur_at].valence; j++)
+    {
+        if (at[at[cur_at].neighbor[j]].z != 0.0)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+/****************************************************************************
+ Allene drawn with a wedge at one end only (IUPAC): the flat end lies in the
+ drawing plane, so the wedged end lies in the perpendicular plane through the
+ axis. Replace the wedged end's tilted plane normal by its in-plane part
+ perpendicular to the axis. The triple product keeps its sign but clears
+ MIN_DOT_PROD (a lone wedge alone only tilts the normal ~45 degrees).
+
+      F              Cl (wedge)
+        \           /
+         C == C == C        z_dir (-25,-44,86) -> (0,-100,0)
+        /           \   (left end flat)
+      Br             CH3
+****************************************************************************/
+static void allene_one_wedge_z( inp_ATOM *at,
+                                int at_1, S_CHAR *z_dir1,
+                                int at_2, S_CHAR *z_dir2 )
+{
+    int flat1 = !z_dir1[0] && !z_dir1[1];
+    int flat2 = !z_dir2[0] && !z_dir2[1];
+    S_CHAR *z_dir = flat1 ? z_dir2 : z_dir1;
+    double ax, ay, len, dot, px, py;
+
+    /* Both ends flat or both wedged: the drawing defines the geometry */
+    if (flat1 == flat2)
+    {
+        return;
+    }
+
+    /* Real 3D coordinates and 0D parities carry their own geometry */
+    if (at[at_1].bUsed0DParity || at[at_2].bUsed0DParity ||
+        !is_2d_end( at, at_1 ) || !is_2d_end( at, at_2 ))
+    {
+        return;
+    }
+
+    ax = at[at_2].x - at[at_1].x;
+    ay = at[at_2].y - at[at_1].y;
+    len = sqrt( ax * ax + ay * ay );
+    if (len < MIN_BOND_LEN)
+    {
+        return;
+    }
+    ax /= len;
+    ay /= len;
+
+    /* In-plane part of z_dir perpendicular to the axis; a wedge along the axis has none */
+    dot = z_dir[0] * ax + z_dir[1] * ay;
+    px = z_dir[0] - dot * ax;
+    py = z_dir[1] - dot * ay;
+    len = sqrt( px * px + py * py );
+    if (len < ALLENE_MIN_TILT)
+    {
+        return;
+    }
+
+    z_dir[0] = (S_CHAR) ( px >= 0.0 ? floor( 0.5 + 100.0 * px / len ) : -floor( 0.5 - 100.0 * px / len ) );
+    z_dir[1] = (S_CHAR) ( py >= 0.0 ? floor( 0.5 + 100.0 * py / len ) : -floor( 0.5 - 100.0 * py / len ) );
+    z_dir[2] = 0;
+}
+
+
+/****************************************************************************
+ Atropisomer axis (spec 4): a hindered single bond between two sp2 C or planar N,
+ e.g. a biaryl. Chiral like an allene, but the "cumulene chain" has no
+ middle atom, so it is stored as a stereo bond of chain length 0 on a
+ SINGLE bond; IS_ATROP_AXIS() tells it from a double bond downstream
+ (canonical ranking prunes it, InvertStereo() flips it for /m and
+ Copy2StereoBondOrAllene() cites it as a /t centre on the lower atom).
+
+        Br          Cl
+          \        /            parity = sign of the triple product
+     (A)   C ---- C   (B)       ( z_dir1, A->B, z_dir2 ), exactly as
+          /        \            for an allene end pair
+        Cl          Br
+
+ Only the ends flagged by find_atropisomeric_atoms_and_bonds() qualify;
+ the predicate is re-checked here because a flag marks an atom, not a bond.
+****************************************************************************/
+#define ATROP_MIN_HINDERED         3  /* ortho positions with a non-H substituent */
+#define ATROP_BRIDGED_RING         8  /* biaryl bridged into an 8-ring: stable */
+#define ATROP_MIN_HINDERED_BRIDGED 2  /* ... needs only the two bridge positions */
+#define ATROP_MIN_HINDERED_WEDGED  2  /* acyclic axis drawn with a wedge */
+#define ATROP_0D_CHAIN_LEN         1  /* odd: 0D parity read like an allene's */
+
+/**
+ * @brief Count the hindered ortho positions at one end of an axis
+ *
+ * Ortho positions X of axis end at_1 are its neighbours except at_2; one is
+ * hindered when it carries a non-H substituent, i.e. has a third heavy
+ * neighbour besides at_1.
+ *
+ * @param at Input atoms
+ * @param at_1 Axis end
+ * @param at_2 Other axis end
+ * @return Returns the number of hindered ortho positions
+ */
+static int count_hindered_ortho( inp_ATOM *at, int at_1, int at_2 )
+{
+    int k, x, num = 0;
+
+    for (k = 0; k < at[at_1].valence; k++)
+    {
+        x = (int) at[at_1].neighbor[k];
+        if (x != at_2 && at[x].valence >= 3)
+        {
+            num++;
+        }
+    }
+
+    return num;
+}
+
+/**
+ * @brief Does a 2D wedge (up or down, not wavy) start at axis end a?
+ *
+ * A chemist who wedges the axis specifies a stereoisomer, so the hindrance
+ * count drops from 3 to 2 (A. Yerin, 2026-11-19: a 1,3-diaxis phenylene
+ * with two ortho groups per axis has four separable isomers). 3D
+ * coordinates are a conformer, not a choice: they keep 3, or every
+ * 2,2'-disubstituted biaryl conformer would get its own InChI.
+ *
+ * @param at Input atoms
+ * @param a Axis end
+ * @param other Other axis end
+ * @return Returns 1 if a wedge in the drawing plane starts at a, else 0
+ */
+static int has_axis_wedge( inp_ATOM *at, int a, int other )
+{
+    int k, x;
+
+    for (k = 0; k < at[a].valence; k++)
+    {
+        x = (int) at[a].neighbor[k];
+        if (x != other && at[a].z == 0.0 && at[x].z == 0.0 &&
+            ( at[a].bond_stereo[k] == STEREO_SNGL_UP || at[a].bond_stereo[k] == STEREO_SNGL_DOWN ))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Are all bonds of atom a ring bonds (a ring-fusion atom)?
+ *
+ * A bond is a ring bond when both atoms share a ring system.
+ *
+ * @param at Input atoms
+ * @param a Atom
+ * @return Returns 1 if every neighbour is in a's ring system, else 0
+ */
+static int is_fused_atom( inp_ATOM *at, int a )
+{
+    int k;
+
+    for (k = 0; k < at[a].valence; k++)
+    {
+        if (at[(int) at[a].neighbor[k]].nRingSystem != at[a].nRingSystem)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/**
+ * @brief May atom a be one end of an axis to atom other?
+ *
+ * C-C: any sp2 C (unchanged v1 rule).
+ * C-N / N-N (n_N > 0):
+ *   - N must be neutral and planar, i.e. conjugated through a neighbour
+ *     other than the axis partner (amide, imide, urea, pyrrole, indole);
+ *     a pyramidal amine N inverts fast and has no axis.
+ *   - C must be a ring atom (aryl). This keeps the amide C(=O)-N bond out:
+ *     an sp2 C carrying =O and N has no room for two ring bonds.
+ *
+ *        O=C(R)              Ar-N(-C=O)(R)   -> axis Ar-N
+ *              \N-Ar          O=C-N          -> never (C not in ring)
+ *
+ * @param at Input atoms
+ * @param a Axis end
+ * @param other Other axis end
+ * @param n_N Number of N atoms among the two ends
+ * @return Returns 1 if a qualifies, else 0
+ */
+static int is_atrop_axis_end( inp_ATOM *at, int a, int other, int n_N )
+{
+    int k, x;
+
+    if (at[a].el_number == EL_NUMBER_C)
+    {
+        /* ponytail: aryl C only; acyclic enamide C-N axes need a vinyl rule */
+        return !n_N || at[a].nNumAtInRingSystem > 1;
+    }
+
+    if (at[a].el_number != EL_NUMBER_N || at[a].charge || at[a].radical)
+    {
+        return 0;
+    }
+
+    /* Planar N: some other neighbour is unsaturated */
+    for (k = 0; k < at[a].valence; k++)
+    {
+        x = (int) at[a].neighbor[k];
+        if (x != other && at[x].chem_bonds_valence > at[x].valence)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Is the bond at_1-neighbor[ord_1] a stable atropisomer axis?
+ *
+ * Both ends must be flagged by find_atropisomeric_atoms_and_bonds(); the
+ * check is repeated here because the flag marks atoms, not bonds. Scope:
+ * a C-C, C-N or N-N (acyclic) single bond with both ends three-connected and without H, not in a
+ * ring of size <= ATROP_MIN_ROTATABLE_RING, and hindered at >= 3 of the four
+ * ortho positions (2 for a biaryl bridged into an 8-ring).
+ *
+ * @param at Input atoms
+ * @param at_1 First axis atom
+ * @param ord_1 Index of the second axis atom among at_1's neighbours
+ * @param q, nAtomLevel, cSource Work buffers for the ring search; q may be NULL
+ * @return Returns 1 for a stable axis, else 0
+ */
+static int is_atrop_axis_bond( inp_ATOM *at, int at_1, int ord_1, QUEUE *q,
+                               AT_RANK *nAtomLevel, S_CHAR *cSource )
+{
+    int at_2 = (int) at[at_1].neighbor[ord_1];
+
+    if (!at[at_1].bAtropisomeric || !at[at_2].bAtropisomeric)
+    {
+        return 0;
+    }
+
+    /* Single bond, both ends three-connected without H */
+    if (BOND_SINGLE != ( at[at_1].bond_type[ord_1] & BOND_TYPE_MASK ) ||
+         at[at_1].valence != 3 || at[at_2].valence != 3 ||
+         at[at_1].num_H || at[at_2].num_H)
+    {
+        return 0;
+    }
+
+    /* Element classes: C-C, C-N, N-N (see is_atrop_axis_end) */
+    int n_N = ( at[at_1].el_number == EL_NUMBER_N ) + ( at[at_2].el_number == EL_NUMBER_N );
+    if (!is_atrop_axis_end( at, at_1, at_2, n_N ) || !is_atrop_axis_end( at, at_2, at_1, n_N ))
+    {
+        return 0;
+    }
+
+    /* C-N / N-N: acyclic bonds only. In a ring, an N end with an acyl or aryl
+       substituent passes the hindrance count almost for free (benzodiazepinone
+       N1-C9a), and the 8-ring exemption below is for C-C lignans only. */
+    if (n_N && at[at_1].nRingSystem == at[at_2].nRingSystem)
+    {
+        return 0;
+    }
+
+    /* Smallest ring through the axis, 0 if none of size <= 8 */
+    int ring = 0;
+    if (q && at[at_1].nRingSystem == at[at_2].nRingSystem)
+    {
+        ring = is_bond_in_Nmax_memb_ring( at, at_1, ord_1, q, nAtomLevel, cSource,
+                                          (AT_RANK) ( ATROP_BRIDGED_RING + 1 ) );
+    }
+
+    /* A small ring locks the rotation */
+    if (0 < ring && ring <= ATROP_MIN_ROTATABLE_RING)
+    {
+        return 0;
+    }
+
+    /* Axis inside a 7/8-ring: a bridged biaryl, so both ends are fusion atoms.
+       An end with an exocyclic group (=O, =NR, aryl) is a bond of the flexible
+       ring itself, which flips (benzothiepinone C(=O)-Ar, tropone).
+
+            Ar===Ar   fused ends: axis   Ar---C(=O)   exocyclic =O: no axis
+            |     |                      |       |
+            X--Y--X                      X---Y---X                        */
+    if (ring && ( !is_fused_atom( at, at_1 ) || !is_fused_atom( at, at_2 ) ))
+    {
+        return 0;
+    }
+
+    /* [ATROP] stability heuristic: the four ortho positions X must carry a
+       non-H substituent at >= 3 of them. An unsubstituted X has only its
+       ring neighbour besides the axis end; a bridge atom always counts.
+       Exception: a biaryl bridged into an 8-ring (dibenzocyclooctadiene
+       lignans) is stable with the two bridge positions alone, while 7-rings
+       ring-invert fast and larger rings rotate like open chains:
+
+            X---Ar===Ar---X        8-ring:  2 bridge X suffice
+            |            |         7-ring, >= 9-ring, acyclic: 3 X
+            CH2--CH---CH--CH2                                            */
+    int min_hindered = ring == ATROP_BRIDGED_RING ? ATROP_MIN_HINDERED_BRIDGED
+                                                  : ATROP_MIN_HINDERED;
+
+    /* A wedge at an acyclic axis is the chemist's choice of isomer: two
+       ortho groups suffice (no ortho group, e.g. 3,3'-bipyridine, never) */
+    if (!ring && ( has_axis_wedge( at, at_1, at_2 ) || has_axis_wedge( at, at_2, at_1 ) ))
+    {
+        min_hindered = ATROP_MIN_HINDERED_WEDGED;
+    }
+    if (count_hindered_ortho( at, at_1, at_2 ) + count_hindered_ortho( at, at_2, at_1 ) < min_hindered)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+
+/** @brief Stereo layer an axis is stored in. */
+typedef enum tagAtropLayer
+{
+    ATROP_LAYER_MAIN,       /* stereo_bond_*[], parity   */
+    ATROP_LAYER_ISOTOPIC    /* stereo_bond_*2[], parity2 */
+} ATROP_LAYER;
+
+/**
+ * @brief Store one axis in the non-isotopic or isotopic stereo bond slots
+ *
+ * Mirrors what set_stereo_bonds_parity() does for allenes: registers the bond
+ * at both ends, sets the end parities and plane normals, and carries the
+ * ambiguous-stereo flags over.
+ *
+ * @return Returns 1 if the axis was stored, 0 if save_a_stereo_bond() refused it
+ */
+static int save_atrop_axis( sp_ATOM *out_at, inp_ATOM *at, ATROP_LAYER layer,
+                            int at_1, int ord_1, int at_2, int ord_2,
+                            int z_prod, int action, int parity_1, int parity_2,
+                            S_CHAR *z_dir1, S_CHAR *z_dir2 )
+{
+    sp_ATOM *a1 = out_at + at_1, *a2 = out_at + at_2;
+    int saved = ( layer == ATROP_LAYER_ISOTOPIC )
+        ? save_a_stereo_bond( z_prod, action,
+                              at_1, ord_1, a1->stereo_bond_neighbor2, a1->stereo_bond_ord2,
+                              a1->stereo_bond_z_prod2, a1->stereo_bond_parity2,
+                              at_2, ord_2, a2->stereo_bond_neighbor2, a2->stereo_bond_ord2,
+                              a2->stereo_bond_z_prod2, a2->stereo_bond_parity2 )
+        : save_a_stereo_bond( z_prod, action,
+                              at_1, ord_1, a1->stereo_bond_neighbor, a1->stereo_bond_ord,
+                              a1->stereo_bond_z_prod, a1->stereo_bond_parity,
+                              at_2, ord_2, a2->stereo_bond_neighbor, a2->stereo_bond_ord,
+                              a2->stereo_bond_z_prod, a2->stereo_bond_parity );
+    if (!saved)
+    {
+        return 0;
+    }
+
+    if (layer == ATROP_LAYER_ISOTOPIC)
+    {
+        a1->parity2 = (S_CHAR) parity_1;
+        a2->parity2 = (S_CHAR) parity_2;
+    }
+    else
+    {
+        a1->parity = (S_CHAR) parity_1;
+        a2->parity = (S_CHAR) parity_2;
+    }
+    memcpy( a1->z_dir, z_dir1, sizeof( a1->z_dir ) );
+    memcpy( a2->z_dir, z_dir2, sizeof( a2->z_dir ) );
+    a1->bAmbiguousStereo |= at[at_1].bAmbiguousStereo;
+    a2->bAmbiguousStereo |= at[at_2].bAmbiguousStereo;
+
+    return 1;
+}
+
+
+/****************************************************************************
+ Axial parity of the single bond at[at_1]-at[at_2] from the allene
+ primitives: half-bond planes + triple product (the one-wedge rule applies).
+ Returns the number of axis ends registered (0 or 2) or an error code.
+****************************************************************************/
+static int set_atrop_axis_parity( sp_ATOM *out_at, inp_ATOM *at,
+                                  int at_1, int ord_1, int at_2, int ord_2,
+                                  inp_ATOM *at_removed_H, int num_removed_H,
+                                  int bPointedEdgeStereo, int vABParityUnknown )
+{
+    S_CHAR z_dir1[3] = { 0 }, z_dir2[3] = { 0 };
+    int parity_1, parity_2, action_1, action_2, action, z_prod = 0, num_saved = 0;
+
+    parity_1 = half_stereo_bond_parity( at, at_1, at_removed_H, num_removed_H,
+                                        z_dir1, bPointedEdgeStereo, vABParityUnknown );
+    parity_2 = half_stereo_bond_parity( at, at_2, at_removed_H, num_removed_H,
+                                        z_dir2, bPointedEdgeStereo, vABParityUnknown );
+    if (RETURNED_ERROR( parity_1 ) || RETURNED_ERROR( parity_2 ))
+    {
+        return CT_CALC_STEREO_ERR;
+    }
+
+    /* 0D input (API record, reversed InChI): no geometry, so set the end-plane
+       normals perpendicular, as for an allene */
+    if (( at[at_1].bUsed0DParity | at[at_2].bUsed0DParity ) & FlagSB_0D)
+    {
+        FixSb0DParities( at, ATROP_0D_CHAIN_LEN, at_1, ord_1, z_dir1, at_2, ord_2, z_dir2,
+                         &parity_1, &parity_2 );
+    }
+
+    if (parity_1 == AB_PARITY_NONE || abs( parity_1 ) == AB_PARITY_IISO ||
+         parity_2 == AB_PARITY_NONE || abs( parity_2 ) == AB_PARITY_IISO)
+    {
+        return 0;
+    }
+
+    /* Handedness of the twist; too flat (no wedge, no z) => undefined */
+    if (ATOM_PARITY_WELL_DEF( abs( parity_1 ) ) && ATOM_PARITY_WELL_DEF( abs( parity_2 ) ))
+    {
+        if (bPointedEdgeStereo & PES_BIT_ALLENE_ONE_WEDGE)
+        {
+            allene_one_wedge_z( at, at_1, z_dir1, at_2, z_dir2 );
+        }
+        z_prod = triple_prod_char( at, at_1, ord_1, z_dir1, at_2, ord_2, z_dir2 );
+    }
+
+    /* Non-isotopic layer */
+    action_1 = half_stereo_bond_action( parity_1, 0, 0, vABParityUnknown );
+    action_2 = half_stereo_bond_action( parity_2, 0, 0, vABParityUnknown );
+    action = inchi_min( action_1, action_2 );
+    if (action == -1)
+    {
+        return CT_CALC_STEREO_ERR;
+    }
+    if (abs( z_prod ) < MIN_DOT_PROD)
+    {
+        action = inchi_min( action, AB_PARITY_UNDF );
+    }
+    if (action != AB_PARITY_NONE && parity_1 > 0 && parity_2 > 0)
+    {
+        num_saved += save_atrop_axis( out_at, at, ATROP_LAYER_MAIN, at_1, ord_1, at_2, ord_2,
+                                      z_prod, action, parity_1, parity_2, z_dir1, z_dir2 );
+    }
+
+    /* Isotopic layer (parities counting isotopic H) */
+    action_1 = half_stereo_bond_action( parity_1, 0, 1, vABParityUnknown );
+    action_2 = half_stereo_bond_action( parity_2, 0, 1, vABParityUnknown );
+    action = inchi_min( action_1, action_2 );
+    if (action == -1)
+    {
+        return CT_CALC_STEREO_ERR;
+    }
+    if (abs( z_prod ) < MIN_DOT_PROD)
+    {
+        action = inchi_min( action, AB_PARITY_UNDF );
+    }
+    if (action != AB_PARITY_NONE)
+    {
+        num_saved += save_atrop_axis( out_at, at, ATROP_LAYER_ISOTOPIC, at_1, ord_1, at_2, ord_2,
+                                      z_prod, action, abs( parity_1 ), abs( parity_2 ),
+                                      z_dir1, z_dir2 );
+    }
+
+    return num_saved ? 2 : 0;
+}
+
+
+/****************************************************************************
+ Register every flagged atropisomer axis; returns number of axis ends.
+****************************************************************************/
+static int set_atrop_axes_parity( sp_ATOM *out_at, inp_ATOM *at, int num_at,
+                                  inp_ATOM *at_removed_H, int num_removed_H,
+                                  QUEUE *q, AT_RANK *nAtomLevel, S_CHAR *cSource,
+                                  int bPointedEdgeStereo, int vABParityUnknown )
+{
+    int at_1, at_2, ord_1, ord_2, ret, num_ends = 0;
+
+    for (at_1 = 0; at_1 < num_at; at_1++)
+    {
+        if (!at[at_1].bAtropisomeric)
+        {
+            continue;
+        }
+        for (ord_1 = 0; ord_1 < at[at_1].valence; ord_1++)
+        {
+            at_2 = (int) at[at_1].neighbor[ord_1];
+            if (at_2 < at_1 || !is_atrop_axis_bond( at, at_1, ord_1, q, nAtomLevel, cSource ))
+            {
+                continue;
+            }
+            for (ord_2 = 0; (int) at[at_2].neighbor[ord_2] != at_1; ord_2++)
+            {
+                ;
+            }
+            ret = set_atrop_axis_parity( out_at, at, at_1, ord_1, at_2, ord_2,
+                                         at_removed_H, num_removed_H,
+                                         bPointedEdgeStereo, vABParityUnknown );
+            if (RETURNED_ERROR( ret ))
+            {
+                return ret;
+            }
+            num_ends += ret;
+        }
+    }
+
+    return num_ends;
+}
+
+
 /****************************************************************************/
 int set_stereo_bonds_parity( sp_ATOM *out_at,
                              inp_ATOM *at,
@@ -2993,7 +3546,7 @@ int set_stereo_bonds_parity( sp_ATOM *out_at,
     int n2sh, num_2s_hetero[2], num_2s_hetero_next[2], next_next_at, type_N, type_N_next;
 #endif
     int num_stored_isotopic_stereo_bonds; /* djb-rwth: removing redundant variables/code */
-    int chain_length, num_chains, cur_chain_length;
+    int chain_length, num_chains, cur_chain_length, max_chain;
     int all_at_2[MAX_NUM_STEREO_BONDS];
     int all_pos_1[MAX_NUM_STEREO_BONDS], all_pos_2[MAX_NUM_STEREO_BONDS];
     S_CHAR all_unkn[MAX_NUM_STEREO_BONDS];
@@ -3317,7 +3870,9 @@ int set_stereo_bonds_parity( sp_ATOM *out_at,
     /*  Accept only short chains for now */
     /*  chain_length=1: >C=C=C<      tetrahedral center, allene */
     /*  chain_length=2: >C=C=C=C<    stereogenic bond, cumulene */
-    if (chain_length && ( num_stereo_bonds != 1 || num_alt_1 || chain_length > MAX_CUMULENE_LEN ))
+    /*  chain_length=3,4: [4], [5]cumulene, -EnhancedStereochemistry only */
+    max_chain = ( bPointedEdgeStereo & PES_BIT_LONG_CUMULENE ) ? MAX_CUMULENE_LEN : MAX_CUMULENE_LEN_STD;
+    if (chain_length && ( num_stereo_bonds != 1 || num_alt_1 || chain_length > max_chain ))
     {
         return 0;
     }
@@ -3536,6 +4091,12 @@ int set_stereo_bonds_parity( sp_ATOM *out_at,
                            triple_prod_char( at, at_1, i_next_at_1, z_dir1, at_2, i_next_at_2, z_dir2 ) :
                            dot_prodchar3(z_dir1, z_dir2);
             */
+
+            if (( bPointedEdgeStereo & PES_BIT_ALLENE_ONE_WEDGE ) &&
+                 chain_len_bits && BOND_CHAIN_LEN( chain_len_bits ) % 2)
+            {
+                allene_one_wedge_z( at, at_1, z_dir1, at_2, z_dir2 );
+            }
 
             dot_prod_z = ( chain_len_bits && BOND_CHAIN_LEN( chain_len_bits ) % 2 )
                 ?  triple_prod_char( at, at_1, i_next_at_1, z_dir1, at_2, i_next_at_2, z_dir2 )
@@ -4565,6 +5126,22 @@ int set_stereo_parity( CANON_GLOBALS *pCG,
         }
         num_stereo += ( is_stereo != 0 );
         /* djb-rwth: removing redundant code */
+    }
+
+    /* Atropisomer axes (-EnhancedStereochemistry): flagged single bonds become stereo bonds */
+    if (!RETURNED_ERROR( num_3D_stereo_atoms ))
+    {
+        is_stereo = set_atrop_axes_parity( at_output, at, num_at, at + num_at, num_removed_H,
+                                           q, nAtomLevel, cSource,
+                                           bPointedEdgeStereo, vABParityUnknown );
+        if (RETURNED_ERROR( is_stereo ))
+        {
+            num_3D_stereo_atoms = is_stereo;
+        }
+        else
+        {
+            num_stereo_bonds += is_stereo;
+        }
     }
 
     /* Added to fix bug reported by Burt Leland - 2009-02-05 DT */

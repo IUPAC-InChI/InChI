@@ -161,6 +161,14 @@ static int bIsSp3LayerNotEmpty(INChI* pInpInChI[], int bMobileH,
     int bIso, int nNumComponents);
 static int ParseSegmentSp3s(const char* str, int bMobileH, INChI* pInpInChI[],
     int s[TAUT_NUM][2], int ppnNumComponents[], int state);
+static int ParseEnhancedSlots(const char* pStart, const char* pEnd, INChI* pInChI,
+    int nNumComponents, int bIso);
+static int ParseSegmentSp2Enh(const char* str, int bMobileH, INChI* pInpInChI[],
+    int ppnNumComponents[], int state, int* pbAbc);
+
+/* Summary /s digit for grouped or per-component /s: the groups themselves
+   are in each component's szEnhS, so the structure-wide flags stay absolute */
+#define ENH_S_SUMMARY 1
 static int ParseSegmentIsoAtoms(const char* str, int bMobileH, INChI* pInpInChI[],
     int nNumComponents[], int state, int* pbAbc);
 static int ParseSegmentIsoExchgH(const char* str, int bMobileH,
@@ -5265,8 +5273,8 @@ next_line:
                 (*ppPolymer)->is_in_reconn = bReconn;
             state = IST_MOBILE_H_SP2;
             break;
-        case IST_MOBILE_H_SP2:           /* /b */
-            ret = ParseSegmentSp2(pLine->str, bMobileH, pInpInChI[bReconn], nNumComponents[bReconn], state, &bAbc);
+        case IST_MOBILE_H_SP2:           /* /b, possibly with OR/AND groups */
+            ret = ParseSegmentSp2Enh(pLine->str, bMobileH, pInpInChI[bReconn], nNumComponents[bReconn], state, &bAbc);
             state = IST_MOBILE_H_SP3;
             break;
         case IST_MOBILE_H_SP3:         /* t */
@@ -6339,11 +6347,397 @@ int ParseSegmentSp3s(const char* str,
         }
         else
         {
-            ret = RI_ERR_SYNTAX; /* syntax error */
+            /* enhanced stereo: per-component slots, e.g. "1(4)3(5)" or "2;3" */
+            ret = ParseEnhancedSlots(pStart, pEnd, pInChI, nNumComponents, bIso);
+            if (ret >= 0)
+            {
+                s[bMobileH][bIso] = ENH_S_SUMMARY;
+                ret = nNumComponents + 1;
+            }
         }
     }
 
 exit_function:
+
+    return ret;
+}
+
+
+/**
+ * @brief Is [p, end) one enhanced-stereo /s slot of a component?
+ *
+ * Grammar (spec 1, §6): a bare digit 1..3, or one or more s-groups, each a
+ * digit followed by atom groups of ascending canonical numbers <= num_atoms:
+ *
+ *     "3"   "1(4)3(5)"   "1(3,5)2(4)(6,8)3(7,9)(10)"
+ *
+ * @param p Slot start
+ * @param end Slot end
+ * @param num_atoms Number of atoms of the component
+ * @return Returns 1 if valid, else 0
+ */
+static int IsEnhancedSlot(const char* p, const char* end, int num_atoms)
+{
+    const char* q;
+    long atom, prev;
+
+    if (end - p == 1)
+    {
+        return '1' <= *p && *p <= '3';
+    }
+
+    while (p < end)
+    {
+        /* s-type digit, then at least one atom group */
+        if (*p < '1' || *p > '3' || p + 1 >= end || p[1] != '(')
+        {
+            return 0;
+        }
+        p++;
+
+        while (p < end && *p == '(')
+        {
+            prev = 0;
+            do
+            {
+                p++;
+                if (!isdigit(UCINT * p))
+                {
+                    return 0;
+                }
+                atom = inchi_strtol(p, &q, 10);
+                if (atom <= prev || atom > num_atoms)
+                {
+                    return 0; /* not ascending or out of range */
+                }
+                prev = atom;
+                p = q;
+            } while (p < end && *p == ',');
+
+            if (p >= end || *p != ')')
+            {
+                return 0;
+            }
+            p++;
+        }
+    }
+
+    return 1;
+}
+
+
+/**
+ * @brief Store the slots of an enhanced-stereo /s layer per component
+ *
+ * Slots are separated by ';' and may carry a repeat count, like /t:
+ *
+ *     "1;2*1(3,5)2(4)(6,8);3"   ->   "1" | "1(3,5)2(4)(6,8)" x2 | "3"
+ *
+ * Each non-empty slot is kept verbatim in the component's Stereo (or
+ * StereoIsotopic) szEnhS; the component must already have that stereo.
+ *
+ * @param pStart Layer text after "s"
+ * @param pEnd Layer end
+ * @param pInChI Components
+ * @param nNumComponents Number of components
+ * @param bIso 1 for the isotopic layer
+ * @return Returns 0 or an RI_ERR_* code
+ */
+static int ParseEnhancedSlots(const char* pStart, const char* pEnd, INChI* pInChI,
+                              int nNumComponents, int bIso)
+{
+    const char *p = pStart, *end, *star, *r;
+    int iComponent = 0, mult, k;
+    size_t len;
+    INChI_Stereo* pStereo;
+
+    while (p <= pEnd)
+    {
+        for (end = p; end < pEnd && *end != ';'; end++)
+            ;
+
+        /* optional repeat count "n*" */
+        mult = 1;
+        for (star = p; star < end && *star != '*'; star++)
+            ;
+        if (star < end)
+        {
+            mult = (int)inchi_strtol(p, &r, 10);
+            if (r != star || mult < 1)
+            {
+                return RI_ERR_SYNTAX;
+            }
+            p = star + 1;
+        }
+        if (iComponent + mult > nNumComponents)
+        {
+            return RI_ERR_SYNTAX;
+        }
+
+        len = (size_t)(end - p);
+        for (k = 0; k < mult && len; k++, iComponent++)
+        {
+            pStereo = bIso ? pInChI[iComponent].StereoIsotopic : pInChI[iComponent].Stereo;
+            if (!pStereo || !IsEnhancedSlot(p, end, pInChI[iComponent].nNumberOfAtoms))
+            {
+                return RI_ERR_SYNTAX;
+            }
+            if (!(pStereo->szEnhS = (char*)inchi_calloc(len + 1, sizeof(char))))
+            {
+                return RI_ERR_ALLOC;
+            }
+            memcpy(pStereo->szEnhS, p, len);
+        }
+        if (!len)
+        {
+            iComponent += mult; /* empty slot: no stereo groups */
+        }
+
+        p = end + 1;
+    }
+
+    return 0;
+}
+
+
+/** @brief One /b entry: bond hi-lo and its parity character */
+typedef struct tagBPair
+{
+    long hi, lo;
+    char par;
+} B_PAIR;
+
+/* qsort: ascending by (hi, lo), the flat /b order */
+static int CompBPair(const void* a, const void* b)
+{
+    const B_PAIR *x = (const B_PAIR*)a, *y = (const B_PAIR*)b;
+
+    return x->hi != y->hi ? (x->hi > y->hi) - (x->hi < y->hi) : (x->lo > y->lo) - (x->lo < y->lo);
+}
+
+/**
+ * @brief Read one "hi-lo<par>" entry at *pp; par must be in allowed
+ *
+ * @return Returns 1 and advances *pp, or 0 on a syntax error
+ */
+static int ReadBPair(const char** pp, const char* end, const char* allowed, B_PAIR* pair)
+{
+    const char* q;
+
+    if (!isdigit(UCINT **pp))
+    {
+        return 0;
+    }
+    pair->hi = inchi_strtol(*pp, &q, 10);
+    if (q >= end || *q != '-' || !isdigit(UCINT q[1]))
+    {
+        return 0;
+    }
+    pair->lo = inchi_strtol(q + 1, &q, 10);
+    if (q >= end || !*q || !strchr(allowed, *q) || pair->lo >= pair->hi)
+    {
+        return 0;
+    }
+    pair->par = *q;
+    *pp = q + 1;
+
+    return 1;
+}
+
+/**
+ * @brief Flatten one grouped /b slot (spec 3, §6) into a standard /b slot
+ *
+ * Every bond of a block keeps its parity: the group's relative geometry,
+ * read as absolute. The flat entries and the block entries are merged in
+ * ascending (hi, lo) order:
+ *
+ *     "12-11+,9-6+,2(17-13-),3(16-8-)"  ->  "9-6+,12-11+,16-8-,17-13-"
+ *
+ * @param p Slot start
+ * @param end Slot end
+ * @param flat Receives the flat slot, at least (end - p + 1) chars
+ * @return Returns 0 or RI_ERR_SYNTAX / RI_ERR_ALLOC
+ */
+static int FlattenEnhancedBSlot(const char* p, const char* end, char* flat)
+{
+    const char* q;
+    B_PAIR* pairs;
+    int n = 0, i, in_block, ret = 0;
+    long type;
+
+    /* every entry has a '-' */
+    pairs = (B_PAIR*)inchi_calloc((size_t)(end - p) / 2 + 1, sizeof(pairs[0]));
+    if (!pairs)
+    {
+        return RI_ERR_ALLOC;
+    }
+
+    while (p < end && !ret)
+    {
+        for (q = p; q < end && isdigit(UCINT * q); q++)
+            ;
+        if (q < end && *q == '(')
+        {
+            /* class "2"/"3", then blocks "(pair,...)": first pair '-', ascending */
+            type = inchi_strtol(p, NULL, 10);
+            if (type != 2 && type != 3)
+            {
+                ret = RI_ERR_SYNTAX;
+                break;
+            }
+            p = q;
+            while (p < end && *p == '(' && !ret)
+            {
+                p++;
+                for (in_block = 0; !ret; in_block++)
+                {
+                    if (!ReadBPair(&p, end, "-+", pairs + n) ||
+                        (!in_block && pairs[n].par != '-') ||
+                        (in_block && CompBPair(pairs + n - 1, pairs + n) >= 0))
+                    {
+                        ret = RI_ERR_SYNTAX;
+                        break;
+                    }
+                    n++;
+                    if (p < end && *p == ',')
+                    {
+                        p++;
+                        continue;
+                    }
+                    break;
+                }
+                if (!ret && (p >= end || *p++ != ')'))
+                {
+                    ret = RI_ERR_SYNTAX;
+                }
+            }
+        }
+        else if (!ReadBPair(&p, end, "-+u?", pairs + n++))
+        {
+            ret = RI_ERR_SYNTAX;
+        }
+
+        if (!ret && p < end && *p++ != ',')
+        {
+            ret = RI_ERR_SYNTAX;
+        }
+    }
+
+    if (!ret)
+    {
+        qsort(pairs, (size_t)n, sizeof(pairs[0]), CompBPair);
+        for (i = 0, *flat = '\0'; i < n; i++)
+        {
+            flat += sprintf(flat, "%s%ld-%ld%c", i ? "," : "", pairs[i].hi, pairs[i].lo, pairs[i].par);
+        }
+    }
+    inchi_free(pairs);
+
+    return ret;
+}
+
+/**
+ * @brief Parse the main /b layer, which may carry OR/AND groups (spec 3)
+ *
+ * A layer without groups goes to ParseSegmentSp2() as is. Otherwise each
+ * ';' slot (n* repeats as usual) is flattened, the flat layer is parsed as
+ * standard /b, and every component keeps its slot verbatim in
+ * Stereo->szEnhB for -InChI2InChI output:
+ *
+ *     "b2(2-1-);3(2-1-)"  ->  parse "b2-1-;2-1-", keep "2(2-1-)" | "3(2-1-)"
+ *
+ * @return Same as ParseSegmentSp2()
+ */
+static int ParseSegmentSp2Enh(const char* str, int bMobileH, INChI* pInpInChI[],
+                              int ppnNumComponents[], int state, int* pbAbc)
+{
+    const char *p, *end, *star, *r;
+    char *flat = NULL, *out;
+    char **verb = NULL;
+    int nComp = ppnNumComponents[bMobileH], iComp = 0, mult, k, ret;
+    size_t len;
+
+    if (str[0] != 'b' || !strchr(str, '('))
+    {
+        return ParseSegmentSp2(str, bMobileH, pInpInChI, ppnNumComponents, state, pbAbc);
+    }
+
+    /* a flat slot is never longer than its grouped form */
+    len = strlen(str);
+    flat = (char*)inchi_calloc(len + 2, sizeof(char));
+    verb = (char**)inchi_calloc((size_t)nComp + 1, sizeof(verb[0]));
+    if (!flat || !verb)
+    {
+        ret = RI_ERR_ALLOC;
+        goto exit_function;
+    }
+    out = flat;
+    *out++ = 'b';
+
+    for (p = str + 1; ; p = end + 1)
+    {
+        for (end = p; *end && *end != ';'; end++)
+            ;
+
+        /* optional repeat count "n*" */
+        mult = 1;
+        for (star = p; star < end && isdigit(UCINT * star); star++)
+            ;
+        if (star > p && star < end && *star == '*')
+        {
+            mult = (int)inchi_strtol(p, &r, 10);
+            out += sprintf(out, "%d*", mult);
+            p = star + 1;
+        }
+        if (mult < 1 || iComp + mult > nComp)
+        {
+            ret = RI_ERR_SYNTAX;
+            goto exit_function;
+        }
+
+        if (0 > (ret = FlattenEnhancedBSlot(p, end, out)))
+        {
+            goto exit_function;
+        }
+        out += strlen(out);
+
+        for (k = 0; k < mult; k++, iComp++)
+        {
+            if (!(verb[iComp] = (char*)inchi_calloc((size_t)(end - p) + 1, sizeof(char))))
+            {
+                ret = RI_ERR_ALLOC;
+                goto exit_function;
+            }
+            memcpy(verb[iComp], p, (size_t)(end - p));
+        }
+
+        if (!*end)
+        {
+            break;
+        }
+        *out++ = ';';
+    }
+
+    ret = ParseSegmentSp2(flat, bMobileH, pInpInChI, ppnNumComponents, state, pbAbc);
+
+    /* keep the slots on the components that have stereo */
+    for (k = 0; ret >= 0 && k < iComp; k++)
+    {
+        INChI_Stereo* st = pInpInChI[bMobileH][k].Stereo;
+        if (st)
+        {
+            st->szEnhB = verb[k];
+            verb[k] = NULL;
+        }
+    }
+
+exit_function:
+    for (k = 0; verb && k < nComp; k++)
+    {
+        inchi_free(verb[k]);
+    }
+    inchi_free(verb);
+    inchi_free(flat);
 
     return ret;
 }
@@ -11223,6 +11617,220 @@ int ConvertInChI2InChI(INPUT_PARMS* ip,
 }
 
 
+/**
+ * @brief Append one stereo collection [tag, count, atoms...] to a V3000 list
+ *
+ * @return Returns 0 or RI_ERR_ALLOC
+ */
+static int AddStereoCollection(int*** plists, int* pn, int tag, const int* atoms, int count)
+{
+    int** lists = (int**)inchi_calloc((size_t)*pn + 1, sizeof(lists[0]));
+    int* rec = (int*)inchi_calloc((size_t)count + 2, sizeof(rec[0]));
+
+    if (!lists || !rec)
+    {
+        inchi_free(lists);
+        inchi_free(rec);
+        return RI_ERR_ALLOC;
+    }
+    if (*pn)
+    {
+        memcpy(lists, *plists, (size_t)*pn * sizeof(lists[0]));
+    }
+    inchi_free(*plists);
+
+    rec[0] = tag;
+    rec[1] = count;
+    memcpy(rec + 2, atoms, (size_t)count * sizeof(rec[0]));
+    lists[(*pn)++] = rec;
+    *plists = lists;
+
+    return 0;
+}
+
+
+/**
+ * @brief Turn one component's /s slot into V3000 stereo collections
+ *
+ * Atoms become restored-structure numbers (offset + canonical number). A bare
+ * "1"/"2"/"3" puts all the component's centres in ABS / one OR / one AND
+ * group; centres a grouped slot leaves out stay ungrouped. ABS atoms of every
+ * component are gathered in abs[] for the single structure-wide STEABS collection.
+ *
+ *     slot "1(4)3(5)", offset 7   ->   STEABS += 11;  STERACn (12)
+ *
+ * @param v V3000 data receiving STEREL/STERAC collections
+ * @param slot The /s slot (parser-validated)
+ * @param st The component's stereo (its /t centres)
+ * @param offset Number of atoms of the components before this one
+ * @param abs ABS atoms collected so far; *n_abs is their count
+ * @param buf Work buffer of at least the structure's atom count
+ * @return Returns 0 or RI_ERR_ALLOC
+ */
+static int EnhSlotToCollections(OAD_V3000* v, const char* slot, const INChI_Stereo* st,
+                                int offset, int* abs, int* n_abs, int* buf)
+{
+    const char* p = slot;
+    const char* q;
+    int type, n, i, ret = 0;
+
+    /* bare digit: the whole component; "1" in one slot is its ABS collection
+       (the forward /s writes it only then: ungrouped centres give "") */
+    if (!p[1])
+    {
+        type = *p - '0';
+        if (!st)
+        {
+            return 0;
+        }
+        for (i = 0; i < st->nNumberOfStereoCenters; i++)
+        {
+            buf[i] = offset + st->nNumber[i];
+        }
+        if (type == 1)
+        {
+            memcpy(abs + *n_abs, buf, (size_t)i * sizeof(buf[0]));
+            *n_abs += i;
+            return 0;
+        }
+        return type == 2
+            ? AddStereoCollection(&v->lists_sterel, &v->n_sterel, v->n_sterel + 1, buf, i)
+            : AddStereoCollection(&v->lists_sterac, &v->n_sterac, v->n_sterac + 1, buf, i);
+    }
+
+    /* s-groups: class digit, then "(a,b,...)" groups */
+    while (*p && !ret)
+    {
+        type = *p++ - '0';
+        while (*p == '(' && !ret)
+        {
+            n = 0;
+            do
+            {
+                buf[n++] = offset + (int)inchi_strtol(p + 1, &q, 10);
+                p = q;
+            } while (*p == ',');
+            p++; /* ')' */
+
+            if (type == 1)
+            {
+                memcpy(abs + *n_abs, buf, (size_t)n * sizeof(buf[0]));
+                *n_abs += n;
+            }
+            else
+            {
+                ret = type == 2
+                    ? AddStereoCollection(&v->lists_sterel, &v->n_sterel, v->n_sterel + 1, buf, n)
+                    : AddStereoCollection(&v->lists_sterac, &v->n_sterac, v->n_sterac + 1, buf, n);
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+/**
+ * @brief Put the parsed /s groups on the restored structure as V3000 stereo
+ *        collections, so that the InChI computed from it has the same /s
+ *
+ * Follows MergeStructureComponents(): the same layer (reconnected/fixed-H
+ * before main/mobile-H) and component k's atoms at the summed atom counts of
+ * the components before it. The slot comes from the main (mobile-H) /s when
+ * the chosen layer has none. pOneInput->v3000 then reaches GetStructFromINCHIEx
+ * and the self-check unchanged.
+ *
+ * @param pOneInput Parsed InChI with the merged structure
+ * @return Returns 0 or RI_ERR_ALLOC
+ */
+static int SetEnhStereoCollections(InpInChI* pOneInput)
+{
+    int iRec, iTaut, nComp, k, offset = 0, n_abs = 0, ret = 0;
+    int *abs, *buf;
+    const char* slot;
+    INChI *comp, *alt, *pI;
+    INChI_Stereo* st;
+    OAD_V3000* v;
+
+    /* the layer MergeStructureComponents restored */
+    iRec = (pOneInput->nNumComponents[INCHI_REC][TAUT_NON] || pOneInput->nNumComponents[INCHI_REC][TAUT_YES])
+        ? INCHI_REC : INCHI_BAS;
+    iTaut = pOneInput->nNumComponents[iRec][TAUT_NON] ? TAUT_NON : TAUT_YES;
+    nComp = pOneInput->nNumComponents[iRec][iTaut];
+    comp = pOneInput->pInpInChI[iRec][iTaut];
+    alt = (iTaut == TAUT_NON && pOneInput->nNumComponents[iRec][TAUT_YES]) ? pOneInput->pInpInChI[iRec][TAUT_YES] : NULL;
+
+    abs = (int*)inchi_calloc((size_t)pOneInput->num_atoms + 1, sizeof(abs[0]));
+    buf = (int*)inchi_calloc((size_t)pOneInput->num_atoms + 1, sizeof(buf[0]));
+    v = (OAD_V3000*)inchi_calloc(1, sizeof(OAD_V3000));
+    if (!abs || !buf || !v)
+    {
+        inchi_free(v);
+        ret = RI_ERR_ALLOC;
+        goto exit_function;
+    }
+
+    for (k = 0; k < nComp && !ret; k++)
+    {
+        pI = comp[k].nNumberOfAtoms ? comp + k : (alt ? alt + k : NULL);
+        if (!pI)
+        {
+            continue;
+        }
+
+        /* centres stereogenic only through isotopes are in the isotopic layer */
+        st = (pI->Stereo && pI->Stereo->nNumberOfStereoCenters) ? pI->Stereo : pI->StereoIsotopic;
+
+        slot = st ? st->szEnhS : NULL;
+        if (!slot && alt && alt[k].Stereo)
+        {
+            slot = alt[k].Stereo->szEnhS;
+        }
+        if (!slot)
+        {
+            /* one bare /s digit for the whole structure */
+            slot = (pI->nFlags & INCHI_FLAG_REL_STEREO) ? "2" : (pI->nFlags & INCHI_FLAG_RAC_STEREO) ? "3" : NULL;
+        }
+        if (slot)
+        {
+            ret = EnhSlotToCollections(v, slot, st, offset, abs, &n_abs, buf);
+        }
+        offset += pI->nNumberOfAtoms;
+    }
+
+    if (!ret && n_abs)
+    {
+        ret = AddStereoCollection(&v->lists_steabs, &v->n_steabs, 0, abs, n_abs);
+    }
+    if (ret || !(v->n_steabs + v->n_sterel + v->n_sterac))
+    {
+        FreeExtOrigAtData(NULL, v); /* frees v too */
+        goto exit_function;
+    }
+
+    if (!pOneInput->v3000)
+    {
+        pOneInput->v3000 = v;
+        goto exit_function;
+    }
+
+    /* V3000 data already there (polymer): add the collections */
+    pOneInput->v3000->n_steabs = v->n_steabs;
+    pOneInput->v3000->lists_steabs = v->lists_steabs;
+    pOneInput->v3000->n_sterel = v->n_sterel;
+    pOneInput->v3000->lists_sterel = v->lists_sterel;
+    pOneInput->v3000->n_sterac = v->n_sterac;
+    pOneInput->v3000->lists_sterac = v->lists_sterac;
+    inchi_free(v);
+
+exit_function:
+    inchi_free(abs);
+    inchi_free(buf);
+
+    return ret;
+}
+
+
 /* InChi --> Structure (presented as AuxInfo or MolFile) */
 
 
@@ -11466,6 +12074,14 @@ int ConvertInChI2Struct(ICHICONST INPUT_PARMS* ip_inp,
     if (ret < 0)
     {
         AddOneMsg(szMessage, (int)strlen(szMessage), nMessageLen, "Merge Components error", "; ");
+        (*num_errors)++;
+        goto dealloc;
+    }
+
+    /* enhanced stereo: /s groups -> V3000 stereo collections of the structure */
+    if (ip->bEnhancedStereo && 0 > (ret = SetEnhStereoCollections(pOneInput)))
+    {
+        AddOneMsg(szMessage, (int)strlen(szMessage), nMessageLen, "Enhanced stereo groups error", "; ");
         (*num_errors)++;
         goto dealloc;
     }
